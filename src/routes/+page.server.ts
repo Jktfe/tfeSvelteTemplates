@@ -13,18 +13,20 @@
 
 import type { PageServerLoad } from './$types';
 import { neon } from '@neondatabase/serverless';
+import type { Card, CardRow } from '$lib/types';
+import { FALLBACK_CARDS } from '$lib/constants';
 
-export const load: PageServerLoad = async () => {
+export const load: PageServerLoad = async (): Promise<{ cards: Card[] }> => {
 	try {
 		// Get database connection string from environment variable
 		const databaseUrl = process.env.DATABASE_URL;
 
-		// If DATABASE_URL is not configured, return empty cards array
-		// This allows the app to work with fallback data
+		// If DATABASE_URL is not configured, return fallback cards
+		// This allows the app to work without a database connection
 		if (!databaseUrl) {
 			console.warn('DATABASE_URL not configured, using fallback data');
 			return {
-				cards: getFallbackCards()
+				cards: FALLBACK_CARDS
 			};
 		}
 
@@ -32,7 +34,7 @@ export const load: PageServerLoad = async () => {
 		const sql = neon(databaseUrl);
 
 		// Query cards from database
-		const cards = await sql`
+		const rows = (await sql`
 			SELECT
 				id,
 				title,
@@ -42,15 +44,14 @@ export const load: PageServerLoad = async () => {
 				created_at
 			FROM cards
 			ORDER BY display_order ASC
-		`;
+		`) as unknown as CardRow[];
 
 		// Transform database records to match component expectations
-		const formattedCards = cards.map(card => ({
-			id: card.id,
-			title: card.title,
-			content: card.description,
-			image: card.image_url,
-			display_order: card.display_order
+		// Maps database column names to Card interface properties
+		const formattedCards: Card[] = rows.map(row => ({
+			title: row.title,
+			content: row.description,
+			image: row.image_url
 		}));
 
 		return {
@@ -63,58 +64,7 @@ export const load: PageServerLoad = async () => {
 
 		// Return fallback cards so the demo still works
 		return {
-			cards: getFallbackCards()
+			cards: FALLBACK_CARDS
 		};
 	}
 };
-
-/**
- * Fallback card data for when database is unavailable
- * Uses Unsplash images for beautiful placeholders
- */
-function getFallbackCards() {
-	return [
-		{
-			id: 1,
-			title: 'Mountain Vista',
-			content: 'Breathtaking views from the highest peaks, where the air is crisp and the horizon endless.',
-			image: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop',
-			display_order: 1
-		},
-		{
-			id: 2,
-			title: 'Ocean Waves',
-			content: 'The rhythmic dance of waves meeting shore, a timeless symphony of nature.',
-			image: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&h=600&fit=crop',
-			display_order: 2
-		},
-		{
-			id: 3,
-			title: 'Forest Path',
-			content: 'Wandering through ancient woods, where sunlight filters through emerald canopies.',
-			image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop',
-			display_order: 3
-		},
-		{
-			id: 4,
-			title: 'Desert Dunes',
-			content: 'Golden sands sculpted by wind, creating an ever-changing landscape of beauty.',
-			image: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=800&h=600&fit=crop',
-			display_order: 4
-		},
-		{
-			id: 5,
-			title: 'City Lights',
-			content: 'Urban brilliance illuminating the night, a testament to human achievement.',
-			image: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800&h=600&fit=crop',
-			display_order: 5
-		},
-		{
-			id: 6,
-			title: 'Northern Lights',
-			content: 'Aurora borealis painting the sky with ethereal colours, nature\'s greatest light show.',
-			image: 'https://images.unsplash.com/photo-1531366936337-7c912a4589a7?w=800&h=600&fit=crop',
-			display_order: 6
-		}
-	];
-}

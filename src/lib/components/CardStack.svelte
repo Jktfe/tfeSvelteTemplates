@@ -1,15 +1,15 @@
 <!--
-	CardStack Component - Interactive Card Fan Display
+	CardStack Component - Horizontal Card Row with Two-Stage Interaction
 
-	A reusable Svelte 5 component that displays cards in an interactive fan layout.
-	Cards can be navigated via drag (desktop) or swipe (mobile) interactions.
+	A reusable Svelte 5 component that displays cards in a horizontal overlapping row.
+	Features a two-stage interaction: hover to preview (partial reveal), click to select (full reveal).
 
 	FEATURES:
-	- Drag horizontally on desktop to navigate cards
-	- Swipe vertically on mobile to navigate cards
-	- Smooth animations with cubic-bezier easing
+	- Cards arranged horizontally with slight overlap
+	- Two-stage interaction: hover for preview, click for full reveal
+	- Dynamic partial reveal based on mouse movement direction
 	- Responsive design with mobile optimisations
-	- Accessible with ARIA labels
+	- Fully accessible with semantic button elements, ARIA labels, and keyboard navigation support
 
 	USAGE:
 	<CardStack
@@ -19,251 +19,222 @@
 		]}
 		cardWidth={300}
 		cardHeight={400}
+		partialRevealSide="right"
 	/>
 
 	PROPS:
 	- cards: Array of card objects with { image, title, content }
 	- cardWidth: Width of each card in pixels (default: 300)
 	- cardHeight: Height of each card in pixels (default: 400)
+	- partialRevealSide: Which side stays hidden on hover - 'left' or 'right' (default: 'right')
+
+	INTERACTION:
+	- Hover: Card rises and shifts based on mouse direction, keeping one edge behind its neighbour
+	- Click: Card fully emerges from the stack with maximum elevation
 -->
 
 <script lang="ts">
-	import { onMount } from 'svelte';
-
-	// Type definitions
-	interface Card {
-		image?: string;
-		title?: string;
-		content?: string;
-	}
+	import type { Card, CardStackProps } from '$lib/types';
 
 	// Component props with default values
-	// cards: Array of card data objects
-	// cardWidth/cardHeight: Dimensions for the card container
-	let { cards = [], cardWidth = 300, cardHeight = 400 }: {
-		cards?: Card[];
-		cardWidth?: number;
-		cardHeight?: number;
-	} = $props();
+	let { cards = [], cardWidth = 300, cardHeight = 400, partialRevealSide = 'right' }: CardStackProps = $props();
 
-	// Reactive state using Svelte 5 runes
-	let currentIndex = $state(0); // Index of the currently focused card
-	let isDragging = $state(false); // Whether user is currently dragging
-	let dragStart = $state({ x: 0, y: 0 }); // Starting position of drag
-	let dragCurrent = $state({ x: 0, y: 0 }); // Current position during drag
-	let containerRef = $state<HTMLDivElement | null>(null); // Reference to container element
+	// Track which card is currently hovered and selected
+	let hoveredIndex = $state<number | null>(null);
+	let selectedIndex = $state<number | null>(null);
+
+	// Track mouse movement direction for dynamic partial reveal
+	// When partialRevealSide is 'right', we start assuming leftward mouse movement (card shifts left, hiding right edge)
+	// When partialRevealSide is 'left', we start assuming rightward mouse movement (card shifts right, hiding left edge)
+	let mouseDirection = $state<'left' | 'right' | null>(partialRevealSide === 'right' ? 'right' : 'left');
+	let previousMouseX = $state<number>(0);
 
 	/**
-	 * Calculate the transform properties for each card based on its position
-	 *
-	 * VISUAL EFFECT:
-	 * - Cards behind current are hidden (scale: 0, opacity: 0)
-	 * - Current card and cards ahead fan out with increasing scale
-	 * - Rotation creates the fan effect (30-45 degrees)
-	 * - Cards respond to drag for dynamic rotation feedback
+	 * Calculate dynamic hover shift based on mouse movement direction
+	 * - When mouse moves left: card shifts left (hiding right edge behind neighbour)
+	 * - When mouse moves right: card shifts right (hiding left edge behind neighbour)
+	 * This creates a realistic "peeking" effect that follows the mouse
 	 */
-	function getCardTransform(index: number): { scale: number; rotation: number; opacity: number } {
-		const offset = index - currentIndex;
-
-		// Hide cards that are behind the current card
-		if (offset < 0) return { scale: 0, rotation: 0, opacity: 0 };
-
-		// Scale progression: starts at 0.34, increases by 0.084 per position, capped at 0.94
-		// This creates a gradual size increase from back to front
-		const baseScale = 0.34 + (offset * 0.084);
-		const scale = Math.min(baseScale, 0.94);
-
-		// Rotation creates the fan effect
-		// Base rotation starts at 30° and increases 3° per position
-		// During drag, rotation responds to horizontal movement for feedback
-		const baseRotation = 30 + offset * 3;
-		const rotation = baseRotation + (isDragging ? (dragCurrent.x - dragStart.x) * 0.1 : 0);
-
-		// Fade out cards that are too far back (beyond 8 positions)
-		const opacity = offset > 8 ? 0 : 1;
-
-		return { scale, rotation, opacity };
-	}
-
-	/**
-	 * MOUSE INTERACTION HANDLERS (Desktop)
-	 * These handle horizontal dragging on desktop devices
-	 */
-
-	// Start dragging when mouse button is pressed
-	function handleMouseDown(e: MouseEvent) {
-		if (e.button !== 0) return; // Only respond to left click
-		isDragging = true;
-		dragStart = { x: e.clientX, y: e.clientY };
-		dragCurrent = { ...dragStart };
-	}
-
-	// Track mouse position during drag
-	function handleMouseMove(e: MouseEvent) {
-		if (!isDragging) return;
-		dragCurrent = { x: e.clientX, y: e.clientY };
-	}
-
-	// End drag and determine if we should navigate to next/previous card
-	function handleMouseUp(_e: MouseEvent) {
-		if (!isDragging) return;
-		isDragging = false;
-
-		const deltaX = dragCurrent.x - dragStart.x;
-		const threshold = 30; // Minimum drag distance to trigger navigation
-
-		// Drag right = next card, drag left = previous card
-		if (deltaX > threshold && currentIndex < cards.length - 1) {
-			currentIndex++;
-		} else if (deltaX < -threshold && currentIndex > 0) {
-			currentIndex--;
-		}
-	}
-
-	/**
-	 * TOUCH INTERACTION HANDLERS (Mobile)
-	 * These handle vertical swiping on touch devices
-	 */
-
-	// Start touch interaction
-	function handleTouchStart(e: TouchEvent) {
-		isDragging = true;
-		dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-		dragCurrent = { ...dragStart };
-	}
-
-	// Track finger position during swipe
-	function handleTouchMove(e: TouchEvent) {
-		if (!isDragging) return;
-		dragCurrent = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-	}
-
-	// End touch and determine if we should navigate
-	function handleTouchEnd(_e: TouchEvent) {
-		if (!isDragging) return;
-		isDragging = false;
-
-		const deltaY = dragCurrent.y - dragStart.y;
-		const threshold = 30; // Minimum swipe distance to trigger navigation
-
-		// Swipe up = next card, swipe down = previous card
-		if (deltaY < -threshold && currentIndex < cards.length - 1) {
-			currentIndex++;
-		} else if (deltaY > threshold && currentIndex > 0) {
-			currentIndex--;
-		}
-	}
-
-	// Set up global mouse event listeners on component mount
-	// These are global to track mouse movement even outside the component
-	onMount(() => {
-		document.addEventListener('mousemove', handleMouseMove);
-		document.addEventListener('mouseup', handleMouseUp);
-
-		// Clean up event listeners when component is destroyed
-		return () => {
-			document.removeEventListener('mousemove', handleMouseMove);
-			document.removeEventListener('mouseup', handleMouseUp);
-		};
-	});
+	const hoverShift = $derived(mouseDirection === 'left' ? -60 : 60);
 </script>
 
-<!-- Global mousedown listener to initiate drag from anywhere -->
-<svelte:document onmousedown={handleMouseDown} />
-
 <!-- Main container that holds all cards -->
-<div
-	class="stack-container"
-	bind:this={containerRef}
-	ontouchstart={handleTouchStart}
-	ontouchmove={handleTouchMove}
-	ontouchend={handleTouchEnd}
-	role="region"
-	aria-label="Card stack"
->
-	<!-- Render each card with its calculated transform -->
-	{#each cards as card, index (index)}
-		{@const transform = getCardTransform(index)}
-		<div
-			class="card-wrapper"
-			style="
-				--scale: {transform.scale};
-				--rotation: {transform.rotation}deg;
-				--opacity: {transform.opacity};
-				z-index: {index};
-				transform: scale(var(--scale)) rotateZ(var(--rotation));
-				opacity: var(--opacity);
-			"
-		>
-			<div class="card">
-				<!-- Background image (if provided) -->
-				{#if card.image}
-					<img src={card.image} alt={card.title} class="card-image" />
-				{/if}
+<div class="stack-container" role="region" aria-label="Card stack">
+	<div class="cards-wrapper">
+		<!-- Render each card -->
+		{#each cards as card, index (index)}
+			<button
+				class="card-wrapper"
+				class:hovered={hoveredIndex === index && selectedIndex !== index}
+				class:selected={selectedIndex === index}
+				style="
+					--card-index: {index};
+					--total-cards: {cards.length};
+					--hover-shift: {hoverShift}px;
+					z-index: {selectedIndex === index ? cards.length + 20 : hoveredIndex === index ? cards.length + 5 : index + 1};
+				"
+				onmouseenter={() => (hoveredIndex = index)}
+				onmouseleave={() => {
+					hoveredIndex = null;
+					previousMouseX = 0;
+				}}
+				onmousemove={(e: MouseEvent) => {
+					if (previousMouseX !== 0) {
+						const direction = e.clientX < previousMouseX ? 'left' : 'right';
+						if (direction !== mouseDirection) {
+							mouseDirection = direction;
+						}
+					}
+					previousMouseX = e.clientX;
+				}}
+				onclick={() => (selectedIndex = selectedIndex === index ? null : index)}
+				aria-label="Card {index + 1} of {cards.length}: {card.title || 'Untitled'}"
+				aria-pressed={selectedIndex === index}
+			>
+				<div class="card">
+					<!-- Background image (if provided) -->
+					{#if card.image}
+						<img
+							src={card.image}
+							alt={card.title ? `${card.title} - Image ${index + 1}` : `Card image ${index + 1} of ${cards.length}`}
+							class="card-image"
+						/>
+					{/if}
 
-				<!-- Card title overlay (if provided) -->
-				{#if card.title}
-					<div class="card-title">{card.title}</div>
-				{/if}
+					<!-- Card title overlay (if provided) -->
+					{#if card.title}
+						<div class="card-title">{card.title}</div>
+					{/if}
 
-				<!-- Card content with gradient background (if provided) -->
-				{#if card.content}
-					<div class="card-content">
-						{@html card.content}
-					</div>
-				{/if}
-			</div>
-		</div>
-	{/each}
+					<!-- Card content with gradient background (if provided) -->
+					{#if card.content}
+						<div class="card-content">
+							{@html card.content}
+						</div>
+					{/if}
+				</div>
+			</button>
+		{/each}
+	</div>
 </div>
 
 <style>
-	/* Global body styles - ensures no unwanted margins */
-	:global(body) {
-		margin: 0;
-		padding: 0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-			Cantarell, sans-serif;
-	}
-
 	/* Container that holds the card stack */
 	.stack-container {
-		position: relative;
-		width: 300px;
-		height: 400px;
-		perspective: 600px; /* Creates 3D perspective for rotation effect */
-		cursor: grab;
-		user-select: none; /* Prevent text selection during drag */
-		-webkit-user-select: none;
-		touch-action: none; /* Disable default touch behaviours */
-	}
-
-	/* Change cursor when actively dragging */
-	.stack-container:active {
-		cursor: grabbing;
-	}
-
-	/* Individual card wrapper that handles positioning and transforms */
-	.card-wrapper {
-		position: absolute;
-		top: 0;
-		left: 0;
 		width: 100%;
-		height: 100%;
-		transform-origin: 90% 90%; /* Rotation pivot point (bottom-right for fan effect) */
-		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Smooth bounce effect */
-		will-change: transform; /* Optimise for animation performance */
+		padding: 4rem 2rem;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 	}
+
+	/* Wrapper for cards with horizontal layout */
+	.cards-wrapper {
+		display: flex;
+		align-items: center;
+		padding: 2rem 2rem 2rem 0;
+		gap: 0;
+		justify-content: center;
+		max-width: 100%;
+		overflow: visible;
+	}
+
+	/* Individual card wrapper with hover effect */
+	.card-wrapper {
+		/* Reset button defaults for clean styling */
+		border: none;
+		padding: 0;
+		background: none;
+		font: inherit;
+		color: inherit;
+		text-align: inherit;
+		outline: none;
+
+		/* Card wrapper styling */
+		position: relative;
+		flex: 0 0 auto;
+		width: 220px;
+		height: 300px;
+		margin-left: -50px;
+		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+		cursor: pointer;
+		will-change: transform;
+	}
+
+	/* Focus visible for keyboard navigation accessibility */
+	.card-wrapper:focus-visible {
+		outline: 3px solid #667eea;
+		outline-offset: 4px;
+		border-radius: 20px;
+	}
+
+	/* Scale cards down on smaller screens */
+	@media (max-width: 1400px) {
+		.card-wrapper {
+			width: 200px;
+			height: 270px;
+			margin-left: -45px;
+		}
+	}
+
+	@media (max-width: 1200px) {
+		.card-wrapper {
+			width: 180px;
+			height: 245px;
+			margin-left: -40px;
+		}
+	}
+
+	@media (max-width: 1000px) {
+		.card-wrapper {
+			width: 160px;
+			height: 220px;
+			margin-left: -35px;
+		}
+	}
+
+	/* First card shouldn't have negative margin */
+	.card-wrapper:first-child {
+		margin-left: 0;
+	}
+
+	/* Hover effect: partial reveal - card rises but stays behind neighbor */
+	.card-wrapper:hover,
+	.card-wrapper:focus,
+	.card-wrapper.hovered {
+		transform: translate(var(--hover-shift), -30px) scale(1.05);
+		/* z-index is set inline to ensure proper stacking */
+	}
+
+	/* Selected effect: full reveal - card completely emerges */
+	.card-wrapper.selected {
+		transform: translateY(-40px) scale(1.1);
+		/* z-index is set inline to ensure proper stacking */
+	}
+
 
 	/* The actual card content container */
 	.card {
-		position: relative;
 		width: 100%;
 		height: 100%;
-		border-radius: 12px;
+		border-radius: 20px;
 		overflow: hidden;
 		background: white;
-		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15); /* Elevated shadow */
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+		transition: box-shadow 0.3s ease;
+		position: relative;
+	}
+
+	/* Enhanced shadow on hover */
+	.card-wrapper:hover .card,
+	.card-wrapper:focus .card,
+	.card-wrapper.hovered .card {
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+	}
+
+	/* Maximum shadow on selected */
+	.card-wrapper.selected .card {
+		box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
 	}
 
 	/* Background image styling */
@@ -273,7 +244,9 @@
 		left: 0;
 		width: 100%;
 		height: 100%;
-		object-fit: cover; /* Ensure image fills card without distortion */
+		object-fit: cover;
+		user-select: none;
+		pointer-events: none;
 	}
 
 	/* Card title overlay (positioned at top) */
@@ -285,7 +258,9 @@
 		font-weight: 700;
 		z-index: 10;
 		color: white;
-		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Ensure readability over images */
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+		letter-spacing: 0.5px;
+		pointer-events: none;
 	}
 
 	/* Card content area (positioned at bottom with gradient) */
@@ -295,21 +270,53 @@
 		left: 0;
 		right: 0;
 		padding: 24px;
-		background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+		background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.8) 100%);
 		color: white;
 		z-index: 10;
+		font-size: 14px;
+		line-height: 1.5;
+		pointer-events: none;
+	}
+
+	/* Hide content text when cards get small */
+	@media (max-width: 1000px) {
+		.card-content {
+			display: none;
+		}
+
+		.card-title {
+			font-size: 18px;
+		}
 	}
 
 	/* MOBILE RESPONSIVE STYLES */
 	@media (max-width: 768px) {
 		.stack-container {
-			width: 280px;
-			height: 380px;
+			padding: 2rem 1rem;
 		}
 
-		/* Change rotation pivot to centre-bottom for mobile */
+		.cards-wrapper {
+			padding: 1rem 1rem 1rem 0;
+		}
+
 		.card-wrapper {
-			transform-origin: 50% 100%;
+			width: 140px;
+			height: 190px;
+			margin-left: -60px;
+		}
+
+		.card-wrapper:first-child {
+			margin-left: 0;
+		}
+
+		/* Less dramatic hover on mobile (touch screens) */
+		.card-wrapper:hover,
+		.card-wrapper:focus {
+			transform: translateY(-20px) scale(1.03);
+		}
+
+		.card-title {
+			font-size: 16px;
 		}
 	}
 </style>

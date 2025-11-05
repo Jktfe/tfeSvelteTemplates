@@ -5,7 +5,7 @@ A collection of reusable, well-documented Svelte 5 component templates. Each com
 ## 🎯 Project Goals
 
 - **Human Readable**: Clear, extensive comments explaining every part of the code
-- **Easily Editable**: Simple to customise and adapt to your needs
+- **Easy to Edit**: Simple to customise and adapt to your needs
 - **Copy-Paste Ready**: Just copy the component files and use them
 - **Production Quality**: Built with best practices and performance in mind
 
@@ -13,13 +13,15 @@ A collection of reusable, well-documented Svelte 5 component templates. Each com
 
 ### CardStack Component
 
-Interactive card fan displays with drag/swipe navigation. Perfect for image galleries, product showcases, or content carousels.
+Interactive horizontal card displays with hover and swipe interactions. Perfect for image galleries, product showcases, or content carousels.
 
 **Features:**
-- Drag horizontally (desktop) or swipe vertically (mobile)
+- Cards arranged in an elegant horizontal overlapping row
+- Hover effect makes cards pop up and become clearly visible
+- Swipe gestures cycle cards (Advanced version - mobile)
+- Keyboard navigation (Advanced version - desktop)
 - Smooth cubic-bezier animations
 - Responsive design
-- Two variants: Basic and Advanced (with keyboard support)
 - Fully accessible with ARIA labels
 
 **Files:**
@@ -139,19 +141,22 @@ Each component includes:
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `cards` | `Array` | `[]` | Array of card objects with `image`, `title`, `content` |
+| `cards` | `Card[]` | `[]` | Array of card objects with `image`, `title`, `content` |
 | `cardWidth` | `number` | `300` | Width of card container in pixels |
 | `cardHeight` | `number` | `400` | Height of card container in pixels |
+| `partialRevealSide` | `'left' \| 'right'` | `'right'` | Which side stays hidden on hover |
 
 ### Card Object Structure
 
 ```typescript
-{
-  image: string;      // Image URL
-  title?: string;     // Optional title text
-  content?: string;   // Optional HTML content
+interface Card {
+  image?: string;      // Optional image URL
+  title?: string;      // Optional title text
+  content?: string;    // Optional HTML content
 }
 ```
+
+All properties are optional, allowing flexibility in card content.
 
 ## 🎨 Customisation
 
@@ -193,7 +198,52 @@ This is a template library. If you create additional templates following the sam
 For issues or questions:
 1. Check component comments for implementation details
 2. Review the demo page for usage examples
-3. Consult the database schema for data structure
+3. Consult the database schema at [database/schema.sql](database/schema.sql) for data structure
+
+## 🌐 Browser Compatibility
+
+### Modern Browsers
+- Chrome/Edge 90+
+- Firefox 88+
+- Safari 14.1+
+- Opera 76+
+
+### Features Used
+- CSS Grid and Flexbox
+- CSS Custom Properties (CSS Variables)
+- CSS Transforms and Transitions
+- Touch Events API
+- Backdrop Filter (progressive enhancement)
+
+**Note:** Backdrop filter may not work on older browsers but degrades gracefully.
+
+## 💻 Requirements
+
+### Development
+- Node.js 18.x or higher
+- npm 9.x or higher
+
+### Optional
+- Neon account for database hosting
+- Vercel account for deployment
+
+## 🐛 Troubleshooting
+
+### Cards Not Displaying
+- Ensure `cards` array is passed to the component
+- Check browser console for errors
+- Verify images URLs are accessible
+
+### Database Connection Issues
+- Verify `DATABASE_URL` is set in `.env`
+- Check Neon database is running
+- Review server console for error messages
+- App will use fallback data if database unavailable
+
+### Build Errors
+- Run `npm install` to ensure dependencies are up-to-date
+- Clear `.svelte-kit` directory and rebuild
+- Check Node.js version matches requirements
 
 ## 🎓 Learning Resources
 
@@ -204,4 +254,4 @@ For issues or questions:
 
 ---
 
-Built with ❤️ using Svelte 5, TypeScript, and modern web technologies.
+Built with Svelte 5, TypeScript, and modern web technologies.

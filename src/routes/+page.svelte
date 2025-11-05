@@ -3,6 +3,14 @@
 
 	This page demonstrates both CardStack components with live examples.
 	Shows how to import, use, and customize the components.
+
+	STRUCTURE:
+	- Header with component overview
+	- Basic CardStack demo with code examples
+	- Advanced CardStack demo with code examples
+	- Features grid highlighting key capabilities
+	- Quick start guide with step-by-step instructions
+	- Footer with technology links
 -->
 
 <script lang="ts">
@@ -24,7 +32,7 @@
 		<!-- Header Section -->
 		<header>
 			<h1>CardStack Components</h1>
-			<p class="subtitle">Interactive, drag-and-swipe card displays for Svelte 5</p>
+			<p class="subtitle">Interactive horizontal card displays with hover and swipe interactions for Svelte 5</p>
 		</header>
 
 		<!-- Basic CardStack Example -->
@@ -35,8 +43,7 @@
 			</div>
 
 			<p class="description">
-				A simple, elegant card fan with smooth animations. Drag horizontally on desktop or swipe
-				vertically on mobile to navigate.
+				Cards arranged in a horizontal overlapping row. <strong>Hover</strong> to preview a card (it rises but stays partially behind its neighbor), then <strong>click</strong> to select and fully reveal it. Perfect for showcasing products, portfolios, or image galleries.
 			</p>
 
 			<div class="demo-container">
@@ -78,8 +85,7 @@
 			</div>
 
 			<p class="description">
-				Enhanced version with precise rotation angles, keyboard navigation (arrow keys), and refined
-				animations for a more polished experience.
+				Enhanced version with the same two-stage interaction: <strong>hover to preview, click to reveal</strong>. Adds swipe-to-cycle on mobile (swipe left/right to roll cards through the stack) and keyboard navigation on desktop (arrow keys).
 			</p>
 
 			<div class="demo-container">
@@ -114,9 +120,14 @@
 			<h2>Features</h2>
 			<div class="features-grid">
 				<div class="feature">
-					<div class="feature-icon">🎯</div>
-					<h3>Drag & Swipe</h3>
-					<p>Horizontal drag on desktop, vertical swipe on mobile</p>
+					<div class="feature-icon">👆</div>
+					<h3>Two-Stage Interaction</h3>
+					<p>Hover to preview (partial reveal), click to select (full reveal)</p>
+				</div>
+				<div class="feature">
+					<div class="feature-icon">📱</div>
+					<h3>Swipe to Cycle</h3>
+					<p>Mobile swipe gestures roll cards through the stack (Advanced version)</p>
 				</div>
 				<div class="feature">
 					<div class="feature-icon">⚡</div>
@@ -124,24 +135,19 @@
 					<p>Cubic-bezier easing for natural, bouncy transitions</p>
 				</div>
 				<div class="feature">
-					<div class="feature-icon">📱</div>
-					<h3>Responsive</h3>
-					<p>Optimised layouts and interactions for all screen sizes</p>
+					<div class="feature-icon">📐</div>
+					<h3>Horizontal Overlap</h3>
+					<p>Cards arranged in an elegant overlapping row layout</p>
 				</div>
 				<div class="feature">
 					<div class="feature-icon">⌨️</div>
 					<h3>Keyboard Support</h3>
-					<p>Arrow key navigation (Advanced version)</p>
-				</div>
-				<div class="feature">
-					<div class="feature-icon">🎨</div>
-					<h3>Customisable</h3>
-					<p>Adjust dimensions, styling, and card content</p>
+					<p>Arrow key navigation cycles through cards (Advanced version)</p>
 				</div>
 				<div class="feature">
 					<div class="feature-icon">♿</div>
 					<h3>Accessible</h3>
-					<p>Proper ARIA labels and semantic HTML</p>
+					<p>Proper ARIA labels, keyboard focus, and semantic HTML</p>
 				</div>
 			</div>
 		</section>
@@ -178,9 +184,9 @@
 		<!-- Footer -->
 		<footer>
 			<p>
-				Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
-				Hosted on <a href="https://vercel.com" target="_blank" rel="noopener">Vercel</a> •
-				Database by <a href="https://neon.tech" target="_blank" rel="noopener">Neon</a>
+				Built with <a href="https://svelte.dev" target="_blank" rel="noopener noreferrer">Svelte 5</a> •
+				Hosted on <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">Vercel</a> •
+				Database by <a href="https://neon.tech" target="_blank" rel="noopener noreferrer">Neon</a>
 			</p>
 			<p class="small">Part of the TFE Svelte Templates collection</p>
 		</footer>
@@ -284,8 +290,8 @@
 	/* Demo Container */
 	.demo-container {
 		display: flex;
-		justify-content: centre;
-		align-items: centre;
+		justify-content: center;
+		align-items: center;
 		min-height: 500px;
 		background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
 		border-radius: 16px;
@@ -341,7 +347,7 @@
 	}
 
 	.feature {
-		text-align: centre;
+		text-align: center;
 		padding: 2rem;
 		background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
 		border-radius: 16px;
@@ -389,8 +395,8 @@
 		width: 3rem;
 		height: 3rem;
 		display: flex;
-		align-items: centre;
-		justify-content: centre;
+		align-items: center;
+		justify-content: center;
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 		color: white;
 		font-size: 1.5rem;
@@ -426,7 +432,7 @@
 		margin-top: 4rem;
 		padding-top: 2rem;
 		border-top: 2px solid #e2e8f0;
-		text-align: centre;
+		text-align: center;
 		color: #718096;
 	}
 
