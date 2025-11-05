@@ -123,6 +123,21 @@
 	}
 
 	/**
+	 * Handle touch move event for mobile swipe detection
+	 * Prevents default page scrolling when horizontal swipe is detected
+	 * @param e - TouchEvent from the browser
+	 */
+	function handleTouchMove(e: TouchEvent) {
+		const deltaX = e.touches[0].clientX - touchStartX;
+		const deltaY = e.touches[0].clientY - touchStartY;
+
+		// Prevent page scroll if horizontal swipe is dominant
+		if (Math.abs(deltaX) > Math.abs(deltaY)) {
+			e.preventDefault();
+		}
+	}
+
+	/**
 	 * Handle touch end event for mobile swipe detection
 	 * Calculates swipe direction and triggers card cycling if horizontal swipe > 50px
 	 * Only triggers if horizontal movement dominates vertical (prevents conflict with scrolling)
@@ -137,6 +152,7 @@
 
 		// Only trigger if horizontal swipe is dominant
 		if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+			e.preventDefault();
 			if (deltaX > 0) {
 				// Swipe right - cycle backward
 				cycleBackward();
@@ -179,6 +195,7 @@
 <div
 	class="stack-container"
 	ontouchstart={handleTouchStart}
+	ontouchmove={handleTouchMove}
 	ontouchend={handleTouchEnd}
 	role="region"
 	aria-label="Card stack with swipe navigation"
@@ -261,6 +278,7 @@
 		align-items: center;
 		outline: none;
 		position: relative;
+		touch-action: pan-y; /* Allow vertical scroll only, prevent horizontal pan */
 	}
 
 	/* Wrapper for cards with horizontal layout */
@@ -450,17 +468,19 @@
 	/* MOBILE RESPONSIVE STYLES */
 	@media (max-width: 768px) {
 		.stack-container {
-			padding: 2rem 1rem;
+			padding: 2rem 0.5rem;
 		}
 
 		.cards-wrapper {
-			padding: 1rem 1rem 1rem 0;
+			padding: 1rem 0.5rem 1rem 0;
+			max-width: 100%;
+			justify-content: center;
 		}
 
 		.card-wrapper {
-			width: 140px;
-			height: 190px;
-			margin-left: -60px;
+			width: 130px;
+			height: 175px;
+			margin-left: -104px; /* 80% overlap: 130px * 0.8 = 104px covered */
 		}
 
 		.card-wrapper:first-child {
@@ -473,8 +493,28 @@
 			transform: translateY(-20px) scale(1.03);
 		}
 
+		/* Selected card expands on mobile to show full content */
+		.card-wrapper.selected {
+			position: fixed;
+			left: 50%;
+			top: 50%;
+			transform: translate(-50%, -50%);
+			width: 280px;
+			height: 400px;
+			margin-left: 0;
+		}
+
+		/* Show content when card is selected on mobile */
+		.card-wrapper.selected .card-content {
+			display: block;
+		}
+
 		.card-title {
 			font-size: 16px;
+		}
+
+		.card-wrapper.selected .card-title {
+			font-size: 20px;
 		}
 
 		.swipe-hint {
