@@ -29,11 +29,12 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { neon } from '@neondatabase/serverless';
+import type { Card, CardRow } from '$lib/types';
 
 /**
  * GET handler - Fetch all cards from database
  */
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async () => {
 	try {
 		// Get database connection string from environment variable
 		const databaseUrl = process.env.DATABASE_URL;
@@ -51,7 +52,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
 		// Query cards ordered by display_order
 		// This ensures cards appear in the correct sequence
-		const cards = await sql`
+		const rows = (await sql`
 			SELECT
 				id,
 				title,
@@ -61,18 +62,14 @@ export const GET: RequestHandler = async ({ url }) => {
 				created_at
 			FROM cards
 			ORDER BY display_order ASC
-		`;
+		`) as unknown as CardRow[];
 
 		// Transform database records to match component expectations
-		// Maps image_url to image for consistency with component props
-		const formattedCards = cards.map(card => ({
-			id: card.id,
-			title: card.title,
-			// Use description as content for the card
-			content: card.description,
-			// Map image_url to image for component compatibility
-			image: card.image_url,
-			display_order: card.display_order
+		// Maps database column names to Card interface properties
+		const formattedCards: Card[] = rows.map(row => ({
+			title: row.title,
+			content: row.description,
+			image: row.image_url
 		}));
 
 		// Return cards as JSON
