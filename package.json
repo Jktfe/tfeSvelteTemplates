@@ -1,0 +1,27 @@
+{
+	"name": "tfe-svelte-templates",
+	"version": "0.0.1",
+	"description": "A collection of reusable, well-documented Svelte 5 component templates",
+	"private": true,
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-vercel": "^5.4.8",
+		"@sveltejs/kit": "^2.15.5",
+		"@sveltejs/vite-plugin-svelte": "^5.0.3",
+		"svelte": "^5.16.1",
+		"svelte-check": "^4.2.1",
+		"tslib": "^2.8.1",
+		"typescript": "^5.7.2",
+		"vite": "^6.0.7"
+	},
+	"type": "module",
+	"dependencies": {
+		"@neondatabase/serverless": "^1.0.2"
+	}
+}
