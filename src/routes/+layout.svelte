@@ -32,6 +32,30 @@
 			href: '/magiccard',
 			icon: '✨',
 			active: currentPath.startsWith('/magiccard')
+		},
+		{
+			label: 'ShineBorder',
+			href: '/shineborder',
+			icon: '💫',
+			active: currentPath.startsWith('/shineborder')
+		},
+		{
+			label: 'SwishButton',
+			href: '/swishbutton',
+			icon: '🎯',
+			active: currentPath.startsWith('/swishbutton')
+		},
+		{
+			label: 'ExpandingCard',
+			href: '/expandingcard',
+			icon: '🎴',
+			active: currentPath.startsWith('/expandingcard')
+		},
+		{
+			label: 'LinkImageHover',
+			href: '/linkimagehover',
+			icon: '🔗',
+			active: currentPath.startsWith('/linkimagehover')
 		}
 	]);
 
