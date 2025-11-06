@@ -167,3 +167,52 @@ export interface MarqueeDraggableProps {
 	class?: string;
 	children?: import('svelte').Snippet;
 }
+
+/**
+ * Props for SwishButton component
+ *
+ * @property text - Button text to display (default: 'Button')
+ * @property class - Additional CSS classes for customisation
+ */
+export interface SwishButtonProps {
+	text?: string;
+	class?: string;
+}
+
+/**
+ * Props for ExpandingCard component
+ *
+ * @property imageSrc - URL to the card image (default: placeholder image)
+ * @property imageAlt - Alt text for the image (default: 'Card Image')
+ * @property heading - Card heading text (default: 'Card Title')
+ * @property compactText - Text shown in compact layout (default: 'Hello Devs, welcome to our Website')
+ * @property expandedText - Text shown in expanded layout (default: 'Yoo devs, How you doing?')
+ * @property bgColor - Tailwind background colour class (default: 'bg-lime-100')
+ */
+export interface ExpandingCardProps {
+	imageSrc?: string;
+	imageAlt?: string;
+	heading?: string;
+	compactText?: string;
+	expandedText?: string;
+	bgColor?: string;
+}
+
+/**
+ * Props for LinkImageHover component
+ *
+ * @property href - URL the link points to (default: 'https://example.com')
+ * @property text - Link text to display (default: 'Link Text')
+ * @property imageSrc - URL to the preview image (default: placeholder image)
+ * @property imageAlt - Alt text for the preview image (default: 'Preview Image')
+ * @property imageWidth - Tailwind width/height classes for image (default: 'h-44 w-44')
+ * @property target - Link target attribute (default: '_blank')
+ */
+export interface LinkImageHoverProps {
+	href?: string;
+	text?: string;
+	imageSrc?: string;
+	imageAlt?: string;
+	imageWidth?: string;
+	target?: string;
+}

@@ -60,6 +60,62 @@
       ],
       status: "ready",
     },
+    {
+      title: "ShineBorder",
+      description:
+        "Animated border component with a smooth horizontal shine effect. Wrap any content to add an elegant, attention-grabbing animated border with customisable colours and timing.",
+      href: "/shineborder",
+      icon: "💫",
+      features: [
+        "Customisable colours",
+        "CSS animations",
+        "Flexible sizing",
+        "Zero dependencies",
+      ],
+      status: "ready",
+    },
+    {
+      title: "SwishButton",
+      description:
+        "Animated button with swishing text transition and expanding background dot effect. Features smooth text slides and an arrow icon on hover for engaging CTAs.",
+      href: "/swishbutton",
+      icon: "🎯",
+      features: [
+        "Text slide animation",
+        "Background expansion",
+        "Native events",
+        "Customisable styling",
+      ],
+      status: "ready",
+    },
+    {
+      title: "ExpandingCard",
+      description:
+        "Interactive card that smoothly transitions between compact and expanded layouts using Svelte's crossfade. Perfect for galleries, portfolios, or progressive content disclosure.",
+      href: "/expandingcard",
+      icon: "🎴",
+      features: [
+        "Crossfade transitions",
+        "Layout morphing",
+        "Click to toggle",
+        "Responsive design",
+      ],
+      status: "ready",
+    },
+    {
+      title: "LinkImageHover",
+      description:
+        "Link component with image preview on hover. Images appear above links with a smooth blur transition, perfect for adding visual context to documentation and references.",
+      href: "/linkimagehover",
+      icon: "🔗",
+      features: [
+        "Image preview",
+        "Blur transitions",
+        "Customisable size",
+        "Inline usage",
+      ],
+      status: "ready",
+    },
   ];
 </script>
 
