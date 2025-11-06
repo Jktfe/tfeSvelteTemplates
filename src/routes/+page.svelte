@@ -1,489 +1,553 @@
 <!--
-	CardStack Template Demo Page
+	Component Template Library Home Page
 
-	This page demonstrates both CardStack components with live examples.
-	Shows how to import, use, and customize the components.
-
-	STRUCTURE:
-	- Header with component overview
-	- Basic CardStack demo with code examples
-	- Advanced CardStack demo with code examples
-	- Features grid highlighting key capabilities
-	- Quick start guide with step-by-step instructions
-	- Footer with technology links
+	This is the landing page showcasing all available components.
+	Each component card links to its dedicated demo page.
 -->
 
 <script lang="ts">
-	import CardStack from '$lib/components/CardStack.svelte';
-	import CardStackAdvanced from '$lib/components/CardStackAdvanced.svelte';
-	import type { PageData } from './$types';
+  import ShineBorder from "$lib/components/ShineBorder.svelte";
 
-	// Receive card data from server load function
-	let { data }: { data: PageData } = $props();
+  interface ComponentCard {
+    title: string;
+    description: string;
+    href: string;
+    icon: string;
+    features: string[];
+    status: "ready" | "coming-soon";
+  }
+
+  const components: ComponentCard[] = [
+    {
+      title: "CardStack",
+      description:
+        "Interactive horizontal card displays with two-stage interaction: hover to preview, click to reveal. Enhanced version includes swipe gestures and keyboard navigation.",
+      href: "/cardstack",
+      icon: "🃏",
+      features: [
+        "Two-stage interaction",
+        "Swipe to cycle",
+        "Keyboard navigation",
+        "Fully responsive",
+      ],
+      status: "ready",
+    },
+    {
+      title: "Marquee",
+      description:
+        "Two variants: Static marquee with pause-on-hover, and interactive marquee with click-and-drag control. Both feature seamless infinite loop animation.",
+      href: "/marquee",
+      icon: "🎭",
+      features: [
+        "Static & Interactive",
+        "Pause on hover",
+        "Click & drag",
+        "Momentum scrolling",
+      ],
+      status: "ready",
+    },
+    {
+      title: "MagicCard",
+      description:
+        "Interactive cards with dynamic spotlight effects that follow your cursor, creating an illuminated area with glowing borders for an engaging user experience.",
+      href: "/magiccard",
+      icon: "✨",
+      features: [
+        "Mouse tracking",
+        "Dynamic spotlight",
+        "Border glow",
+        "Theme support",
+      ],
+      status: "ready",
+    },
+  ];
 </script>
 
 <svelte:head>
-	<title>CardStack Template - Svelte 5 Component Library</title>
-	<meta name="description" content="Interactive card stack components for Svelte 5" />
+  <title>Svelte 5 Component Templates</title>
+  <meta
+    name="description"
+    content="Production-ready Svelte 5 component templates with modern interactions and animations"
+  />
 </svelte:head>
 
-<main>
-	<div class="container">
-		<!-- Header Section -->
-		<header>
-			<h1>CardStack Components</h1>
-			<p class="subtitle">Interactive horizontal card displays with hover and swipe interactions for Svelte 5</p>
-		</header>
+<div class="page">
+  <div class="container">
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1 class="hero-title">Svelte 5 Component Templates</h1>
+      <p class="hero-subtitle">
+        Production-ready components with modern interactions, smooth animations,
+        and clean design. Copy, customise, and integrate into your projects.
+        Built natively with Svelte 5 for optimal performance - leaning heavily
+        on better developers that came before like Sikandar.S.Bhide who built
+        the excellent animation-svelte.vercel.app Mostly for my own use in my
+        projects, but feel free to use them too!
+      </p>
+    </section>
 
-		<!-- Basic CardStack Example -->
-		<section class="demo-section">
-			<div class="section-header">
-				<h2>Basic CardStack</h2>
-				<div class="badge">Default</div>
-			</div>
+    <!-- Component Grid -->
+    <section class="components-section">
+      <h2 class="section-title">Available Components</h2>
+      <div class="components-grid">
+        {#each components as component}
+          <ShineBorder
+            color="#146ef5"
+            duration={4}
+            borderWidth={2}
+            borderRadius={16}
+          >
+            <a href={component.href} class="component-card">
+              <div class="card-header">
+                <span class="card-icon">{component.icon}</span>
+                <h3 class="card-title">{component.title}</h3>
+                {#if component.status === "coming-soon"}
+                  <span class="badge badge-soon">Coming Soon</span>
+                {/if}
+              </div>
 
-			<p class="description">
-				Cards arranged in a horizontal overlapping row. <strong>Hover</strong> to preview a card (it rises but stays partially behind its neighbor), then <strong>click</strong> to select and fully reveal it. Perfect for showcasing products, portfolios, or image galleries.
-			</p>
+              <p class="card-description">{component.description}</p>
 
-			<div class="demo-container">
-				<CardStack cards={data.cards} />
-			</div>
+              <ul class="card-features">
+                {#each component.features as feature}
+                  <li class="feature-item">
+                    <span class="feature-check">✓</span>
+                    {feature}
+                  </li>
+                {/each}
+              </ul>
 
-			<!-- Usage Example -->
-			<details class="code-block">
-				<summary>View Code Example</summary>
-				<pre><code>{`<script>
-  import CardStack from '$lib/components/CardStack.svelte';
+              <div class="card-footer">
+                <span class="view-demo">
+                  View Demo
+                  <span class="arrow">→</span>
+                </span>
+              </div>
+            </a>
+          </ShineBorder>
+        {/each}
+      </div>
+    </section>
 
-  const cards = [
-    {
-      image: '/path/to/image.jpg',
-      title: 'Card Title',
-      content: 'Card description or HTML content'
-    },
-    // ... more cards
-  ];
-</script>
+    <!-- Features Section -->
+    <section class="info-section">
+      <h2 class="section-title">Why These Templates?</h2>
+      <div class="info-grid">
+        <div class="info-card">
+          <div class="info-icon">⚡</div>
+          <h3 class="info-title">Svelte 5 Native</h3>
+          <p class="info-text">
+            Built with Svelte 5 runes ($state, $derived, $effect) for optimal
+            reactivity and performance.
+          </p>
+        </div>
 
-<CardStack cards={cards} />
+        <div class="info-card">
+          <div class="info-icon">🎨</div>
+          <h3 class="info-title">Modern Design</h3>
+          <p class="info-text">
+            Clean, Webflow-inspired aesthetic with generous whitespace and
+            smooth animations.
+          </p>
+        </div>
 
-<!-- With custom dimensions -->
-<CardStack
-  cards={cards}
-  cardWidth={350}
-  cardHeight={450}
-/>`}</code></pre>
-			</details>
-		</section>
+        <div class="info-card">
+          <div class="info-icon">📱</div>
+          <h3 class="info-title">Fully Responsive</h3>
+          <p class="info-text">
+            Mobile-first design with touch gestures, breakpoints, and adaptive
+            layouts.
+          </p>
+        </div>
 
-		<!-- Advanced CardStack Example -->
-		<section class="demo-section">
-			<div class="section-header">
-				<h2>CardStack Advanced</h2>
-				<div class="badge badge-premium">Enhanced</div>
-			</div>
+        <div class="info-card">
+          <div class="info-icon">♿</div>
+          <h3 class="info-title">Accessible</h3>
+          <p class="info-text">
+            ARIA labels, keyboard navigation, focus states, and semantic HTML
+            throughout.
+          </p>
+        </div>
 
-			<p class="description">
-				Enhanced version with the same two-stage interaction: <strong>hover to preview, click to reveal</strong>. Adds swipe-to-cycle on mobile (swipe left/right to roll cards through the stack) and keyboard navigation on desktop (arrow keys).
-			</p>
+        <div class="info-card">
+          <div class="info-icon">🚀</div>
+          <h3 class="info-title">Zero Dependencies Options</h3>
+          <p class="info-text">
+            Pure Svelte and CSS implementations available. Options with no
+            external animation libraries required.
+          </p>
+        </div>
 
-			<div class="demo-container">
-				<CardStackAdvanced cards={data.cards} />
-			</div>
+        <div class="info-card">
+          <div class="info-icon">📝</div>
+          <h3 class="info-title">TypeScript</h3>
+          <p class="info-text">
+            Full type safety with comprehensive interfaces and JSDoc
+            documentation.
+          </p>
+        </div>
+      </div>
+    </section>
 
-			<!-- Usage Example -->
-			<details class="code-block">
-				<summary>View Code Example</summary>
-				<pre><code>{`<script>
-  import CardStackAdvanced from '$lib/components/CardStackAdvanced.svelte';
+    <!-- Quick Start -->
+    <section class="quickstart-section">
+      <h2 class="section-title">Quick Start</h2>
+      <div class="quickstart-steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Browse Components</h3>
+            <p>
+              Explore the component demos above to see them in action with live
+              examples.
+            </p>
+          </div>
+        </div>
 
-  const cards = [
-    {
-      image: '/path/to/image.jpg',
-      title: 'Card Title',
-      content: 'Card description or HTML content'
-    },
-    // ... more cards
-  ];
-</script>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Copy to Your Project</h3>
+            <p>
+              Copy the component files from <code>src/lib/components/</code> to your
+              project.
+            </p>
+          </div>
+        </div>
 
-<CardStackAdvanced cards={cards} />
-
-<!-- Supports keyboard navigation -->
-<!-- Press ← and → arrow keys to navigate -->`}</code></pre>
-			</details>
-		</section>
-
-		<!-- Features Section -->
-		<section class="features-section">
-			<h2>Features</h2>
-			<div class="features-grid">
-				<div class="feature">
-					<div class="feature-icon">👆</div>
-					<h3>Two-Stage Interaction</h3>
-					<p>Hover to preview (partial reveal), click to select (full reveal)</p>
-				</div>
-				<div class="feature">
-					<div class="feature-icon">📱</div>
-					<h3>Swipe to Cycle</h3>
-					<p>Mobile swipe gestures roll cards through the stack (Advanced version)</p>
-				</div>
-				<div class="feature">
-					<div class="feature-icon">⚡</div>
-					<h3>Smooth Animations</h3>
-					<p>Cubic-bezier easing for natural, bouncy transitions</p>
-				</div>
-				<div class="feature">
-					<div class="feature-icon">📐</div>
-					<h3>Horizontal Overlap</h3>
-					<p>Cards arranged in an elegant overlapping row layout</p>
-				</div>
-				<div class="feature">
-					<div class="feature-icon">⌨️</div>
-					<h3>Keyboard Support</h3>
-					<p>Arrow key navigation cycles through cards (Advanced version)</p>
-				</div>
-				<div class="feature">
-					<div class="feature-icon">♿</div>
-					<h3>Accessible</h3>
-					<p>Proper ARIA labels, keyboard focus, and semantic HTML</p>
-				</div>
-			</div>
-		</section>
-
-		<!-- Implementation Guide -->
-		<section class="guide-section">
-			<h2>Quick Start Guide</h2>
-
-			<div class="guide-step">
-				<div class="step-number">1</div>
-				<div class="step-content">
-					<h3>Copy the Component</h3>
-					<p>Copy <code>CardStack.svelte</code> or <code>CardStackAdvanced.svelte</code> from <code>src/lib/components/</code> to your project.</p>
-				</div>
-			</div>
-
-			<div class="guide-step">
-				<div class="step-number">2</div>
-				<div class="step-content">
-					<h3>Prepare Your Data</h3>
-					<p>Create an array of card objects with <code>image</code>, <code>title</code>, and <code>content</code> properties.</p>
-				</div>
-			</div>
-
-			<div class="guide-step">
-				<div class="step-number">3</div>
-				<div class="step-content">
-					<h3>Import and Use</h3>
-					<p>Import the component and pass your cards array as a prop. That's it!</p>
-				</div>
-			</div>
-		</section>
-
-		<!-- Footer -->
-		<footer>
-			<p>
-				Built with <a href="https://svelte.dev" target="_blank" rel="noopener noreferrer">Svelte 5</a> •
-				Hosted on <a href="https://vercel.com" target="_blank" rel="noopener noreferrer">Vercel</a> •
-				Database by <a href="https://neon.tech" target="_blank" rel="noopener noreferrer">Neon</a>
-			</p>
-			<p class="small">Part of the TFE Svelte Templates collection</p>
-		</footer>
-	</div>
-</main>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Customise & Use</h3>
+            <p>
+              Import and use with your data. All props are fully typed and
+              documented.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
 
 <style>
-	/* Global Styles */
-	:global(body) {
-		margin: 0;
-		padding: 0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-			Cantarell, sans-serif;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		min-height: 100vh;
-		color: #1a202c;
-	}
+  .page {
+    padding: 4rem 0;
+  }
 
-	main {
-		min-height: 100vh;
-		padding: 2rem 1rem;
-	}
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
 
-	.container {
-		max-width: 1200px;
-		margin: 0 auto;
-		background: white;
-		border-radius: 24px;
-		padding: 3rem 2rem;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-	}
+  /* Hero Section */
+  .hero {
+    text-align: center;
+    margin-bottom: 6rem;
+  }
 
-	/* Header */
-	header {
-		text-align: center;
-		margin-bottom: 4rem;
-	}
+  .hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem 0;
+    color: #1a202c;
+    line-height: 1.2;
+    text-wrap: pretty;
+  }
 
-	h1 {
-		font-size: 3rem;
-		font-weight: 800;
-		margin: 0 0 0.5rem 0;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		-webkit-background-clip: text;
-		-webkit-text-fill-color: transparent;
-		background-clip: text;
-	}
+  .hero-subtitle {
+    font-size: 1.35rem;
+    color: #718096;
+    margin: 0;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
 
-	.subtitle {
-		font-size: 1.25rem;
-		color: #718096;
-		margin: 0;
-	}
+  /* Section Titles */
+  .section-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin: 0 0 3rem 0;
+    color: #1a202c;
+    text-align: center;
+  }
 
-	/* Demo Sections */
-	.demo-section {
-		margin-bottom: 4rem;
-		padding-bottom: 4rem;
-		border-bottom: 2px solid #e2e8f0;
-	}
+  /* Components Grid */
+  .components-section {
+    margin-bottom: 6rem;
+  }
 
-	.demo-section:last-of-type {
-		border-bottom: none;
-	}
+  .components-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+  }
 
-	.section-header {
-		display: flex;
-		align-items: center;
-		gap: 1rem;
-		margin-bottom: 1rem;
-	}
+  .component-card {
+    display: flex;
+    flex-direction: column;
+    padding: 2.5rem;
+    background: #ffffff;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    border-radius: 14px;
+  }
 
-	h2 {
-		font-size: 2rem;
-		font-weight: 700;
-		margin: 0;
-		color: #2d3748;
-	}
+  .component-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(20, 110, 245, 0.03) 0%,
+      rgba(102, 126, 234, 0.03) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
 
-	.badge {
-		padding: 0.25rem 0.75rem;
-		background: #edf2f7;
-		color: #4a5568;
-		border-radius: 9999px;
-		font-size: 0.875rem;
-		font-weight: 600;
-	}
+  .component-card:hover {
+    transform: translateY(-4px);
+  }
 
-	.badge-premium {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
-	}
+  .component-card:hover::before {
+    opacity: 1;
+  }
 
-	.description {
-		font-size: 1.125rem;
-		color: #4a5568;
-		line-height: 1.6;
-		margin-bottom: 2rem;
-	}
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
 
-	/* Demo Container */
-	.demo-container {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 500px;
-		background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-		border-radius: 16px;
-		padding: 3rem;
-		margin-bottom: 2rem;
-	}
+  .card-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
 
-	/* Code Block */
-	.code-block {
-		margin-top: 2rem;
-		border: 2px solid #e2e8f0;
-		border-radius: 12px;
-		overflow: hidden;
-	}
+  .card-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    color: #1a202c;
+    line-height: 1;
+  }
 
-	.code-block summary {
-		padding: 1rem 1.5rem;
-		background: #f7fafc;
-		cursor: pointer;
-		font-weight: 600;
-		color: #2d3748;
-		user-select: none;
-	}
+  .badge {
+    margin-left: auto;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
 
-	.code-block summary:hover {
-		background: #edf2f7;
-	}
+  .badge-soon {
+    background: #edf2f7;
+    color: #718096;
+  }
 
-	.code-block pre {
-		margin: 0;
-		padding: 1.5rem;
-		background: #1a202c;
-		overflow-x: auto;
-	}
+  .card-description {
+    font-size: 1rem;
+    color: #4a5568;
+    line-height: 1.6;
+    margin: 0 0 1.5rem 0;
+    position: relative;
+    z-index: 1;
+  }
 
-	.code-block code {
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-		font-size: 0.875rem;
-		line-height: 1.6;
-		color: #e2e8f0;
-	}
+  .card-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 2rem 0;
+    flex-grow: 1;
+    position: relative;
+    z-index: 1;
+  }
 
-	/* Features Section */
-	.features-section {
-		margin: 4rem 0;
-	}
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    color: #4a5568;
+    font-size: 0.95rem;
+  }
 
-	.features-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-		gap: 2rem;
-		margin-top: 2rem;
-	}
+  .feature-check {
+    color: #146ef5;
+    font-weight: 700;
+  }
 
-	.feature {
-		text-align: center;
-		padding: 2rem;
-		background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-		border-radius: 16px;
-		transition: transform 0.2s;
-	}
+  .card-footer {
+    display: flex;
+    justify-content: flex-end;
+    position: relative;
+    z-index: 1;
+  }
 
-	.feature:hover {
-		transform: translateY(-4px);
-	}
+  .view-demo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #146ef5;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: gap 0.2s ease;
+  }
 
-	.feature-icon {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
+  .component-card:hover .view-demo {
+    gap: 0.75rem;
+  }
 
-	.feature h3 {
-		font-size: 1.25rem;
-		font-weight: 700;
-		margin: 0 0 0.5rem 0;
-		color: #2d3748;
-	}
+  .arrow {
+    transition: transform 0.2s ease;
+  }
 
-	.feature p {
-		font-size: 0.875rem;
-		color: #718096;
-		margin: 0;
-	}
+  .component-card:hover .arrow {
+    transform: translateX(2px);
+  }
 
-	/* Guide Section */
-	.guide-section {
-		margin: 4rem 0;
-	}
+  /* Info Section */
+  .info-section {
+    margin-bottom: 6rem;
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+    margin-left: -2rem;
+    margin-right: -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
 
-	.guide-step {
-		display: flex;
-		gap: 1.5rem;
-		margin-top: 2rem;
-		padding: 1.5rem;
-		background: #f7fafc;
-		border-radius: 12px;
-	}
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+  }
 
-	.step-number {
-		flex-shrink: 0;
-		width: 3rem;
-		height: 3rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		color: white;
-		font-size: 1.5rem;
-		font-weight: 700;
-		border-radius: 50%;
-	}
+  .info-card {
+    text-align: center;
+    padding: 2rem;
+  }
 
-	.step-content h3 {
-		font-size: 1.25rem;
-		font-weight: 700;
-		margin: 0 0 0.5rem 0;
-		color: #2d3748;
-	}
+  .info-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
 
-	.step-content p {
-		font-size: 1rem;
-		color: #4a5568;
-		margin: 0;
-		line-height: 1.6;
-	}
+  .info-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.75rem 0;
+    color: #1a202c;
+  }
 
-	.step-content code {
-		padding: 0.125rem 0.375rem;
-		background: #e2e8f0;
-		color: #667eea;
-		border-radius: 4px;
-		font-size: 0.875rem;
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-	}
+  .info-text {
+    font-size: 0.95rem;
+    color: #718096;
+    margin: 0;
+    line-height: 1.6;
+  }
 
-	/* Footer */
-	footer {
-		margin-top: 4rem;
-		padding-top: 2rem;
-		border-top: 2px solid #e2e8f0;
-		text-align: center;
-		color: #718096;
-	}
+  /* Quick Start */
+  .quickstart-section {
+    margin-bottom: 4rem;
+  }
 
-	footer p {
-		margin: 0.5rem 0;
-	}
+  .quickstart-steps {
+    max-width: 800px;
+    margin: 0 auto;
+  }
 
-	footer a {
-		color: #667eea;
-		text-decoration: none;
-		font-weight: 600;
-	}
+  .step {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: #ffffff;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+  }
 
-	footer a:hover {
-		text-decoration: underline;
-	}
+  .step:hover {
+    border-color: #146ef5;
+    transform: translateX(4px);
+  }
 
-	.small {
-		font-size: 0.875rem;
-	}
+  .step-number {
+    flex-shrink: 0;
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #146ef5 0%, #667eea 100%);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    border-radius: 50%;
+  }
 
-	/* Responsive */
-	@media (max-width: 768px) {
-		.container {
-			padding: 2rem 1rem;
-			border-radius: 0;
-		}
+  .step-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+    color: #1a202c;
+  }
 
-		h1 {
-			font-size: 2rem;
-		}
+  .step-content p {
+    font-size: 1rem;
+    color: #4a5568;
+    margin: 0;
+    line-height: 1.6;
+  }
 
-		.subtitle {
-			font-size: 1rem;
-		}
+  .step-content code {
+    padding: 0.125rem 0.375rem;
+    background: #edf2f7;
+    color: #146ef5;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  }
 
-		h2 {
-			font-size: 1.5rem;
-		}
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2.5rem;
+    }
 
-		.demo-container {
-			padding: 2rem 1rem;
-			min-height: 450px;
-		}
+    .hero-subtitle {
+      font-size: 1.1rem;
+    }
 
-		.features-grid {
-			grid-template-columns: 1fr;
-		}
+    .section-title {
+      font-size: 1.75rem;
+    }
 
-		.guide-step {
-			flex-direction: column;
-		}
-	}
+    .components-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .info-section {
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .step {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
 </style>

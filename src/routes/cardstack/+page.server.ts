@@ -1,5 +1,5 @@
 /**
- * Server Load Function for Home Page
+ * Server Load Function for CardStack Page
  *
  * Fetches card data from the database on the server side
  * This runs before the page loads, providing data for SSR
