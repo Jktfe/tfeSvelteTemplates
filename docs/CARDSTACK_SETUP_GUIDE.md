@@ -155,8 +155,7 @@ tfeSvelteTemplates/
 
 1. **Explore the Demo**
    - Run `npm run dev`
-   - Try dragging cards horizontally
-   - On mobile, try swiping vertically
+   - On mobile, try swiping horizontally
    - Use arrow keys (Advanced version)
 
 2. **Read the Code**
