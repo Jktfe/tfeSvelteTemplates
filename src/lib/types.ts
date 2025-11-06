@@ -216,3 +216,18 @@ export interface LinkImageHoverProps {
 	imageWidth?: string;
 	target?: string;
 }
+
+/**
+ * Props for Navbar component
+ *
+ * @property menuItems - Array of menu items to display in navigation
+ * @property logoIcon - Logo icon/emoji (default: '⚡')
+ * @property logoText - Logo text (default: 'Svelte Templates')
+ * @property logoHref - Logo link destination (default: '/')
+ */
+export interface NavbarProps {
+	menuItems: MenuItem[];
+	logoIcon?: string;
+	logoText?: string;
+	logoHref?: string;
+}
