@@ -1,6 +1,6 @@
 <script lang="ts">
 	import '../app.css';
-	import StaggeredMenu from '$lib/components/StaggeredMenu.svelte';
+	import Navbar from '$lib/components/Navbar.svelte';
 	import type { MenuItem } from '$lib/types';
 	import { page } from '$app/stores';
 
@@ -63,17 +63,7 @@
 </script>
 
 <div class="app">
-	<header class="header">
-		<div class="container">
-			<div class="header-content">
-				<a href="/" class="logo">
-					<span class="logo-icon">⚡</span>
-					<span class="logo-text">Svelte Templates</span>
-				</a>
-				<StaggeredMenu items={menuItems} />
-			</div>
-		</div>
-	</header>
+	<Navbar {menuItems} />
 
 	<main class="main">
 		{@render children()}
@@ -113,52 +103,10 @@
 		flex-direction: column;
 	}
 
-	.header {
-		background-color: #ffffff;
-		border-bottom: 1px solid #e2e8f0;
-		position: sticky;
-		top: 0;
-		z-index: 100;
-		backdrop-filter: blur(10px);
-		background-color: rgba(255, 255, 255, 0.95);
-	}
-
 	.container {
 		max-width: 1280px;
 		margin: 0 auto;
 		padding: 0 2rem;
-	}
-
-	.header-content {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 1.25rem 0;
-		gap: 2rem;
-	}
-
-	.logo {
-		display: flex;
-		align-items: center;
-		gap: 0.75rem;
-		text-decoration: none;
-		color: #1a202c;
-		font-weight: 600;
-		font-size: 1.25rem;
-		transition: transform 0.2s ease;
-	}
-
-	.logo:hover {
-		transform: scale(1.02);
-	}
-
-	.logo-icon {
-		font-size: 1.5rem;
-		line-height: 1;
-	}
-
-	.logo-text {
-		line-height: 1;
 	}
 
 	.main {
@@ -195,16 +143,6 @@
 	@media (max-width: 768px) {
 		.container {
 			padding: 0 1rem;
-		}
-
-		.header-content {
-			flex-direction: column;
-			gap: 1rem;
-			padding: 1rem 0;
-		}
-
-		.logo {
-			font-size: 1.1rem;
 		}
 	}
 </style>
