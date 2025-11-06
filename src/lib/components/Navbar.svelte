@@ -22,22 +22,15 @@
 -->
 
 <script lang="ts">
-	import type { MenuItem } from '$lib/types';
+	import type { NavbarProps } from '$lib/types';
 	import { onMount } from 'svelte';
-
-	interface Props {
-		menuItems: MenuItem[];
-		logoIcon?: string;
-		logoText?: string;
-		logoHref?: string;
-	}
 
 	let {
 		menuItems,
 		logoIcon = '⚡',
 		logoText = 'Svelte Templates',
 		logoHref = '/'
-	}: Props = $props();
+	}: NavbarProps = $props();
 
 	// Mobile menu state
 	let isMobileMenuOpen = $state(false);
@@ -334,7 +327,7 @@
 
 	/* Hamburger animation when open */
 	.navbar-hamburger.open .hamburger-line:nth-child(1) {
-		transform: translateY(0.5rem) rotate(45deg);
+		transform: translateY(0.4375rem) rotate(45deg);
 	}
 
 	.navbar-hamburger.open .hamburger-line:nth-child(2) {
@@ -343,7 +336,7 @@
 	}
 
 	.navbar-hamburger.open .hamburger-line:nth-child(3) {
-		transform: translateY(-0.5rem) rotate(-45deg);
+		transform: translateY(-0.4375rem) rotate(-45deg);
 	}
 
 	/* ============================================
