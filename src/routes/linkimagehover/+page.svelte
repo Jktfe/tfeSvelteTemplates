@@ -7,55 +7,15 @@
 
 <script lang="ts">
 	import LinkImageHover from '$lib/components/LinkImageHover.svelte';
+	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
+	import type { PageData } from './$types';
 
-	// Sample link data for demonstrations
-	const cityLinks = [
-		{
-			href: 'https://en.wikipedia.org/wiki/Mumbai',
-			text: 'Mumbai',
-			imageSrc: 'https://i.pinimg.com/736x/7e/61/74/7e6174c858a5aa169de033f55fc3050c.jpg',
-			imageAlt: 'Mumbai City'
-		},
-		{
-			href: 'https://en.wikipedia.org/wiki/London',
-			text: 'London',
-			imageSrc: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&h=400&fit=crop',
-			imageAlt: 'London City'
-		},
-		{
-			href: 'https://en.wikipedia.org/wiki/Tokyo',
-			text: 'Tokyo',
-			imageSrc: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=400&fit=crop',
-			imageAlt: 'Tokyo City'
-		},
-		{
-			href: 'https://en.wikipedia.org/wiki/Paris',
-			text: 'Paris',
-			imageSrc: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400&h=400&fit=crop',
-			imageAlt: 'Paris City'
-		}
-	];
+	// Get server data
+	let { data }: { data: PageData } = $props();
 
-	const natureLinks = [
-		{
-			href: 'https://en.wikipedia.org/wiki/Mount_Everest',
-			text: 'Mount Everest',
-			imageSrc: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop',
-			imageAlt: 'Mount Everest'
-		},
-		{
-			href: 'https://en.wikipedia.org/wiki/Amazon_rainforest',
-			text: 'Amazon Rainforest',
-			imageSrc: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
-			imageAlt: 'Amazon Rainforest'
-		},
-		{
-			href: 'https://en.wikipedia.org/wiki/Great_Barrier_Reef',
-			text: 'Great Barrier Reef',
-			imageSrc: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400&h=400&fit=crop',
-			imageAlt: 'Great Barrier Reef'
-		}
-	];
+	// Destructure link data from server
+	const cityLinks = data.cityLinks;
+	const natureLinks = data.natureLinks;
 </script>
 
 <svelte:head>
@@ -76,6 +36,7 @@
 				visual context to text links, creating engaging navigation menus, or enhancing article
 				references.
 			</p>
+			<DatabaseStatus usingDatabase={data.usingDatabase} class="status-badge" />
 		</header>
 
 		<!-- Basic Demo -->
@@ -115,40 +76,41 @@
 			</details>
 		</section>
 
-		<!-- Multiple Links -->
+		<!-- City Links Grid -->
 		<section class="demo-section">
 			<div class="section-header">
 				<h2>City Links Grid</h2>
 			</div>
 
 			<p class="description">
-				Multiple links in a paragraph or list. Each link independently shows its preview on hover.
+				A grid layout displaying major cities around the world. Hover over each city to see its preview image.
 			</p>
 
 			<div class="demo-container">
-				<div class="links-paragraph">
-					<p>
-						Explore major cities around the world: {#each cityLinks as link, i}
-							<LinkImageHover
-								href={link.href}
-								text={link.text}
-								imageSrc={link.imageSrc}
-								imageAlt={link.imageAlt}
-							/>{#if i < cityLinks.length - 1},{/if}
-						{/each}.
-					</p>
+				<div class="links-grid">
+					{#each cityLinks as link}
+						<LinkImageHover
+							href={link.href}
+							text={link.text}
+							imageSrc={link.imageSrc}
+							imageAlt={link.imageAlt}
+						/>
+					{/each}
 				</div>
 			</div>
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<p>
-  Explore major cities:
-  <LinkImageHover href="..." text="Mumbai" imageSrc="..." />,
-  <LinkImageHover href="..." text="London" imageSrc="..." />,
-  <LinkImageHover href="..." text="Tokyo" imageSrc="..." />,
-  <LinkImageHover href="..." text="Paris" imageSrc="..." />.
-</p>`}</code></pre>
+				<pre><code>{`<div class="grid">
+  {#each cityLinks as link}
+    <LinkImageHover
+      href={link.href}
+      text={link.text}
+      imageSrc={link.imageSrc}
+      imageAlt={link.imageAlt}
+    />
+  {/each}
+</div>`}</code></pre>
 			</details>
 		</section>
 
@@ -503,17 +465,6 @@
 		border-radius: 12px;
 		margin-bottom: 2rem;
 		min-height: 300px;
-	}
-
-	.links-paragraph {
-		max-width: 600px;
-		text-align: center;
-	}
-
-	.links-paragraph p {
-		font-size: 1.125rem;
-		line-height: 2;
-		color: #1a202c;
 	}
 
 	.links-grid {

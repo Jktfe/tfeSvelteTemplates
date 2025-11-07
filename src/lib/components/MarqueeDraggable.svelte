@@ -31,9 +31,9 @@
 	let dragStartY = 0;
 	let dragStartOffset = 0;
 	let lastVelocity = 0;
-	let containerEl: HTMLDivElement;
-	let contentEl: HTMLDivElement;
-	let animateEl: HTMLDivElement;
+	let containerEl = $state<HTMLDivElement>();
+	let contentEl = $state<HTMLDivElement>();
+	let animateEl = $state<HTMLDivElement>();
 
 	// Use simple state for offset - reactivity will handle updates
 	let currentOffset = $state(0);

@@ -9,45 +9,15 @@
 <script lang="ts">
 	import Marquee from '$lib/components/Marquee.svelte';
 	import MarqueeDraggable from '$lib/components/MarqueeDraggable.svelte';
+	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
+	import type { PageData } from './$types';
 
-	// Testimonial data for static marquee
-	const testimonials = [
-		{
-			name: 'Sarah Chen',
-			role: 'Product Designer',
-			company: 'TechCorp',
-			quote: 'These components saved us weeks of development time. Absolutely brilliant!',
-			avatar: '👩‍💼'
-		},
-		{
-			name: 'James Rodriguez',
-			role: 'Engineering Lead',
-			company: 'StartupXYZ',
-			quote: 'Clean, performant, and beautifully designed. Exactly what we needed.',
-			avatar: '👨‍💻'
-		},
-		{
-			name: 'Emily Watson',
-			role: 'Frontend Developer',
-			company: 'DesignStudio',
-			quote: 'The TypeScript support and documentation are top-notch. Highly recommend!',
-			avatar: '👩‍🎨'
-		},
-		{
-			name: 'Michael Park',
-			role: 'CTO',
-			company: 'InnovateLabs',
-			quote: 'Production-ready components that just work. Our team loves them!',
-			avatar: '👨‍💼'
-		},
-		{
-			name: 'Lisa Thompson',
-			role: 'UI Engineer',
-			company: 'CloudSystems',
-			quote: 'Responsive, accessible, and easy to customise. Perfect for our projects.',
-			avatar: '👩‍🔬'
-		}
-	];
+	// Get server data
+	let { data }: { data: PageData } = $props();
+
+	// Destructure testimonials from server data
+	const testimonials = data.staticTestimonials;
+	const testimonialsInteractive = data.interactiveTestimonials;
 
 	// Company logos (using emojis for demo)
 	const companies = ['🚀 SpaceX', '🍎 Apple', '🔍 Google', '💼 Microsoft', '⚡ Tesla', '🎵 Spotify'];
@@ -70,38 +40,6 @@
 		{ emoji: '📱', name: 'Smartphone' },
 		{ emoji: '🖥️', name: 'Monitor' },
 		{ emoji: '⌨️', name: 'Keyboard' }
-	];
-
-	// Testimonials for draggable marquee
-	const testimonialsInteractive = [
-		{
-			name: 'Alex Morgan',
-			role: 'UX Designer',
-			company: 'TechFlow',
-			quote: 'The drag interaction is incredibly smooth and intuitive!',
-			avatar: '👨‍💼'
-		},
-		{
-			name: 'Sophia Chen',
-			role: 'Product Manager',
-			company: 'InnovateHub',
-			quote: 'Users love being able to control the marquee speed themselves.',
-			avatar: '👩‍💻'
-		},
-		{
-			name: 'Marcus Johnson',
-			role: 'Developer',
-			company: 'CodeCraft',
-			quote: 'Easy to implement and the momentum feels natural.',
-			avatar: '👨‍🔬'
-		},
-		{
-			name: 'Emma Wilson',
-			role: 'Marketing Lead',
-			company: 'BrandBoost',
-			quote: 'Perfect for showcasing content in an engaging way!',
-			avatar: '👩‍💼'
-		}
 	];
 
 	// Features for draggable marquee
@@ -132,6 +70,7 @@
 				Two variants available: Static marquee with pause-on-hover, or interactive marquee with
 				click-and-drag control. Both feature seamless infinite loop animation.
 			</p>
+			<DatabaseStatus usingDatabase={data.usingDatabase} class="status-badge" />
 		</header>
 
 		<!-- Static Marquee Section -->
@@ -538,6 +477,14 @@
 	header {
 		text-align: center;
 		margin-bottom: 4rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	:global(.status-badge) {
+		margin-top: 0.5rem;
 	}
 
 	h1 {

@@ -10,6 +10,7 @@
 	import CardStackAdvanced from '$lib/components/CardStackAdvanced.svelte';
 	import CardStackMotionSpring from '$lib/components/CardStackMotionSpring.svelte';
 	import CardStackMotionFlip from '$lib/components/CardStackMotionFlip.svelte';
+	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 	import type { PageData } from './$types';
 
 	// Receive card data from server load function
@@ -29,6 +30,7 @@
 			<p class="subtitle">
 				Interactive horizontal card displays with hover and swipe interactions for Svelte 5
 			</p>
+			<DatabaseStatus usingDatabase={data.usingDatabase} class="status-badge" />
 		</header>
 
 		<!-- Basic CardStack Example -->
@@ -319,6 +321,14 @@
 	header {
 		text-align: center;
 		margin-bottom: 4rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	header :global(.status-badge) {
+		margin-top: 0.5rem;
 	}
 
 	h1 {

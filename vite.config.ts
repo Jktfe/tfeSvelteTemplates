@@ -10,6 +10,10 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 
+// Load environment variables from .env file
+import { config } from 'dotenv';
+config();
+
 export default defineConfig({
 	// SvelteKit plugin - handles all SvelteKit-specific Vite configuration
 	plugins: [sveltekit()]
