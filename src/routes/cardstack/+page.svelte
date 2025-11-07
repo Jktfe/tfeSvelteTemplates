@@ -130,15 +130,15 @@
     <section class="demo-section">
       <div class="section-header">
         <h2>CardStack Motion Flip</h2>
-        <div class="badge badge-motion">3D Roll</div>
+        <div class="badge badge-motion">3D Roll + 4D Swipe</div>
       </div>
 
       <p class="description">
-        Features smooth FLIP layout animations with 3D roll effects. Cards <strong
-          >rotate and scale</strong
-        >
-        as they shuffle to the back, creating a deck-like aesthetic. Staggered animations
-        with configurable timing. Use arrow keys or swipe to cycle through cards.
+        Swipe the top card <strong>left/right/up/down</strong> and watch it <strong>roll off-screen</strong>
+        in that direction with full 3D rotation, then reappear at the back of the stack
+        facing forward. Features real-time drag preview with rotation feedback, instant
+        reposition, and smooth fade-in. <strong>Zero dependencies</strong> – pure CSS
+        and Svelte. Perfect for mobile-first applications.
       </p>
 
       <div class="demo-container">
@@ -164,12 +164,15 @@
 
 <CardStackMotionFlip
   cards={cards}
-  flipDuration={0.5}
-  staggerDelay={0.05}
+  cardWidth={300}
+  cardHeight={400}
+  cardGap={50}
+  swipeThreshold={80}
+  rollDuration={400}
   enable3D={true}
 />
 
-<!-- Watch the 3D roll effect! -->`}</code
+<!-- Try swiping in any direction! Arrow keys also work. -->`}</code
           ></pre>
       </details>
     </section>
@@ -212,8 +215,8 @@
           <div class="feature-icon">🔄</div>
           <h3>3D Roll Effect</h3>
           <p>
-            Cards rotate and scale as they shuffle, creating deck-like motion
-            (Motion Flip)
+            Swipe cards in any direction (L/R/U/D) and watch them roll off-screen with
+            full 3D rotation (Motion Flip)
           </p>
         </div>
         <div class="feature">
@@ -262,14 +265,11 @@
       <div class="guide-step">
         <div class="step-number">2</div>
         <div class="step-content">
-          <h3>Install Dependencies (3D Motion Only)</h3>
+          <h3>Zero Dependencies</h3>
           <p>
-            If using 3D motion components, install <code
-              >@humanspeak/svelte-motion</code
-            >
-            with
-            <code>npm install @humanspeak/svelte-motion</code>. Not required for
-            basic or advanced versions.
+            All components work out of the box with <strong>zero external dependencies</strong>.
+            No animation libraries required – everything uses pure CSS transitions
+            and Svelte's built-in reactivity.
           </p>
         </div>
       </div>

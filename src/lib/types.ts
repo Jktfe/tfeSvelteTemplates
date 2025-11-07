@@ -54,25 +54,27 @@ export interface CardStackProps {
 }
 
 /**
- * Props for CardStackMotion components (Spring and Flip variants)
- * Extends CardStackProps with motion-specific configuration options
+ * Props for CardStackMotionFlip component
+ * 4-directional swipe with 3D roll-off effect (mobile-first, zero dependencies)
  *
- * @property springStiffness - Spring stiffness for physics-based animations (default: 300)
- * @property springDamping - Spring damping to control bounce (default: 30)
- * @property dragEnabled - Enable drag-to-cycle functionality (default: true)
- * @property flipDuration - Duration of FLIP animations in seconds (default: 0.5)
- * @property staggerDelay - Delay between card animations in seconds (default: 0.05)
- * @property enable3D - Enable 3D transforms (rotateY, z-depth) (default: true)
- * @property reducedMotion - Respect prefers-reduced-motion (default: true)
+ * @property cards - Array of card objects to display
+ * @property cardWidth - Width of each card in pixels (default: 300)
+ * @property cardHeight - Height of each card in pixels (default: 400)
+ * @property cardGap - Gap between stacked cards in pixels (default: 50)
+ * @property swipeThreshold - Minimum drag distance in pixels to trigger swipe (default: 80)
+ * @property rollDuration - Duration of roll-off animation in milliseconds (default: 400)
+ * @property enterDuration - Duration of fade-in animation in milliseconds (default: 200)
+ * @property enable3D - Enable 3D rotation effects (default: true)
  */
-export interface CardStackMotionProps extends CardStackProps {
-	springStiffness?: number;
-	springDamping?: number;
-	dragEnabled?: boolean;
-	flipDuration?: number;
-	staggerDelay?: number;
+export interface CardStackMotionFlipProps {
+	cards?: Card[];
+	cardWidth?: number;
+	cardHeight?: number;
+	cardGap?: number;
+	swipeThreshold?: number;
+	rollDuration?: number;
+	enterDuration?: number;
 	enable3D?: boolean;
-	reducedMotion?: boolean;
 }
 
 /**
