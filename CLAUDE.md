@@ -145,8 +145,7 @@ All shared types are defined once in `src/lib/types.ts`:
 Components have multiple implementations demonstrating different approaches:
 - **CardStack.svelte** - Basic version (CSS transforms only)
 - **CardStackAdvanced.svelte** - Adds swipe gestures and keyboard nav
-- **CardStackMotionSpring.svelte** - Uses svelte-motion with spring physics
-- **CardStackMotionFlip.svelte** - Uses FLIP animation technique
+- **CardStackMotionFlip.svelte** - Uses FLIP animation technique with 3D roll effects
 - **Marquee.svelte** - Static infinite scroll with pause-on-hover
 - **MarqueeDraggable.svelte** - Interactive with drag-to-scroll
 
@@ -273,7 +272,7 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
 ### UI Components
 
 1. **CardStack** - Interactive horizontal card displays with hover/click interactions
-   - Variants: Basic, Advanced (swipe/keyboard), Motion (Spring/FLIP)
+   - Variants: Basic, Advanced (swipe/keyboard), Motion Flip (3D roll)
    - Features: Two-stage interaction, responsive, accessible
 
 2. **Marquee** - Infinite scrolling content displays
@@ -310,8 +309,8 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
 
 The project has **zero build warnings** (`npm run build` is clean), but `npm run check` reports some warnings that are safe to ignore:
 
-#### CSS Unused Selector Warnings (14 warnings)
-- **Location**: `CardStackMotionFlip.svelte` and `CardStackMotionSpring.svelte`
+#### CSS Unused Selector Warnings
+- **Location**: `CardStackMotionFlip.svelte`
 - **Reason**: CSS classes are applied dynamically via the `getCardClass()` function, which Svelte's static analysis cannot detect
 - **Mitigation**: All selectors are documented with `/* svelte-ignore css-unused-selector */` comments explaining why they're used
 - **Impact**: None - CSS is actively used at runtime, warnings are false positives
