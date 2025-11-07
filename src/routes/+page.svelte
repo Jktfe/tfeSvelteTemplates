@@ -152,7 +152,8 @@
         Built natively with Svelte 5 for optimal performance - leaning heavily
         on better developers that came before like Sikandar.S.Bhide who built
         the excellent animation-svelte.vercel.app Mostly for my own use in my
-        projects, but feel free to use them too!
+        projects, but feel free to use them too! Developed and modified by me,
+        @Jktfe, and Claude.
       </p>
     </section>
 
