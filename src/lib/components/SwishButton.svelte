@@ -57,26 +57,60 @@
 		{text}
 	</span>
 
-	<!-- Hover state: Text + Arrow that slides in from the right -->
+	<!-- Hover state: Text + Icon that slides in from the right -->
 	<div
 		class="absolute top-0 z-10 flex h-full w-full translate-x-12 items-center justify-center gap-2 text-primary-foreground opacity-0 transition-all duration-300 group-hover:-translate-x-1 group-hover:opacity-100"
 	>
 		<span>{text}</span>
-		<!-- Inline SVG arrow icon - zero dependencies -->
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="20"
-			height="20"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-		>
-			<line x1="5" y1="12" x2="19" y2="12"></line>
-			<polyline points="12 5 19 12 12 19"></polyline>
-		</svg>
+		{#if disabled}
+			<!-- Inline SVG X icon for disabled state -->
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<line x1="18" y1="6" x2="6" y2="18"></line>
+				<line x1="6" y1="6" x2="18" y2="18"></line>
+			</svg>
+		{:else if type === 'reset'}
+			<!-- Inline SVG circular undo/reset icon for reset buttons -->
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<polyline points="1 4 1 10 7 10"></polyline>
+				<path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+			</svg>
+		{:else}
+			<!-- Inline SVG arrow icon for normal/enabled state -->
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="20"
+				height="20"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+			>
+				<line x1="5" y1="12" x2="19" y2="12"></line>
+				<polyline points="12 5 19 12 12 19"></polyline>
+			</svg>
+		{/if}
 	</div>
 
 	<!-- Expanding background dot that grows to fill button on hover -->
