@@ -236,7 +236,7 @@
 				onmouseenter={() => (hoveredIndex = displayIndex)}
 				onmouseleave={() => (hoveredIndex = null)}
 				onclick={() => (selectedIndex = selectedIndex === displayIndex ? null : displayIndex)}
-				onkeydown={(e) => {
+				onkeydown={(e: KeyboardEvent) => {
 					if (e.key === 'Enter' || e.key === ' ') {
 						e.preventDefault();
 						selectedIndex = selectedIndex === displayIndex ? null : displayIndex;
@@ -307,6 +307,7 @@
 	}
 
 	/* Individual card wrapper with spring motion */
+	/* svelte-ignore css-unused-selector - Applied dynamically via getCardClass() */
 	.card-wrapper {
 		/* Reset button defaults */
 		border: none;
@@ -324,11 +325,13 @@
 		display: block;
 	}
 
+	/* svelte-ignore css-unused-selector - Applied dynamically via getCardClass() */
 	.card-wrapper:active {
 		cursor: grabbing;
 	}
 
 	/* Focus visible for keyboard navigation */
+	/* svelte-ignore css-unused-selector - Applied dynamically via getCardClass() */
 	.card-wrapper:focus-visible {
 		outline: 3px solid #667eea;
 		outline-offset: 4px;
@@ -347,11 +350,13 @@
 	}
 
 	/* Enhanced shadow on hover */
+	/* svelte-ignore css-unused-selector - Applied dynamically via getCardClass() */
 	.card-wrapper.hovered .card {
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 	}
 
 	/* Maximum shadow on selected */
+	/* svelte-ignore css-unused-selector - Applied dynamically via getCardClass() */
 	.card-wrapper.selected .card {
 		box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
 	}
@@ -448,6 +453,7 @@
 
 	/* Reduced motion support */
 	@media (prefers-reduced-motion: reduce) {
+		/* svelte-ignore css-unused-selector - Applied dynamically via getCardClass() */
 		.card-wrapper {
 			transition: transform 0.2s ease;
 		}

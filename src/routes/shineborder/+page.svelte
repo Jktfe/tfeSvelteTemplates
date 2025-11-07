@@ -407,14 +407,6 @@
 		margin: 0;
 	}
 
-	.badge {
-		padding: 0.25rem 0.75rem;
-		background: #edf2f7;
-		color: #4a5568;
-		font-size: 0.875rem;
-		font-weight: 600;
-		border-radius: 9999px;
-	}
 
 	.description {
 		font-size: 1rem;

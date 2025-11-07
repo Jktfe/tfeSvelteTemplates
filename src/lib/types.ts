@@ -234,3 +234,113 @@ export interface NavbarProps {
 	logoText?: string;
 	logoHref?: string;
 }
+
+// ==================================================
+// DATABASE TYPES FOR ADDITIONAL COMPONENTS
+// ==================================================
+
+/**
+ * Testimonial data structure for Marquee demos
+ *
+ * @property id - Optional database ID
+ * @property name - Person's name
+ * @property role - Job title/role
+ * @property company - Company name
+ * @property quote - Testimonial text
+ * @property avatar - Emoji or icon character (default: '👤')
+ * @property category - For filtering (e.g., 'static', 'interactive')
+ */
+export interface Testimonial {
+	id?: number;
+	name: string;
+	role: string;
+	company: string;
+	quote: string;
+	avatar?: string;
+	category?: string;
+}
+
+/**
+ * Database row structure from the testimonials table
+ * Maps to the schema defined in database/schema_v2.sql
+ */
+export interface TestimonialRow {
+	id: number;
+	name: string;
+	role: string;
+	company: string;
+	quote: string;
+	avatar: string;
+	category: string;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+}
+
+/**
+ * Expanding card data structure
+ * Extends ExpandingCardProps with database metadata
+ */
+export interface ExpandingCardData {
+	id?: number;
+	heading: string;
+	compactText: string;
+	expandedText: string;
+	imageSrc: string;
+	imageAlt: string;
+	bgColor?: string;
+	category?: string;
+}
+
+/**
+ * Database row structure from the expanding_cards table
+ * Maps to the schema defined in database/schema_v2.sql
+ */
+export interface ExpandingCardRow {
+	id: number;
+	heading: string;
+	compact_text: string;
+	expanded_text: string;
+	image_url: string;
+	image_alt: string;
+	bg_color: string;
+	category: string;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+}
+
+/**
+ * Link preview data for LinkImageHover component
+ * Extends LinkImageHoverProps with database metadata
+ */
+export interface LinkPreview {
+	id?: number;
+	text: string;
+	href: string;
+	imageSrc: string;
+	imageAlt: string;
+	imageWidth?: string;
+	target?: string;
+	category?: string;
+	description?: string;
+}
+
+/**
+ * Database row structure from the link_previews table
+ * Maps to the schema defined in database/schema_v2.sql
+ */
+export interface LinkPreviewRow {
+	id: number;
+	text: string;
+	href: string;
+	image_url: string;
+	image_alt: string;
+	image_width: string;
+	target: string;
+	category: string;
+	description: string | null;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+}

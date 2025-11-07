@@ -11,22 +11,65 @@ A collection of reusable, well-documented Svelte 5 component templates. Each com
 
 ## 📚 Available Templates
 
-### CardStack Component
+### 1. CardStack Component (4 variants)
 
 Interactive horizontal card displays with hover and swipe interactions. Perfect for image galleries, product showcases, or content carousels.
 
-**Features:**
-- Cards arranged in an elegant horizontal overlapping row
-- Hover effect makes cards pop up and become clearly visible
-- Swipe gestures cycle cards (Advanced version - mobile)
-- Keyboard navigation (Advanced version - desktop)
-- Smooth cubic-bezier animations
-- Responsive design
-- Fully accessible with ARIA labels
+**Variants:**
+- [`CardStack.svelte`](src/lib/components/CardStack.svelte) - Basic CSS-only version
+- [`CardStackAdvanced.svelte`](src/lib/components/CardStackAdvanced.svelte) - Enhanced with swipe gestures and keyboard navigation
+- [`CardStackMotionSpring.svelte`](src/lib/components/CardStackMotionSpring.svelte) - Spring physics animations via svelte-motion
+- [`CardStackMotionFlip.svelte`](src/lib/components/CardStackMotionFlip.svelte) - FLIP animation technique
 
-**Files:**
-- [`src/lib/components/CardStack.svelte`](src/lib/components/CardStack.svelte) - Basic version
-- [`src/lib/components/CardStackAdvanced.svelte`](src/lib/components/CardStackAdvanced.svelte) - Enhanced version
+### 2. Marquee Component (2 variants)
+
+Infinite scrolling content displays for logos, testimonials, or featured content.
+
+**Variants:**
+- [`Marquee.svelte`](src/lib/components/Marquee.svelte) - Static scroll with pause-on-hover
+- [`MarqueeDraggable.svelte`](src/lib/components/MarqueeDraggable.svelte) - Interactive with drag-to-scroll and momentum
+
+### 3. MagicCard Component
+
+Cards with mouse-tracking spotlight effects and dynamic border glow. Perfect for feature highlights or premium content.
+
+**File:** [`MagicCard.svelte`](src/lib/components/MagicCard.svelte)
+
+### 4. ShineBorder Component
+
+Animated border wrapper with horizontal shine animation. Zero dependencies, pure CSS animations.
+
+**File:** [`ShineBorder.svelte`](src/lib/components/ShineBorder.svelte)
+
+### 5. SwishButton Component
+
+Animated CTA button with text slide animation and background expansion. No icon library dependencies.
+
+**File:** [`SwishButton.svelte`](src/lib/components/SwishButton.svelte)
+
+### 6. ExpandingCard Component
+
+Card with layout transitions between compact and expanded states using Svelte's built-in transitions.
+
+**File:** [`ExpandingCard.svelte`](src/lib/components/ExpandingCard.svelte)
+
+### 7. LinkImageHover Component
+
+Links with image preview on hover using blur transitions. Perfect for documentation and references.
+
+**File:** [`LinkImageHover.svelte`](src/lib/components/LinkImageHover.svelte)
+
+### 8. Navbar Component
+
+Responsive navigation with mobile hamburger menu and smooth panel animations.
+
+**File:** [`Navbar.svelte`](src/lib/components/Navbar.svelte)
+
+### 9. StaggeredMenu Component
+
+Animated navigation menu with staggered entrance animations and active state highlighting.
+
+**File:** [`StaggeredMenu.svelte`](src/lib/components/StaggeredMenu.svelte)
 
 ## 🚀 Quick Start
 
@@ -77,24 +120,24 @@ Interactive horizontal card displays with hover and swipe interactions. Perfect 
 
 ## 🗄️ Database Setup (Optional)
 
-The demo includes Neon database integration, but components work with any data source.
+The demo includes Neon database integration for all components, but everything works with fallback data if no database is configured.
 
 ### Setting up Neon Database:
 
 1. Create a free account at [neon.tech](https://neon.tech)
 2. Create a new project and database
 3. Copy your connection string
-4. Run the schema in your Neon SQL Editor:
+4. Run the database schemas in your Neon SQL Editor:
    ```bash
-   # Copy contents of database/schema.sql
-   # Paste into Neon SQL Editor and execute
+   # First, run database/schema.sql (CardStack data)
+   # Then, run database/schema_v2.sql (Marquee, ExpandingCard, LinkImageHover data)
    ```
 5. Add connection string to `.env`:
    ```
    DATABASE_URL=your_connection_string_here
    ```
 
-**Note:** If you don't set up a database, the app will use fallback data automatically.
+**Note:** If you don't set up a database, the app will use fallback data automatically. Each page displays a status indicator showing whether it's using database or fallback data.
 
 ## 📁 Project Structure
 
@@ -102,17 +145,33 @@ The demo includes Neon database integration, but components work with any data s
 tfeSvelteTemplates/
 ├── src/
 │   ├── lib/
-│   │   └── components/          # Reusable components
-│   │       ├── CardStack.svelte
-│   │       └── CardStackAdvanced.svelte
+│   │   ├── components/          # Reusable components
+│   │   │   ├── CardStack.svelte
+│   │   │   ├── Marquee.svelte
+│   │   │   ├── ExpandingCard.svelte
+│   │   │   ├── LinkImageHover.svelte
+│   │   │   └── DatabaseStatus.svelte
+│   │   ├── server/              # Server utilities
+│   │   │   ├── cards.ts
+│   │   │   ├── testimonials.ts
+│   │   │   ├── expandingCards.ts
+│   │   │   └── linkPreviews.ts
+│   │   ├── types.ts             # TypeScript interfaces
+│   │   ├── constants.ts         # Fallback data
+│   │   └── utils.ts             # Helper functions
 │   ├── routes/
 │   │   ├── api/cards/
 │   │   │   └── +server.ts       # API endpoint
-│   │   ├── +page.svelte         # Demo page
-│   │   └── +page.server.ts      # Server-side data loading
+│   │   ├── +page.svelte         # Home page
+│   │   ├── +page.server.ts      # Server-side data loading
+│   │   ├── cardstack/
+│   │   ├── marquee/
+│   │   ├── expandingcard/
+│   │   └── linkimagehover/
 │   └── app.html                 # HTML template
 ├── database/
-│   └── schema.sql               # Database schema & seed data
+│   ├── schema.sql               # CardStack data schema
+│   └── schema_v2.sql            # Additional components schema
 ├── static/                      # Static assets
 ├── .env.example                 # Environment variables template
 ├── package.json                 # Dependencies

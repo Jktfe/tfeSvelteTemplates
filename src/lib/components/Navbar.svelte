@@ -398,10 +398,6 @@
 			min-height: 64px;
 		}
 
-		.navbar-title {
-			font-size: 1.125rem;
-		}
-
 		.panel {
 			width: min(70vw, 320px);
 		}
@@ -410,10 +406,6 @@
 	@media (min-width: 1024px) {
 		.navbar-inner {
 			padding: 0 2rem;
-		}
-
-		.navbar-title {
-			font-size: 1.25rem;
 		}
 	}
 

@@ -7,6 +7,11 @@
 
 <script lang="ts">
   import ExpandingCard from "$lib/components/ExpandingCard.svelte";
+  import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
+  import type { PageData } from './$types';
+
+  // Get server data
+  let { data }: { data: PageData } = $props();
 </script>
 
 <svelte:head>
@@ -28,6 +33,7 @@
         seamless element morphing. Perfect for galleries, portfolios, or any
         content that benefits from progressive disclosure.
       </p>
+      <DatabaseStatus usingDatabase={data.usingDatabase} class="status-badge" />
     </header>
 
     <!-- Basic Demo -->
@@ -72,39 +78,49 @@
       </details>
     </section>
 
-    <!-- Custom Content -->
+    <!-- Database-Driven Content -->
     <section class="demo-section">
       <div class="section-header">
-        <h2>Custom Content</h2>
+        <h2>Database Content</h2>
+        <div class="badge">Dynamic Data</div>
       </div>
 
       <p class="description">
-        Customise the image, heading, and text content to match your needs. Each
-        card maintains visual continuity during the transition.
+        These cards are loaded from the database (or fallback data if DATABASE_URL is not configured).
+        Each card maintains visual continuity during the transition.
       </p>
 
-      <div class="demo-container-tall">
-        <ExpandingCard
-          imageSrc="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop"
-          imageAlt="Mountain Vista"
-          heading="Mountain Vista"
-          compactText="Breathtaking views from the highest peaks"
-          expandedText="Where the air is crisp and the horizon endless. Experience nature at its finest."
-          bgColor="bg-blue-100"
-        />
-      </div>
+      {#each data.expandingCards as card}
+        <div class="demo-container-tall">
+          <ExpandingCard
+            imageSrc={card.imageSrc}
+            imageAlt={card.imageAlt}
+            heading={card.heading}
+            compactText={card.compactText}
+            expandedText={card.expandedText}
+            bgColor={card.bgColor}
+          />
+        </div>
+      {/each}
 
       <details class="code-block">
         <summary>View Code Example</summary>
         <pre><code
-            >{`<ExpandingCard
-  imageSrc="https://images.unsplash.com/photo-1506905925346-21bda4d32df4"
-  imageAlt="Mountain Vista"
-  heading="Mountain Vista"
-  compactText="Breathtaking views from the highest peaks"
-  expandedText="Where the air is crisp and the horizon endless."
-  bgColor="bg-blue-100"
-/>`}</code
+            >{`<script>
+  // Data loaded from server
+  let { data } = $props();
+</script>
+
+{#each data.expandingCards as card}
+  <ExpandingCard
+    imageSrc={card.imageSrc}
+    imageAlt={card.imageAlt}
+    heading={card.heading}
+    compactText={card.compactText}
+    expandedText={card.expandedText}
+    bgColor={card.bgColor}
+  />
+{/each}`}</code
           ></pre>
       </details>
     </section>
@@ -686,6 +702,10 @@
     color: #718096;
     margin: 0;
     line-height: 1.6;
+  }
+
+  :global(.status-badge) {
+    margin-top: 0.5rem;
   }
 
   /* Responsive */
