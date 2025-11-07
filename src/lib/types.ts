@@ -219,14 +219,17 @@ export interface LinkImageHoverProps {
 
 /**
  * Props for Navbar component
+ * Framework7-style three-section layout (Left/Center/Right)
  *
- * @property menuItems - Array of menu items to display in navigation
+ * @property menuItems - Array of menu items for quick navigation (displayed on right)
+ * @property currentPageTitle - Title of the current page (displayed in center)
  * @property logoIcon - Logo icon/emoji (default: '⚡')
  * @property logoText - Logo text (default: 'Svelte Templates')
  * @property logoHref - Logo link destination (default: '/')
  */
 export interface NavbarProps {
 	menuItems: MenuItem[];
+	currentPageTitle?: string;
 	logoIcon?: string;
 	logoText?: string;
 	logoHref?: string;

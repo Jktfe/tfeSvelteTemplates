@@ -1,11 +1,12 @@
 <!--
 	LinkImageHover Component
 
-	A link component that displays an image preview on hover above the link text.
+	A link component that displays an image preview on hover (desktop) or tap (mobile) above the link text.
 	The image appears with a smooth blur transition when you hover over the link.
 
 	Features:
-	- Image preview appears on hover
+	- Desktop: Image preview appears on hover, click follows link
+	- Mobile: First tap shows preview, second tap (on preview) follows link
 	- Smooth blur transition effect
 	- Positioned above the link text
 	- Customisable link and image details
@@ -23,6 +24,7 @@
 
 <script lang="ts">
 	import { blur } from 'svelte/transition';
+	import { onMount } from 'svelte';
 	import type { LinkImageHoverProps } from '$lib/types';
 
 	/**
@@ -38,55 +40,149 @@
 	}: LinkImageHoverProps = $props();
 
 	/**
-	 * Track hover state to show/hide image
+	 * Track hover state to show/hide image (desktop)
 	 */
 	let isHover = $state(false);
 
 	/**
-	 * Action to handle mouse enter/leave events
-	 * Toggles the image visibility based on hover state
+	 * Track if preview is shown on mobile (tap state)
+	 */
+	let showPreviewMobile = $state(false);
+
+	/**
+	 * Detect if device uses touch as primary input (mobile/tablet)
+	 */
+	let isTouchDevice = $state(false);
+
+	/**
+	 * Reference to the container element for click-outside detection
+	 */
+	let containerRef: HTMLDivElement;
+
+	/**
+	 * Detect touch device on mount using pointer media query
+	 */
+	onMount(() => {
+		isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
+	});
+
+	/**
+	 * Close preview when clicking outside the component on mobile
+	 */
+	$effect(() => {
+		if (isTouchDevice && showPreviewMobile) {
+			const handleClickOutside = (event: MouseEvent) => {
+				if (containerRef && !containerRef.contains(event.target as Node)) {
+					showPreviewMobile = false;
+				}
+			};
+
+			// Add listener with a slight delay to avoid immediate closure
+			const timeoutId = setTimeout(() => {
+				document.addEventListener('click', handleClickOutside);
+			}, 10);
+
+			return () => {
+				clearTimeout(timeoutId);
+				document.removeEventListener('click', handleClickOutside);
+			};
+		}
+	});
+
+	/**
+	 * Handle link click - different behaviour for touch vs mouse devices
+	 * On mobile: first tap shows preview (prevents navigation), second tap follows link
+	 * On desktop: always follows link (hover handles preview)
+	 */
+	function handleLinkClick(event: MouseEvent) {
+		// Only intercept clicks on touch devices
+		if (isTouchDevice) {
+			// If preview not shown yet, prevent navigation and show it
+			if (!showPreviewMobile) {
+				event.preventDefault();
+				showPreviewMobile = true;
+			}
+			// If preview is already shown, allow navigation (link will follow href)
+		}
+		// On desktop, always allow navigation immediately
+	}
+
+	/**
+	 * Handle preview image click on mobile
+	 * Clicking the preview should follow the link
+	 */
+	function handlePreviewClick(event: MouseEvent) {
+		event.stopPropagation(); // Prevent triggering link click
+		showPreviewMobile = false; // Hide preview
+		window.open(href, target); // Follow the link
+	}
+
+	/**
+	 * Action to handle mouse enter/leave events for desktop hover
+	 * Also adds click handler for mobile tap behaviour
 	 */
 	function linkEffect(node: HTMLElement) {
-		node.addEventListener('mouseenter', () => {
+		const handleMouseEnter = () => {
 			isHover = true;
-		});
-		node.addEventListener('mouseleave', () => {
+		};
+
+		const handleMouseLeave = () => {
 			isHover = false;
-		});
+		};
+
+		// Add hover listeners for desktop
+		node.addEventListener('mouseenter', handleMouseEnter);
+		node.addEventListener('mouseleave', handleMouseLeave);
 
 		// Cleanup event listeners when component is destroyed
 		return {
 			destroy() {
-				node.removeEventListener('mouseenter', () => {
-					isHover = true;
-				});
-				node.removeEventListener('mouseleave', () => {
-					isHover = false;
-				});
+				node.removeEventListener('mouseenter', handleMouseEnter);
+				node.removeEventListener('mouseleave', handleMouseLeave);
 			}
 		};
 	}
 </script>
 
-<div class="relative z-50 flex w-full items-center justify-center">
-	<!-- Image preview that appears on hover -->
-	{#if isHover}
-		<img
-			in:blur={{ duration: 300 }}
-			style="position:absolute; bottom:40px;"
-			src={imageSrc}
-			alt={imageAlt}
-			class="{imageWidth} z-50 rounded-lg shadow-lg"
-		/>
+<div bind:this={containerRef} class="relative z-50 flex w-full items-center justify-center">
+	<!-- Image preview that appears on hover (desktop) or tap (mobile) -->
+	{#if (isHover && !isTouchDevice) || (showPreviewMobile && isTouchDevice)}
+		{#if isTouchDevice}
+			<!-- On mobile: make image clickable to follow link -->
+			<button
+				type="button"
+				class="absolute z-50 border-0 bg-transparent p-0"
+				style="bottom: 40px;"
+				onclick={handlePreviewClick}
+				aria-label="Open {text}"
+			>
+				<img
+					in:blur={{ duration: 300 }}
+					src={imageSrc}
+					alt={imageAlt}
+					class="{imageWidth} rounded-lg shadow-lg"
+				/>
+			</button>
+		{:else}
+			<!-- On desktop: static image preview -->
+			<img
+				in:blur={{ duration: 300 }}
+				style="position:absolute; bottom:40px;"
+				src={imageSrc}
+				alt={imageAlt}
+				class="{imageWidth} z-50 rounded-lg shadow-lg"
+			/>
+		{/if}
 	{/if}
 
-	<!-- The link element with hover detection -->
+	<!-- The link element with hover detection (desktop) and click handling (mobile) -->
 	<a
 		use:linkEffect
 		{href}
 		{target}
 		class="z-50 cursor-pointer text-md underline"
 		rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+		onclick={handleLinkClick}
 	>
 		{text}
 	</a>

@@ -7,13 +7,19 @@
 	// Get current path for active menu highlighting
 	let currentPath = $derived($page.url.pathname);
 
-	// Define navigation menu items
+	// All navigation menu items for the panel
 	const menuItems: MenuItem[] = $derived([
 		{
 			label: 'Home',
 			href: '/',
 			icon: '🏠',
 			active: currentPath === '/'
+		},
+		{
+			label: 'Navbar',
+			href: '/navbar',
+			icon: '☰',
+			active: currentPath.startsWith('/navbar')
 		},
 		{
 			label: 'CardStack',
@@ -59,11 +65,17 @@
 		}
 	]);
 
+	// Determine current page title based on path
+	let currentPageTitle = $derived.by(() => {
+		const activeItem = menuItems.find((item) => item.active);
+		return activeItem ? activeItem.label : 'Svelte Templates';
+	});
+
 	let { children } = $props();
 </script>
 
 <div class="app">
-	<Navbar {menuItems} />
+	<Navbar {menuItems} {currentPageTitle} />
 
 	<main class="main">
 		{@render children()}

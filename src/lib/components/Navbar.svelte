@@ -1,24 +1,28 @@
 <!--
   Navbar Component
 
-  A responsive navigation bar with mobile hamburger menu and desktop horizontal layout.
-  Inspired by Framework7 design patterns with smooth animations and accessibility features.
+  A responsive navigation bar following Framework7's panel pattern.
+  Features a hamburger menu that opens a left-side sliding panel.
 
   Features:
-  - Hamburger menu for mobile devices (< 768px)
-  - Horizontal navigation for desktop
-  - Smooth slide-in/out animations
-  - Backdrop blur and overlay
-  - Active state highlighting
-  - Keyboard accessible (Escape to close, Tab navigation)
-  - Touch-friendly tap targets
+  - Hamburger button on the left (next to logo)
+  - Left-sliding panel menu with all navigation items
+  - Panel is scrollable if content exceeds viewport height
+  - Logo and page title in navbar
+  - Backdrop overlay when panel is open
+  - Sticky positioning with backdrop blur
+  - Collapsible menu with smooth animations
   - Zero external dependencies
 
   Usage:
-    <Navbar {menuItems} />
+    <Navbar {menuItems} currentPageTitle="Home" />
 
   Props:
-  - menuItems: Array of MenuItem objects with label, href, icon, and active state
+  - menuItems: Array of MenuItem objects for navigation
+  - currentPageTitle: Title of the current page displayed in navbar
+  - logoIcon: Logo icon/emoji (default: '⚡')
+  - logoText: Logo text (default: 'Svelte Templates')
+  - logoHref: Logo link destination (default: '/')
 -->
 
 <script lang="ts">
@@ -27,57 +31,42 @@
 
 	let {
 		menuItems,
+		currentPageTitle = 'Home',
 		logoIcon = '⚡',
 		logoText = 'Svelte Templates',
 		logoHref = '/'
 	}: NavbarProps = $props();
 
-	// Mobile menu state
-	let isMobileMenuOpen = $state(false);
+	let isPanelOpen = $state(false);
 
-	/**
-	 * Toggle mobile menu open/closed state
-	 */
-	function toggleMobileMenu() {
-		isMobileMenuOpen = !isMobileMenuOpen;
+	function togglePanel() {
+		isPanelOpen = !isPanelOpen;
 	}
 
-	/**
-	 * Close mobile menu
-	 */
-	function closeMobileMenu() {
-		isMobileMenuOpen = false;
+	function closePanel() {
+		isPanelOpen = false;
 	}
 
-	/**
-	 * Handle escape key to close menu
-	 */
 	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape' && isMobileMenuOpen) {
-			closeMobileMenu();
+		if (event.key === 'Escape' && isPanelOpen) {
+			closePanel();
 		}
 	}
 
-	/**
-	 * Prevent body scroll when mobile menu is open
-	 */
 	$effect(() => {
-		if (isMobileMenuOpen) {
+		if (isPanelOpen) {
 			document.body.style.overflow = 'hidden';
 		} else {
 			document.body.style.overflow = '';
 		}
 
-		// Cleanup on component unmount
 		return () => {
 			document.body.style.overflow = '';
 		};
 	});
 
 	onMount(() => {
-		// Add global keydown listener
 		window.addEventListener('keydown', handleKeydown);
-
 		return () => {
 			window.removeEventListener('keydown', handleKeydown);
 		};
@@ -85,88 +74,68 @@
 </script>
 
 <header class="navbar">
-	<div class="navbar-container">
-		<!-- Logo / Brand -->
-		<a href={logoHref} class="navbar-logo">
-			<span class="navbar-logo-icon" aria-hidden="true">{logoIcon}</span>
-			<span class="navbar-logo-text">{logoText}</span>
-		</a>
+	<div class="navbar-inner">
+		<!-- Left Section: Hamburger + Logo -->
+		<div class="navbar-left">
+			<button
+				class="hamburger-button"
+				class:open={isPanelOpen}
+				onclick={togglePanel}
+				aria-label={isPanelOpen ? 'Close menu' : 'Open menu'}
+				aria-expanded={isPanelOpen}
+				aria-controls="panel-menu"
+			>
+				<span class="hamburger-line"></span>
+				<span class="hamburger-line"></span>
+				<span class="hamburger-line"></span>
+			</button>
 
-		<!-- Desktop Navigation -->
-		<nav class="navbar-desktop" aria-label="Main navigation">
-			<ul class="navbar-menu">
-				{#each menuItems as item}
-					<li class="navbar-menu-item">
-						<a
-							href={item.href}
-							class="navbar-menu-link"
-							class:active={item.active}
-							aria-current={item.active ? 'page' : undefined}
-						>
-							{#if item.icon}
-								<span class="navbar-menu-icon" aria-hidden="true">{item.icon}</span>
-							{/if}
-							<span class="navbar-menu-label">{item.label}</span>
-						</a>
-					</li>
-				{/each}
-			</ul>
-		</nav>
+			<a href={logoHref} class="navbar-logo">
+				<span class="navbar-logo-icon" aria-hidden="true">{logoIcon}</span>
+				<span class="navbar-logo-text">{logoText}</span>
+			</a>
+		</div>
 
-		<!-- Mobile Hamburger Button -->
-		<button
-			class="navbar-hamburger"
-			class:open={isMobileMenuOpen}
-			onclick={toggleMobileMenu}
-			aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-			aria-expanded={isMobileMenuOpen}
-			aria-controls="mobile-menu"
-		>
-			<span class="hamburger-line"></span>
-			<span class="hamburger-line"></span>
-			<span class="hamburger-line"></span>
-		</button>
+		<!-- Right Section: Empty for balance -->
+		<div class="navbar-right"></div>
 	</div>
+</header>
 
-	<!-- Mobile Menu Overlay -->
-	{#if isMobileMenuOpen}
-		<div class="navbar-overlay" onclick={closeMobileMenu} aria-hidden="true"></div>
-	{/if}
+<!-- Panel Overlay -->
+{#if isPanelOpen}
+	<div class="panel-overlay" onclick={closePanel} aria-hidden="true"></div>
+{/if}
 
-	<!-- Mobile Menu Panel -->
-	<nav
-		id="mobile-menu"
-		class="navbar-mobile"
-		class:open={isMobileMenuOpen}
-		aria-label="Mobile navigation"
-	>
-		<ul class="navbar-mobile-menu">
+<!-- Left Panel Menu -->
+<nav id="panel-menu" class="panel" class:open={isPanelOpen} aria-label="Main navigation">
+	<div class="panel-content">
+		<ul class="panel-menu">
 			{#each menuItems as item, index}
-				<li class="navbar-mobile-item" style="--item-index: {index}">
+				<li class="panel-menu-item" style="--item-index: {index}">
 					<a
 						href={item.href}
-						class="navbar-mobile-link"
+						class="panel-menu-link"
 						class:active={item.active}
 						aria-current={item.active ? 'page' : undefined}
-						onclick={closeMobileMenu}
+						onclick={closePanel}
 					>
 						{#if item.icon}
-							<span class="navbar-mobile-icon" aria-hidden="true">{item.icon}</span>
+							<span class="panel-menu-icon" aria-hidden="true">{item.icon}</span>
 						{/if}
-						<span class="navbar-mobile-label">{item.label}</span>
+						<span class="panel-menu-label">{item.label}</span>
 						{#if item.active}
-							<span class="navbar-mobile-indicator" aria-hidden="true"></span>
+							<span class="panel-menu-indicator" aria-hidden="true"></span>
 						{/if}
 					</a>
 				</li>
 			{/each}
 		</ul>
-	</nav>
-</header>
+	</div>
+</nav>
 
 <style>
 	/* ============================================
-	   Base Navbar Styles
+	   Framework7-Style Navbar with Left Panel
 	   ============================================ */
 
 	.navbar {
@@ -174,49 +143,106 @@
 		top: 0;
 		z-index: 100;
 		background-color: rgba(255, 255, 255, 0.95);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
-		border-bottom: 1px solid #e2e8f0;
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
+		box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
 	}
 
-	.navbar-container {
-		max-width: 1280px;
-		margin: 0 auto;
-		padding: 1rem 2rem;
+	.navbar-inner {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 2rem;
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: 0 1rem;
+		min-height: 56px;
+		gap: 1rem;
 	}
 
 	/* ============================================
-	   Logo / Brand
+	   Left Section: Hamburger + Logo
 	   ============================================ */
+
+	.navbar-left {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.hamburger-button {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		gap: 0.3125rem;
+		width: 2.25rem;
+		height: 2.25rem;
+		padding: 0;
+		background: none;
+		border: none;
+		cursor: pointer;
+		border-radius: 0.375rem;
+		transition: background-color 0.2s ease;
+	}
+
+	.hamburger-button:hover {
+		background-color: rgba(0, 0, 0, 0.05);
+	}
+
+	.hamburger-button:focus {
+		outline: 2px solid #007aff;
+		outline-offset: 2px;
+	}
+
+	.hamburger-line {
+		display: block;
+		width: 1.25rem;
+		height: 2px;
+		background-color: #000000;
+		border-radius: 2px;
+		transition: all 0.3s ease;
+		transform-origin: center;
+	}
+
+	.hamburger-button.open .hamburger-line:nth-child(1) {
+		transform: translateY(0.375rem) rotate(45deg);
+	}
+
+	.hamburger-button.open .hamburger-line:nth-child(2) {
+		opacity: 0;
+		transform: scaleX(0);
+	}
+
+	.hamburger-button.open .hamburger-line:nth-child(3) {
+		transform: translateY(-0.375rem) rotate(-45deg);
+	}
 
 	.navbar-logo {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.625rem;
 		text-decoration: none;
-		color: #1a202c;
+		color: #000000;
 		font-weight: 600;
-		font-size: 1.25rem;
-		transition: transform 0.2s ease;
-		z-index: 101;
+		font-size: 1rem;
+		transition: opacity 0.2s ease;
+		white-space: nowrap;
 	}
 
 	.navbar-logo:hover {
-		transform: scale(1.02);
+		opacity: 0.7;
 	}
 
 	.navbar-logo:focus {
-		outline: 2px solid #146ef5;
+		outline: 2px solid #007aff;
 		outline-offset: 4px;
 		border-radius: 4px;
 	}
 
 	.navbar-logo-icon {
-		font-size: 1.5rem;
+		font-size: 1.375rem;
 		line-height: 1;
 	}
 
@@ -225,131 +251,24 @@
 	}
 
 	/* ============================================
-	   Desktop Navigation
+	   Right Section
 	   ============================================ */
 
-	.navbar-desktop {
-		display: none;
-	}
-
-	.navbar-menu {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-	}
-
-	.navbar-menu-item {
-		display: block;
-	}
-
-	.navbar-menu-link {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1rem;
-		text-decoration: none;
-		color: #4a5568;
-		font-weight: 500;
-		font-size: 0.9375rem;
-		border-radius: 0.5rem;
-		transition: all 0.2s ease;
-		position: relative;
-		white-space: nowrap;
-	}
-
-	.navbar-menu-link:hover {
-		color: #146ef5;
-		background-color: rgba(20, 110, 245, 0.08);
-	}
-
-	.navbar-menu-link:focus {
-		outline: 2px solid #146ef5;
-		outline-offset: 2px;
-	}
-
-	.navbar-menu-link.active {
-		color: #146ef5;
-		font-weight: 600;
-		background-color: rgba(20, 110, 245, 0.1);
-	}
-
-	.navbar-menu-icon {
-		font-size: 1.1rem;
-		line-height: 1;
-	}
-
-	.navbar-menu-label {
-		line-height: 1;
+	.navbar-right {
+		flex: 1;
 	}
 
 	/* ============================================
-	   Mobile Hamburger Button
+	   Panel Overlay
 	   ============================================ */
 
-	.navbar-hamburger {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-		gap: 0.375rem;
-		width: 2.5rem;
-		height: 2.5rem;
-		padding: 0;
-		background: none;
-		border: none;
-		cursor: pointer;
-		z-index: 101;
-		border-radius: 0.375rem;
-		transition: background-color 0.2s ease;
-	}
-
-	.navbar-hamburger:hover {
-		background-color: rgba(20, 110, 245, 0.08);
-	}
-
-	.navbar-hamburger:focus {
-		outline: 2px solid #146ef5;
-		outline-offset: 2px;
-	}
-
-	.hamburger-line {
-		display: block;
-		width: 1.5rem;
-		height: 2px;
-		background-color: #1a202c;
-		border-radius: 2px;
-		transition: all 0.3s ease;
-		transform-origin: center;
-	}
-
-	/* Hamburger animation when open */
-	.navbar-hamburger.open .hamburger-line:nth-child(1) {
-		transform: translateY(0.4375rem) rotate(45deg);
-	}
-
-	.navbar-hamburger.open .hamburger-line:nth-child(2) {
-		opacity: 0;
-		transform: scaleX(0);
-	}
-
-	.navbar-hamburger.open .hamburger-line:nth-child(3) {
-		transform: translateY(-0.4375rem) rotate(-45deg);
-	}
-
-	/* ============================================
-	   Mobile Menu Overlay
-	   ============================================ */
-
-	.navbar-overlay {
+	.panel-overlay {
 		position: fixed;
 		top: 0;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.5);
+		background-color: rgba(0, 0, 0, 0.4);
 		z-index: 99;
 		animation: fade-in 0.3s ease;
 	}
@@ -364,40 +283,46 @@
 	}
 
 	/* ============================================
-	   Mobile Menu Panel
+	   Left Panel Menu
 	   ============================================ */
 
-	.navbar-mobile {
+	.panel {
 		position: fixed;
 		top: 0;
-		right: 0;
+		left: 0;
 		bottom: 0;
-		width: min(80vw, 320px);
+		width: min(80vw, 280px);
 		background-color: #ffffff;
-		box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
+		box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
 		z-index: 100;
-		overflow-y: auto;
-		padding-top: 5rem;
-		transform: translateX(100%);
+		transform: translateX(-100%);
 		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	.navbar-mobile.open {
+	.panel.open {
 		transform: translateX(0);
 	}
 
-	.navbar-mobile-menu {
+	.panel-content {
+		height: 100%;
+		overflow-y: auto;
+		overflow-x: hidden;
+		-webkit-overflow-scrolling: touch;
+		padding: 1rem 0;
+	}
+
+	.panel-menu {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 	}
 
-	.navbar-mobile-item {
+	.panel-menu-item {
 		opacity: 0;
-		transform: translateX(2rem);
+		transform: translateX(-1rem);
 	}
 
-	.navbar-mobile.open .navbar-mobile-item {
+	.panel.open .panel-menu-item {
 		animation: slide-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 		animation-delay: calc(0.05s * var(--item-index));
 	}
@@ -409,13 +334,13 @@
 		}
 	}
 
-	.navbar-mobile-link {
+	.panel-menu-link {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
-		padding: 1.125rem 2rem;
+		padding: 1rem 1.5rem;
 		text-decoration: none;
-		color: #1a202c;
+		color: #000000;
 		font-weight: 500;
 		font-size: 1rem;
 		transition: all 0.2s ease;
@@ -423,87 +348,72 @@
 		border-left: 3px solid transparent;
 	}
 
-	.navbar-mobile-link:hover {
-		background-color: rgba(20, 110, 245, 0.05);
-		color: #146ef5;
+	.panel-menu-link:hover {
+		background-color: rgba(0, 122, 255, 0.05);
+		color: #007aff;
 	}
 
-	.navbar-mobile-link:focus {
-		outline: 2px solid #146ef5;
+	.panel-menu-link:focus {
+		outline: 2px solid #007aff;
 		outline-offset: -2px;
-		background-color: rgba(20, 110, 245, 0.05);
+		background-color: rgba(0, 122, 255, 0.05);
 	}
 
-	.navbar-mobile-link.active {
-		color: #146ef5;
+	.panel-menu-link.active {
+		color: #007aff;
 		font-weight: 600;
-		background-color: rgba(20, 110, 245, 0.1);
-		border-left-color: #146ef5;
+		background-color: rgba(0, 122, 255, 0.08);
+		border-left-color: #007aff;
 	}
 
-	.navbar-mobile-icon {
+	.panel-menu-icon {
 		font-size: 1.375rem;
 		line-height: 1;
 		width: 1.5rem;
 		text-align: center;
+		flex-shrink: 0;
 	}
 
-	.navbar-mobile-label {
+	.panel-menu-label {
 		flex: 1;
 		line-height: 1.4;
 	}
 
-	.navbar-mobile-indicator {
-		width: 0.5rem;
-		height: 0.5rem;
-		background-color: #146ef5;
+	.panel-menu-indicator {
+		width: 0.375rem;
+		height: 0.375rem;
+		background-color: #007aff;
 		border-radius: 50%;
 		margin-left: auto;
+		flex-shrink: 0;
 	}
 
 	/* ============================================
 	   Responsive Breakpoints
 	   ============================================ */
 
-	/* Mobile: Show hamburger, hide desktop nav */
-	@media (max-width: 768px) {
-		.navbar-container {
-			padding: 1rem 1.25rem;
+	@media (min-width: 640px) {
+		.navbar-inner {
+			padding: 0 1.5rem;
+			min-height: 64px;
 		}
 
-		.navbar-logo {
-			font-size: 1.1rem;
+		.navbar-title {
+			font-size: 1.125rem;
 		}
 
-		.navbar-logo-icon {
-			font-size: 1.375rem;
-		}
-
-		.navbar-desktop {
-			display: none;
-		}
-
-		.navbar-hamburger {
-			display: flex;
+		.panel {
+			width: min(70vw, 320px);
 		}
 	}
 
-	/* Desktop: Show desktop nav, hide hamburger */
-	@media (min-width: 769px) {
-		.navbar-desktop {
-			display: block;
+	@media (min-width: 1024px) {
+		.navbar-inner {
+			padding: 0 2rem;
 		}
 
-		.navbar-hamburger {
-			display: none;
-		}
-
-		.navbar-mobile {
-			display: none;
-		}
-
-		.navbar-overlay {
-			display: none;
+		.navbar-title {
+			font-size: 1.25rem;
 		}
 	}
 
@@ -513,16 +423,15 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.navbar-logo,
-		.navbar-menu-link,
-		.navbar-mobile-link,
-		.navbar-hamburger,
+		.hamburger-button,
 		.hamburger-line,
-		.navbar-mobile {
+		.panel,
+		.panel-menu-link {
 			transition-duration: 0.01ms;
 			animation-duration: 0.01ms;
 		}
 
-		.navbar-mobile-item {
+		.panel-menu-item {
 			animation: none;
 			opacity: 1;
 			transform: none;

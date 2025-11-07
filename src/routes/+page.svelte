@@ -19,6 +19,20 @@
 
   const components: ComponentCard[] = [
     {
+      title: "Navbar",
+      description:
+        "Framework7-style navigation bar with hamburger menu and left-sliding panel. Features smooth animations, backdrop overlay, and scrollable menu for any number of items.",
+      href: "/navbar",
+      icon: "☰",
+      features: [
+        "Left panel menu",
+        "Smooth animations",
+        "Keyboard accessible",
+        "Mobile-first design",
+      ],
+      status: "ready",
+    },
+    {
       title: "CardStack",
       description:
         "Interactive horizontal card displays with two-stage interaction: hover to preview, click to reveal. Enhanced version includes swipe gestures and keyboard navigation.",
