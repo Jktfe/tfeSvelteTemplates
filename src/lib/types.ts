@@ -661,7 +661,7 @@ export interface DataGridColumn {
 	editable?: boolean;
 	type?: 'text' | 'number' | 'date' | 'email' | 'tel' | 'select';
 	formatter?: (value: any) => string;
-	options?: string[];
+	options?: readonly string[];
 }
 
 /**
