@@ -650,6 +650,7 @@ export interface EmployeeRow {
  * @property editable - Whether cells in this column can be edited (default: false)
  * @property type - Data type for proper formatting and editing
  * @property formatter - Optional custom function to format cell values
+ * @property options - Array of allowed values for select/dropdown editor (used when type is 'select')
  */
 export interface DataGridColumn {
 	id: string;
@@ -658,8 +659,9 @@ export interface DataGridColumn {
 	sortable?: boolean;
 	filterable?: boolean;
 	editable?: boolean;
-	type?: 'text' | 'number' | 'date' | 'email' | 'tel';
+	type?: 'text' | 'number' | 'date' | 'email' | 'tel' | 'select';
 	formatter?: (value: any) => string;
+	options?: readonly string[];
 }
 
 /**
