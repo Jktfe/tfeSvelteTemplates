@@ -173,8 +173,8 @@
 			case 'select':
 				// Validate that options are provided for select type
 				if (!options || options.length === 0) {
-					console.warn('[DataGridAdvanced] Select editor created without options, falling back to text editor');
-					return 'text';
+					console.warn('[DataGridAdvanced] Select editor created without options, column will not be editable');
+					return undefined;
 				}
 				// SVAR Grid expects an object with type and options for select editor
 				return {
