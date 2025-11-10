@@ -13,6 +13,7 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import type { Employee } from '$lib/types';
 import {
 	loadEmployeesFromDatabase,
 	loadEmployeesByDepartment,
@@ -36,7 +37,7 @@ import {
  * @param data - Employee data to validate
  * @returns Error message if validation fails, null if valid
  */
-function validateDropdownFields(data: any): string | null {
+function validateDropdownFields(data: Partial<Employee>): string | null {
 	// Validate department
 	if (data.department && !DEPARTMENT_OPTIONS.includes(data.department)) {
 		return `Invalid department: ${data.department}. Must be one of: ${DEPARTMENT_OPTIONS.join(', ')}`;

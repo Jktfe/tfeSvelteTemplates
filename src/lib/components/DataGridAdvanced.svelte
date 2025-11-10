@@ -120,19 +120,19 @@
 			header: string;
 			width?: number;
 			type?: DataGridColumn['type'];
-			options?: string[];
+			options?: readonly string[];
 			template?: (obj: any) => string;
 		}> = {
 			id: { header: 'ID', width: 60 },
 			firstName: { header: 'First Name', width: 120 },
 			lastName: { header: 'Last Name', width: 120 },
 			email: { header: 'Email', width: 200, type: 'email' },
-			department: { header: 'Department', width: 120, type: 'select', options: [...DEPARTMENT_OPTIONS] },
-			position: { header: 'Position', width: 150, type: 'select', options: [...POSITION_OPTIONS] },
+			department: { header: 'Department', width: 120, type: 'select', options: DEPARTMENT_OPTIONS },
+			position: { header: 'Position', width: 150, type: 'select', options: POSITION_OPTIONS },
 			salary: { header: 'Salary', width: 120, type: 'number' },
 			hireDate: { header: 'Hire Date', width: 120, type: 'date' },
-			status: { header: 'Status', width: 100, type: 'select', options: [...STATUS_OPTIONS] },
-			location: { header: 'Location', width: 120, type: 'select', options: [...LOCATION_OPTIONS] },
+			status: { header: 'Status', width: 100, type: 'select', options: STATUS_OPTIONS },
+			location: { header: 'Location', width: 120, type: 'select', options: LOCATION_OPTIONS },
 			phone: { header: 'Phone', width: 140, type: 'tel' },
 			notes: { header: 'Notes', width: 200 }
 		};
@@ -163,7 +163,7 @@
 	 * @param options - Array of options for select type (required if type is 'select')
 	 * @returns Editor configuration (string for simple types, object for select)
 	 */
-	function getEditorType(type?: DataGridColumn['type'], options?: string[]): any {
+	function getEditorType(type?: DataGridColumn['type'], options?: readonly string[]): string | { type: 'select'; options: readonly string[] } {
 		switch (type) {
 			case 'number':
 				return 'number';
@@ -277,7 +277,7 @@
 		if (property in validationMap) {
 			const allowedValues = validationMap[property as keyof typeof validationMap];
 			if (!allowedValues.includes(value)) {
-				alert(`Invalid value for ${property}. Please select from the dropdown options.`);
+				alert(`Invalid value for ${property}: ${value}. Must be one of: ${allowedValues.join(', ')}`);
 				console.error(`[DataGridAdvanced] Invalid value for ${property}:`, value);
 				return;
 			}
