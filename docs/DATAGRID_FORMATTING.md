@@ -4,6 +4,7 @@ This guide demonstrates how to apply custom styling and formatting to DataGrid c
 
 ## Table of Contents
 
+- [Security Notice](#security-notice)
 - [Overview](#overview)
 - [Column Configuration Options](#column-configuration-options)
 - [Formatter Functions](#formatter-functions)
@@ -11,6 +12,49 @@ This guide demonstrates how to apply custom styling and formatting to DataGrid c
 - [Renderer Functions](#renderer-functions)
 - [Usage Examples](#usage-examples)
 - [Creating Custom Formatters](#creating-custom-formatters)
+
+## Security Notice
+
+> ⚠️ **IMPORTANT: XSS Prevention**
+>
+> Renderer functions generate HTML and are automatically protected against XSS (Cross-Site Scripting) attacks through built-in security measures:
+>
+> ### Automatic Security Features
+>
+> All formatter utilities (`createStatusBadge`, `createIconRenderer`, `createProgressBar`, etc.) include:
+> - **Automatic HTML escaping** for all user-provided values
+> - **CSS color validation** to prevent CSS injection
+> - **Performance-optimized caching** of validated colors
+>
+> ### What's Protected
+>
+> - ✅ User input values are HTML-escaped automatically
+> - ✅ CSS colors are validated against safe patterns
+> - ✅ Numeric values are sanitized before rendering
+> - ✅ Icon and label text is escaped
+>
+> ### Security Best Practices
+>
+> 1. **Use Built-in Formatters**: The provided utilities have security built-in
+> 2. **Custom Renderers**: If creating custom `cellRenderer` functions, always HTML-escape user values:
+>    ```typescript
+>    function escapeHtml(str: string): string {
+>      const div = document.createElement('div');
+>      div.textContent = str;
+>      return div.innerHTML;
+>    }
+>    ```
+> 3. **Color Validation**: Use the built-in color sanitization or validate hex/rgb formats
+> 4. **Never Trust User Input**: Even with automatic escaping, validate data types and ranges
+>
+> ### What This Means for You
+>
+> - Safe to use with user-generated content (names, descriptions, etc.)
+> - Safe to use with database values that may contain special characters
+> - No additional sanitization needed when using built-in formatters
+> - Custom renderers must manually escape values (see example above)
+>
+> For more details on XSS prevention, see [OWASP XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html).
 
 ## Overview
 
@@ -261,7 +305,9 @@ import { createConditionalClass } from '$lib/dataGridFormatters';
 
 ## Renderer Functions
 
-Renderers generate custom HTML for cells. They're more powerful than formatters but require sanitised inputs.
+Renderers generate custom HTML for cells. They're more powerful than formatters and include **automatic HTML escaping** for security.
+
+> ✅ **Security Built-In**: All renderer functions automatically escape user values to prevent XSS attacks. No additional sanitization required when using the built-in utilities.
 
 ### Status Badges
 
