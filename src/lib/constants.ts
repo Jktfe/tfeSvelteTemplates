@@ -5,7 +5,14 @@
  * across the application and prevent duplication.
  */
 
-import type { Card, Testimonial, ExpandingCardData, LinkPreview, EditorData } from './types';
+import type {
+	Card,
+	Testimonial,
+	ExpandingCardData,
+	LinkPreview,
+	EditorData,
+	Employee
+} from './types';
 
 /**
  * Fallback card data for when database is unavailable
@@ -285,5 +292,155 @@ export const FALLBACK_EDITOR_DATA: EditorData[] = [
 		imageAlt: 'Dynamic city skyline at night with lights',
 		bgColor: 'bg-purple-100',
 		category: 'editor-demo'
+	}
+];
+
+/**
+ * Fallback employee data for DataGrid demos when database is unavailable
+ * Used by DataGrid components when DATABASE_URL is not configured
+ *
+ * Kept in sync with database/schema_datagrid.sql seed data
+ * Sample data demonstrating various employee records for grid features
+ */
+export const FALLBACK_EMPLOYEES: Employee[] = [
+	{
+		id: 1,
+		firstName: 'Sarah',
+		lastName: 'Johnson',
+		email: 'sarah.johnson@company.com',
+		department: 'Engineering',
+		position: 'Senior Developer',
+		salary: 95000,
+		hireDate: '2020-03-15',
+		status: 'active',
+		location: 'London',
+		phone: '+44 20 7946 0958',
+		notes: 'Team lead for backend services'
+	},
+	{
+		id: 2,
+		firstName: 'James',
+		lastName: 'Smith',
+		email: 'james.smith@company.com',
+		department: 'Engineering',
+		position: 'DevOps Engineer',
+		salary: 88000,
+		hireDate: '2021-06-01',
+		status: 'active',
+		location: 'Manchester',
+		phone: '+44 161 850 2000',
+		notes: 'AWS infrastructure specialist'
+	},
+	{
+		id: 3,
+		firstName: 'Emily',
+		lastName: 'Brown',
+		email: 'emily.brown@company.com',
+		department: 'Design',
+		position: 'UX Designer',
+		salary: 72000,
+		hireDate: '2019-09-20',
+		status: 'active',
+		location: 'London',
+		phone: '+44 20 7946 0123',
+		notes: 'Leading design system initiative'
+	},
+	{
+		id: 4,
+		firstName: 'Michael',
+		lastName: 'Davis',
+		email: 'michael.davis@company.com',
+		department: 'Sales',
+		position: 'Account Executive',
+		salary: 65000,
+		hireDate: '2022-01-10',
+		status: 'active',
+		location: 'Birmingham',
+		phone: '+44 121 234 5678',
+		notes: 'Enterprise accounts focus'
+	},
+	{
+		id: 5,
+		firstName: 'Jessica',
+		lastName: 'Wilson',
+		email: 'jessica.wilson@company.com',
+		department: 'Marketing',
+		position: 'Marketing Manager',
+		salary: 78000,
+		hireDate: '2020-11-05',
+		status: 'active',
+		location: 'London',
+		phone: '+44 20 7946 0456',
+		notes: 'Digital marketing campaigns'
+	},
+	{
+		id: 6,
+		firstName: 'David',
+		lastName: 'Taylor',
+		email: 'david.taylor@company.com',
+		department: 'Engineering',
+		position: 'Frontend Developer',
+		salary: 82000,
+		hireDate: '2021-03-22',
+		status: 'active',
+		location: 'Leeds',
+		phone: '+44 113 243 2635',
+		notes: 'React and Svelte specialist'
+	},
+	{
+		id: 7,
+		firstName: 'Laura',
+		lastName: 'Anderson',
+		email: 'laura.anderson@company.com',
+		department: 'HR',
+		position: 'HR Manager',
+		salary: 70000,
+		hireDate: '2018-07-14',
+		status: 'active',
+		location: 'London',
+		phone: '+44 20 7946 0789',
+		notes: 'Recruitment and onboarding'
+	},
+	{
+		id: 8,
+		firstName: 'Robert',
+		lastName: 'Thomas',
+		email: 'robert.thomas@company.com',
+		department: 'Finance',
+		position: 'Financial Analyst',
+		salary: 68000,
+		hireDate: '2021-08-30',
+		status: 'active',
+		location: 'Edinburgh',
+		phone: '+44 131 225 2383',
+		notes: 'Budget planning and analysis'
+	},
+	{
+		id: 9,
+		firstName: 'Sophie',
+		lastName: 'Jackson',
+		email: 'sophie.jackson@company.com',
+		department: 'Engineering',
+		position: 'QA Engineer',
+		salary: 75000,
+		hireDate: '2020-05-18',
+		status: 'active',
+		location: 'Bristol',
+		phone: '+44 117 927 7000',
+		notes: 'Automated testing framework'
+	},
+	{
+		id: 10,
+		firstName: 'Daniel',
+		lastName: 'White',
+		email: 'daniel.white@company.com',
+		department: 'Design',
+		position: 'Product Designer',
+		salary: 76000,
+		hireDate: '2019-12-03',
+		status: 'active',
+		location: 'London',
+		phone: '+44 20 7946 0321',
+		notes: 'Mobile app design'
 	}
 ];

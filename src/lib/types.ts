@@ -579,3 +579,149 @@ export interface FileFieldProps extends BaseFieldProps {
 	maxSize?: number;
 	maxFiles?: number;
 }
+
+// ==================================================
+// DATAGRID COMPONENT TYPES
+// ==================================================
+
+/**
+ * Employee data structure for DataGrid demonstrations
+ * Sample data for showcasing grid features like sorting, filtering, editing
+ *
+ * @property id - Unique employee identifier
+ * @property firstName - Employee's first name
+ * @property lastName - Employee's last name
+ * @property email - Employee's email address
+ * @property department - Department name (e.g., 'Engineering', 'Sales')
+ * @property position - Job title/position
+ * @property salary - Annual salary in GBP
+ * @property hireDate - Date when employee was hired (ISO string format)
+ * @property status - Employment status (e.g., 'active', 'on-leave')
+ * @property location - Office location/city
+ * @property phone - Contact phone number
+ * @property notes - Additional notes or comments
+ */
+export interface Employee {
+	id?: number;
+	firstName: string;
+	lastName: string;
+	email: string;
+	department: string;
+	position: string;
+	salary: number;
+	hireDate: string;
+	status: string;
+	location?: string;
+	phone?: string;
+	notes?: string;
+}
+
+/**
+ * Database row structure from the employees table
+ * Maps to the schema defined in database/schema_datagrid.sql
+ */
+export interface EmployeeRow {
+	id: number;
+	first_name: string;
+	last_name: string;
+	email: string;
+	department: string;
+	position: string;
+	salary: number;
+	hire_date: Date;
+	status: string;
+	location: string | null;
+	phone: string | null;
+	notes: string | null;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * Column definition for DataGrid components
+ * Defines how each column should be displayed and configured
+ *
+ * @property id - Unique column identifier (matches data key)
+ * @property header - Column header text to display
+ * @property width - Optional column width (pixels or auto)
+ * @property sortable - Whether this column can be sorted (default: true)
+ * @property filterable - Whether this column can be filtered (default: true)
+ * @property editable - Whether cells in this column can be edited (default: false)
+ * @property type - Data type for proper formatting and editing
+ * @property formatter - Optional custom function to format cell values
+ */
+export interface DataGridColumn {
+	id: string;
+	header: string;
+	width?: number | 'auto';
+	sortable?: boolean;
+	filterable?: boolean;
+	editable?: boolean;
+	type?: 'text' | 'number' | 'date' | 'email' | 'tel';
+	formatter?: (value: any) => string;
+}
+
+/**
+ * Props for DataGridAdvanced component (SVAR Grid wrapper)
+ *
+ * @property data - Array of employee records to display
+ * @property columns - Optional custom column definitions (auto-generated if not provided)
+ * @property editable - Enable inline editing (default: false)
+ * @property selectable - Enable row selection (default: false)
+ * @property pageSize - Number of rows per page for pagination (default: 20, 0 = no pagination)
+ * @property exportable - Show export to CSV button (default: false)
+ * @property theme - Theme name: 'willow' (light) or 'willowDark' (default: 'willow')
+ */
+export interface DataGridAdvancedProps {
+	data: Employee[];
+	columns?: DataGridColumn[];
+	editable?: boolean;
+	selectable?: boolean;
+	pageSize?: number;
+	exportable?: boolean;
+	theme?: 'willow' | 'willowDark';
+}
+
+/**
+ * Props for DataGridBasic component (self-contained)
+ *
+ * @property data - Array of employee records to display
+ * @property columns - Column definitions for the grid
+ * @property sortable - Enable column sorting (default: true)
+ * @property filterable - Enable global search/filter (default: true)
+ * @property pageSize - Number of rows per page (default: 10, 0 = no pagination)
+ * @property striped - Alternating row colours (default: true)
+ * @property hoverable - Highlight row on hover (default: true)
+ * @property compact - Compact row spacing (default: false)
+ */
+export interface DataGridBasicProps {
+	data: Employee[];
+	columns: DataGridColumn[];
+	sortable?: boolean;
+	filterable?: boolean;
+	pageSize?: number;
+	striped?: boolean;
+	hoverable?: boolean;
+	compact?: boolean;
+}
+
+/**
+ * Filter values for DataGrid advanced filtering
+ * Used by DataGridFilters component
+ *
+ * @property departments - Selected department filters
+ * @property statuses - Selected status filters
+ * @property salaryMin - Minimum salary filter value
+ * @property salaryMax - Maximum salary filter value
+ * @property hireDateFrom - Hire date range start (ISO date string)
+ * @property hireDateTo - Hire date range end (ISO date string)
+ */
+export interface DataGridFilterValues {
+	departments: string[];
+	statuses: string[];
+	salaryMin: number;
+	salaryMax: number;
+	hireDateFrom: string;
+	hireDateTo: string;
+}
