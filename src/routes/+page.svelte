@@ -145,6 +145,20 @@
       status: "ready",
     },
     {
+      title: "DataGrid",
+      description:
+        "Two data grid implementations: a lightweight self-contained version for small datasets and a production-ready wrapper around SVAR Grid for large datasets. Features sorting, filtering, pagination, inline editing, and CSV export.",
+      href: "/datagrid",
+      icon: "📊",
+      features: [
+        "Two implementations",
+        "Sorting & filtering",
+        "Virtual scrolling",
+        "CSV export",
+      ],
+      status: "ready",
+    },
+    {
       title: "Forms",
       description:
         "Comprehensive collection of reusable form field components with validation, accessibility, and consistent styling. Includes text inputs, selects, checkboxes, radios, ranges, dates, switches, and colour pickers.",

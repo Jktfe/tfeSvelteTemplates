@@ -311,9 +311,22 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
    - Loading states, error handling, accessible modal
    - Perfect for demonstrating real-world data management patterns
 
+9. **DataGrid** - Two data grid implementations for different use cases
+   - **DataGridBasic**: Self-contained, zero-dependency grid (copy-paste ready)
+     - Column sorting, global search/filter, pagination
+     - Suitable for datasets up to ~500 rows
+     - ~10KB bundle size, fully portable
+   - **DataGridAdvanced**: Production-ready wrapper around SVAR Grid
+     - Virtual scrolling for large datasets (1000s of rows)
+     - Inline editing with various editor types
+     - Row selection, CSV export, theme support
+     - Requires @svar-ui/svelte-grid dependency (~155KB)
+   - Database integration with fallback to constants
+   - Demonstrates dual-approach pattern: simple vs feature-rich
+
 ### Utility Components
 
-9. **StaggeredMenu** - Animated navigation menu
+10. **StaggeredMenu** - Animated navigation menu
    - Features: Staggered entrance animations, active state highlighting
 
 ## Code Quality & Warnings
@@ -694,6 +707,434 @@ To adapt this CRUD pattern for your own data:
 5. Create API endpoint in `src/routes/your-feature/api/+server.ts`
 6. Adapt Editor component or create custom form
 7. Build demo page with your display component
+
+## DataGrid Components - Dual Implementation Pattern
+
+The **DataGrid components** demonstrate a dual-approach pattern: offering both a lightweight self-contained solution and a feature-rich production-ready alternative. This allows developers to choose the right tool for their specific needs.
+
+### Why Two Implementations?
+
+This project provides two distinct data grid implementations to serve different use cases:
+
+1. **DataGridBasic**: For learning, prototyping, and small-medium datasets
+2. **DataGridAdvanced**: For production applications with large datasets and complex requirements
+
+This dual approach teaches developers:
+- When to use external libraries vs. building from scratch
+- Trade-offs between bundle size and features
+- How to wrap third-party libraries while maintaining project conventions
+- How to create portable, dependency-free components
+
+### DataGridBasic - Self-Contained Implementation
+
+**File**: `src/lib/components/DataGridBasic.svelte`
+
+**Philosophy**: Zero external dependencies, fully copy-paste ready, educational focus
+
+**Features**:
+- Column sorting (ascending/descending)
+- Global search/filter across all columns
+- Pagination with configurable page size
+- Responsive table design
+- Accessible keyboard navigation
+- Customisable styling (striped, hoverable, compact modes)
+- Dark mode support
+- Custom cell formatters
+
+**Performance**: Suitable for datasets up to ~500 rows (no virtual scrolling)
+
+**Bundle Size**: ~10KB (minified)
+
+**Usage Example**:
+```svelte
+<script>
+  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
+  import type { DataGridColumn } from '$lib/types';
+
+  const columns: DataGridColumn[] = [
+    { id: 'id', header: 'ID', width: 60, type: 'number' },
+    { id: 'name', header: 'Name', width: 150 },
+    {
+      id: 'salary',
+      header: 'Salary',
+      type: 'number',
+      formatter: (value) => `£${value.toLocaleString('en-GB')}`
+    },
+    { id: 'hireDate', header: 'Hire Date', type: 'date' }
+  ];
+
+  const data = [
+    { id: 1, name: 'John Doe', salary: 75000, hireDate: '2020-01-15' },
+    // ... more rows
+  ];
+</script>
+
+<DataGridBasic
+  {data}
+  {columns}
+  sortable={true}
+  filterable={true}
+  pageSize={10}
+  striped={true}
+  hoverable={true}
+/>
+```
+
+**Key Implementation Details**:
+- Uses Svelte 5 `$state` and `$derived` runes for reactive state
+- Pure CSS styling with scoped styles
+- No virtual scrolling (renders all visible rows in DOM)
+- Client-side sorting and filtering
+- Type-safe column definitions with custom formatters
+
+**When to Use**:
+- ✅ Small-medium datasets (up to 500 rows)
+- ✅ Prototyping and learning projects
+- ✅ Projects where bundle size matters
+- ✅ Need copy-paste portability
+- ❌ Large datasets requiring virtual scrolling
+- ❌ Need inline editing functionality
+- ❌ Require advanced features like column resizing
+
+### DataGridAdvanced - SVAR Grid Wrapper
+
+**File**: `src/lib/components/DataGridAdvanced.svelte`
+
+**Philosophy**: Production-ready features using established third-party library
+
+**Dependencies**: `@svar-ui/svelte-grid` (~155KB)
+
+**Features**:
+- Virtual scrolling for 1000s of rows
+- Inline editing with multiple editor types:
+  - Text input
+  - Number input
+  - Date picker
+  - Select dropdown
+- Row selection (single or multiple)
+- CSV export functionality
+- Auto-generated columns from data structure
+- Custom column definitions
+- Theme support (Willow light/dark)
+- WAI-ARIA accessibility compliance
+- Print support
+- Advanced filtering and sorting
+
+**Performance**: Handles large datasets (10,000+ rows) efficiently
+
+**Usage Example**:
+```svelte
+<script>
+  import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
+
+  const employees = [...]; // Your employee data
+</script>
+
+<!-- Simple configuration with auto-generated columns -->
+<DataGridAdvanced
+  data={employees}
+  editable={false}
+  selectable={false}
+  pageSize={20}
+  theme="willow"
+/>
+
+<!-- Full features enabled -->
+<DataGridAdvanced
+  data={employees}
+  editable={true}
+  selectable={true}
+  pageSize={20}
+  exportable={true}
+  theme="willow"
+  on:edit={(e) => handleCellEdit(e.detail)}
+  on:selection={(e) => handleSelection(e.detail)}
+/>
+```
+
+**Key Implementation Details**:
+- Wraps SVAR Grid with type-safe props interface
+- Auto-generates column definitions from data structure
+- Supports custom column configuration
+- Handles edit and selection events
+- Provides CSV export utility function
+- Theme wrapper component pattern
+- Maintains separation between DataGridColumn format and SVAR Grid format
+
+**SVAR Grid Integration Pattern**:
+```typescript
+// Convert our column format to SVAR Grid format
+const gridColumns = $derived(() => {
+  return columns.map((col) => ({
+    id: col.id,
+    header: col.header,
+    width: typeof col.width === 'number' ? col.width : undefined,
+    sort: col.sortable !== false,
+    filter: col.filterable !== false,
+    editor: editable && col.editable !== false ? getEditorType(col.type) : undefined
+  }));
+});
+```
+
+**When to Use**:
+- ✅ Large datasets (1000+ rows)
+- ✅ Production applications
+- ✅ Need inline editing
+- ✅ Require virtual scrolling performance
+- ✅ Want advanced features out-of-the-box
+- ❌ Bundle size is critical concern
+- ❌ Need fully portable code
+- ❌ Simple use case where DataGridBasic suffices
+
+### Database Integration Pattern
+
+Both DataGrid implementations use the same database integration pattern with graceful fallback:
+
+**Schema**: `database/schema_datagrid.sql`
+```sql
+CREATE TABLE employees (
+  id SERIAL PRIMARY KEY,
+  first_name VARCHAR(100) NOT NULL,
+  last_name VARCHAR(100) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  department VARCHAR(100) NOT NULL,
+  position VARCHAR(100) NOT NULL,
+  salary DECIMAL(10, 2) NOT NULL,
+  hire_date DATE NOT NULL,
+  status VARCHAR(20) DEFAULT 'active',
+  location VARCHAR(100),
+  phone VARCHAR(20),
+  notes TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**Server Utility**: `src/lib/server/dataGrid.ts`
+```typescript
+export async function loadEmployeesFromDatabase(): Promise<Employee[]> {
+  try {
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl) {
+      console.warn('[DataGrid] DATABASE_URL not configured, using fallback');
+      return FALLBACK_EMPLOYEES;
+    }
+
+    const sql = neon(databaseUrl);
+    const rows = await sql`SELECT * FROM employees WHERE is_active = TRUE`;
+
+    // Transform snake_case to camelCase
+    return rows.map(row => ({
+      id: row.id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      // ... rest of transformation
+    }));
+  } catch (error) {
+    console.error('[DataGrid] Error:', error);
+    return FALLBACK_EMPLOYEES;
+  }
+}
+```
+
+**Fallback Constants**: `src/lib/constants.ts`
+```typescript
+export const FALLBACK_EMPLOYEES: Employee[] = [
+  {
+    id: 1,
+    firstName: 'Sarah',
+    lastName: 'Johnson',
+    email: 'sarah.johnson@company.com',
+    department: 'Engineering',
+    position: 'Senior Developer',
+    salary: 95000,
+    hireDate: '2020-03-15',
+    status: 'active',
+    location: 'London',
+    phone: '+44 20 7946 0958'
+  },
+  // ... more sample data
+];
+```
+
+### Type Definitions
+
+**Employee Data Structure**:
+```typescript
+export interface Employee {
+  id?: number;
+  firstName: string;
+  lastName: string;
+  email: string;
+  department: string;
+  position: string;
+  salary: number;
+  hireDate: string; // ISO date format
+  status: string;
+  location?: string;
+  phone?: string;
+  notes?: string;
+}
+```
+
+**Database Row Structure** (snake_case):
+```typescript
+export interface EmployeeRow {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  department: string;
+  position: string;
+  salary: number;
+  hire_date: Date;
+  status: string;
+  location: string | null;
+  phone: string | null;
+  notes: string | null;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+```
+
+**Column Definition**:
+```typescript
+export interface DataGridColumn {
+  id: string; // Matches data key
+  header: string; // Display text
+  width?: number | 'auto';
+  sortable?: boolean; // Default: true
+  filterable?: boolean; // Default: true
+  editable?: boolean; // Default: false
+  type?: 'text' | 'number' | 'date' | 'email' | 'tel';
+  formatter?: (value: any) => string; // Custom display format
+}
+```
+
+### Demo Page Features
+
+The `/datagrid` route demonstrates both implementations with:
+
+1. **Statistics Cards**: Total employees, average salary, department count
+2. **Component Comparison**: Side-by-side feature comparison
+3. **Live Examples**: Interactive demos with tab switching
+4. **Usage Guide**: Code examples for both components
+5. **Department Breakdown**: Visual data summary
+
+**Page Structure**:
+```svelte
+// src/routes/datagrid/+page.svelte
+<script>
+  let activeExample = $state<'basic' | 'advanced-simple' | 'advanced-full'>('basic');
+</script>
+
+<!-- Statistics -->
+<section class="stats-section">
+  <div class="stat-card">
+    <div class="stat-value">{data.stats.totalEmployees}</div>
+    <div class="stat-label">Total Employees</div>
+  </div>
+  <!-- ... more stats -->
+</section>
+
+<!-- Component Comparison -->
+<section class="comparison-section">
+  <!-- Feature lists for each implementation -->
+</section>
+
+<!-- Live Examples with Tab Switching -->
+{#if activeExample === 'basic'}
+  <DataGridBasic ... />
+{:else if activeExample === 'advanced-simple'}
+  <DataGridAdvanced editable={false} ... />
+{:else}
+  <DataGridAdvanced editable={true} ... />
+{/if}
+```
+
+### Design Decisions
+
+1. **Dual Implementations**: Provide both simple and advanced options to demonstrate trade-offs
+2. **Type Safety**: Maintain consistent types across both implementations
+3. **Database Agnostic**: Both grids work with any Employee[] array, regardless of source
+4. **Separation of Concerns**:
+   - DataGridColumn (our format) separate from SVAR Grid's column format
+   - Database rows (snake_case) separate from component data (camelCase)
+5. **Progressive Enhancement**: DataGridBasic demonstrates core features, DataGridAdvanced adds production capabilities
+6. **Educational Value**: Show when to build vs. when to use libraries
+
+### Extending the Pattern
+
+To create your own data grid component:
+
+**Option 1: Adapt DataGridBasic**
+1. Copy `DataGridBasic.svelte` to your project
+2. Modify types to match your data structure
+3. Customise column configuration
+4. Adjust styling to match your design system
+5. Add/remove features as needed
+
+**Option 2: Wrap Another Grid Library**
+1. Follow the DataGridAdvanced pattern
+2. Create type-safe props interface
+3. Transform between your format and library format
+4. Wrap library component with theme/configuration
+5. Provide event handlers for library events
+6. Document library-specific features
+
+**Option 3: Hybrid Approach**
+1. Start with DataGridBasic for prototyping
+2. Identify missing features for your use case
+3. Evaluate if external library is justified
+4. Migrate to wrapped library if needed
+5. Maintain both for comparison
+
+### Performance Considerations
+
+**DataGridBasic**:
+- Renders all visible rows in DOM (no virtual scrolling)
+- Client-side sorting and filtering
+- Performance degrades around 500+ rows
+- Suitable for most CRUD admin interfaces
+- Low memory footprint
+
+**DataGridAdvanced**:
+- Virtual scrolling renders only visible rows
+- Handles 10,000+ rows efficiently
+- Higher memory usage due to library overhead
+- Required for large datasets
+- Optimised for data-heavy applications
+
+### Accessibility Features
+
+Both implementations include:
+- Keyboard navigation (Tab, Enter, Arrow keys)
+- ARIA roles and labels
+- Screen reader announcements
+- Focus management
+- Semantic HTML table structure
+- High contrast support
+- Reduced motion support
+
+### Testing Strategy
+
+**DataGridBasic Tests**:
+- Sorting: Click headers, verify order
+- Filtering: Enter search, verify results
+- Pagination: Navigate pages, verify data
+- Formatting: Check number/date formats
+- Responsiveness: Test mobile/tablet views
+
+**DataGridAdvanced Tests**:
+- All DataGridBasic tests plus:
+- Inline editing: Edit cells, verify saves
+- Row selection: Select rows, verify events
+- CSV export: Export, verify file contents
+- Virtual scrolling: Scroll large dataset, verify performance
+- Theme switching: Toggle themes, verify styling
 
 ## Important Notes
 
