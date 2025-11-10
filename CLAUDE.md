@@ -69,12 +69,14 @@ src/
 │   │   ├── SwishButton.svelte          # Animated button with text slide
 │   │   ├── ExpandingCard.svelte        # Card with layout transitions
 │   │   ├── LinkImageHover.svelte       # Link with image preview
-│   │   └── StaggeredMenu.svelte        # Animated navigation menu
+│   │   ├── StaggeredMenu.svelte        # Animated navigation menu
+│   │   └── Editor.svelte               # CRUD editor modal component
 │   ├── server/
 │   │   ├── cards.ts              # CardStack database utility
 │   │   ├── testimonials.ts       # Testimonials database utility
 │   │   ├── expandingCards.ts     # ExpandingCard database utility
-│   │   └── linkPreviews.ts       # LinkImageHover database utility
+│   │   ├── linkPreviews.ts       # LinkImageHover database utility
+│   │   └── editorData.ts         # Editor CRUD utility
 │   ├── types.ts             # Shared TypeScript interfaces
 │   ├── constants.ts         # Fallback data (all components)
 │   └── utils.ts             # Utility functions (clsx, cn)
@@ -88,12 +90,16 @@ src/
 │   ├── swishbutton/+page.svelte        # SwishButton demo
 │   ├── expandingcard/+page.svelte      # ExpandingCard demo
 │   ├── linkimagehover/+page.svelte     # LinkImageHover demo
+│   ├── editor/+page.svelte             # Editor CRUD demo
+│   ├── editor/+page.server.ts          # Editor SSR data loading
+│   ├── editor/api/+server.ts           # Editor REST API endpoints
 │   └── api/cards/+server.ts # API endpoint (optional)
 └── app.html                 # HTML template
 
 database/
 ├── schema.sql              # CardStack PostgreSQL schema and seed data
-└── schema_v2.sql           # Additional components schema (Marquee, ExpandingCard, LinkImageHover)
+├── schema_v2.sql           # Additional components schema (Marquee, ExpandingCard, LinkImageHover)
+└── schema_editor.sql       # Editor component schema (CRUD demo)
 ```
 
 ### Key Architectural Patterns
@@ -298,9 +304,16 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
    - Features: Image appears on hover, blur transition, customisable sizing
    - Perfect for documentation and references
 
+8. **Editor** - CRUD modal component with database integration
+   - Features: Full Create, Read, Update, Delete operations
+   - Form validation with real-time feedback
+   - Database integration with graceful fallback to in-memory mode
+   - Loading states, error handling, accessible modal
+   - Perfect for demonstrating real-world data management patterns
+
 ### Utility Components
 
-8. **StaggeredMenu** - Animated navigation menu
+9. **StaggeredMenu** - Animated navigation menu
    - Features: Staggered entrance animations, active state highlighting
 
 ## Code Quality & Warnings
@@ -378,6 +391,309 @@ If you see errors about `@neondatabase/serverless`:
 - Verify data is being passed correctly to component props
 - Check browser console for runtime errors
 - Ensure image URLs in data are accessible
+
+## Editor Component - CRUD Pattern Implementation
+
+The **Editor component** demonstrates a complete, production-ready CRUD (Create, Read, Update, Delete) implementation with database integration and graceful fallback. It serves as both a functional demo and a learning resource for developers implementing data management features.
+
+### Architecture Overview
+
+The Editor implementation follows a multi-layer architecture:
+
+```
+User Interface Layer
+├── Editor.svelte (Modal UI with form validation)
+└── /editor/+page.svelte (Demo page with ExpandingCard grid)
+
+API Layer
+└── /editor/api/+server.ts (REST endpoints: GET, POST, PUT, DELETE)
+
+Business Logic Layer
+└── editorData.ts (CRUD functions with fallback logic)
+
+Data Layer
+├── Database (Neon PostgreSQL - editor_data table)
+└── Fallback (FALLBACK_EDITOR_DATA constant)
+```
+
+### Key Features
+
+1. **Dual-Mode Operation**
+   - **Database Mode**: Full CRUD with persistence to Neon
+   - **In-Memory Mode**: Local state management when DATABASE_URL not configured
+   - Automatic detection and user notification of current mode
+
+2. **Form Validation**
+   - Real-time validation with Svelte 5 `$derived` rune
+   - "Touched" state tracking (only show errors after user interaction)
+   - Required field validation
+   - URL format validation for image sources
+   - Character length limits
+
+3. **REST API Endpoints** (`/editor/api/+server.ts`)
+   - `GET` - Fetch items with optional category filtering
+   - `POST` - Create new item (returns item with generated ID)
+   - `PUT` - Update existing item (partial updates supported)
+   - `DELETE` - Soft delete (sets `is_active = FALSE`)
+   - Proper HTTP status codes and error messages
+
+4. **Server Utilities** (`editorData.ts`)
+   - `loadEditorDataFromDatabase()` - Read with category filtering
+   - `createEditorData()` - Create with auto-incremented `display_order`
+   - `updateEditorData()` - Update with partial field support
+   - `deleteEditorData()` - Soft delete for audit trail
+   - All functions include fallback to constants
+
+5. **Accessibility**
+   - Modal focus trap (Tab/Shift+Tab navigation)
+   - Escape key to close
+   - ARIA roles (dialog, alert for errors)
+   - Focus management (first field on open, first invalid field on error)
+   - Screen reader announcements
+
+### Database Schema
+
+```sql
+-- database/schema_editor.sql
+CREATE TABLE editor_data (
+    id SERIAL PRIMARY KEY,
+    heading VARCHAR(255) NOT NULL,
+    compact_text TEXT NOT NULL,
+    expanded_text TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    image_alt VARCHAR(255) NOT NULL,
+    bg_color VARCHAR(50) DEFAULT 'bg-lime-100',
+    category VARCHAR(50) DEFAULT 'editor-demo',
+    display_order INTEGER NOT NULL DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Auto-update trigger for updated_at
+CREATE TRIGGER update_editor_data_updated_at
+    BEFORE UPDATE ON editor_data
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+```
+
+### Usage Examples
+
+#### Basic CRUD Operations
+
+```typescript
+// CREATE
+const newItem = await fetch('/editor/api', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    heading: 'New Card',
+    compactText: 'Short description',
+    expandedText: 'Full description',
+    imageSrc: 'https://example.com/image.jpg',
+    imageAlt: 'Image description',
+    bgColor: 'bg-blue-100',
+    category: 'editor-demo'
+  })
+});
+
+// READ
+const response = await fetch('/editor/api?category=editor-demo');
+const { data } = await response.json();
+
+// UPDATE
+await fetch('/editor/api', {
+  method: 'PUT',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    id: 123,
+    heading: 'Updated Title'
+  })
+});
+
+// DELETE
+await fetch('/editor/api?id=123', { method: 'DELETE' });
+```
+
+#### Using the Editor Component
+
+```svelte
+<script>
+  import Editor from '$lib/components/Editor.svelte';
+  import type { EditorData } from '$lib/types';
+
+  let editorOpen = $state(false);
+  let editingItem = $state(null);
+
+  async function handleSave(formData: EditorData) {
+    // Your save logic here
+    console.log('Saving:', formData);
+    editorOpen = false;
+  }
+</script>
+
+{#if editorOpen}
+  <Editor
+    mode={editingItem ? 'edit' : 'create'}
+    initialData={editingItem || {}}
+    usingDatabase={true}
+    onSave={handleSave}
+    onCancel={() => editorOpen = false}
+  />
+{/if}
+```
+
+### Implementation Patterns
+
+#### Server-Side Data Loading
+
+```typescript
+// src/routes/editor/+page.server.ts
+import { loadEditorDataFromDatabase } from '$lib/server/editorData';
+
+export const load: PageServerLoad = async () => {
+  const editorData = await loadEditorDataFromDatabase('editor-demo');
+  const usingDatabase = !!process.env.DATABASE_URL;
+
+  return { editorData, usingDatabase };
+};
+```
+
+#### Graceful Fallback in Server Utility
+
+```typescript
+export async function loadEditorDataFromDatabase(category?: string) {
+  try {
+    const databaseUrl = process.env.DATABASE_URL;
+
+    if (!databaseUrl) {
+      console.warn('DATABASE_URL not configured, using fallback');
+      return FALLBACK_EDITOR_DATA.filter(d => !category || d.category === category);
+    }
+
+    const sql = neon(databaseUrl);
+    const rows = await sql`SELECT * FROM editor_data WHERE is_active = TRUE`;
+
+    return rows.map(row => ({
+      id: row.id,
+      heading: row.heading,
+      compactText: row.compact_text,  // snake_case → camelCase
+      // ... rest of transformation
+    }));
+  } catch (err) {
+    console.error('Error loading data:', err);
+    return FALLBACK_EDITOR_DATA;  // Always return fallback on error
+  }
+}
+```
+
+#### Form Validation with Svelte 5
+
+```typescript
+let formData = $state({
+  heading: '',
+  compactText: '',
+  // ... other fields
+});
+
+let errors = $state<Record<string, string>>({});
+let touched = $state<Record<string, boolean>>({});
+
+// Computed validation status
+let isValid = $derived(Object.keys(errors).length === 0);
+
+// Only show errors for touched fields
+let visibleErrors = $derived(
+  Object.fromEntries(
+    Object.entries(errors).filter(([key]) => touched[key])
+  )
+);
+
+// Auto-validate on change
+$effect(() => {
+  const _ = JSON.stringify(formData);
+  validateForm();
+});
+```
+
+### Type Definitions
+
+```typescript
+// src/lib/types.ts
+
+// Component data (camelCase for JavaScript/TypeScript)
+export interface EditorData {
+  id?: number;
+  heading: string;
+  compactText: string;
+  expandedText: string;
+  imageSrc: string;
+  imageAlt: string;
+  bgColor?: string;
+  category?: string;
+}
+
+// Database row (snake_case for PostgreSQL)
+export interface EditorDataRow {
+  id: number;
+  heading: string;
+  compact_text: string;
+  expanded_text: string;
+  image_url: string;
+  image_alt: string;
+  bg_color: string;
+  category: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Component props
+export interface EditorProps {
+  mode?: 'create' | 'edit';
+  initialData?: Partial<EditorData>;
+  usingDatabase?: boolean;
+  onSave?: (data: EditorData) => void | Promise<void>;
+  onCancel?: () => void;
+}
+```
+
+### Design Decisions
+
+1. **Soft Deletes**: Use `is_active` flag instead of hard deletes to maintain audit trail
+2. **Partial Updates**: `updateEditorData()` uses SQL `COALESCE` for unchanged fields
+3. **Auto Display Order**: New items get `MAX(display_order) + 1` for their category
+4. **Separation of Concerns**: Database types (snake_case) separate from component types (camelCase)
+5. **Error Resilience**: All server utilities return fallback data on error
+6. **Status Transparency**: `DatabaseStatus` component shows connection state to users
+
+### Testing Checklist
+
+**With Database (DATABASE_URL set):**
+- ✅ Create persists to Neon and appears immediately
+- ✅ Edit updates database and UI in real-time
+- ✅ Delete soft-deletes (check `is_active` in database)
+- ✅ Refresh page - changes persist
+- ✅ Validation prevents invalid data from being saved
+
+**Without Database:**
+- ✅ Create adds to local state with temporary ID
+- ✅ Edit updates local state
+- ✅ Delete removes from display
+- ✅ Warning shows "not persisted" message
+- ✅ Refresh page - changes lost (expected)
+
+### Extending the Pattern
+
+To adapt this CRUD pattern for your own data:
+
+1. Create database schema with similar structure (id, display_order, is_active, timestamps)
+2. Add types to `src/lib/types.ts` (both component and row interfaces)
+3. Add fallback data to `src/lib/constants.ts`
+4. Create server utility in `src/lib/server/` following the same pattern
+5. Create API endpoint in `src/routes/your-feature/api/+server.ts`
+6. Adapt Editor component or create custom form
+7. Build demo page with your display component
 
 ## Important Notes
 

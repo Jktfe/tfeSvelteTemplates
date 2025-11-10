@@ -5,7 +5,7 @@
  * across the application and prevent duplication.
  */
 
-import type { Card, Testimonial, ExpandingCardData, LinkPreview } from './types';
+import type { Card, Testimonial, ExpandingCardData, LinkPreview, EditorData } from './types';
 
 /**
  * Fallback card data for when database is unavailable
@@ -243,5 +243,47 @@ export const FALLBACK_LINK_PREVIEWS: LinkPreview[] = [
 		imageSrc: 'https://images.unsplash.com/photo-1582967788606-a171c1080cb0?w=400',
 		imageAlt: 'Great Barrier Reef coral',
 		category: 'nature'
+	}
+];
+
+/**
+ * Fallback editor data for when database is unavailable
+ * Used by Editor component CRUD demos when DATABASE_URL is not configured
+ *
+ * Kept in sync with database/schema_editor.sql seed data
+ */
+export const FALLBACK_EDITOR_DATA: EditorData[] = [
+	{
+		id: -1,
+		heading: 'Mountain Wilderness',
+		compactText: 'Explore the untamed beauty of mountain landscapes and discover nature at its finest.',
+		expandedText:
+			"The mountain wilderness offers breathtaking vistas, challenging trails, and an escape from the bustle of everyday life. From snow-capped peaks to alpine meadows, every season brings its own unique charm. Whether you're an experienced mountaineer or a casual hiker, there's something magical about standing atop a summit and viewing the world from above.",
+		imageSrc: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop',
+		imageAlt: 'Majestic mountain landscape with snow-capped peaks',
+		bgColor: 'bg-blue-100',
+		category: 'editor-demo'
+	},
+	{
+		id: -2,
+		heading: 'Ocean Serenity',
+		compactText: 'Dive into the calming waves and peaceful shores of our coastal paradise.',
+		expandedText:
+			"The ocean has a way of putting everything into perspective. The rhythmic sound of waves, the endless horizon, and the salty breeze create a sense of peace that's hard to find elsewhere. Whether you're surfing the breaks, swimming in crystal-clear waters, or simply walking along the shore, the ocean offers renewal and inspiration. It's a reminder of nature's power and beauty.",
+		imageSrc: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=800&auto=format&fit=crop',
+		imageAlt: 'Peaceful ocean waves at sunset',
+		bgColor: 'bg-cyan-100',
+		category: 'editor-demo'
+	},
+	{
+		id: -3,
+		heading: 'Urban Energy',
+		compactText: 'Experience the vibrant pulse of city life where innovation meets culture.',
+		expandedText:
+			"Cities are living organisms, constantly evolving and buzzing with energy. From towering skyscrapers to hidden alleyways, every corner tells a story. The urban landscape is where cultures collide, ideas flourish, and opportunities abound. Street art, diverse cuisines, cutting-edge technology, and historic architecture all coexist in a beautiful chaos. It's a place where you can reinvent yourself daily and find inspiration around every corner.",
+		imageSrc: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=800&auto=format&fit=crop',
+		imageAlt: 'Dynamic city skyline at night with lights',
+		bgColor: 'bg-purple-100',
+		category: 'editor-demo'
 	}
 ];

@@ -1,3 +1,53 @@
+<!--
+/**
+ * StaggeredMenu - Animated navigation menu with cascading entrance effects
+ *
+ * Features:
+ * - Staggered entrance animations for menu items
+ * - Smooth fly-in transitions using Svelte transitions
+ * - Active state highlighting with visual indicators
+ * - Optional icon support for menu items
+ * - Bindable isOpen state for toggling visibility
+ * - Zero external dependencies
+ * - Fully accessible with proper ARIA labels
+ * - Keyboard navigation support
+ *
+ * Perfect for:
+ * - Mobile navigation menus
+ * - Dropdown navigation panels
+ * - Sidebar navigation
+ * - App menus with visual flair
+ * - Header navigation with toggle
+ *
+ * Technical Implementation:
+ * - Svelte's built-in fly() transition for entrance
+ * - Cascading delays calculated from item index
+ * - CSS custom properties for flexible timing
+ * - ARIA current-page indicator for active items
+ * - Bindable props with Svelte 5 $bindable rune
+ * - Respects reduced motion preferences
+ *
+ * Animation Pattern:
+ * - Each item flies in from top with slight delay
+ * - Delay increases by 50ms per item (configurable)
+ * - Creates a smooth cascading effect
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <script>
+ *   let menuOpen = $state(false);
+ *   const menuItems = [
+ *     { href: '/', label: 'Home', active: true },
+ *     { href: '/about', label: 'About', icon: '👤' },
+ *     { href: '/contact', label: 'Contact', icon: '📧' }
+ *   ];
+ * </script>
+ *
+ * <StaggeredMenu items={menuItems} bind:isOpen={menuOpen} />
+ * ```
+ */
+-->
 <script lang="ts">
 	import { fly } from 'svelte/transition';
 	import type { MenuItem } from '$lib/types';

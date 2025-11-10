@@ -1,3 +1,47 @@
+<!--
+/**
+ * MarqueeDraggable - Interactive infinite scrolling carousel with drag-to-scroll
+ *
+ * Features:
+ * - All features of standard Marquee component
+ * - Click-and-drag to manually scroll content
+ * - Momentum-based scrolling with physics simulation
+ * - Automatic direction reversal on drag
+ * - Smooth transitions between auto-scroll and drag
+ * - Touch-friendly for mobile devices
+ * - Infinite seamless looping
+ * - Fully accessible with keyboard support
+ *
+ * Perfect for:
+ * - Interactive testimonial galleries
+ * - Exploratory product showcases
+ * - Image galleries with manual control
+ * - Timeline displays
+ * - Portfolio carousels
+ *
+ * Technical Implementation:
+ * - Svelte 5 runes ($state, $derived, $effect) for reactive state
+ * - RAF (RequestAnimationFrame) for smooth animations
+ * - Velocity tracking with momentum decay
+ * - Content duplication for seamless infinite loop
+ * - GPU-accelerated CSS transforms
+ * - Event-based drag detection with threshold
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <MarqueeDraggable
+ *   duration={50}
+ *   dragEnabled={true}
+ *   dragMomentum={true}
+ * >
+ *   <div>Slide 1</div>
+ *   <div>Slide 2</div>
+ *   <div>Slide 3</div>
+ * </MarqueeDraggable>
+ * ```
+ */
+-->
 <script lang="ts">
 	import { cn } from '$lib/utils';
 	import { onMount } from 'svelte';

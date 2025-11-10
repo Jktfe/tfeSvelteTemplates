@@ -1,12 +1,52 @@
 <!--
-	DatabaseStatus Component
-
-	A simple indicator showing whether the app is connected to Neon database or using fallback data.
-	Used to demonstrate the graceful fallback pattern in the demo app.
-
-	Props:
-	- usingDatabase: boolean - Whether database connection is active
-	- class: string (optional) - Additional CSS classes
+/**
+ * DatabaseStatus - Visual indicator for database connection state
+ *
+ * Features:
+ * - Clear visual distinction between connected and fallback states
+ * - Emoji icons for quick recognition (🟢 connected, 🟡 fallback)
+ * - Semantic colour coding (green for connected, yellow for fallback)
+ * - Accessible with ARIA live region for status updates
+ * - Responsive sizing for mobile and desktop
+ * - Pill-shaped badge design
+ * - Zero dependencies
+ *
+ * Perfect for:
+ * - Demo applications showing graceful degradation
+ * - Development environments with optional database
+ * - Showing users which data source is active
+ * - Template projects with fallback patterns
+ * - Educational examples of resilient architecture
+ *
+ * Technical Implementation:
+ * - Svelte 5 $derived rune for reactive status computation
+ * - ARIA live region (role="status") for accessibility
+ * - CSS transitions for smooth state changes
+ * - Responsive design with mobile-optimised sizing
+ * - Scoped CSS with no external dependencies
+ *
+ * States:
+ * - Connected: Green badge with 🟢 icon - Database is active
+ * - Fallback: Yellow badge with 🟡 icon - Using constants from code
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <script>
+ *   // In +page.server.ts
+ *   export const load = async () => {
+ *     const usingDatabase = !!process.env.DATABASE_URL;
+ *     return { usingDatabase };
+ *   };
+ * </script>
+ *
+ * <script>
+ *   let { data } = $props();
+ * </script>
+ *
+ * <DatabaseStatus usingDatabase={data.usingDatabase} />
+ * ```
+ */
 -->
 <script lang="ts">
 	interface Props {

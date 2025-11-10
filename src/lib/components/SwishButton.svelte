@@ -1,20 +1,48 @@
 <!--
-	SwishButton Component
-
-	An animated button with a swishing text transition and background fill effect.
-	When hovered, the button text slides out while a new instance slides in with an arrow,
-	and the background fills from a small dot to cover the entire button.
-
-	Features:
-	- Smooth text slide animation on hover
-	- Expanding background dot effect
-	- Arrow icon that appears on hover
-	- Zero external dependencies (no icon libraries)
-	- Fully customisable with CSS classes
-	- Supports all native button attributes via $$restProps
-
-	Usage:
-	<SwishButton text="Click me" class="custom-class" on:click={handleClick} />
+/**
+ * SwishButton - Animated call-to-action button with text slide and background fill
+ *
+ * Features:
+ * - Smooth text slide animation on hover
+ * - Expanding background dot effect from center
+ * - Inline SVG arrow icon (no icon library dependencies)
+ * - Coordinated multi-layer transitions
+ * - Zero external dependencies
+ * - Fully customisable with CSS classes
+ * - Supports all native button attributes
+ * - Accessible with proper focus states
+ *
+ * Perfect for:
+ * - Primary call-to-action buttons
+ * - Hero section buttons
+ * - Form submissions with flair
+ * - Navigation links styled as buttons
+ * - Landing page conversions
+ *
+ * Technical Implementation:
+ * - CSS-only animations (no JavaScript required)
+ * - GPU-accelerated transforms for smooth performance
+ * - Coordinated timing functions for synchronized effects
+ * - Inline SVG for zero external dependencies
+ * - Respects reduced motion preferences
+ * - Focus-visible for keyboard accessibility
+ *
+ * Animation Layers:
+ * 1. Background expands from center dot to full coverage
+ * 2. Original text slides out to the left
+ * 3. New text with arrow slides in from the right
+ * 4. Arrow icon fades in during text transition
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <SwishButton
+ *   text="Get Started"
+ *   class="my-custom-class"
+ *   onclick={handleClick}
+ * />
+ * ```
+ */
 -->
 
 <script lang="ts">

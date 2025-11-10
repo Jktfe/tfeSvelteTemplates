@@ -1,25 +1,49 @@
 <!--
-	LinkImageHover Component
-
-	A link component that displays an image preview on hover (desktop) or tap (mobile) above the link text.
-	The image appears with a smooth blur transition when you hover over the link.
-
-	Features:
-	- Desktop: Image preview appears on hover, click follows link
-	- Mobile: First tap shows preview, second tap (on preview) follows link
-	- Smooth blur transition effect
-	- Positioned above the link text
-	- Customisable link and image details
-	- Zero external dependencies
-	- Fully accessible with proper alt text
-
-	Usage:
-	<LinkImageHover
-		href="https://example.com"
-		text="Link Text"
-		imageSrc="https://example.com/image.jpg"
-		imageAlt="Image description"
-	/>
+/**
+ * LinkImageHover - Interactive link with floating image preview on hover
+ *
+ * Features:
+ * - Desktop: Image preview appears on hover, click follows link immediately
+ * - Mobile: First tap shows preview, second tap on preview follows link
+ * - Smooth blur transition effect using Svelte transitions
+ * - Image floats above the link text with absolute positioning
+ * - Customisable link attributes and image dimensions
+ * - Zero external dependencies
+ * - Fully accessible with proper alt text and ARIA labels
+ * - Touch-optimised interaction patterns
+ *
+ * Perfect for:
+ * - Documentation sites with visual references
+ * - Resource lists with preview images
+ * - Bibliography or citation lists
+ * - Product links in content
+ * - Portfolio or project references
+ * - Navigation with visual context
+ *
+ * Technical Implementation:
+ * - Svelte 5 $state rune for reactive hover/show state
+ * - Svelte's built-in blur() transition
+ * - Device detection (mouse vs. touch) on mount
+ * - Absolute positioning with z-index stacking
+ * - Event handlers optimised for desktop vs. mobile
+ * - Respects reduced motion preferences
+ *
+ * Interaction Patterns:
+ * - Desktop (mouse): Hover to preview, click to navigate
+ * - Mobile (touch): Tap to preview, tap image to navigate, tap away to dismiss
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <LinkImageHover
+ *   href="https://docs.example.com"
+ *   text="View Documentation"
+ *   imageSrc="/preview-docs.jpg"
+ *   imageAlt="Documentation screenshot"
+ *   imageWidth="h-52 w-52"
+ * />
+ * ```
+ */
 -->
 
 <script lang="ts">

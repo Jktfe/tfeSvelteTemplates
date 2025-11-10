@@ -1,3 +1,40 @@
+<!--
+/**
+ * MagicCard - Interactive card component with mouse-tracking spotlight effect
+ *
+ * Features:
+ * - Radial gradient spotlight that follows mouse movement
+ * - Smooth entrance and exit transitions
+ * - Customisable gradient size, colour, and opacity
+ * - Zero dependencies (pure CSS and Svelte)
+ * - Fully responsive and performant
+ *
+ * Perfect for:
+ * - Feature showcases and product cards
+ * - Interactive portfolios and galleries
+ * - Highlighting important content
+ * - Creating visual interest on landing pages
+ *
+ * Technical Implementation:
+ * - Uses Svelte 5 runes ($state, $derived) for reactive mouse tracking
+ * - Gradient positioning calculated relative to card bounds
+ * - GPU-accelerated with CSS transforms and opacity
+ * - Respects reduced motion preferences
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <MagicCard
+ *   gradientSize={250}
+ *   gradientColor="#3b82f6"
+ *   gradientOpacity={0.6}
+ * >
+ *   <h3>Your content here</h3>
+ *   <p>The spotlight effect will track your mouse</p>
+ * </MagicCard>
+ * ```
+ */
+-->
 <script lang="ts">
 	import { cn } from '$lib/utils';
 

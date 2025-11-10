@@ -130,6 +130,34 @@
       ],
       status: "ready",
     },
+    {
+      title: "Editor (CRUD)",
+      description:
+        "Complete CRUD demonstration with database integration and graceful fallback. Features full Create, Read, Update, and Delete operations with validation, loading states, and accessible modal UI.",
+      href: "/editor",
+      icon: "✏️",
+      features: [
+        "Full CRUD operations",
+        "Database integration",
+        "Form validation",
+        "Graceful fallback",
+      ],
+      status: "ready",
+    },
+    {
+      title: "Forms",
+      description:
+        "Comprehensive collection of reusable form field components with validation, accessibility, and consistent styling. Includes text inputs, selects, checkboxes, radios, ranges, dates, switches, and colour pickers.",
+      href: "/forms",
+      icon: "📝",
+      features: [
+        "14 field components",
+        "Full validation",
+        "Accessibility first",
+        "Type-safe props",
+      ],
+      status: "ready",
+    },
   ];
 </script>
 

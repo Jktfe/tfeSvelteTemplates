@@ -346,3 +346,236 @@ export interface LinkPreviewRow {
 	is_active: boolean;
 	created_at: Date;
 }
+
+// ==================================================
+// EDITOR COMPONENT TYPES (CRUD Demo)
+// ==================================================
+
+/**
+ * Editor data structure for CRUD demonstrations
+ * Uses ExpandingCard format to showcase database integration
+ *
+ * @property id - Optional database ID (auto-generated for new items)
+ * @property heading - Card heading text
+ * @property compactText - Text shown in compact layout
+ * @property expandedText - Text shown in expanded layout
+ * @property imageSrc - URL to the card image
+ * @property imageAlt - Alt text for the image
+ * @property bgColor - Tailwind background colour class (e.g., 'bg-lime-100')
+ * @property category - For filtering/grouping (default: 'editor-demo')
+ */
+export interface EditorData {
+	id?: number;
+	heading: string;
+	compactText: string;
+	expandedText: string;
+	imageSrc: string;
+	imageAlt: string;
+	bgColor?: string;
+	category?: string;
+}
+
+/**
+ * Database row structure from the editor_data table
+ * Maps to the schema defined in database/schema_editor.sql
+ */
+export interface EditorDataRow {
+	id: number;
+	heading: string;
+	compact_text: string;
+	expanded_text: string;
+	image_url: string;
+	image_alt: string;
+	bg_color: string;
+	category: string;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * Props for Editor component
+ *
+ * @property mode - Edit mode: 'create' for new items, 'edit' for existing items
+ * @property initialData - Initial form data (for edit mode)
+ * @property usingDatabase - Whether the app is connected to a database
+ * @property onSave - Callback when save button is clicked
+ * @property onCancel - Callback when cancel button is clicked
+ */
+export interface EditorProps {
+	mode?: 'create' | 'edit';
+	initialData?: Partial<EditorData>;
+	usingDatabase?: boolean;
+	onSave?: (data: EditorData) => void | Promise<void>;
+	onCancel?: () => void;
+}
+
+// ==================================================
+// FORM FIELD TYPES (Modular Form Components)
+// ==================================================
+
+/**
+ * Supported field types for form components
+ */
+export type FieldType =
+	| 'text'
+	| 'textarea'
+	| 'number'
+	| 'email'
+	| 'url'
+	| 'tel'
+	| 'password'
+	| 'search'
+	| 'date'
+	| 'time'
+	| 'datetime-local'
+	| 'color'
+	| 'range'
+	| 'file'
+	| 'checkbox'
+	| 'checkbox-group'
+	| 'radio'
+	| 'select'
+	| 'switch';
+
+/**
+ * Base props shared by all form field components
+ */
+export interface BaseFieldProps {
+	name: string;
+	label: string;
+	value?: any;
+	placeholder?: string;
+	helpText?: string;
+	required?: boolean;
+	disabled?: boolean;
+	readonly?: boolean;
+	error?: string;
+	touched?: boolean;
+	onblur?: () => void;
+	oninput?: (value: any) => void;
+}
+
+/**
+ * Option for select, radio, and checkbox group fields
+ */
+export interface SelectOption {
+	value: string | number;
+	label: string;
+	disabled?: boolean;
+}
+
+/**
+ * Props for TextField component
+ */
+export interface TextFieldProps extends BaseFieldProps {
+	type?: 'text' | 'email' | 'url' | 'tel' | 'password' | 'search';
+	maxlength?: number;
+	pattern?: string;
+	autocomplete?: string;
+}
+
+/**
+ * Props for TextareaField component
+ */
+export interface TextareaFieldProps extends BaseFieldProps {
+	rows?: number;
+	maxlength?: number;
+	showCharCount?: boolean;
+}
+
+/**
+ * Props for NumberField component
+ */
+export interface NumberFieldProps extends BaseFieldProps {
+	min?: number;
+	max?: number;
+	step?: number;
+}
+
+/**
+ * Props for SelectField component
+ */
+export interface SelectFieldProps extends BaseFieldProps {
+	options: SelectOption[];
+}
+
+/**
+ * Props for RadioGroup component
+ */
+export interface RadioGroupProps extends BaseFieldProps {
+	options: SelectOption[];
+	orientation?: 'horizontal' | 'vertical';
+}
+
+/**
+ * Props for CheckboxField component (single boolean checkbox)
+ */
+export interface CheckboxFieldProps extends Omit<BaseFieldProps, 'value'> {
+	checked?: boolean;
+}
+
+/**
+ * Props for CheckboxGroup component (multiple selection)
+ */
+export interface CheckboxGroupProps extends Omit<BaseFieldProps, 'value'> {
+	options: SelectOption[];
+	values?: string[];
+	orientation?: 'horizontal' | 'vertical';
+	minSelected?: number;
+	maxSelected?: number;
+}
+
+/**
+ * Props for RangeField component (slider)
+ */
+export interface RangeFieldProps extends BaseFieldProps {
+	min: number;
+	max: number;
+	step?: number;
+	showValue?: boolean;
+	showMinMax?: boolean;
+}
+
+/**
+ * Props for DateField component
+ */
+export interface DateFieldProps extends BaseFieldProps {
+	min?: string;
+	max?: string;
+}
+
+/**
+ * Props for TimeField component
+ */
+export interface TimeFieldProps extends BaseFieldProps {
+	min?: string;
+	max?: string;
+}
+
+/**
+ * Props for SwitchField component (toggle)
+ */
+export interface SwitchFieldProps extends Omit<BaseFieldProps, 'value'> {
+	checked?: boolean;
+	labelPosition?: 'left' | 'right';
+}
+
+/**
+ * Props for ColorField component
+ */
+export interface ColorFieldProps extends BaseFieldProps {
+	presetColors?: string[];
+	showPresets?: boolean;
+}
+
+/**
+ * Props for FileField component
+ */
+export interface FileFieldProps extends BaseFieldProps {
+	accept?: string;
+	multiple?: boolean;
+	maxSize?: number;
+	maxFiles?: number;
+}
