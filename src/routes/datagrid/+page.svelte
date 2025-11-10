@@ -4,6 +4,14 @@
 	import DataGridFilters from '$lib/components/DataGridFilters.svelte';
 	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 	import type { DataGridColumn, DataGridFilterValues, Employee } from '$lib/types';
+	import {
+		formatCurrency,
+		formatCurrencyCompact,
+		formatDateRelative,
+		createGradientStyle,
+		createStatusBadge,
+		createIconRenderer
+	} from '$lib/dataGridFormatters';
 
 	// Data loaded from +page.server.ts
 	let { data } = $props();
@@ -27,8 +35,51 @@
 		{ id: 'status', header: 'Status', width: 100 }
 	];
 
+	// Styled column definitions showcasing formatting utilities
+	const styledColumns: DataGridColumn[] = [
+		{ id: 'firstName', header: 'First Name', width: 120 },
+		{ id: 'lastName', header: 'Last Name', width: 120 },
+		{ id: 'department', header: 'Department', width: 130 },
+		{
+			id: 'salary',
+			header: 'Salary',
+			width: 130,
+			type: 'number',
+			formatter: formatCurrencyCompact,
+			cellStyle: createGradientStyle(30000, 150000, '#ef4444', '#22c55e')
+		},
+		{
+			id: 'hireDate',
+			header: 'Tenure',
+			width: 120,
+			type: 'date',
+			formatter: formatDateRelative
+		},
+		{
+			id: 'status',
+			header: 'Status',
+			width: 120,
+			cellRenderer: createStatusBadge({
+				'active': { color: '#22c55e', label: 'Active' },
+				'on-leave': { color: '#f59e0b', label: 'On Leave' },
+				'inactive': { color: '#ef4444', label: 'Inactive' }
+			})
+		},
+		{
+			id: 'salary',
+			header: 'Performance',
+			width: 140,
+			cellRenderer: createIconRenderer([
+				{ max: 50000, icon: '📉', color: '#ef4444', label: 'Entry Level' },
+				{ max: 80000, icon: '➡️', color: '#f59e0b', label: 'Mid Level' },
+				{ max: 110000, icon: '📊', color: '#3b82f6', label: 'Senior' },
+				{ max: Infinity, icon: '📈', color: '#22c55e', label: 'Executive' }
+			])
+		}
+	];
+
 	// State for toggling between examples
-	let activeExample = $state<'basic' | 'advanced-simple' | 'advanced-full' | 'advanced-filtered'>('basic');
+	let activeExample = $state<'basic' | 'advanced-simple' | 'advanced-full' | 'advanced-filtered' | 'styled-formatted'>('basic');
 
 	// Filter state
 	let filters = $state<DataGridFilterValues>({
@@ -190,6 +241,13 @@
 			</button>
 			<button
 				class="tab"
+				class:active={activeExample === 'styled-formatted'}
+				onclick={() => activeExample = 'styled-formatted'}
+			>
+				Styled & Formatted
+			</button>
+			<button
+				class="tab"
 				class:active={activeExample === 'advanced-filtered'}
 				onclick={() => activeExample = 'advanced-filtered'}
 			>
@@ -258,6 +316,34 @@
 					<strong>Try it:</strong> Search for names/departments • Click cells to edit • Select rows • Delete selected • Export CSV
 				</div>
 			</div>
+		{:else if activeExample === 'styled-formatted'}
+			<div class="example-container">
+				<div class="example-header">
+					<h3>Styled & Formatted Columns</h3>
+					<p>
+						Currency formatting with abbreviations • Color gradients • Status badges • Icon-based performance indicators •
+						<a href="https://github.com/yourusername/repo/blob/main/src/lib/dataGridFormatters.ts" target="_blank">View Formatter Utilities</a>
+					</p>
+				</div>
+				<DataGridBasic
+					data={data.employees}
+					columns={styledColumns}
+					sortable={true}
+					filterable={true}
+					pageSize={10}
+					striped={true}
+					hoverable={true}
+				/>
+				<div class="feature-note">
+					<strong>Formatting Features:</strong>
+					<ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+						<li><strong>Salary column:</strong> Compact currency format (£75K, £1.5M) with gradient from red (low) to green (high)</li>
+						<li><strong>Tenure column:</strong> Relative date formatting ("2 years ago", "3 months ago")</li>
+						<li><strong>Status column:</strong> Color-coded badges with custom labels</li>
+						<li><strong>Performance column:</strong> Icon-based indicators with color coding by salary range</li>
+					</ul>
+				</div>
+			</div>
 		{:else}
 			<div class="example-container">
 				<div class="example-header">
@@ -304,6 +390,48 @@
 	<!-- Usage Guide -->
 	<section class="usage-guide">
 		<h2>Usage Guide</h2>
+
+		<div class="guide-section">
+			<h3>Column Styling & Formatting</h3>
+			<pre><code>{`<script>
+  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
+  import ${'{'}
+    formatCurrencyCompact,
+    createGradientStyle,
+    createStatusBadge,
+    createIconRenderer
+  ${'}'} from '$lib/dataGridFormatters';
+
+  const columns = [
+    ${'{'}
+      id: 'salary',
+      header: 'Salary',
+      type: 'number',
+      formatter: formatCurrencyCompact, // £75K, £1.5M
+      cellStyle: createGradientStyle(30000, 150000, '#ef4444', '#22c55e')
+    ${'}'},
+    ${'{'}
+      id: 'status',
+      header: 'Status',
+      cellRenderer: createStatusBadge(${'{'}
+        'active': ${'{'} color: '#22c55e', label: 'Active' ${'}'},
+        'on-leave': ${'{'} color: '#f59e0b', label: 'On Leave' ${'}'}
+      ${'}'})
+    ${'}'},
+    ${'{'}
+      id: 'performance',
+      header: 'Level',
+      cellRenderer: createIconRenderer([
+        ${'{'} max: 50000, icon: '📉', color: '#ef4444' ${'}'},
+        ${'{'} max: 100000, icon: '📊', color: '#3b82f6' ${'}'},
+        ${'{'} max: Infinity, icon: '📈', color: '#22c55e' ${'}'}
+      ])
+    ${'}'}
+  ];
+<\/script>
+
+<DataGridBasic ${'{'} data ${'}'} ${'{'} columns ${'}'} />`}</code></pre>
+		</div>
 
 		<div class="guide-section">
 			<h3>DataGridBasic - Copy & Paste Ready</h3>

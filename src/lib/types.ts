@@ -649,7 +649,10 @@ export interface EmployeeRow {
  * @property filterable - Whether this column can be filtered (default: true)
  * @property editable - Whether cells in this column can be edited (default: false)
  * @property type - Data type for proper formatting and editing
- * @property formatter - Optional custom function to format cell values
+ * @property formatter - Optional custom function to format cell values for display
+ * @property cellStyle - Optional function to return CSS inline styles for cells (e.g., color gradients)
+ * @property cellClass - Optional function to return CSS class names for cells
+ * @property cellRenderer - Optional function to return custom HTML for cells (advanced formatting)
  */
 export interface DataGridColumn {
 	id: string;
@@ -659,7 +662,10 @@ export interface DataGridColumn {
 	filterable?: boolean;
 	editable?: boolean;
 	type?: 'text' | 'number' | 'date' | 'email' | 'tel';
-	formatter?: (value: any) => string;
+	formatter?: (value: any, row?: any) => string;
+	cellStyle?: (value: any, row?: any) => string;
+	cellClass?: (value: any, row?: any) => string;
+	cellRenderer?: (value: any, row?: any) => string;
 }
 
 /**
