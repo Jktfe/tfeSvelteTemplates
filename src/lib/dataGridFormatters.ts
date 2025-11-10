@@ -4,6 +4,9 @@
  * This module provides pre-built formatters and styling functions for common DataGrid use cases.
  * Import and use these functions in your DataGridColumn definitions for consistent formatting.
  *
+ * SECURITY NOTE: Renderer functions that generate HTML must be used with trusted data only.
+ * All user-provided values are automatically HTML-escaped to prevent XSS attacks.
+ *
  * @example
  * ```typescript
  * import { formatCurrency, formatCurrencyCompact, createGradientStyle } from '$lib/dataGridFormatters';
@@ -19,6 +22,55 @@
  * ];
  * ```
  */
+
+// ==================================================
+// SECURITY UTILITIES
+// ==================================================
+
+/**
+ * Escape HTML special characters to prevent XSS attacks
+ *
+ * @param str - String to escape
+ * @returns HTML-safe string
+ */
+function escapeHtml(str: string): string {
+	const div = document.createElement('div');
+	div.textContent = str;
+	return div.innerHTML;
+}
+
+/**
+ * Validate and sanitize CSS color value
+ * Accepts hex colors (#RGB, #RRGGBB) and named colors
+ *
+ * @param color - Color string to validate
+ * @returns Validated color or fallback
+ */
+function sanitizeColor(color: string): string {
+	// Check for valid hex color (3 or 6 digits)
+	if (/^#([0-9A-Fa-f]{3}){1,2}$/.test(color)) {
+		return color;
+	}
+
+	// Check for valid rgb/rgba
+	if (/^rgba?\([\d\s,\.]+\)$/.test(color)) {
+		return color;
+	}
+
+	// List of safe CSS color names
+	const safeColors = new Set([
+		'transparent', 'currentcolor', 'black', 'white', 'red', 'green', 'blue',
+		'yellow', 'orange', 'purple', 'pink', 'gray', 'grey', 'brown'
+	]);
+
+	if (safeColors.has(color.toLowerCase())) {
+		return color;
+	}
+
+	// Fallback to a safe default
+	console.warn(`Invalid color "${color}", using fallback`);
+	return '#6b7280'; // Gray
+}
 
 // ==================================================
 // CURRENCY FORMATTERS
@@ -137,12 +189,14 @@ export function formatDateUK(value: any): string {
 
 /**
  * Format date as relative time (e.g., "2 years ago", "3 months ago")
+ * Handles both past and future dates
  *
  * @param value - Date object or ISO date string
  * @returns Relative time string
  *
  * @example
  * formatDateRelative('2020-03-15') // "4 years ago"
+ * formatDateRelative('2026-03-15') // "in 1 year"
  */
 export function formatDateRelative(value: any): string {
 	if (!value) return '—';
@@ -152,7 +206,19 @@ export function formatDateRelative(value: any): string {
 	const now = new Date();
 	const diffMs = now.getTime() - date.getTime();
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+	const absDays = Math.abs(diffDays);
 
+	// Future dates
+	if (diffDays < 0) {
+		if (absDays === 0) return 'Today';
+		if (absDays === 1) return 'Tomorrow';
+		if (absDays < 7) return `in ${absDays} days`;
+		if (absDays < 30) return `in ${Math.floor(absDays / 7)} weeks`;
+		if (absDays < 365) return `in ${Math.floor(absDays / 30)} months`;
+		return `in ${Math.floor(absDays / 365)} years`;
+	}
+
+	// Past dates
 	if (diffDays === 0) return 'Today';
 	if (diffDays === 1) return 'Yesterday';
 	if (diffDays < 7) return `${diffDays} days ago`;
@@ -200,11 +266,76 @@ export function formatNumberCompact(value: any): string {
 }
 
 // ==================================================
+// COLOR UTILITIES (Internal)
+// ==================================================
+
+/**
+ * Parse hex color to RGB components
+ * Supports both 3-digit (#RGB) and 6-digit (#RRGGBB) formats
+ */
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+	// Remove leading '#' if present
+	hex = hex.replace(/^#/, '');
+
+	// Expand 3-digit shorthand to 6 digits
+	if (hex.length === 3) {
+		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+	}
+
+	// Handle 8-digit hex (ignore alpha channel)
+	if (hex.length === 8) {
+		hex = hex.slice(0, 6);
+	}
+
+	if (hex.length !== 6) {
+		return null;
+	}
+
+	const r = parseInt(hex.slice(0, 2), 16);
+	const g = parseInt(hex.slice(2, 4), 16);
+	const b = parseInt(hex.slice(4, 6), 16);
+
+	if ([r, g, b].some((v) => isNaN(v))) {
+		return null;
+	}
+
+	return { r, g, b };
+}
+
+/**
+ * Calculate relative luminance of an RGB color
+ * Returns value between 0 (darkest) and 1 (brightest)
+ * Used for determining optimal text color (black or white)
+ */
+function getLuminance(r: number, g: number, b: number): number {
+	// Standard luminance formula (ITU-R BT.709)
+	return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+}
+
+/**
+ * Interpolate between two hex colors
+ * Caching version for performance
+ */
+function interpolateColor(color1: string, color2: string, factor: number): string {
+	const c1 = hexToRgb(color1);
+	const c2 = hexToRgb(color2);
+
+	if (!c1 || !c2) return color1;
+
+	const r = Math.round(c1.r + factor * (c2.r - c1.r));
+	const g = Math.round(c1.g + factor * (c2.g - c1.g));
+	const b = Math.round(c1.b + factor * (c2.b - c1.b));
+
+	return `rgb(${r}, ${g}, ${b})`;
+}
+
+// ==================================================
 // GRADIENT STYLING FUNCTIONS
 // ==================================================
 
 /**
  * Create a function that generates gradient background styles based on value ranges
+ * Automatically selects black or white text for optimal contrast
  *
  * @param min - Minimum value for gradient range
  * @param max - Maximum value for gradient range
@@ -226,18 +357,47 @@ export function createGradientStyle(
 	colorLow: string = '#ef4444',
 	colorHigh: string = '#22c55e'
 ) {
+	// Validate and sanitize colors once at creation time
+	const safeLow = sanitizeColor(colorLow);
+	const safeHigh = sanitizeColor(colorHigh);
+
+	// Pre-parse colors for performance (cache)
+	const c1 = hexToRgb(safeLow);
+	const c2 = hexToRgb(safeHigh);
+
 	return (value: any): string => {
 		if (value === null || value === undefined) return '';
 		const num = typeof value === 'number' ? value : parseFloat(value);
 		if (isNaN(num)) return '';
 
+		// Handle edge case where min === max
+		if (max === min) {
+			const bgColor = num === min ? safeHigh : safeLow;
+			return `background-color: ${bgColor}; color: #fff; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 0.25rem;`;
+		}
+
 		// Normalize value to 0-1 range
 		const normalized = Math.max(0, Math.min(1, (num - min) / (max - min)));
 
-		// Interpolate between colors
-		const color = interpolateColor(colorLow, colorHigh, normalized);
+		// Interpolate between colors (using cached parsed values)
+		let r: number, g: number, b: number;
+		if (c1 && c2) {
+			r = Math.round(c1.r + normalized * (c2.r - c1.r));
+			g = Math.round(c1.g + normalized * (c2.g - c1.g));
+			b = Math.round(c1.b + normalized * (c2.b - c1.b));
+		} else {
+			// Fallback if hex parsing failed
+			const color = interpolateColor(safeLow, safeHigh, normalized);
+			return `background-color: ${color}; color: #fff; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 0.25rem;`;
+		}
 
-		return `background-color: ${color}; color: #fff; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 0.25rem;`;
+		const bgColor = `rgb(${r}, ${g}, ${b})`;
+
+		// Calculate luminance and choose text color for accessibility
+		const luminance = getLuminance(r, g, b);
+		const textColor = luminance > 0.5 ? '#000' : '#fff';
+
+		return `background-color: ${bgColor}; color: ${textColor}; font-weight: 600; padding: 0.25rem 0.5rem; border-radius: 0.25rem;`;
 	};
 }
 
@@ -260,46 +420,26 @@ export function createTextColorGradient(
 	colorLow: string = '#dc2626',
 	colorHigh: string = '#16a34a'
 ) {
+	// Validate and sanitize colors
+	const safeLow = sanitizeColor(colorLow);
+	const safeHigh = sanitizeColor(colorHigh);
+
 	return (value: any): string => {
 		if (value === null || value === undefined) return '';
 		const num = typeof value === 'number' ? value : parseFloat(value);
 		if (isNaN(num)) return '';
 
+		// Handle edge case where min === max
+		if (max === min) {
+			const textColor = num === min ? safeHigh : safeLow;
+			return `color: ${textColor}; font-weight: 600;`;
+		}
+
 		const normalized = Math.max(0, Math.min(1, (num - min) / (max - min)));
-		const color = interpolateColor(colorLow, colorHigh, normalized);
+		const color = interpolateColor(safeLow, safeHigh, normalized);
 
 		return `color: ${color}; font-weight: 600;`;
 	};
-}
-
-/**
- * Helper function to interpolate between two hex colors
- */
-function interpolateColor(color1: string, color2: string, factor: number): string {
-	const c1 = hexToRgb(color1);
-	const c2 = hexToRgb(color2);
-
-	if (!c1 || !c2) return color1;
-
-	const r = Math.round(c1.r + factor * (c2.r - c1.r));
-	const g = Math.round(c1.g + factor * (c2.g - c1.g));
-	const b = Math.round(c1.b + factor * (c2.b - c1.b));
-
-	return `rgb(${r}, ${g}, ${b})`;
-}
-
-/**
- * Convert hex color to RGB components
- */
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-	const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-	return result
-		? {
-				r: parseInt(result[1], 16),
-				g: parseInt(result[2], 16),
-				b: parseInt(result[3], 16)
-			}
-		: null;
 }
 
 // ==================================================
@@ -308,6 +448,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
 
 /**
  * Create a function that renders status badges with colors
+ * All user values are HTML-escaped to prevent XSS
  *
  * @param statusConfig - Map of status values to badge configurations
  * @returns Function that generates HTML for status badges
@@ -320,18 +461,36 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
  * })
  */
 export function createStatusBadge(statusConfig: Record<string, { color: string; label?: string }>) {
+	// Pre-validate all colors at creation time
+	const safeConfig: Record<string, { color: string; label?: string }> = {};
+	for (const [key, value] of Object.entries(statusConfig)) {
+		safeConfig[key] = {
+			color: sanitizeColor(value.color),
+			label: value.label
+		};
+	}
+
 	return (value: any): string => {
 		if (!value) return '—';
-		const config = statusConfig[value.toString()];
-		if (!config) return value.toString();
 
-		const label = config.label || value.toString();
-		return `<span style="background-color: ${config.color}; color: #fff; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">${label}</span>`;
+		const valueStr = String(value);
+		const config = safeConfig[valueStr];
+
+		if (!config) {
+			// Unknown status - escape and display as-is
+			return escapeHtml(valueStr);
+		}
+
+		const label = config.label || valueStr;
+		const escapedLabel = escapeHtml(label);
+
+		return `<span style="background-color: ${config.color}; color: #fff; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">${escapedLabel}</span>`;
 	};
 }
 
 /**
  * Create a function that renders icons based on value ranges
+ * All user values are HTML-escaped to prevent XSS
  *
  * @param ranges - Array of range configurations with icons
  * @returns Function that generates HTML with icons
@@ -339,24 +498,34 @@ export function createStatusBadge(statusConfig: Record<string, { color: string; 
  * @example
  * cellRenderer: createIconRenderer([
  *   { max: 50000, icon: '📉', color: '#ef4444' },
- *   { max: 100000, icon: '➡️', color: '#f59e0b' },
+ *   { max: 100000, icon: '📊', color: '#3b82f6' },
  *   { max: Infinity, icon: '📈', color: '#22c55e' }
  * ])
  */
 export function createIconRenderer(
 	ranges: Array<{ max: number; icon: string; color?: string; label?: string }>
 ) {
+	// Pre-validate all colors at creation time
+	const safeRanges = ranges.map(r => ({
+		...r,
+		color: r.color ? sanitizeColor(r.color) : '#6b7280'
+	}));
+
 	return (value: any): string => {
 		if (value === null || value === undefined) return '—';
 		const num = typeof value === 'number' ? value : parseFloat(value);
 		if (isNaN(num)) return '—';
 
-		const range = ranges.find((r) => num <= r.max);
-		if (!range) return value.toString();
+		const range = safeRanges.find((r) => num <= r.max);
+		if (!range) {
+			return escapeHtml(String(value));
+		}
 
-		const color = range.color || '#6b7280';
-		const label = range.label || value.toString();
-		return `<span style="color: ${color};">${range.icon} ${label}</span>`;
+		const label = range.label || String(value);
+		const escapedLabel = escapeHtml(label);
+		const escapedIcon = escapeHtml(range.icon);
+
+		return `<span style="color: ${range.color};">${escapedIcon} ${escapedLabel}</span>`;
 	};
 }
 
@@ -372,19 +541,31 @@ export function createIconRenderer(
  * cellRenderer: createProgressBar(0, 100, '#3b82f6')
  */
 export function createProgressBar(min: number, max: number, color: string = '#3b82f6') {
+	// Validate color at creation time
+	const safeColor = sanitizeColor(color);
+
 	return (value: any): string => {
 		if (value === null || value === undefined) return '—';
 		const num = typeof value === 'number' ? value : parseFloat(value);
 		if (isNaN(num)) return '—';
 
-		const percentage = Math.max(0, Math.min(100, ((num - min) / (max - min)) * 100));
+		// Handle edge case where min === max
+		let percentage: number;
+		if (max === min) {
+			percentage = num === min ? 100 : 0;
+		} else {
+			percentage = Math.max(0, Math.min(100, ((num - min) / (max - min)) * 100));
+		}
+
+		// Escape the numeric value for display
+		const escapedNum = escapeHtml(String(num));
 
 		return `
 			<div style="display: flex; align-items: center; gap: 0.5rem;">
 				<div style="flex: 1; background-color: #e5e7eb; border-radius: 9999px; height: 0.5rem; overflow: hidden;">
-					<div style="background-color: ${color}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
+					<div style="background-color: ${safeColor}; height: 100%; width: ${percentage}%; transition: width 0.3s ease;"></div>
 				</div>
-				<span style="font-size: 0.75rem; color: #6b7280; min-width: 2.5rem; text-align: right;">${num}</span>
+				<span style="font-size: 0.75rem; color: #6b7280; min-width: 2.5rem; text-align: right;">${escapedNum}</span>
 			</div>
 		`;
 	};
@@ -443,6 +624,7 @@ export function createConditionalStyle(
 
 /**
  * Create a function that combines formatting and icon rendering
+ * Icons are HTML-escaped for security
  *
  * @param formatter - Formatter function for the value
  * @param icon - Icon string or function to generate icon
@@ -458,6 +640,7 @@ export function createFormatterWithIcon(
 	return (value: any): string => {
 		const formatted = formatter(value);
 		const iconStr = typeof icon === 'function' ? icon(value) : icon;
-		return `${iconStr} ${formatted}`;
+		const escapedIcon = escapeHtml(iconStr);
+		return `${escapedIcon} ${formatted}`;
 	};
 }
