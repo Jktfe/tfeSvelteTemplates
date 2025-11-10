@@ -37,7 +37,7 @@ function validateDropdownFields(data: Partial<Employee>): string | null {
 	for (const [field, allowedValues] of Object.entries(VALIDATION_FIELDS)) {
 		const value = data[field as keyof typeof data];
 
-		if (value && !allowedValues.includes(value as any)) {
+		if (typeof value === 'string' && !allowedValues.includes(value)) {
 			return `Invalid ${field}: ${value}. Must be one of: ${allowedValues.join(', ')}`;
 		}
 	}
