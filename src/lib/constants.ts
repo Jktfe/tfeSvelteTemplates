@@ -532,3 +532,15 @@ export const LOCATION_OPTIONS = [
 	'Nottingham',
 	'Remote'
 ] as const;
+
+/**
+ * Validation fields mapping for dropdown columns
+ * Used by both client-side and server-side validation to ensure consistency
+ * Maps employee property names to their allowed values
+ */
+export const VALIDATION_FIELDS = {
+	department: DEPARTMENT_OPTIONS,
+	status: STATUS_OPTIONS,
+	position: POSITION_OPTIONS,
+	location: LOCATION_OPTIONS
+} as const;

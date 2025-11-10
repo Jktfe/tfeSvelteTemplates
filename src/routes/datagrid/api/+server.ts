@@ -23,12 +23,7 @@ import {
 	deleteEmployee,
 	deleteEmployees
 } from '$lib/server/dataGrid';
-import {
-	DEPARTMENT_OPTIONS,
-	STATUS_OPTIONS,
-	POSITION_OPTIONS,
-	LOCATION_OPTIONS
-} from '$lib/constants';
+import { VALIDATION_FIELDS } from '$lib/constants';
 
 /**
  * Validate dropdown field values against allowed options
@@ -38,24 +33,13 @@ import {
  * @returns Error message if validation fails, null if valid
  */
 function validateDropdownFields(data: Partial<Employee>): string | null {
-	// Validate department
-	if (data.department && !DEPARTMENT_OPTIONS.includes(data.department)) {
-		return `Invalid department: ${data.department}. Must be one of: ${DEPARTMENT_OPTIONS.join(', ')}`;
-	}
+	// Iterate through all validated fields
+	for (const [field, allowedValues] of Object.entries(VALIDATION_FIELDS)) {
+		const value = data[field as keyof typeof data];
 
-	// Validate status
-	if (data.status && !STATUS_OPTIONS.includes(data.status)) {
-		return `Invalid status: ${data.status}. Must be one of: ${STATUS_OPTIONS.join(', ')}`;
-	}
-
-	// Validate position
-	if (data.position && !POSITION_OPTIONS.includes(data.position)) {
-		return `Invalid position: ${data.position}. Must be one of: ${POSITION_OPTIONS.join(', ')}`;
-	}
-
-	// Validate location
-	if (data.location && !LOCATION_OPTIONS.includes(data.location)) {
-		return `Invalid location: ${data.location}. Must be one of: ${LOCATION_OPTIONS.join(', ')}`;
+		if (value && !allowedValues.includes(value as any)) {
+			return `Invalid ${field}: ${value}. Must be one of: ${allowedValues.join(', ')}`;
+		}
 	}
 
 	return null;

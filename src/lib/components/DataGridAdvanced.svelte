@@ -56,7 +56,8 @@
 		DEPARTMENT_OPTIONS,
 		STATUS_OPTIONS,
 		POSITION_OPTIONS,
-		LOCATION_OPTIONS
+		LOCATION_OPTIONS,
+		VALIDATION_FIELDS
 	} from '$lib/constants';
 
 	/**
@@ -170,10 +171,15 @@
 			case 'date':
 				return 'datepicker';
 			case 'select':
+				// Validate that options are provided for select type
+				if (!options || options.length === 0) {
+					console.warn('[DataGridAdvanced] Select editor created without options, falling back to text editor');
+					return 'text';
+				}
 				// SVAR Grid expects an object with type and options for select editor
 				return {
 					type: 'select',
-					options: options || []
+					options
 				};
 			case 'email':
 			case 'tel':
@@ -267,15 +273,8 @@
 		}
 
 		// Validate select field values against allowed options
-		const validationMap: Record<string, readonly string[]> = {
-			department: DEPARTMENT_OPTIONS,
-			status: STATUS_OPTIONS,
-			position: POSITION_OPTIONS,
-			location: LOCATION_OPTIONS
-		};
-
-		if (property in validationMap) {
-			const allowedValues = validationMap[property as keyof typeof validationMap];
+		if (property in VALIDATION_FIELDS) {
+			const allowedValues = VALIDATION_FIELDS[property as keyof typeof VALIDATION_FIELDS];
 			if (!allowedValues.includes(value)) {
 				alert(`Invalid value for ${property}: ${value}. Must be one of: ${allowedValues.join(', ')}`);
 				console.error(`[DataGridAdvanced] Invalid value for ${property}:`, value);
