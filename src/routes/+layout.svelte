@@ -3,6 +3,13 @@
 	import Navbar from '$lib/components/Navbar.svelte';
 	import type { MenuItem } from '$lib/types';
 	import { page } from '$app/stores';
+	import { browser, dev } from '$app/environment';
+	import { inject } from '@vercel/analytics';
+
+	// Initialize Vercel Analytics (client-side only)
+	if (browser) {
+		inject({ mode: dev ? 'development' : 'production' });
+	}
 
 	// Get current path for active menu highlighting
 	let currentPath = $derived($page.url.pathname);
