@@ -99,7 +99,49 @@
 				sort: col.sortable !== false, // Default to true
 				filter: col.filterable !== false, // Default to true
 				editor: editable && col.editable !== false ? getEditorType(col.type) : undefined,
-				template: col.formatter ? (obj: any) => col.formatter!(obj[col.id]) : undefined
+				template: (obj: any) => {
+					const value = obj[col.id];
+
+					// If cellRenderer is provided, use it (returns HTML)
+					if (col.cellRenderer) {
+						const html = col.cellRenderer(value, obj);
+						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+						const className = col.cellClass ? col.cellClass(value, obj) : '';
+
+						// Wrap in span with styles and classes
+						if (style || className) {
+							return `<span class="${className}" style="${style}">${html}</span>`;
+						}
+						return html;
+					}
+
+					// If formatter is provided, use it
+					if (col.formatter) {
+						const formatted = col.formatter(value, obj);
+						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+						const className = col.cellClass ? col.cellClass(value, obj) : '';
+
+						if (style || className) {
+							return `<span class="${className}" style="${style}">${formatted}</span>`;
+						}
+						return formatted;
+					}
+
+					// If only styling options are provided
+					if (col.cellStyle || col.cellClass) {
+						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+						const className = col.cellClass ? col.cellClass(value, obj) : '';
+						const displayValue = value !== null && value !== undefined ? String(value) : '';
+
+						if (style || className) {
+							return `<span class="${className}" style="${style}">${displayValue}</span>`;
+						}
+						return displayValue;
+					}
+
+					// Default: return value as-is
+					return value;
+				}
 			}));
 		}
 
