@@ -1,3 +1,41 @@
+<!--
+/**
+ * Marquee - Infinite scrolling carousel for displaying content continuously
+ *
+ * Features:
+ * - Seamless infinite loop animation
+ * - Optional pause-on-hover interaction
+ * - Horizontal or vertical scrolling directions
+ * - Configurable speed and repeat count
+ * - Reverse direction support
+ * - Zero dependencies (pure CSS animations)
+ * - Fully accessible with ARIA labels
+ *
+ * Perfect for:
+ * - Testimonials and reviews
+ * - Partner logos and brand showcases
+ * - Social media feeds
+ * - News tickers and announcements
+ * - Product features or highlights
+ *
+ * Technical Implementation:
+ * - Pure CSS animations for smooth performance
+ * - Content duplicated for seamless looping
+ * - CSS custom properties for runtime configuration
+ * - GPU-accelerated with CSS transforms
+ * - Respects reduced motion preferences
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <Marquee duration={30} pauseOnHover={true} repeat={3}>
+ *   <div>Item 1</div>
+ *   <div>Item 2</div>
+ *   <div>Item 3</div>
+ * </Marquee>
+ * ```
+ */
+-->
 <script lang="ts">
 	import { cn } from '$lib/utils';
 

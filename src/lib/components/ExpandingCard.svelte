@@ -1,25 +1,48 @@
 <!--
-	ExpandingCard Component
-
-	An interactive card that expands between two layout states with smooth crossfade transitions.
-	Click the card to toggle between compact (vertical) and expanded (horizontal) layouts.
-
-	Features:
-	- Smooth crossfade transitions using Svelte's built-in animation
-	- Two distinct layouts: compact and expanded
-	- Click to toggle between states
-	- Maintains visual continuity with shared element transitions
-	- Fully responsive design
-	- Customisable content (image, heading, description)
-
-	Usage:
-	<ExpandingCard
-		imageSrc="https://example.com/image.jpg"
-		imageAlt="Description"
-		heading="Title"
-		compactText="Short description"
-		expandedText="Longer description with more details"
-	/>
+/**
+ * ExpandingCard - Interactive card with layout transitions between compact and expanded states
+ *
+ * Features:
+ * - Smooth crossfade transitions using Svelte's built-in animations
+ * - Two distinct layouts: compact (vertical) and expanded (horizontal)
+ * - Click anywhere to toggle between states
+ * - Maintains visual continuity with shared element transitions
+ * - Fully responsive design with mobile optimisations
+ * - Customisable content (image, heading, descriptions, background colour)
+ * - Accessible with keyboard support and ARIA labels
+ *
+ * Perfect for:
+ * - Feature showcases with expandable details
+ * - Team member profiles or bios
+ * - Product highlights with additional information
+ * - Portfolio items with expandable descriptions
+ * - FAQ sections with visual emphasis
+ * - Content previews with "read more" functionality
+ *
+ * Technical Implementation:
+ * - Svelte's built-in crossfade() for seamless transitions
+ * - Svelte 5 $state rune for reactive toggle
+ * - CSS transitions for smooth background and size changes
+ * - TailwindCSS utility classes for styling
+ * - Respects reduced motion preferences
+ *
+ * Layout States:
+ * 1. Compact: Vertical layout with image top, text below
+ * 2. Expanded: Horizontal layout with image left, extended text right
+ *
+ * @component
+ * @example
+ * ```svelte
+ * <ExpandingCard
+ *   imageSrc="/team-member.jpg"
+ *   imageAlt="Team member photo"
+ *   heading="Jane Doe"
+ *   compactText="Senior Developer"
+ *   expandedText="Jane has 10+ years experience in web development..."
+ *   bgColor="bg-blue-100"
+ * />
+ * ```
+ */
 -->
 
 <script lang="ts">

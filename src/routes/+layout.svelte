@@ -62,6 +62,18 @@
 			href: '/linkimagehover',
 			icon: '🔗',
 			active: currentPath.startsWith('/linkimagehover')
+		},
+		{
+			label: 'Editor (CRUD)',
+			href: '/editor',
+			icon: '✏️',
+			active: currentPath.startsWith('/editor')
+		},
+		{
+			label: 'Forms',
+			href: '/forms',
+			icon: '📝',
+			active: currentPath.startsWith('/forms')
 		}
 	]);
 
