@@ -52,6 +52,12 @@
 <script lang="ts">
 	import { Grid, Willow, WillowDark } from '@svar-ui/svelte-grid';
 	import type { DataGridAdvancedProps, Employee, DataGridColumn } from '$lib/types';
+	import {
+		DEPARTMENT_OPTIONS,
+		STATUS_OPTIONS,
+		POSITION_OPTIONS,
+		LOCATION_OPTIONS
+	} from '$lib/constants';
 
 	/**
 	 * Component Props
@@ -98,7 +104,7 @@
 				width: typeof col.width === 'number' ? col.width : undefined,
 				sort: col.sortable !== false, // Default to true
 				filter: col.filterable !== false, // Default to true
-				editor: editable && col.editable !== false ? getEditorType(col.type) : undefined,
+				editor: editable && col.editable !== false ? getEditorType(col.type, col.options) : undefined,
 				template: col.formatter ? (obj: any) => col.formatter!(obj[col.id]) : undefined
 			}));
 		}
@@ -114,18 +120,19 @@
 			header: string;
 			width?: number;
 			type?: DataGridColumn['type'];
+			options?: string[];
 			template?: (obj: any) => string;
 		}> = {
 			id: { header: 'ID', width: 60 },
 			firstName: { header: 'First Name', width: 120 },
 			lastName: { header: 'Last Name', width: 120 },
 			email: { header: 'Email', width: 200, type: 'email' },
-			department: { header: 'Department', width: 120 },
-			position: { header: 'Position', width: 150 },
+			department: { header: 'Department', width: 120, type: 'select', options: [...DEPARTMENT_OPTIONS] },
+			position: { header: 'Position', width: 150, type: 'select', options: [...POSITION_OPTIONS] },
 			salary: { header: 'Salary', width: 120, type: 'number' },
 			hireDate: { header: 'Hire Date', width: 120, type: 'date' },
-			status: { header: 'Status', width: 100 },
-			location: { header: 'Location', width: 120 },
+			status: { header: 'Status', width: 100, type: 'select', options: [...STATUS_OPTIONS] },
+			location: { header: 'Location', width: 120, type: 'select', options: [...LOCATION_OPTIONS] },
 			phone: { header: 'Phone', width: 140, type: 'tel' },
 			notes: { header: 'Notes', width: 200 }
 		};
@@ -139,7 +146,7 @@
 					width: config.width,
 					sort: true,
 					filter: true,
-					editor: editable ? getEditorType(config.type) : undefined,
+					editor: editable ? getEditorType(config.type, config.options) : undefined,
 					template: config.template
 				});
 			}
@@ -151,13 +158,23 @@
 	/**
 	 * Get SVAR Grid editor type from our column type
 	 * Maps our simplified type system to SVAR Grid's editor types
+	 *
+	 * @param type - The column type
+	 * @param options - Array of options for select type (required if type is 'select')
+	 * @returns Editor configuration (string for simple types, object for select)
 	 */
-	function getEditorType(type?: DataGridColumn['type']): string {
+	function getEditorType(type?: DataGridColumn['type'], options?: string[]): any {
 		switch (type) {
 			case 'number':
 				return 'number';
 			case 'date':
 				return 'datepicker';
+			case 'select':
+				// SVAR Grid expects an object with type and options for select editor
+				return {
+					type: 'select',
+					options: options || []
+				};
 			case 'email':
 			case 'tel':
 			case 'text':
@@ -247,6 +264,23 @@
 		if (!property) {
 			console.error('[DataGridAdvanced] Unknown column:', col);
 			return;
+		}
+
+		// Validate select field values against allowed options
+		const validationMap: Record<string, readonly string[]> = {
+			department: DEPARTMENT_OPTIONS,
+			status: STATUS_OPTIONS,
+			position: POSITION_OPTIONS,
+			location: LOCATION_OPTIONS
+		};
+
+		if (property in validationMap) {
+			const allowedValues = validationMap[property as keyof typeof validationMap];
+			if (!allowedValues.includes(value)) {
+				alert(`Invalid value for ${property}. Please select from the dropdown options.`);
+				console.error(`[DataGridAdvanced] Invalid value for ${property}:`, value);
+				return;
+			}
 		}
 
 		// Store original value for rollback

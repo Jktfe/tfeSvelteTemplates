@@ -22,6 +22,43 @@ import {
 	deleteEmployee,
 	deleteEmployees
 } from '$lib/server/dataGrid';
+import {
+	DEPARTMENT_OPTIONS,
+	STATUS_OPTIONS,
+	POSITION_OPTIONS,
+	LOCATION_OPTIONS
+} from '$lib/constants';
+
+/**
+ * Validate dropdown field values against allowed options
+ * Ensures data integrity by preventing invalid values
+ *
+ * @param data - Employee data to validate
+ * @returns Error message if validation fails, null if valid
+ */
+function validateDropdownFields(data: any): string | null {
+	// Validate department
+	if (data.department && !DEPARTMENT_OPTIONS.includes(data.department)) {
+		return `Invalid department: ${data.department}. Must be one of: ${DEPARTMENT_OPTIONS.join(', ')}`;
+	}
+
+	// Validate status
+	if (data.status && !STATUS_OPTIONS.includes(data.status)) {
+		return `Invalid status: ${data.status}. Must be one of: ${STATUS_OPTIONS.join(', ')}`;
+	}
+
+	// Validate position
+	if (data.position && !POSITION_OPTIONS.includes(data.position)) {
+		return `Invalid position: ${data.position}. Must be one of: ${POSITION_OPTIONS.join(', ')}`;
+	}
+
+	// Validate location
+	if (data.location && !LOCATION_OPTIONS.includes(data.location)) {
+		return `Invalid location: ${data.location}. Must be one of: ${LOCATION_OPTIONS.join(', ')}`;
+	}
+
+	return null;
+}
 
 /**
  * GET /datagrid/api
@@ -87,6 +124,18 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
+		// Validate dropdown field values
+		const validationError = validateDropdownFields(data);
+		if (validationError) {
+			return json(
+				{
+					success: false,
+					error: validationError
+				},
+				{ status: 400 }
+			);
+		}
+
 		const employee = await createEmployee(data);
 
 		if (!employee) {
@@ -130,6 +179,18 @@ export const PUT: RequestHandler = async ({ request }) => {
 				{
 					success: false,
 					error: 'Employee ID is required'
+				},
+				{ status: 400 }
+			);
+		}
+
+		// Validate dropdown field values
+		const validationError = validateDropdownFields(data);
+		if (validationError) {
+			return json(
+				{
+					success: false,
+					error: validationError
 				},
 				{ status: 400 }
 			);
