@@ -4,6 +4,15 @@
 	import DataGridFilters from '$lib/components/DataGridFilters.svelte';
 	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 	import type { DataGridColumn, DataGridFilterValues, Employee } from '$lib/types';
+	import {
+		formatCurrency,
+		formatCurrencyCompact,
+		formatCurrencyDecimals,
+		formatDateRelative,
+		createGradientStyle,
+		createStatusBadge,
+		createIconRenderer
+	} from '$lib/dataGridFormatters';
 
 	// Data loaded from +page.server.ts
 	let { data } = $props();
@@ -27,8 +36,78 @@
 		{ id: 'status', header: 'Status', width: 100 }
 	];
 
+	// Currency format comparison - demonstrates choosing different formats
+	const currencyComparisonColumns: DataGridColumn[] = [
+		{ id: 'firstName', header: 'First Name', width: 120 },
+		{ id: 'lastName', header: 'Last Name', width: 120 },
+		{
+			id: 'salary',
+			header: 'Standard (No Decimals)',
+			width: 160,
+			type: 'number',
+			formatter: formatCurrency  // £75,000
+		},
+		{
+			id: 'salary',
+			header: 'With Decimals',
+			width: 160,
+			type: 'number',
+			formatter: formatCurrencyDecimals  // £75,000.00
+		},
+		{
+			id: 'salary',
+			header: 'Compact (K/M)',
+			width: 130,
+			type: 'number',
+			formatter: formatCurrencyCompact  // £75K
+		}
+	];
+
+	// Styled column definitions showcasing formatting utilities
+	const styledColumns: DataGridColumn[] = [
+		{ id: 'firstName', header: 'First Name', width: 120 },
+		{ id: 'lastName', header: 'Last Name', width: 120 },
+		{ id: 'department', header: 'Department', width: 130 },
+		{
+			id: 'salary',
+			header: 'Salary',
+			width: 130,
+			type: 'number',
+			formatter: formatCurrencyCompact,
+			cellStyle: createGradientStyle(30000, 150000, '#ef4444', '#22c55e')
+		},
+		{
+			id: 'hireDate',
+			header: 'Tenure',
+			width: 120,
+			type: 'date',
+			formatter: formatDateRelative
+		},
+		{
+			id: 'status',
+			header: 'Status',
+			width: 120,
+			cellRenderer: createStatusBadge({
+				'active': { color: '#22c55e', label: 'Active' },
+				'on-leave': { color: '#f59e0b', label: 'On Leave' },
+				'inactive': { color: '#ef4444', label: 'Inactive' }
+			})
+		},
+		{
+			id: 'salary',
+			header: 'Performance',
+			width: 140,
+			cellRenderer: createIconRenderer([
+				{ max: 50000, icon: '📉', color: '#ef4444', label: 'Entry Level' },
+				{ max: 80000, icon: '➡️', color: '#f59e0b', label: 'Mid Level' },
+				{ max: 110000, icon: '📊', color: '#3b82f6', label: 'Senior' },
+				{ max: Infinity, icon: '📈', color: '#22c55e', label: 'Executive' }
+			])
+		}
+	];
+
 	// State for toggling between examples
-	let activeExample = $state<'basic' | 'advanced-simple' | 'advanced-full' | 'advanced-filtered'>('basic');
+	let activeExample = $state<'basic' | 'advanced-simple' | 'advanced-full' | 'advanced-filtered' | 'styled-formatted' | 'currency-comparison'>('currency-comparison');
 
 	// Filter state
 	let filters = $state<DataGridFilterValues>({
@@ -169,6 +248,13 @@
 		<div class="tabs">
 			<button
 				class="tab"
+				class:active={activeExample === 'currency-comparison'}
+				onclick={() => activeExample = 'currency-comparison'}
+			>
+				Currency Formats Comparison
+			</button>
+			<button
+				class="tab"
 				class:active={activeExample === 'basic'}
 				onclick={() => activeExample = 'basic'}
 			>
@@ -190,6 +276,13 @@
 			</button>
 			<button
 				class="tab"
+				class:active={activeExample === 'styled-formatted'}
+				onclick={() => activeExample = 'styled-formatted'}
+			>
+				Styled & Formatted
+			</button>
+			<button
+				class="tab"
 				class:active={activeExample === 'advanced-filtered'}
 				onclick={() => activeExample = 'advanced-filtered'}
 			>
@@ -200,7 +293,61 @@
 
 	<!-- Example Display -->
 	<section class="example-display">
-		{#if activeExample === 'basic'}
+		{#if activeExample === 'currency-comparison'}
+			<div class="example-container">
+				<div class="example-header">
+					<h3>Currency Format Comparison - Choose Your Format</h3>
+					<p>
+						The same salary data displayed in three different formats. You choose which formatter to use for each column!
+					</p>
+				</div>
+
+				<div class="format-explanation">
+					<h4>Three Currency Formatters Available:</h4>
+					<ul>
+						<li><code>formatCurrency</code> - Standard with commas, no decimals (e.g., £75,000)</li>
+						<li><code>formatCurrencyDecimals</code> - With commas AND decimals (e.g., £75,000.00)</li>
+						<li><code>formatCurrencyCompact</code> - With K/M abbreviations (e.g., £75K)</li>
+					</ul>
+					<p style="margin-top: 1rem; font-style: italic;">
+						Each column below uses a different formatter on the same salary data. You can use different formats in different columns based on your needs!
+					</p>
+				</div>
+
+				<DataGridBasic
+					data={data.employees}
+					columns={currencyComparisonColumns}
+					sortable={true}
+					filterable={true}
+					pageSize={10}
+					striped={true}
+					hoverable={true}
+				/>
+
+				<div class="code-example">
+					<h4>How to Use Different Formatters:</h4>
+					<pre><code>{`import { formatCurrency, formatCurrencyDecimals, formatCurrencyCompact } from '$lib/dataGridFormatters';
+
+const columns: DataGridColumn[] = [
+  {
+    id: 'annualBudget',
+    header: 'Annual Budget',
+    formatter: formatCurrencyCompact  // ← Use compact for large numbers (£1.5M)
+  },
+  {
+    id: 'productPrice',
+    header: 'Product Price',
+    formatter: formatCurrencyDecimals  // ← Use decimals for precise prices (£12.99)
+  },
+  {
+    id: 'totalRevenue',
+    header: 'Total Revenue',
+    formatter: formatCurrency  // ← Use standard for whole numbers (£75,000)
+  }
+];`}</code></pre>
+				</div>
+			</div>
+		{:else if activeExample === 'basic'}
 			<div class="example-container">
 				<div class="example-header">
 					<h3>DataGridBasic - Self-Contained Grid</h3>
@@ -258,6 +405,34 @@
 					<strong>Try it:</strong> Search for names/departments • Click cells to edit • Select rows • Delete selected • Export CSV
 				</div>
 			</div>
+		{:else if activeExample === 'styled-formatted'}
+			<div class="example-container">
+				<div class="example-header">
+					<h3>Styled & Formatted Columns</h3>
+					<p>
+						Currency formatting with abbreviations • Color gradients • Status badges • Icon-based performance indicators •
+						<a href="https://github.com/yourusername/repo/blob/main/src/lib/dataGridFormatters.ts" target="_blank">View Formatter Utilities</a>
+					</p>
+				</div>
+				<DataGridBasic
+					data={data.employees}
+					columns={styledColumns}
+					sortable={true}
+					filterable={true}
+					pageSize={10}
+					striped={true}
+					hoverable={true}
+				/>
+				<div class="feature-note">
+					<strong>Formatting Features:</strong>
+					<ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+						<li><strong>Salary column:</strong> Compact currency format (£75K, £1.5M) with gradient from red (low) to green (high)</li>
+						<li><strong>Tenure column:</strong> Relative date formatting ("2 years ago", "3 months ago")</li>
+						<li><strong>Status column:</strong> Color-coded badges with custom labels</li>
+						<li><strong>Performance column:</strong> Icon-based indicators with color coding by salary range</li>
+					</ul>
+				</div>
+			</div>
 		{:else}
 			<div class="example-container">
 				<div class="example-header">
@@ -304,6 +479,48 @@
 	<!-- Usage Guide -->
 	<section class="usage-guide">
 		<h2>Usage Guide</h2>
+
+		<div class="guide-section">
+			<h3>Column Styling & Formatting</h3>
+			<pre><code>{`<script>
+  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
+  import ${'{'}
+    formatCurrencyCompact,
+    createGradientStyle,
+    createStatusBadge,
+    createIconRenderer
+  ${'}'} from '$lib/dataGridFormatters';
+
+  const columns = [
+    ${'{'}
+      id: 'salary',
+      header: 'Salary',
+      type: 'number',
+      formatter: formatCurrencyCompact, // £75K, £1.5M
+      cellStyle: createGradientStyle(30000, 150000, '#ef4444', '#22c55e')
+    ${'}'},
+    ${'{'}
+      id: 'status',
+      header: 'Status',
+      cellRenderer: createStatusBadge(${'{'}
+        'active': ${'{'} color: '#22c55e', label: 'Active' ${'}'},
+        'on-leave': ${'{'} color: '#f59e0b', label: 'On Leave' ${'}'}
+      ${'}'})
+    ${'}'},
+    ${'{'}
+      id: 'performance',
+      header: 'Level',
+      cellRenderer: createIconRenderer([
+        ${'{'} max: 50000, icon: '📉', color: '#ef4444' ${'}'},
+        ${'{'} max: 100000, icon: '📊', color: '#3b82f6' ${'}'},
+        ${'{'} max: Infinity, icon: '📈', color: '#22c55e' ${'}'}
+      ])
+    ${'}'}
+  ];
+<\/script>
+
+<DataGridBasic ${'{'} data ${'}'} ${'{'} columns ${'}'} />`}</code></pre>
+		</div>
 
 		<div class="guide-section">
 			<h3>DataGridBasic - Copy & Paste Ready</h3>
@@ -700,6 +917,56 @@
 	}
 
 	/* Responsive Design */
+	/* Format Explanation Section */
+	.format-explanation {
+		background: #f0f9ff;
+		border: 2px solid #0ea5e9;
+		border-radius: 8px;
+		padding: 1.5rem;
+		margin-bottom: 2rem;
+	}
+
+	.format-explanation h4 {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #0c4a6e;
+		margin-bottom: 1rem;
+	}
+
+	.format-explanation ul {
+		margin: 0 0 0 1.5rem;
+		padding: 0;
+	}
+
+	.format-explanation li {
+		margin-bottom: 0.5rem;
+		color: #1e3a8a;
+	}
+
+	.format-explanation code {
+		background: #dbeafe;
+		color: #1e40af;
+		padding: 0.125rem 0.5rem;
+		border-radius: 4px;
+		font-size: 0.875rem;
+	}
+
+	/* Code Example Section */
+	.code-example {
+		margin-top: 2rem;
+		background: white;
+		border: 1px solid #e5e7eb;
+		border-radius: 8px;
+		padding: 1.5rem;
+	}
+
+	.code-example h4 {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #1f2937;
+		margin-bottom: 1rem;
+	}
+
 	@media (max-width: 768px) {
 		.demo-page {
 			padding: 1rem;
