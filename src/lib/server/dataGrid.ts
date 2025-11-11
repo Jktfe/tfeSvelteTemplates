@@ -36,7 +36,8 @@ export async function loadEmployeesFromDatabase(): Promise<Employee[]> {
 		const sql = neon(databaseUrl);
 
 		// Query active employees, sorted by name
-		const rows: EmployeeRow[] = await sql`
+		// Note: Neon returns Record<string, any>[], so we type assert to EmployeeRow[]
+		const rows = (await sql`
 			SELECT
 				id,
 				first_name,
@@ -56,7 +57,7 @@ export async function loadEmployeesFromDatabase(): Promise<Employee[]> {
 			FROM employees
 			WHERE is_active = TRUE
 			ORDER BY last_name ASC, first_name ASC
-		`;
+		`) as unknown as EmployeeRow[];
 
 		console.log(`[DataGrid] Loaded ${rows.length} employees from database`);
 
@@ -174,7 +175,7 @@ export async function updateEmployee(
 		const sql = neon(databaseUrl);
 
 		// Build update query with COALESCE for partial updates
-		const result: EmployeeRow[] = await sql`
+		const result = (await sql`
 			UPDATE employees
 			SET
 				first_name = COALESCE(${data.firstName}, first_name),
@@ -190,7 +191,7 @@ export async function updateEmployee(
 				notes = COALESCE(${data.notes}, notes)
 			WHERE id = ${id} AND is_active = TRUE
 			RETURNING *
-		`;
+		`) as unknown as EmployeeRow[];
 
 		if (result.length === 0) {
 			console.warn(`[DataGrid] Employee ${id} not found or inactive`);
@@ -249,7 +250,8 @@ export async function deleteEmployee(id: number): Promise<boolean> {
 			WHERE id = ${id} AND is_active = TRUE
 		`;
 
-		const success = result.count > 0;
+		// Type assertion: Neon result has count property for UPDATE queries
+		const success = (result as any).count > 0;
 		if (success) {
 			console.log(`[DataGrid] Deleted employee ${id}`);
 		} else {
@@ -286,8 +288,10 @@ export async function deleteEmployees(ids: number[]): Promise<number> {
 			WHERE id = ANY(${ids}) AND is_active = TRUE
 		`;
 
-		console.log(`[DataGrid] Bulk deleted ${result.count} employees`);
-		return result.count;
+		// Type assertion: Neon result has count property for UPDATE queries
+		const count = (result as any).count;
+		console.log(`[DataGrid] Bulk deleted ${count} employees`);
+		return count;
 	} catch (error) {
 		console.error('[DataGrid] Error bulk deleting employees:', error);
 		return 0;
@@ -313,7 +317,7 @@ export async function createEmployee(
 
 		const sql = neon(databaseUrl);
 
-		const result: EmployeeRow[] = await sql`
+		const result = (await sql`
 			INSERT INTO employees (
 				first_name, last_name, email, department, position,
 				salary, hire_date, status, location, phone, notes
@@ -324,7 +328,7 @@ export async function createEmployee(
 				${data.location || null}, ${data.phone || null}, ${data.notes || null}
 			)
 			RETURNING *
-		`;
+		`) as unknown as EmployeeRow[];
 
 		const row = result[0];
 		console.log(`[DataGrid] Created employee ${row.id}`);

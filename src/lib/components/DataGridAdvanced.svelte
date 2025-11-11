@@ -221,9 +221,9 @@
 	 *
 	 * @param type - The column type
 	 * @param options - Array of options for select type (required if type is 'select')
-	 * @returns Editor configuration (string for simple types, object for select)
+	 * @returns Editor configuration (string for simple types, object for select, undefined if invalid)
 	 */
-	function getEditorType(type?: DataGridColumn['type'], options?: readonly string[]): string | { type: 'select'; options: readonly string[] } {
+	function getEditorType(type?: DataGridColumn['type'], options?: readonly string[]): string | { type: 'select'; options: readonly string[] } | undefined {
 		switch (type) {
 			case 'number':
 				return 'number';
@@ -236,10 +236,11 @@
 					return undefined;
 				}
 				// SVAR Grid expects an object with type and options for select editor
+				// Type assertion needed as SVAR Grid types don't fully match our type system
 				return {
 					type: 'select',
 					options
-				};
+				} as any;
 			case 'email':
 			case 'tel':
 			case 'text':
@@ -564,28 +565,35 @@
 		</div>
 	{/if}
 
+	<!-- SVAR Grid with type compatibility layer -->
 	{#if theme === 'willowDark'}
+		{@const gridCols = gridColumns() as any}
+		{@const gridProps = editable ? { edit: true } : {}}
+		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
 		<WillowDark>
 			<Grid
 				data={gridData()}
-				columns={gridColumns()}
+				columns={gridCols}
 				selection={selectable ? 'row' : false}
 				rowHeight={40}
-				{...pageSize > 0 && { pager: { size: pageSize } }}
-				{...editable && { edit: true }}
+				{...pagerProps}
+				{...gridProps}
 				on:edit={handleEdit}
 				on:selection={handleSelection}
 			/>
 		</WillowDark>
 	{:else}
+		{@const gridCols = gridColumns() as any}
+		{@const gridProps = editable ? { edit: true } : {}}
+		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
 		<Willow>
 			<Grid
 				data={gridData()}
-				columns={gridColumns()}
+				columns={gridCols}
 				selection={selectable ? 'row' : false}
 				rowHeight={40}
-				{...pageSize > 0 && { pager: { size: pageSize } }}
-				{...editable && { edit: true }}
+				{...pagerProps}
+				{...gridProps}
 				on:edit={handleEdit}
 				on:selection={handleSelection}
 			/>

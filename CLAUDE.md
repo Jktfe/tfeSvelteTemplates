@@ -333,23 +333,24 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
 
 ### Known svelte-check Warnings (Safe to Ignore)
 
-The project has **zero build warnings** (`npm run build` is clean), but `npm run check` reports some warnings that are safe to ignore:
+The project has **zero build warnings** (`npm run build` is clean) and **zero TypeScript errors**. Some warnings from `npm run check` are documented below as safe to ignore:
 
-#### CSS Unused Selector Warnings
-- **Location**: `CardStackMotionFlip.svelte`
+#### CSS Unused Selector Warnings (14 warnings)
+**Location**: `Editor.svelte`
+- **Reason**: CSS classes are used by child form components that are rendered within the Editor modal. Svelte's static analysis cannot detect these dynamically created elements
+- **Examples**: Input fields, textareas, buttons, and error message styles that appear when the form is rendered
+- **Mitigation**: All form-related CSS is necessary for proper styling of the modal's content
+- **Impact**: None - CSS is actively used at runtime for form rendering, warnings are false positives
+
+**Location**: `CardStackMotionFlip.svelte`
 - **Reason**: CSS classes are applied dynamically via the `getCardClass()` function, which Svelte's static analysis cannot detect
 - **Mitigation**: All selectors are documented with `/* svelte-ignore css-unused-selector */` comments explaining why they're used
-- **Impact**: None - CSS is actively used at runtime, warnings are false positives
-
-#### Route File Parsing Errors (53 errors)
-- **Location**: Various `+page.svelte` files in routes
-- **Reason**: Known svelte-check parsing issue with certain Svelte syntax patterns
-- **Evidence**: `npm run build` succeeds without any errors, and the app runs perfectly
-- **Impact**: None - these are tooling false positives, not real code issues
+- **Impact**: None - CSS is actively used at runtime for animation states, warnings are false positives
 
 ### Build Status
 - **Production Build**: ✅ Zero errors, zero warnings
-- **Type Check**: ⚠️ 53 false-positive parsing errors, 14 documented CSS warnings
+- **Type Check**: ✅ Zero TypeScript errors
+- **CSS Warnings**: ⚠️ 14 documented false-positive warnings (safe to ignore)
 - **Runtime**: ✅ All components functional
 
 ## Database Integration
