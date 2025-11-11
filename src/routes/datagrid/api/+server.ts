@@ -13,6 +13,7 @@
 
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import type { Employee } from '$lib/types';
 import {
 	loadEmployeesFromDatabase,
 	loadEmployeesByDepartment,
@@ -22,6 +23,27 @@ import {
 	deleteEmployee,
 	deleteEmployees
 } from '$lib/server/dataGrid';
+import { VALIDATION_FIELDS } from '$lib/constants';
+
+/**
+ * Validate dropdown field values against allowed options
+ * Ensures data integrity by preventing invalid values
+ *
+ * @param data - Employee data to validate
+ * @returns Error message if validation fails, null if valid
+ */
+function validateDropdownFields(data: Partial<Employee>): string | null {
+	// Iterate through all validated fields
+	for (const [field, allowedValues] of Object.entries(VALIDATION_FIELDS)) {
+		const value = data[field as keyof typeof data];
+
+		if (typeof value === 'string' && !allowedValues.includes(value)) {
+			return `Invalid ${field}: ${value}. Must be one of: ${allowedValues.join(', ')}`;
+		}
+	}
+
+	return null;
+}
 
 /**
  * GET /datagrid/api
@@ -87,6 +109,18 @@ export const POST: RequestHandler = async ({ request }) => {
 			);
 		}
 
+		// Validate dropdown field values
+		const validationError = validateDropdownFields(data);
+		if (validationError) {
+			return json(
+				{
+					success: false,
+					error: validationError
+				},
+				{ status: 400 }
+			);
+		}
+
 		const employee = await createEmployee(data);
 
 		if (!employee) {
@@ -130,6 +164,18 @@ export const PUT: RequestHandler = async ({ request }) => {
 				{
 					success: false,
 					error: 'Employee ID is required'
+				},
+				{ status: 400 }
+			);
+		}
+
+		// Validate dropdown field values
+		const validationError = validateDropdownFields(data);
+		if (validationError) {
+			return json(
+				{
+					success: false,
+					error: validationError
 				},
 				{ status: 400 }
 			);

@@ -444,3 +444,103 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		notes: 'Mobile app design'
 	}
 ];
+
+/**
+ * Dropdown options for DataGrid inline editing
+ * These define the allowed values for select/dropdown fields
+ * Keeps data consistent and prevents invalid entries
+ */
+
+/**
+ * Department options for employee records
+ * Based on schema and seed data
+ */
+export const DEPARTMENT_OPTIONS = [
+	'Engineering',
+	'Design',
+	'Sales',
+	'Marketing',
+	'HR',
+	'Finance',
+	'Customer Success'
+] as const;
+
+/**
+ * Employment status options
+ * Used for filtering and inline editing
+ */
+export const STATUS_OPTIONS = [
+	'active',
+	'on-leave',
+	'terminated'
+] as const;
+
+/**
+ * Position/role options
+ * Comprehensive list of job titles used in the organisation
+ */
+export const POSITION_OPTIONS = [
+	'Junior Developer',
+	'Frontend Developer',
+	'Senior Developer',
+	'DevOps Engineer',
+	'QA Engineer',
+	'Data Engineer',
+	'Security Engineer',
+	'Platform Engineer',
+	'Mobile Developer',
+	'ML Engineer',
+	'CTO',
+	'UX Designer',
+	'UI Designer',
+	'Product Designer',
+	'Design Director',
+	'Account Executive',
+	'Sales Representative',
+	'Business Development',
+	'Sales Director',
+	'Marketing Manager',
+	'Content Manager',
+	'SEO Specialist',
+	'Brand Manager',
+	'HR Manager',
+	'Recruiter',
+	'Financial Analyst',
+	'Accountant',
+	'CFO',
+	'Support Manager',
+	'Support Engineer'
+] as const;
+
+/**
+ * Office location options
+ * UK cities and remote option
+ */
+export const LOCATION_OPTIONS = [
+	'London',
+	'Manchester',
+	'Birmingham',
+	'Leeds',
+	'Edinburgh',
+	'Bristol',
+	'Glasgow',
+	'Brighton',
+	'Liverpool',
+	'Cardiff',
+	'Cambridge',
+	'Oxford',
+	'Nottingham',
+	'Remote'
+] as const;
+
+/**
+ * Validation fields mapping for dropdown columns
+ * Used by both client-side and server-side validation to ensure consistency
+ * Maps employee property names to their allowed values
+ */
+export const VALIDATION_FIELDS = {
+	department: DEPARTMENT_OPTIONS,
+	status: STATUS_OPTIONS,
+	position: POSITION_OPTIONS,
+	location: LOCATION_OPTIONS
+} as const;
