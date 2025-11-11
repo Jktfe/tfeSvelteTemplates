@@ -52,6 +52,7 @@
 <script lang="ts">
 	import { Grid, Willow, WillowDark } from '@svar-ui/svelte-grid';
 	import type { DataGridAdvancedProps, Employee, DataGridColumn } from '$lib/types';
+	import { sanitizeClassName } from '$lib/dataGridFormatters';
 	import {
 		DEPARTMENT_OPTIONS,
 		STATUS_OPTIONS,
@@ -59,6 +60,19 @@
 		LOCATION_OPTIONS,
 		VALIDATION_FIELDS
 	} from '$lib/constants';
+
+	/**
+	 * Escape HTML special characters to prevent XSS attacks
+	 * Used for formatter output and raw values in template
+	 */
+	function escapeHtml(str: string): string {
+		return str
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#039;');
+	}
 
 	/**
 	 * Component Props
@@ -106,7 +120,52 @@
 				sort: col.sortable !== false, // Default to true
 				filter: col.filterable !== false, // Default to true
 				editor: editable && col.editable !== false ? getEditorType(col.type, col.options) : undefined,
-				template: col.formatter ? (obj: any) => col.formatter!(obj[col.id]) : undefined
+				template: (obj: any) => {
+					const value = obj[col.id];
+
+					// If cellRenderer is provided, use it (returns HTML - already escaped by renderer)
+					if (col.cellRenderer) {
+						const html = col.cellRenderer(value, obj);
+						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+						const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+
+						// Wrap in span with styles and classes
+						if (style || className) {
+							return `<span class="${className}" style="${style}">${html}</span>`;
+						}
+						return html;
+					}
+
+					// If formatter is provided, use it and escape output
+					if (col.formatter) {
+						const formatted = col.formatter(value, obj);
+						const escapedFormatted = escapeHtml(formatted);
+						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+						const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+
+						if (style || className) {
+							return `<span class="${className}" style="${style}">${escapedFormatted}</span>`;
+						}
+						return escapedFormatted;
+					}
+
+					// If only styling options are provided
+					if (col.cellStyle || col.cellClass) {
+						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+						const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+						const rawValue = value !== null && value !== undefined ? String(value) : '';
+						const displayValue = escapeHtml(rawValue);
+
+						if (style || className) {
+							return `<span class="${className}" style="${style}">${displayValue}</span>`;
+						}
+						return displayValue;
+					}
+
+					// Default: escape value before returning
+					const rawValue = value !== null && value !== undefined ? String(value) : '';
+					return escapeHtml(rawValue);
+				}
 			}));
 		}
 

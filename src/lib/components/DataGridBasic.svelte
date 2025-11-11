@@ -40,6 +40,7 @@
 
 <script lang="ts">
 	import type { DataGridBasicProps, Employee, DataGridColumn } from '$lib/types';
+	import { sanitizeClassName } from '$lib/dataGridFormatters';
 
 	/**
 	 * Component Props
@@ -172,12 +173,17 @@
 	/**
 	 * Format cell value for display
 	 */
-	function formatCellValue(value: any, column: DataGridColumn): string {
+	function formatCellValue(value: any, column: DataGridColumn, row?: any): string {
 		if (value === null || value === undefined) return '';
+
+		// Use custom renderer if provided (for advanced HTML rendering)
+		if (column.cellRenderer) {
+			return column.cellRenderer(value, row);
+		}
 
 		// Use custom formatter if provided
 		if (column.formatter) {
-			return column.formatter(value);
+			return column.formatter(value, row);
 		}
 
 		// Default formatting by type
@@ -198,6 +204,28 @@
 			default:
 				return String(value);
 		}
+	}
+
+	/**
+	 * Get inline CSS styles for a cell
+	 */
+	function getCellStyle(value: any, column: DataGridColumn, row?: any): string {
+		if (column.cellStyle) {
+			return column.cellStyle(value, row);
+		}
+		return '';
+	}
+
+	/**
+	 * Get CSS classes for a cell
+	 * Sanitizes class names to prevent injection attacks
+	 */
+	function getCellClass(value: any, column: DataGridColumn, row?: any): string {
+		if (column.cellClass) {
+			const className = column.cellClass(value, row);
+			return sanitizeClassName(className);
+		}
+		return '';
 	}
 
 	/**
@@ -303,8 +331,15 @@
 					{#each paginatedData() as row, rowIndex}
 						<tr>
 							{#each columns as column}
-								<td>
-									{formatCellValue((row as any)[column.id], column)}
+								<td
+									class={getCellClass((row as any)[column.id], column, row)}
+									style={getCellStyle((row as any)[column.id], column, row)}
+								>
+									{#if column.cellRenderer}
+										{@html formatCellValue((row as any)[column.id], column, row)}
+									{:else}
+										{formatCellValue((row as any)[column.id], column, row)}
+									{/if}
 								</td>
 							{/each}
 						</tr>
