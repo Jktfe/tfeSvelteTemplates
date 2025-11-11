@@ -54,10 +54,11 @@
 	import type { DataGridAdvancedProps, Employee, DataGridColumn } from '$lib/types';
 	import { sanitizeClassName } from '$lib/dataGridFormatters';
 	import {
-		DEPARTMENT_OPTIONS,
-		STATUS_OPTIONS,
-		POSITION_OPTIONS,
-		LOCATION_OPTIONS,
+		DEPARTMENT_OPTIONS_GRID,
+		STATUS_OPTIONS_GRID,
+		POSITION_OPTIONS_GRID,
+		LOCATION_OPTIONS_GRID,
+		transformToGridOptions,
 		VALIDATION_FIELDS
 	} from '$lib/constants';
 
@@ -99,6 +100,35 @@
 	let searchQuery = $state('');
 
 	/**
+	 * Format a Date object as dd/mm/yy for display
+	 * Handles Date objects, date strings, and null/undefined values
+	 */
+	function formatDateDisplay(date: any): string {
+		// Handle null/undefined
+		if (!date) return '';
+
+		// Convert to Date object if needed
+		let dateObj: Date;
+		if (date instanceof Date) {
+			dateObj = date;
+		} else if (typeof date === 'string') {
+			dateObj = new Date(date);
+		} else {
+			return String(date);
+		}
+
+		// Validate Date object
+		if (isNaN(dateObj.getTime())) return '';
+
+		// Format as dd/mm/yy using UK locale
+		return dateObj.toLocaleDateString('en-GB', {
+			day: '2-digit',
+			month: '2-digit',
+			year: '2-digit'
+		});
+	}
+
+	/**
 	 * Generate SVAR Grid column configuration
 	 * Converts our DataGridColumn format to SVAR Grid's expected format
 	 *
@@ -109,65 +139,90 @@
 	 * - sort: boolean - Enable sorting (default: true)
 	 * - filter: boolean - Enable filtering (default: true)
 	 * - editor: string - Editor type for inline editing ('text', 'number', 'date', etc.)
+	 *
+	 * Note: For date fields, template + editor work together (template for display, editor for editing)
 	 */
 	const gridColumns = $derived(() => {
 		// If custom columns provided, use them
 		if (columns) {
-			return columns.map((col) => ({
-				id: col.id,
-				header: col.header,
-				width: typeof col.width === 'number' ? col.width : undefined,
-				sort: col.sortable !== false, // Default to true
-				filter: col.filterable !== false, // Default to true
-				editor: editable && col.editable !== false ? getEditorType(col.type) : undefined,
-				options: col.options, // SVAR Grid expects options as separate property
-				template: (obj: any) => {
-					const value = obj[col.id];
+			return columns.map((col) => {
+				const gridCol: any = {
+					id: col.id,
+					header: col.header,
+					width: typeof col.width === 'number' ? col.width : undefined,
+					sort: col.sortable !== false, // Default to true
+					filter: col.filterable !== false // Default to true
+				};
 
-					// If cellRenderer is provided, use it (returns HTML - already escaped by renderer)
-					if (col.cellRenderer) {
-						const html = col.cellRenderer(value, obj);
-						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
-						const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+				// Add editor configuration if editable
+				if (editable && col.editable !== false) {
+					gridCol.editor = getEditorType(col.type);
 
-						// Wrap in span with styles and classes
-						if (style || className) {
-							return `<span class="${className}" style="${style}">${html}</span>`;
-						}
-						return html;
+					// Transform options to SVAR Grid format { id, label }
+					if (col.options) {
+						gridCol.options = transformToGridOptions(col.options);
 					}
 
-					// If formatter is provided, use it and escape output
-					if (col.formatter) {
-						const formatted = col.formatter(value, obj);
-						const escapedFormatted = escapeHtml(formatted);
-						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
-						const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
-
-						if (style || className) {
-							return `<span class="${className}" style="${style}">${escapedFormatted}</span>`;
-						}
-						return escapedFormatted;
+					// SPECIAL CASE: Date fields can have template + editor together
+					// Template formats display, editor handles editing
+					// Note: Template receives the cell VALUE directly, not the row object
+					if (col.type === 'date') {
+						gridCol.template = (value: any) => formatDateDisplay(value);
 					}
-
-					// If only styling options are provided
-					if (col.cellStyle || col.cellClass) {
-						const style = col.cellStyle ? col.cellStyle(value, obj) : '';
-						const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
-						const rawValue = value !== null && value !== undefined ? String(value) : '';
-						const displayValue = escapeHtml(rawValue);
-
-						if (style || className) {
-							return `<span class="${className}" style="${style}">${displayValue}</span>`;
-						}
-						return displayValue;
-					}
-
-					// Default: escape value before returning
-					const rawValue = value !== null && value !== undefined ? String(value) : '';
-					return escapeHtml(rawValue);
 				}
-			}));
+
+				// Add template for NON-editable columns (or non-date editable columns)
+				if (!editable || col.editable === false) {
+					gridCol.template = (obj: any) => {
+						const value = obj[col.id];
+
+						// If cellRenderer is provided, use it (returns HTML - already escaped by renderer)
+						if (col.cellRenderer) {
+							const html = col.cellRenderer(value, obj);
+							const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+							const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+
+							// Wrap in span with styles and classes
+							if (style || className) {
+								return `<span class="${className}" style="${style}">${html}</span>`;
+							}
+							return html;
+						}
+
+						// If formatter is provided, use it and escape output
+						if (col.formatter) {
+							const formatted = col.formatter(value, obj);
+							const escapedFormatted = escapeHtml(formatted);
+							const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+							const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+
+							if (style || className) {
+								return `<span class="${className}" style="${style}">${escapedFormatted}</span>`;
+							}
+							return escapedFormatted;
+						}
+
+						// If only styling options are provided
+						if (col.cellStyle || col.cellClass) {
+							const style = col.cellStyle ? col.cellStyle(value, obj) : '';
+							const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
+							const rawValue = value !== null && value !== undefined ? String(value) : '';
+							const displayValue = escapeHtml(rawValue);
+
+							if (style || className) {
+								return `<span class="${className}" style="${style}">${displayValue}</span>`;
+							}
+							return displayValue;
+						}
+
+						// Default: escape value before returning
+						const rawValue = value !== null && value !== undefined ? String(value) : '';
+						return escapeHtml(rawValue);
+					};
+				}
+
+				return gridCol;
+			});
 		}
 
 		// Auto-generate columns from first data row
@@ -177,23 +232,23 @@
 		const autoColumns = [];
 
 		// Define column order and configuration
+		// Options are pre-transformed to SVAR Grid format { id, label }
 		const columnConfig: Record<string, {
 			header: string;
 			width?: number;
 			type?: DataGridColumn['type'];
-			options?: readonly string[];
-			template?: (obj: any) => string;
+			options?: Array<{ id: string; label: string }>;
 		}> = {
 			id: { header: 'ID', width: 60 },
 			firstName: { header: 'First Name', width: 120 },
 			lastName: { header: 'Last Name', width: 120 },
 			email: { header: 'Email', width: 200, type: 'email' },
-			department: { header: 'Department', width: 120, type: 'select', options: DEPARTMENT_OPTIONS },
-			position: { header: 'Position', width: 150, type: 'select', options: POSITION_OPTIONS },
+			department: { header: 'Department', width: 120, type: 'select', options: DEPARTMENT_OPTIONS_GRID },
+			position: { header: 'Position', width: 150, type: 'select', options: POSITION_OPTIONS_GRID },
 			salary: { header: 'Salary', width: 120, type: 'number' },
 			hireDate: { header: 'Hire Date', width: 120, type: 'date' },
-			status: { header: 'Status', width: 100, type: 'select', options: STATUS_OPTIONS },
-			location: { header: 'Location', width: 120, type: 'select', options: LOCATION_OPTIONS },
+			status: { header: 'Status', width: 100, type: 'select', options: STATUS_OPTIONS_GRID },
+			location: { header: 'Location', width: 120, type: 'select', options: LOCATION_OPTIONS_GRID },
 			phone: { header: 'Phone', width: 140, type: 'tel' },
 			notes: { header: 'Notes', width: 200 }
 		};
@@ -201,16 +256,31 @@
 		// Generate columns in defined order
 		for (const [key, config] of Object.entries(columnConfig)) {
 			if (key in firstRow) {
-				autoColumns.push({
+				const autoCol: any = {
 					id: key,
 					header: config.header,
 					width: config.width,
 					sort: true,
-					filter: true,
-					editor: editable ? getEditorType(config.type) : undefined,
-					options: config.options, // SVAR Grid expects options as separate property
-					template: config.template
-				});
+					filter: true
+				};
+
+				// Add editor and options if editable
+				// No template property - allows inline editing to work
+				if (editable) {
+					autoCol.editor = getEditorType(config.type);
+					if (config.options) {
+						autoCol.options = config.options; // Already in SVAR Grid format
+					}
+				}
+
+				// Add template for date formatting (display only, doesn't block editing)
+				// SVAR Grid allows template + editor together for date fields
+				// Note: Template receives the cell VALUE directly, not the row object
+				if (key === 'hireDate') {
+					autoCol.template = (value: any) => formatDateDisplay(value);
+				}
+
+				autoColumns.push(autoCol);
 			}
 		}
 
@@ -222,17 +292,22 @@
 	 * Maps our simplified type system to SVAR Grid's editor types
 	 *
 	 * @param type - The column type
-	 * @returns Editor type string (SVAR Grid expects options as separate column property)
+	 * @returns Editor type string
+	 *
+	 * Note: SVAR Grid only supports 'text', 'datepicker', 'richselect', and 'combo' editors
+	 * For number fields, we use 'text' editor and rely on validation in handleEdit
 	 */
 	function getEditorType(type?: DataGridColumn['type']): string | undefined {
 		switch (type) {
 			case 'number':
-				return 'number';
+				// SVAR Grid doesn't have a 'number' editor type
+				// Use 'text' and validate numeric input in handleEdit
+				return 'text';
 			case 'date':
 				return 'datepicker';
 			case 'select':
-				// SVAR Grid uses 'richselect' or 'combo' for dropdown editors
-				// Options should be passed as separate column property
+				// richselect = dropdown with predefined options (not editable)
+				// combo = editable dropdown with suggestions
 				return 'richselect';
 			case 'email':
 			case 'tel':
@@ -244,8 +319,8 @@
 
 	/**
 	 * Transform and filter data for SVAR Grid
-	 * SVAR Grid expects flat objects with all values as primitives
-	 * Also applies global search filter across all columns
+	 * - Converts hireDate strings to Date objects for datepicker editor
+	 * - Applies global search filter across all columns
 	 */
 	const gridData = $derived(() => {
 		let filteredData = data;
@@ -255,6 +330,10 @@
 			const query = searchQuery.toLowerCase();
 			filteredData = data.filter((employee) => {
 				// Search across all string and number fields
+				const hireDateStr = typeof employee.hireDate === 'string'
+					? employee.hireDate
+					: employee.hireDate?.toISOString().split('T')[0];
+
 				return (
 					employee.firstName?.toLowerCase().includes(query) ||
 					employee.lastName?.toLowerCase().includes(query) ||
@@ -266,14 +345,19 @@
 					employee.phone?.toLowerCase().includes(query) ||
 					employee.notes?.toLowerCase().includes(query) ||
 					employee.salary?.toString().includes(query) ||
-					employee.hireDate?.includes(query)
+					hireDateStr?.includes(query)
 				);
 			});
 		}
 
-		return filteredData.map((employee) => ({
-			...employee
-		}));
+		// Convert hireDate strings to Date objects for datepicker editor
+		return filteredData.map((employee) => {
+			const transformed = { ...employee };
+			if (transformed.hireDate && typeof transformed.hireDate === 'string') {
+				transformed.hireDate = new Date(transformed.hireDate);
+			}
+			return transformed;
+		});
 	});
 
 	/**
@@ -338,8 +422,23 @@
 		// Store original value for rollback
 		const originalValue = data[rowIndex][property];
 
+		// Process value based on type
+		let processedValue = value;
+
+		// Convert Date objects to YYYY-MM-DD format for API
+		if (property === 'hireDate') {
+			if (value instanceof Date) {
+				processedValue = value.toISOString().split('T')[0];
+			} else if (typeof value === 'string' && value.includes('T')) {
+				processedValue = value.split('T')[0];
+			} else if (typeof value === 'string') {
+				// Already in YYYY-MM-DD format
+				processedValue = value;
+			}
+		}
+
 		// Optimistic update: Update local data immediately
-		(data[rowIndex] as any)[property] = value;
+		(data[rowIndex] as any)[property] = processedValue;
 
 		try {
 			isUpdating = true;
@@ -350,7 +449,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					id,
-					[property]: value
+					[property]: processedValue
 				})
 			});
 

@@ -787,6 +787,7 @@ const columns: DataGridColumn[] = [
 		border: 1px solid #e5e7eb;
 		border-radius: 12px;
 		padding: 2rem;
+		overflow-x: auto;
 	}
 
 	.example-header {

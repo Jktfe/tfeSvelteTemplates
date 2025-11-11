@@ -544,3 +544,23 @@ export const VALIDATION_FIELDS: Record<string, readonly string[]> = {
 	position: POSITION_OPTIONS,
 	location: LOCATION_OPTIONS
 };
+
+/**
+ * Transform string array to SVAR Grid options format
+ * SVAR Grid expects options as array of objects with { id, label } properties
+ *
+ * @param options - Array of string values
+ * @returns Array of objects with id and label properties
+ */
+export function transformToGridOptions(options: readonly string[]): Array<{ id: string; label: string }> {
+	return options.map(value => ({ id: value, label: value }));
+}
+
+/**
+ * Pre-transformed options for SVAR Grid editors
+ * These are used in DataGridAdvanced for dropdown/select editors
+ */
+export const DEPARTMENT_OPTIONS_GRID = transformToGridOptions(DEPARTMENT_OPTIONS);
+export const STATUS_OPTIONS_GRID = transformToGridOptions(STATUS_OPTIONS);
+export const POSITION_OPTIONS_GRID = transformToGridOptions(POSITION_OPTIONS);
+export const LOCATION_OPTIONS_GRID = transformToGridOptions(LOCATION_OPTIONS);
