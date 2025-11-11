@@ -353,7 +353,7 @@ const columns: DataGridColumn[] = [
 					<h3>DataGridBasic - Self-Contained Grid</h3>
 					<p>
 						Zero dependencies • Sortable columns • Global search • Pagination •
-						<a href="https://github.com/yourusername/repo/blob/main/src/lib/components/DataGridBasic.svelte" target="_blank">View Source</a>
+						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridBasic.svelte" target="_blank">View Source</a>
 					</p>
 				</div>
 				<DataGridBasic
@@ -372,7 +372,7 @@ const columns: DataGridColumn[] = [
 					<h3>DataGridAdvanced - Simple Configuration</h3>
 					<p>
 						SVAR Grid wrapper • Auto-generated columns • Virtual scrolling •
-						<a href="https://github.com/yourusername/repo/blob/main/src/lib/components/DataGridAdvanced.svelte" target="_blank">View Source</a>
+						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridAdvanced.svelte" target="_blank">View Source</a>
 					</p>
 				</div>
 				<DataGridAdvanced
@@ -390,7 +390,7 @@ const columns: DataGridColumn[] = [
 					<h3>DataGridAdvanced - Full Features</h3>
 					<p>
 						Global search • Inline editing • Row selection • Bulk delete • CSV export •
-						<a href="https://github.com/yourusername/repo/blob/main/src/lib/components/DataGridAdvanced.svelte" target="_blank">View Source</a>
+						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridAdvanced.svelte" target="_blank">View Source</a>
 					</p>
 				</div>
 				<DataGridAdvanced
@@ -411,7 +411,7 @@ const columns: DataGridColumn[] = [
 					<h3>Styled & Formatted Columns</h3>
 					<p>
 						Currency formatting with abbreviations • Color gradients • Status badges • Icon-based performance indicators •
-						<a href="https://github.com/yourusername/repo/blob/main/src/lib/dataGridFormatters.ts" target="_blank">View Formatter Utilities</a>
+						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/dataGridFormatters.ts" target="_blank">View Formatter Utilities</a>
 					</p>
 				</div>
 				<DataGridBasic
@@ -439,7 +439,7 @@ const columns: DataGridColumn[] = [
 					<h3>Advanced Filtering - DataGridAdvanced with Filters</h3>
 					<p>
 						Department filter • Status filter • Salary range • Date range • Real-time filtering •
-						<a href="https://github.com/yourusername/repo/blob/main/src/lib/components/DataGridFilters.svelte" target="_blank">View Filter Source</a>
+						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridFilters.svelte" target="_blank">View Filter Source</a>
 					</p>
 				</div>
 
