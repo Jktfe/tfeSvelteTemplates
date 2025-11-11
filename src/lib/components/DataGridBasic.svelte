@@ -40,6 +40,7 @@
 
 <script lang="ts">
 	import type { DataGridBasicProps, Employee, DataGridColumn } from '$lib/types';
+	import { sanitizeClassName } from '$lib/dataGridFormatters';
 
 	/**
 	 * Component Props
@@ -217,10 +218,12 @@
 
 	/**
 	 * Get CSS classes for a cell
+	 * Sanitizes class names to prevent injection attacks
 	 */
 	function getCellClass(value: any, column: DataGridColumn, row?: any): string {
 		if (column.cellClass) {
-			return column.cellClass(value, row);
+			const className = column.cellClass(value, row);
+			return sanitizeClassName(className);
 		}
 		return '';
 	}

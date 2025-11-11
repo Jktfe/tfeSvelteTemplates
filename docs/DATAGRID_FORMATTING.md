@@ -38,10 +38,14 @@ This guide demonstrates how to apply custom styling and formatting to DataGrid c
 > 1. **Use Built-in Formatters**: The provided utilities have security built-in
 > 2. **Custom Renderers**: If creating custom `cellRenderer` functions, always HTML-escape user values:
 >    ```typescript
+>    // SSR-compatible HTML escaping (works in browser and server)
 >    function escapeHtml(str: string): string {
->      const div = document.createElement('div');
->      div.textContent = str;
->      return div.innerHTML;
+>      return str
+>        .replace(/&/g, '&amp;')
+>        .replace(/</g, '&lt;')
+>        .replace(/>/g, '&gt;')
+>        .replace(/"/g, '&quot;')
+>        .replace(/'/g, '&#039;');
 >    }
 >    ```
 > 3. **Color Validation**: Use the built-in color sanitization or validate hex/rgb formats
@@ -595,7 +599,8 @@ function createHeatmapStyle(min: number, max: number) {
     const num = typeof value === 'number' ? value : parseFloat(value);
     if (isNaN(num)) return '';
 
-    const normalized = (num - min) / (max - min);
+    // Handle edge case where min === max
+    const normalized = max === min ? 0 : (num - min) / (max - min);
     const opacity = 0.2 + (normalized * 0.8); // 20% to 100% opacity
 
     return `background-color: rgba(59, 130, 246, ${opacity}); font-weight: 600;`;
@@ -619,6 +624,8 @@ function renderRating(value: any): string {
   const filled = '⭐'.repeat(rating);
   const empty = '☆'.repeat(5 - rating);
 
+  // Note: Emojis are safe here because only controlled characters are used.
+  // For any user-supplied content, always escape or sanitize before inserting into HTML.
   return `<span style="color: #f59e0b; letter-spacing: 2px;">${filled}${empty}</span>`;
 }
 
