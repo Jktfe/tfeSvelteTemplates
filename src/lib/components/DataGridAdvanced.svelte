@@ -119,7 +119,8 @@
 				width: typeof col.width === 'number' ? col.width : undefined,
 				sort: col.sortable !== false, // Default to true
 				filter: col.filterable !== false, // Default to true
-				editor: editable && col.editable !== false ? getEditorType(col.type, col.options) : undefined,
+				editor: editable && col.editable !== false ? getEditorType(col.type) : undefined,
+				options: col.options, // SVAR Grid expects options as separate property
 				template: (obj: any) => {
 					const value = obj[col.id];
 
@@ -206,7 +207,8 @@
 					width: config.width,
 					sort: true,
 					filter: true,
-					editor: editable ? getEditorType(config.type, config.options) : undefined,
+					editor: editable ? getEditorType(config.type) : undefined,
+					options: config.options, // SVAR Grid expects options as separate property
 					template: config.template
 				});
 			}
@@ -220,27 +222,18 @@
 	 * Maps our simplified type system to SVAR Grid's editor types
 	 *
 	 * @param type - The column type
-	 * @param options - Array of options for select type (required if type is 'select')
-	 * @returns Editor configuration (string for simple types, object for select, undefined if invalid)
+	 * @returns Editor type string (SVAR Grid expects options as separate column property)
 	 */
-	function getEditorType(type?: DataGridColumn['type'], options?: readonly string[]): string | { type: 'select'; options: readonly string[] } | undefined {
+	function getEditorType(type?: DataGridColumn['type']): string | undefined {
 		switch (type) {
 			case 'number':
 				return 'number';
 			case 'date':
 				return 'datepicker';
 			case 'select':
-				// Validate that options are provided for select type
-				if (!options || options.length === 0) {
-					console.warn('[DataGridAdvanced] Select editor created without options, column will not be editable');
-					return undefined;
-				}
-				// SVAR Grid expects an object with type and options for select editor
-				// Type assertion needed as SVAR Grid types don't fully match our type system
-				return {
-					type: 'select',
-					options
-				} as any;
+				// SVAR Grid uses 'richselect' or 'combo' for dropdown editors
+				// Options should be passed as separate column property
+				return 'richselect';
 			case 'email':
 			case 'tel':
 			case 'text':
