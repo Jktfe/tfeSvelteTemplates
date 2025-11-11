@@ -159,6 +159,20 @@
       status: "ready",
     },
     {
+      title: "Sankey Diagram",
+      description:
+        "Interactive hierarchical flow visualization with expand/collapse functionality. Click expandable nodes to reveal nested children and see detailed breakdowns of flows. Built with Unovis for smooth animated transitions.",
+      href: "/sankey",
+      icon: "🌊",
+      features: [
+        "Expandable hierarchy",
+        "Colour-coded flows",
+        "Smooth transitions",
+        "Tooltip support",
+      ],
+      status: "ready",
+    },
+    {
       title: "Forms",
       description:
         "Comprehensive collection of reusable form field components with validation, accessibility, and consistent styling. Includes text inputs, selects, checkboxes, radios, ranges, dates, switches, and colour pickers.",

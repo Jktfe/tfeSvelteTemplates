@@ -733,3 +733,67 @@ export interface DataGridFilterValues {
 	hireDateFrom: string;
 	hireDateTo: string;
 }
+
+// ==================================================
+// SANKEY DIAGRAM TYPES (Expandable Hierarchical Flow Visualization)
+// ==================================================
+
+/**
+ * Node in a Sankey diagram
+ * Represents a single entity in the flow visualization (e.g., energy source, processing plant, destination)
+ *
+ * @property id - Unique identifier for the node
+ * @property label - Display text shown on the node
+ * @property color - Optional hex colour for the node and its outgoing flows (e.g., '#8B4513')
+ * @property expandable - Whether this node can be clicked to expand and show children (default: false)
+ * @property expanded - Current expansion state (true = showing children, false = collapsed)
+ * @property parent - Optional ID of parent node (if this is a child in the hierarchy)
+ */
+export interface SankeyNode {
+	id: string;
+	label: string;
+	color?: string;
+	expandable?: boolean;
+	expanded?: boolean;
+	parent?: string;
+}
+
+/**
+ * Link between two nodes in a Sankey diagram
+ * Represents flow/connection with a quantifiable value
+ *
+ * @property source - ID of the source node
+ * @property target - ID of the target node
+ * @property value - Flow quantity/magnitude (determines link thickness)
+ */
+export interface SankeyLink {
+	source: string;
+	target: string;
+	value: number;
+}
+
+/**
+ * Complete Sankey diagram data structure
+ * Contains all nodes and links for the visualization
+ *
+ * @property nodes - Array of all nodes in the diagram
+ * @property links - Array of all connections between nodes
+ */
+export interface SankeyData {
+	nodes: SankeyNode[];
+	links: SankeyLink[];
+}
+
+/**
+ * Props for ExpandableSankey component
+ * Interactive hierarchical Sankey diagram with expand/collapse functionality
+ *
+ * @property nodes - Array of all nodes (including hidden children)
+ * @property links - Array of all links (including hidden connections)
+ * @property height - Container height in pixels (default: 600)
+ */
+export interface ExpandableSankeyProps {
+	nodes: SankeyNode[];
+	links: SankeyLink[];
+	height?: number;
+}

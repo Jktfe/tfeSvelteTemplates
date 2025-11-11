@@ -81,6 +81,18 @@
 			href: '/forms',
 			icon: '📝',
 			active: currentPath.startsWith('/forms')
+		},
+		{
+			label: 'DataGrid',
+			href: '/datagrid',
+			icon: '📊',
+			active: currentPath.startsWith('/datagrid')
+		},
+		{
+			label: 'Sankey',
+			href: '/sankey',
+			icon: '🌊',
+			active: currentPath.startsWith('/sankey')
 		}
 	]);
 

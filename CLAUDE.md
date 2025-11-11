@@ -324,9 +324,21 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
    - Database integration with fallback to constants
    - Demonstrates dual-approach pattern: simple vs feature-rich
 
+10. **ExpandableSankey** - Interactive hierarchical flow visualization
+   - Features: Expand/collapse nodes to reveal nested children
+   - Built with Unovis (@unovis/svelte) for smooth transitions
+   - Colour-coded flows inherited from source nodes
+   - Click expandable nodes to show/hide child nodes
+   - Automatic link aggregation (collapses show summary, expanded shows detail)
+   - Supports multi-level hierarchies (parents, children, grandchildren)
+   - Mouse-tracking tooltips (provided by Unovis)
+   - Perfect for energy flows, process breakdowns, budget allocations
+   - Database integration with fallback to constants
+   - Dependencies: @unovis/svelte, @unovis/ts (~bundle size depends on tree-shaking)
+
 ### Utility Components
 
-10. **StaggeredMenu** - Animated navigation menu
+11. **StaggeredMenu** - Animated navigation menu
    - Features: Staggered entrance animations, active state highlighting
 
 ## Code Quality & Warnings
@@ -1136,6 +1148,316 @@ Both implementations include:
 - CSV export: Export, verify file contents
 - Virtual scrolling: Scroll large dataset, verify performance
 - Theme switching: Toggle themes, verify styling
+
+## ExpandableSankey Component - Hierarchical Flow Visualization
+
+The **ExpandableSankey component** provides an interactive hierarchical flow visualization with expand/collapse functionality. Built with Unovis (@unovis/svelte), it creates beautiful animated Sankey diagrams where users can click nodes to reveal or hide nested children, perfect for visualizing energy flows, process breakdowns, budget allocations, and any hierarchical flow data.
+
+### Key Features
+
+1. **Hierarchical Expansion**
+   - Click expandable nodes to reveal child nodes
+   - Recursive collapse: Collapsing a node also collapses all descendants
+   - Smooth animated transitions between states
+
+2. **Intelligent Link Management**
+   - Aggregate links: Show summary flows when collapsed
+   - Detailed links: Show individual child flows when expanded
+   - Automatic link visibility based on node state
+
+3. **Visual Design**
+   - Colour-coded flows inherited from source nodes
+   - Mouse-tracking tooltips (provided by Unovis)
+   - Pointer cursor for clickable nodes
+   - Responsive width, fixed height container
+
+4. **Multi-Level Hierarchies**
+   - Supports unlimited nesting depth
+   - Parent → Child → Grandchild relationships
+   - Top-level nodes always visible
+   - Child visibility controlled by parent's expanded state
+
+### Architecture Overview
+
+The component uses a factory pattern (`createSankeyData`) that manages visibility:
+
+```
+Component Layer
+├── ExpandableSankey.svelte (Unovis integration, click handlers)
+└── sankeyData.ts (Visibility logic factory)
+
+Data Layer
+├── FALLBACK_SANKEY_DATA (constants.ts)
+└── Database integration (optional, via server utility)
+```
+
+### Data Structure
+
+**Nodes** (`SankeyNode`):
+```typescript
+{
+  id: string;           // Unique identifier
+  label: string;        // Display text
+  color?: string;       // Hex colour (e.g., '#8B4513')
+  expandable?: boolean; // Can be clicked to expand
+  expanded?: boolean;   // Current state (managed internally)
+  parent?: string;      // Parent node ID (if child)
+}
+```
+
+**Links** (`SankeyLink`):
+```typescript
+{
+  source: string;  // Source node ID
+  target: string;  // Target node ID
+  value: number;   // Flow magnitude (determines thickness)
+}
+```
+
+### Visibility Rules
+
+The `createSankeyData` factory implements these visibility rules:
+
+**Nodes**:
+- Top-level nodes (no `parent`): Always visible
+- Child nodes: Visible only if parent is expanded
+
+**Links**:
+1. Both source and target nodes must be visible
+2. Child links (parent → child): Show when parent is expanded
+3. Aggregate links (parent → destination): Show when parent is collapsed
+
+This creates the expand/collapse effect:
+- **Collapsed**: Shows aggregate flow from parent to destinations
+- **Expanded**: Shows detailed flows through children to destinations
+
+### Usage Example
+
+```svelte
+<script>
+  import ExpandableSankey from '$lib/components/ExpandableSankey.svelte';
+  import { FALLBACK_SANKEY_DATA } from '$lib/constants';
+</script>
+
+<ExpandableSankey
+  nodes={FALLBACK_SANKEY_DATA.nodes}
+  links={FALLBACK_SANKEY_DATA.links}
+  height={600}
+/>
+```
+
+### Creating Custom Data
+
+Example: Energy distribution system
+
+```typescript
+const energyData = {
+  nodes: [
+    // Top-level source
+    { id: 'grid', label: 'Power Grid', color: '#6366f1' },
+
+    // Expandable categories
+    { id: 'coal', label: 'Coal', color: '#8B4513', expandable: true },
+    { id: 'solar', label: 'Solar', color: '#FFD700', expandable: true },
+
+    // Child nodes (hidden initially)
+    { id: 'coal-plant-a', label: 'Plant A', color: '#8B4513', parent: 'coal' },
+    { id: 'coal-plant-b', label: 'Plant B', color: '#8B4513', parent: 'coal' },
+
+    // Destinations (always visible)
+    { id: 'residential', label: 'Residential', color: '#32CD32' },
+    { id: 'industrial', label: 'Industrial', color: '#A0522D' }
+  ],
+  links: [
+    // Grid to sources
+    { source: 'grid', target: 'coal', value: 30 },
+    { source: 'grid', target: 'solar', value: 20 },
+
+    // Coal to plants (shown when expanded)
+    { source: 'coal', target: 'coal-plant-a', value: 20 },
+    { source: 'coal', target: 'coal-plant-b', value: 10 },
+
+    // Plants to destinations (detailed flows)
+    { source: 'coal-plant-a', target: 'residential', value: 12 },
+    { source: 'coal-plant-a', target: 'industrial', value: 8 },
+
+    // Aggregate links (shown when collapsed)
+    { source: 'coal', target: 'residential', value: 18 },
+    { source: 'coal', target: 'industrial', value: 12 },
+
+    // Solar direct (no children)
+    { source: 'solar', target: 'residential', value: 8 },
+    { source: 'solar', target: 'industrial', value: 12 }
+  ]
+};
+```
+
+### Component Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `nodes` | `SankeyNode[]` | required | All nodes including hidden children |
+| `links` | `SankeyLink[]` | required | All links including hidden connections |
+| `height` | `number` | `600` | Container height in pixels |
+
+### Database Integration
+
+Like other components, ExpandableSankey supports database integration with graceful fallback:
+
+**Future Schema** (`database/schema_sankey.sql`):
+```sql
+CREATE TABLE sankey_nodes (
+  id VARCHAR(100) PRIMARY KEY,
+  label VARCHAR(255) NOT NULL,
+  color VARCHAR(7),           -- Hex colour
+  expandable BOOLEAN DEFAULT FALSE,
+  parent VARCHAR(100),        -- Parent node ID
+  category VARCHAR(50),       -- For filtering
+  display_order INTEGER,
+  is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE sankey_links (
+  source VARCHAR(100) NOT NULL,
+  target VARCHAR(100) NOT NULL,
+  value DECIMAL(10, 2) NOT NULL,
+  category VARCHAR(50),
+  PRIMARY KEY (source, target, category)
+);
+```
+
+**Server Utility Pattern** (to be implemented):
+```typescript
+// src/lib/server/sankey.ts
+export async function loadSankeyDataFromDatabase(category?: string) {
+  try {
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      return FALLBACK_SANKEY_DATA;
+    }
+
+    const sql = neon(databaseUrl);
+    const nodes = await sql`SELECT * FROM sankey_nodes WHERE is_active = TRUE`;
+    const links = await sql`SELECT * FROM sankey_links`;
+
+    return {
+      nodes: nodes.map(row => ({
+        id: row.id,
+        label: row.label,
+        color: row.color,
+        expandable: row.expandable,
+        parent: row.parent
+      })),
+      links: links.map(row => ({
+        source: row.source,
+        target: row.target,
+        value: Number(row.value)
+      }))
+    };
+  } catch (error) {
+    console.error('[Sankey] Error:', error);
+    return FALLBACK_SANKEY_DATA;
+  }
+}
+```
+
+### Implementation Details
+
+**Svelte 5 Reactivity**:
+The component uses `$state()` to manage the data object. After calling `expand()` or `collapse()`, the entire data object must be reassigned to trigger reactivity:
+
+```typescript
+function toggleGroup(node: SankeyNode): void {
+  if (node.expandable) {
+    if (node.expanded) {
+      sankeyData.collapse(node);
+    } else {
+      sankeyData.expand(node);
+    }
+    // Critical: Reassign to trigger Svelte 5 reactivity
+    data = sankeyData;
+  }
+}
+```
+
+**Unovis Callbacks**:
+The component configures Unovis with custom callbacks:
+
+```typescript
+const callbacks = {
+  // Colour links based on source node
+  linkColor: (d) => {
+    const sourceNode = data.nodes.find(n => n.id === d.source.id);
+    return sourceNode?.color ?? '#ccc';
+  },
+
+  // Pointer cursor for expandable nodes
+  nodeCursor: (d) => d.expandable ? 'pointer' : null,
+
+  // Click handler
+  events: {
+    [Sankey.selectors.node]: {
+      click: toggleGroup
+    }
+  }
+};
+```
+
+### Best Practices
+
+1. **Aggregate Links**: Always provide aggregate links that match the sum of child links. When expanded, users see detailed breakdowns; when collapsed, they see the summary.
+
+2. **Colour Consistency**: Use the same colour for parent and child nodes to show relationships visually.
+
+3. **Meaningful IDs**: Use descriptive IDs (e.g., `coal-plant-a`) not just numbers, for easier debugging.
+
+4. **Balance Depth**: While unlimited nesting is supported, 2-3 levels provide the best UX. Too many levels become hard to track.
+
+5. **Value Accuracy**: Ensure sum of child link values equals the aggregate link value for data integrity.
+
+### Use Cases
+
+**Perfect for**:
+- Energy distribution systems (power sources → plants → consumers)
+- Budget breakdowns (total → departments → projects → expenses)
+- Supply chain flows (suppliers → warehouses → distributors → retailers)
+- Data processing pipelines (sources → transformations → destinations)
+- Organizational hierarchies (company → divisions → teams → individuals)
+
+**Not ideal for**:
+- Simple one-level flows (use basic Sankey instead)
+- Circular flows (Sankey diagrams are directional)
+- Real-time streaming data (static snapshots work better)
+
+### Dependencies
+
+```bash
+npm install @unovis/svelte @unovis/ts --legacy-peer-deps
+```
+
+**Note**: The `--legacy-peer-deps` flag may be needed due to peer dependency version requirements. The Unovis library is actively maintained and provides excellent TypeScript support.
+
+### Troubleshooting
+
+**Links not showing/disappearing**:
+- Verify both source and target node IDs exist
+- Check that aggregate links have `expandable` source with `!expanded` state
+- Ensure child links have `expandable` source with `expanded === true` state
+
+**Clicks not working**:
+- Confirm `expandable: true` is set on parent nodes
+- Check browser console for errors
+- Verify Unovis imports are correct
+
+**Colours not applying**:
+- Ensure `color` field uses hex format with `#` (e.g., `#8B4513`)
+- Check that `linkColor` callback is finding the source node
+- Verify colour is set on source node, not target
+
+**Performance with large datasets**:
+- Unovis handles virtual rendering efficiently
+- Consider limiting initial visibility (start collapsed)
+- Test with ~100 nodes, should perform smoothly
 
 ## Important Notes
 
