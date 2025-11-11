@@ -564,3 +564,100 @@ export const DEPARTMENT_OPTIONS_GRID = transformToGridOptions(DEPARTMENT_OPTIONS
 export const STATUS_OPTIONS_GRID = transformToGridOptions(STATUS_OPTIONS);
 export const POSITION_OPTIONS_GRID = transformToGridOptions(POSITION_OPTIONS);
 export const LOCATION_OPTIONS_GRID = transformToGridOptions(LOCATION_OPTIONS);
+
+// =============================================================================
+// SANKEY VISUALIZATION FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback data for Expandable Sankey diagram
+ *
+ * Hierarchy Structure:
+ * - Level 0: Root node (Energy Sources)
+ * - Level 1: Main categories (Coal, Gas, Solar) - children of root
+ * - Level 2: Subcategories (Plants) - children of categories
+ * - Level 3: Destinations (Residential, Industrial) - final nodes
+ *
+ * Expected Behavior:
+ * - Initially show: Root → Coal, Gas, Solar → Residential, Industrial
+ * - Click Coal: Expand to show Coal Plant A
+ * - Click Coal again: Collapse back to just Coal
+ * - Same pattern for Gas (shows Gas Plant A, Gas Plant B)
+ * - Solar has no children (not expandable)
+ */
+export const FALLBACK_SANKEY_DATA = {
+	nodes: [
+		// Source (single root node - this is what expands)
+		{ id: 'energy', label: 'Energy Sources', color: '#6366f1' },
+
+		// Categories (these are expandable groups)
+		{ id: 'coal', label: 'Coal', color: '#8B4513', expandable: true },
+		{ id: 'gas', label: 'Natural Gas', color: '#4682B4', expandable: true },
+		{ id: 'solar', label: 'Solar', color: '#FFD700' },
+
+		// Subcategories (shown when parent is expanded)
+		{ id: 'coal-plant-a', label: 'Coal Plant A', color: '#8B4513', parent: 'coal' },
+		{ id: 'coal-bbqs', label: 'Coal BBQs', color: '#8B4513', parent: 'coal' },
+		{ id: 'gas-plant-a', label: 'Gas Plant A', color: '#4682B4', parent: 'gas' },
+		{ id: 'gas-plant-b', label: 'Gas Plant B', color: '#4682B4', parent: 'gas', expandable: true },
+
+		// Sub-subcategories (nested children - shown when grandparent is expanded)
+		{ id: 'substation-z', label: 'Substation Z', color: '#4682B4', parent: 'gas-plant-b' },
+		{ id: 'substation-y', label: 'Substation Y', color: '#4682B4', parent: 'gas-plant-b' },
+		{ id: 'substation-x', label: 'Substation X', color: '#4682B4', parent: 'gas-plant-b' },
+
+		// Destinations (targets - always visible)
+		{ id: 'residential', label: 'Residential', color: '#32CD32' },
+		{ id: 'industrial', label: 'Industrial', color: '#A0522D' }
+	],
+	links: [
+		// Source to categories
+		{ source: 'energy', target: 'coal', value: 12 },
+		{ source: 'energy', target: 'gas', value: 29 },
+		{ source: 'energy', target: 'solar', value: 13 },
+
+		// Coal to subcategories (only shown when expanded)
+		{ source: 'coal', target: 'coal-plant-a', value: 8 },
+		{ source: 'coal', target: 'coal-bbqs', value: 4 },
+
+		// Gas to subcategories (only shown when expanded)
+		{ source: 'gas', target: 'gas-plant-a', value: 15 },
+		{ source: 'gas', target: 'gas-plant-b', value: 14 },
+
+		// Gas Plant B to substations (only shown when Gas Plant B is expanded)
+		{ source: 'gas-plant-b', target: 'substation-z', value: 10 },
+		{ source: 'gas-plant-b', target: 'substation-y', value: 2 },
+		{ source: 'gas-plant-b', target: 'substation-x', value: 2 },
+
+		// Coal subcategories to destinations
+		{ source: 'coal-plant-a', target: 'residential', value: 2 },
+		{ source: 'coal-plant-a', target: 'industrial', value: 6 },
+		{ source: 'coal-bbqs', target: 'residential', value: 4 },
+
+		// Gas Plant A to destinations
+		{ source: 'gas-plant-a', target: 'residential', value: 5 },
+		{ source: 'gas-plant-a', target: 'industrial', value: 10 },
+
+		// Substations to destinations
+		{ source: 'substation-z', target: 'residential', value: 7 },
+		{ source: 'substation-z', target: 'industrial', value: 3 },
+		{ source: 'substation-y', target: 'residential', value: 2 },
+		{ source: 'substation-x', target: 'industrial', value: 2 },
+
+		// Gas Plant B aggregate links (shown when Gas Plant B is NOT expanded)
+		{ source: 'gas-plant-b', target: 'residential', value: 9 },
+		{ source: 'gas-plant-b', target: 'industrial', value: 5 },
+
+		// Solar direct to destinations (no subcategories)
+		{ source: 'solar', target: 'residential', value: 5 },
+		{ source: 'solar', target: 'industrial', value: 8 },
+
+		// Coal aggregate links (shown when Coal is NOT expanded)
+		{ source: 'coal', target: 'residential', value: 6 },
+		{ source: 'coal', target: 'industrial', value: 6 },
+
+		// Gas aggregate links (shown when Gas is NOT expanded)
+		{ source: 'gas', target: 'residential', value: 14 },
+		{ source: 'gas', target: 'industrial', value: 15 }
+	]
+};
