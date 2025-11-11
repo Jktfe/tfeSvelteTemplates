@@ -105,9 +105,12 @@
 		// Create a copy to avoid mutating original
 		const sorted = [...filteredData()];
 
+		// Type guard: sortColumn is guaranteed to be non-null here
+		const columnKey = sortColumn;
+
 		sorted.sort((a, b) => {
-			const aValue = (a as any)[sortColumn];
-			const bValue = (b as any)[sortColumn];
+			const aValue = (a as any)[columnKey];
+			const bValue = (b as any)[columnKey];
 
 			// Handle null/undefined values
 			if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;

@@ -538,9 +538,9 @@ export const LOCATION_OPTIONS = [
  * Used by both client-side and server-side validation to ensure consistency
  * Maps employee property names to their allowed values
  */
-export const VALIDATION_FIELDS = {
+export const VALIDATION_FIELDS: Record<string, readonly string[]> = {
 	department: DEPARTMENT_OPTIONS,
 	status: STATUS_OPTIONS,
 	position: POSITION_OPTIONS,
 	location: LOCATION_OPTIONS
-} as const;
+};

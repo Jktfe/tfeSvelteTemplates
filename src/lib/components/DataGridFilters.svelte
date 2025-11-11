@@ -185,6 +185,8 @@
 			<!-- Department Filter -->
 			{#if departments.length > 0}
 				<div class="filter-group">
+					<!-- svelte-ignore a11y_label_has_associated_control -->
+					<!-- This label is a group heading, not associated with a single control. ARIA labels on children provide accessibility. -->
 					<label class="filter-label">Department</label>
 					<div class="checkbox-group" role="group" aria-label="Department filters">
 						{#each departments as dept}
@@ -204,6 +206,8 @@
 			<!-- Status Filter -->
 			{#if statuses.length > 0}
 				<div class="filter-group">
+					<!-- svelte-ignore a11y_label_has_associated_control -->
+					<!-- This label is a group heading, not associated with a single control. ARIA labels on children provide accessibility. -->
 					<label class="filter-label">Status</label>
 					<div class="checkbox-group" role="group" aria-label="Status filters">
 						{#each statuses as status}
@@ -222,6 +226,8 @@
 
 			<!-- Salary Range Filter -->
 			<div class="filter-group">
+				<!-- svelte-ignore a11y_label_has_associated_control -->
+				<!-- This label is a group heading for salary range inputs. Individual controls have their own labels. -->
 				<label class="filter-label">
 					Salary Range: {formatSalary(filters.salaryMin)} - {formatSalary(filters.salaryMax)}
 				</label>
@@ -257,6 +263,8 @@
 
 			<!-- Hire Date Range Filter -->
 			<div class="filter-group">
+				<!-- svelte-ignore a11y_label_has_associated_control -->
+				<!-- This label is a group heading for date range inputs. Individual controls have their own labels. -->
 				<label class="filter-label">Hire Date Range</label>
 				<div class="date-inputs">
 					<div class="date-input-wrapper">
