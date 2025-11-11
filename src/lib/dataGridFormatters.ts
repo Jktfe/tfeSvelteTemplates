@@ -72,9 +72,10 @@ function sanitizeColor(color: string): string {
 	// Format: rgb(0-255, 0-255, 0-255) or rgba(0-255, 0-255, 0-255, 0-1)
 	const rgbMatch = color.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(0|1|0?\.\d+))?\s*\)$/);
 	if (rgbMatch) {
-		const [, r, g, b] = rgbMatch.map(Number);
+		const [, r, g, b] = rgbMatch;
+		const [rNum, gNum, bNum] = [r, g, b].map(Number);
 		// Validate RGB values are in range 0-255
-		if (r <= 255 && g <= 255 && b <= 255) {
+		if (rNum <= 255 && gNum <= 255 && bNum <= 255) {
 			return color;
 		}
 	}
@@ -134,13 +135,13 @@ export function formatCurrencyDecimals(value: any): string {
  * Handles negative numbers correctly
  *
  * @param value - Numeric value to format
- * @returns Compact currency string (e.g., "£75K", "£1.5M", "£-50K")
+ * @returns Compact currency string (e.g., "£75K", "£1.5M", "-£50K")
  *
  * @example
  * formatCurrencyCompact(75000) // "£75K"
  * formatCurrencyCompact(1500000) // "£1.5M"
  * formatCurrencyCompact(850) // "£850"
- * formatCurrencyCompact(-75000) // "£-75K"
+ * formatCurrencyCompact(-75000) // "-£75K"
  */
 export function formatCurrencyCompact(value: any): string {
 	if (value === null || value === undefined) return '—';
@@ -151,11 +152,11 @@ export function formatCurrencyCompact(value: any): string {
 	const sign = num < 0 ? '-' : '';
 
 	if (absNum >= 1000000) {
-		return `£${sign}${(absNum / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+		return `${sign}£${(absNum / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
 	} else if (absNum >= 1000) {
-		return `£${sign}${(absNum / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+		return `${sign}£${(absNum / 1000).toFixed(1).replace(/\.0$/, '')}K`;
 	}
-	return `£${num.toLocaleString('en-GB')}`;
+	return `${sign}£${absNum.toLocaleString('en-GB')}`;
 }
 
 // ==================================================
@@ -236,36 +237,45 @@ export function formatDateRelative(value: any): string {
 	const diffMs = now.getTime() - date.getTime();
 	const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 	const absDays = Math.abs(diffDays);
+	const isFuture = diffDays < 0;
 
-	// Future dates
-	if (diffDays < 0) {
-		if (absDays === 0) return 'Today';
-		if (absDays === 1) return 'Tomorrow';
-		if (absDays < 7) return `in ${absDays} day${absDays !== 1 ? 's' : ''}`;
+	// Today/Yesterday/Tomorrow (same for both past and future)
+	if (absDays === 0) return 'Today';
+	if (isFuture && absDays === 1) return 'Tomorrow';
+	if (!isFuture && absDays === 1) return 'Yesterday';
 
-		const weekCount = Math.floor(absDays / 7);
-		if (absDays < 30) return `in ${weekCount} week${weekCount !== 1 ? 's' : ''}`;
-
-		const monthCount = Math.floor(absDays / 30);
-		if (absDays < 365) return `in ${monthCount} month${monthCount !== 1 ? 's' : ''}`;
-
-		const yearCount = Math.floor(absDays / 365);
-		return `in ${yearCount} year${yearCount !== 1 ? 's' : ''}`;
+	// Days (less than a week)
+	if (absDays < 7) {
+		return isFuture
+			? `in ${absDays} day${absDays !== 1 ? 's' : ''}`
+			: `${absDays} day${absDays !== 1 ? 's' : ''} ago`;
 	}
 
-	// Past dates
-	if (diffDays === 0) return 'Today';
-	if (diffDays === 1) return 'Yesterday';
-	if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+	// Weeks (less than ~4 weeks / 1 month)
+	const weekCount = Math.floor(absDays / 7);
+	if (absDays < 28) {
+		return isFuture
+			? `in ${weekCount} week${weekCount !== 1 ? 's' : ''}`
+			: `${weekCount} week${weekCount !== 1 ? 's' : ''} ago`;
+	}
 
-	const weekCountPast = Math.floor(diffDays / 7);
-	if (diffDays < 30) return `${weekCountPast} week${weekCountPast !== 1 ? 's' : ''} ago`;
+	// Months and years (use proper calendar arithmetic)
+	const monthsDiff = (now.getFullYear() - date.getFullYear()) * 12 + (now.getMonth() - date.getMonth());
+	const absMonths = Math.abs(monthsDiff);
 
-	const monthCountPast = Math.floor(diffDays / 30);
-	if (diffDays < 365) return `${monthCountPast} month${monthCountPast !== 1 ? 's' : ''} ago`;
+	// Months (less than 12)
+	if (absMonths < 12) {
+		return isFuture
+			? `in ${absMonths} month${absMonths !== 1 ? 's' : ''}`
+			: `${absMonths} month${absMonths !== 1 ? 's' : ''} ago`;
+	}
 
-	const yearCountPast = Math.floor(diffDays / 365);
-	return `${yearCountPast} year${yearCountPast !== 1 ? 's' : ''} ago`;
+	// Years
+	const yearsDiff = now.getFullYear() - date.getFullYear();
+	const absYears = Math.abs(yearsDiff);
+	return isFuture
+		? `in ${absYears} year${absYears !== 1 ? 's' : ''}`
+		: `${absYears} year${absYears !== 1 ? 's' : ''} ago`;
 }
 
 // ==================================================
@@ -315,36 +325,76 @@ export function formatNumberCompact(value: any): string {
 // ==================================================
 
 /**
- * Parse hex color to RGB components
- * Supports both 3-digit (#RGB) and 6-digit (#RRGGBB) formats
+ * Parse color string (hex, rgb/rgba, or named) to RGB values
+ * Supports hex colors (#RGB, #RRGGBB), rgb/rgba strings, and common named colors
+ *
+ * @param color - Color string in any supported format
+ * @returns RGB object or null if parsing fails
  */
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-	// Remove leading '#' if present
-	hex = hex.replace(/^#/, '');
+function parseColorToRgb(color: string): { r: number; g: number; b: number } | null {
+	// Handle hex colors
+	if (color.startsWith('#')) {
+		let hex = color.replace(/^#/, '');
 
-	// Expand 3-digit shorthand to 6 digits
-	if (hex.length === 3) {
-		hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+		// Expand 3-digit shorthand to 6 digits
+		if (hex.length === 3) {
+			hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+		}
+
+		// Handle 8-digit hex (ignore alpha channel)
+		if (hex.length === 8) {
+			hex = hex.slice(0, 6);
+		}
+
+		if (hex.length !== 6) {
+			return null;
+		}
+
+		const r = parseInt(hex.slice(0, 2), 16);
+		const g = parseInt(hex.slice(2, 4), 16);
+		const b = parseInt(hex.slice(4, 6), 16);
+
+		if ([r, g, b].some((v) => isNaN(v))) {
+			return null;
+		}
+
+		return { r, g, b };
 	}
 
-	// Handle 8-digit hex (ignore alpha channel)
-	if (hex.length === 8) {
-		hex = hex.slice(0, 6);
-	}
-
-	if (hex.length !== 6) {
+	// Handle rgb/rgba strings
+	const rgbMatch = color.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/);
+	if (rgbMatch) {
+		const [, r, g, b] = rgbMatch;
+		const [rNum, gNum, bNum] = [r, g, b].map(Number);
+		if (rNum <= 255 && gNum <= 255 && bNum <= 255) {
+			return { r: rNum, g: gNum, b: bNum };
+		}
 		return null;
 	}
 
-	const r = parseInt(hex.slice(0, 2), 16);
-	const g = parseInt(hex.slice(2, 4), 16);
-	const b = parseInt(hex.slice(4, 6), 16);
+	// Handle common named colors (map to hex equivalents)
+	const namedColors: Record<string, string> = {
+		black: '#000000',
+		white: '#ffffff',
+		red: '#ff0000',
+		green: '#008000',
+		blue: '#0000ff',
+		yellow: '#ffff00',
+		orange: '#ffa500',
+		purple: '#800080',
+		pink: '#ffc0cb',
+		gray: '#808080',
+		grey: '#808080',
+		brown: '#a52a2a',
+		transparent: '#000000' // Treat as black for gradient purposes
+	};
 
-	if ([r, g, b].some((v) => isNaN(v))) {
-		return null;
+	const lowerColor = color.toLowerCase();
+	if (lowerColor in namedColors) {
+		return parseColorToRgb(namedColors[lowerColor]);
 	}
 
-	return { r, g, b };
+	return null;
 }
 
 /**
@@ -362,8 +412,8 @@ function getLuminance(r: number, g: number, b: number): number {
  * Caching version for performance
  */
 function interpolateColor(color1: string, color2: string, factor: number): string {
-	const c1 = hexToRgb(color1);
-	const c2 = hexToRgb(color2);
+	const c1 = parseColorToRgb(color1);
+	const c2 = parseColorToRgb(color2);
 
 	if (!c1 || !c2) return color1;
 
@@ -407,8 +457,8 @@ export function createGradientStyle(
 	const safeHigh = sanitizeColor(colorHigh);
 
 	// Pre-parse colors for performance (cache)
-	const c1 = hexToRgb(safeLow);
-	const c2 = hexToRgb(safeHigh);
+	const c1 = parseColorToRgb(safeLow);
+	const c2 = parseColorToRgb(safeHigh);
 
 	return (value: any): string => {
 		if (value === null || value === undefined) return '';
@@ -638,7 +688,7 @@ export function createConditionalClass(
 ) {
 	return (value: any, row?: any): string => {
 		const match = conditions.find((c) => c.condition(value, row));
-		return match ? match.class : '';
+		return match ? sanitizeClassName(match.class) : '';
 	};
 }
 
