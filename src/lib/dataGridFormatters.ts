@@ -29,19 +29,35 @@
 
 /**
  * Escape HTML special characters to prevent XSS attacks
+ * SSR-compatible (works in both browser and server environments)
  *
  * @param str - String to escape
  * @returns HTML-safe string
  */
 function escapeHtml(str: string): string {
-	const div = document.createElement('div');
-	div.textContent = str;
-	return div.innerHTML;
+	return str
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#039;');
+}
+
+/**
+ * Sanitize CSS class names to prevent injection
+ * Only allows alphanumeric, hyphens, underscores, and spaces
+ * Exported for use in DataGrid components
+ *
+ * @param className - Class name string to sanitize
+ * @returns Sanitized class name
+ */
+export function sanitizeClassName(className: string): string {
+	return className.replace(/[^a-zA-Z0-9\s_-]/g, '');
 }
 
 /**
  * Validate and sanitize CSS color value
- * Accepts hex colors (#RGB, #RRGGBB) and named colors
+ * Accepts hex colors (#RGB, #RRGGBB), rgb/rgba, and named colors
  *
  * @param color - Color string to validate
  * @returns Validated color or fallback
@@ -52,9 +68,15 @@ function sanitizeColor(color: string): string {
 		return color;
 	}
 
-	// Check for valid rgb/rgba
-	if (/^rgba?\([\d\s,\.]+\)$/.test(color)) {
-		return color;
+	// Check for valid rgb/rgba with proper value ranges
+	// Format: rgb(0-255, 0-255, 0-255) or rgba(0-255, 0-255, 0-255, 0-1)
+	const rgbMatch = color.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(0|1|0?\.\d+))?\s*\)$/);
+	if (rgbMatch) {
+		const [, r, g, b] = rgbMatch.map(Number);
+		// Validate RGB values are in range 0-255
+		if (r <= 255 && g <= 255 && b <= 255) {
+			return color;
+		}
 	}
 
 	// List of safe CSS color names
@@ -84,7 +106,8 @@ function sanitizeColor(color: string): string {
  *
  * @example
  * formatCurrency(75000) // "£75,000"
- * formatCurrency(1234.56) // "£1,234.56"
+ * formatCurrency(1234) // "£1,234"
+ * formatCurrency(-5000) // "£-5,000"
  */
 export function formatCurrency(value: any): string {
 	if (value === null || value === undefined) return '—';
@@ -108,24 +131,29 @@ export function formatCurrencyDecimals(value: any): string {
 
 /**
  * Format large numbers with K/M abbreviations for UK currency
+ * Handles negative numbers correctly
  *
  * @param value - Numeric value to format
- * @returns Compact currency string (e.g., "£75K", "£1.5M")
+ * @returns Compact currency string (e.g., "£75K", "£1.5M", "£-50K")
  *
  * @example
  * formatCurrencyCompact(75000) // "£75K"
  * formatCurrencyCompact(1500000) // "£1.5M"
  * formatCurrencyCompact(850) // "£850"
+ * formatCurrencyCompact(-75000) // "£-75K"
  */
 export function formatCurrencyCompact(value: any): string {
 	if (value === null || value === undefined) return '—';
 	const num = typeof value === 'number' ? value : parseFloat(value);
 	if (isNaN(num)) return '—';
 
-	if (num >= 1000000) {
-		return `£${(num / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
-	} else if (num >= 1000) {
-		return `£${(num / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+	const absNum = Math.abs(num);
+	const sign = num < 0 ? '-' : '';
+
+	if (absNum >= 1000000) {
+		return `£${sign}${(absNum / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+	} else if (absNum >= 1000) {
+		return `£${sign}${(absNum / 1000).toFixed(1).replace(/\.0$/, '')}K`;
 	}
 	return `£${num.toLocaleString('en-GB')}`;
 }
@@ -189,7 +217,7 @@ export function formatDateUK(value: any): string {
 
 /**
  * Format date as relative time (e.g., "2 years ago", "3 months ago")
- * Handles both past and future dates
+ * Handles both past and future dates with correct plural/singular grammar
  *
  * @param value - Date object or ISO date string
  * @returns Relative time string
@@ -197,6 +225,7 @@ export function formatDateUK(value: any): string {
  * @example
  * formatDateRelative('2020-03-15') // "4 years ago"
  * formatDateRelative('2026-03-15') // "in 1 year"
+ * formatDateRelative('2025-11-12') // "Tomorrow"
  */
 export function formatDateRelative(value: any): string {
 	if (!value) return '—';
@@ -212,19 +241,31 @@ export function formatDateRelative(value: any): string {
 	if (diffDays < 0) {
 		if (absDays === 0) return 'Today';
 		if (absDays === 1) return 'Tomorrow';
-		if (absDays < 7) return `in ${absDays} days`;
-		if (absDays < 30) return `in ${Math.floor(absDays / 7)} weeks`;
-		if (absDays < 365) return `in ${Math.floor(absDays / 30)} months`;
-		return `in ${Math.floor(absDays / 365)} years`;
+		if (absDays < 7) return `in ${absDays} day${absDays !== 1 ? 's' : ''}`;
+
+		const weekCount = Math.floor(absDays / 7);
+		if (absDays < 30) return `in ${weekCount} week${weekCount !== 1 ? 's' : ''}`;
+
+		const monthCount = Math.floor(absDays / 30);
+		if (absDays < 365) return `in ${monthCount} month${monthCount !== 1 ? 's' : ''}`;
+
+		const yearCount = Math.floor(absDays / 365);
+		return `in ${yearCount} year${yearCount !== 1 ? 's' : ''}`;
 	}
 
 	// Past dates
 	if (diffDays === 0) return 'Today';
 	if (diffDays === 1) return 'Yesterday';
-	if (diffDays < 7) return `${diffDays} days ago`;
-	if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-	if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-	return `${Math.floor(diffDays / 365)} years ago`;
+	if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+
+	const weekCountPast = Math.floor(diffDays / 7);
+	if (diffDays < 30) return `${weekCountPast} week${weekCountPast !== 1 ? 's' : ''} ago`;
+
+	const monthCountPast = Math.floor(diffDays / 30);
+	if (diffDays < 365) return `${monthCountPast} month${monthCountPast !== 1 ? 's' : ''} ago`;
+
+	const yearCountPast = Math.floor(diffDays / 365);
+	return `${yearCountPast} year${yearCountPast !== 1 ? 's' : ''} ago`;
 }
 
 // ==================================================
@@ -246,21 +287,25 @@ export function formatNumber(value: any): string {
 
 /**
  * Format number with compact notation (K/M/B)
+ * Handles negative numbers correctly
  *
  * @param value - Numeric value to format
- * @returns Compact number string (e.g., "1.5M", "750K")
+ * @returns Compact number string (e.g., "1.5M", "750K", "-50K")
  */
 export function formatNumberCompact(value: any): string {
 	if (value === null || value === undefined) return '—';
 	const num = typeof value === 'number' ? value : parseFloat(value);
 	if (isNaN(num)) return '—';
 
-	if (num >= 1000000000) {
-		return `${(num / 1000000000).toFixed(1).replace(/\.0$/, '')}B`;
-	} else if (num >= 1000000) {
-		return `${(num / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
-	} else if (num >= 1000) {
-		return `${(num / 1000).toFixed(1).replace(/\.0$/, '')}K`;
+	const absNum = Math.abs(num);
+	const sign = num < 0 ? '-' : '';
+
+	if (absNum >= 1000000000) {
+		return `${sign}${(absNum / 1000000000).toFixed(1).replace(/\.0$/, '')}B`;
+	} else if (absNum >= 1000000) {
+		return `${sign}${(absNum / 1000000).toFixed(1).replace(/\.0$/, '')}M`;
+	} else if (absNum >= 1000) {
+		return `${sign}${(absNum / 1000).toFixed(1).replace(/\.0$/, '')}K`;
 	}
 	return num.toLocaleString('en-GB');
 }
