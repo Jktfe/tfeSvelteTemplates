@@ -421,6 +421,8 @@
 							<h3 class="card-title">{card.title}</h3>
 						{/if}
 						{#if card.content}
+							<!-- Plain text rendering - card.content contains no HTML tags (see FALLBACK_CARDS in constants.ts)
+							     Using {@html} here would be unnecessary overhead with no security benefit -->
 							<div class="card-text">{card.content}</div>
 						{/if}
 					</div>
