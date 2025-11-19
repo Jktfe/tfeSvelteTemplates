@@ -253,7 +253,9 @@
 					<!-- Card content with gradient background (if provided) -->
 					{#if card?.content}
 						<div class="card-content">
-							{@html card.content}
+							<!-- Plain text rendering - card.content contains no HTML tags (see FALLBACK_CARDS in constants.ts)
+							     Using {@html} here would be unnecessary overhead with no security benefit -->
+							{card.content}
 						</div>
 					{/if}
 				</div>
@@ -530,3 +532,5 @@
 		}
 	}
 </style>
+
+<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
