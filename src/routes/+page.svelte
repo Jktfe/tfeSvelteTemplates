@@ -17,6 +17,34 @@
     status: "ready" | "coming-soon";
   }
 
+  interface IntegrationCard {
+    title: string;
+    description: string;
+    href: string;
+    icon: string;
+    features: string[];
+    dependency: string;
+    dependencyUrl: string;
+  }
+
+  const integrations: IntegrationCard[] = [
+    {
+      title: "Clerk Auth",
+      description:
+        "Complete authentication integration with sign-in, sign-up, user management, and protected routes. Features graceful fallback when not configured, making it perfect for template projects.",
+      href: "/auth",
+      icon: "🔐",
+      features: [
+        "Sign in/up flows",
+        "Protected routes",
+        "User management",
+        "Demo mode fallback",
+      ],
+      dependency: "svelte-clerk",
+      dependencyUrl: "https://github.com/markjaquith/svelte-clerk",
+    },
+  ];
+
   const components: ComponentCard[] = [
     {
       title: "Navbar",
@@ -354,6 +382,49 @@
         </div>
       </div>
     </section>
+
+    <!-- Integrations Section -->
+    <section class="integrations-section">
+      <h2 class="section-title">Integrations</h2>
+      <p class="section-subtitle">
+        These templates integrate with external services and <strong>require dependencies</strong>.
+        They demonstrate best practices for third-party service integration in SvelteKit.
+      </p>
+      <div class="integrations-grid">
+        {#each integrations as integration}
+          <a href={integration.href} class="integration-card">
+            <div class="card-header">
+              <span class="card-icon">{integration.icon}</span>
+              <h3 class="card-title">{integration.title}</h3>
+              <span class="badge badge-dependency">Requires Dependency</span>
+            </div>
+
+            <p class="card-description">{integration.description}</p>
+
+            <ul class="card-features">
+              {#each integration.features as feature}
+                <li class="feature-item">
+                  <span class="feature-check">✓</span>
+                  {feature}
+                </li>
+              {/each}
+            </ul>
+
+            <div class="dependency-info">
+              <span class="dependency-label">Dependency:</span>
+              <code class="dependency-name">{integration.dependency}</code>
+            </div>
+
+            <div class="card-footer">
+              <span class="view-demo">
+                View Demo
+                <span class="arrow">→</span>
+              </span>
+            </div>
+          </a>
+        {/each}
+      </div>
+    </section>
   </div>
 </div>
 
@@ -647,6 +718,93 @@
     font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
   }
 
+  /* Integrations Section */
+  .integrations-section {
+    margin-bottom: 4rem;
+    padding: 4rem 0;
+    background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+    margin-left: -2rem;
+    margin-right: -2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .section-subtitle {
+    font-size: 1.1rem;
+    color: #718096;
+    text-align: center;
+    max-width: 600px;
+    margin: -2rem auto 3rem;
+    line-height: 1.6;
+  }
+
+  .integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .integration-card {
+    display: flex;
+    flex-direction: column;
+    padding: 2.5rem;
+    background: #ffffff;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    border-radius: 16px;
+    border: 2px solid #f9a8d4;
+    box-shadow: 0 4px 20px rgba(236, 72, 153, 0.1);
+  }
+
+  .integration-card:hover {
+    transform: translateY(-4px);
+    border-color: #ec4899;
+    box-shadow: 0 8px 30px rgba(236, 72, 153, 0.2);
+  }
+
+  .badge-dependency {
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    color: #be185d;
+  }
+
+  .dependency-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: #fdf2f8;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+  }
+
+  .dependency-label {
+    font-size: 0.875rem;
+    color: #9d174d;
+    font-weight: 500;
+  }
+
+  .dependency-name {
+    padding: 0.25rem 0.5rem;
+    background: #fbcfe8;
+    color: #be185d;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-family: "Monaco", "Menlo", "Ubuntu Mono", monospace;
+  }
+
+  .integration-card .feature-check {
+    color: #ec4899;
+  }
+
+  .integration-card .view-demo {
+    color: #ec4899;
+  }
+
   /* Responsive */
   @media (max-width: 768px) {
     .hero-title {
@@ -675,6 +833,17 @@
     .step {
       flex-direction: column;
       gap: 1rem;
+    }
+
+    .integrations-section {
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    .integrations-grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>
