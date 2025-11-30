@@ -5,6 +5,14 @@
 	import { page } from '$app/stores';
 	import { browser, dev } from '$app/environment';
 	import { inject } from '@vercel/analytics';
+	import { ClerkProvider } from 'svelte-clerk';
+	import type { LayoutData } from './$types';
+
+	// Get layout data from server
+	let { data, children } = $props<{ data: LayoutData; children: any }>();
+
+	// Check if Clerk is configured from server data
+	const isClerkConfigured = $derived(data.isClerkConfigured);
 
 	// Initialize Vercel Analytics (client-side only)
 	if (browser) {
@@ -93,6 +101,24 @@
 			href: '/sankey',
 			icon: '🌊',
 			active: currentPath.startsWith('/sankey')
+		},
+		{
+			label: 'Auth Demo',
+			href: '/auth',
+			icon: '🔐',
+			active: currentPath.startsWith('/auth')
+		},
+		{
+			label: 'Dashboard',
+			href: '/dashboard',
+			icon: '📊',
+			active: currentPath.startsWith('/dashboard')
+		},
+		{
+			label: 'Profile',
+			href: '/profile',
+			icon: '👤',
+			active: currentPath.startsWith('/profile')
 		}
 	]);
 
@@ -101,27 +127,49 @@
 		const activeItem = menuItems.find((item) => item.active);
 		return activeItem ? activeItem.label : 'Svelte Templates';
 	});
-
-	let { children } = $props();
 </script>
 
-<div class="app">
-	<Navbar {menuItems} {currentPageTitle} />
+{#if isClerkConfigured}
+	<!-- Full Clerk authentication when configured -->
+	<ClerkProvider>
+		<div class="app">
+			<Navbar {menuItems} {currentPageTitle} {isClerkConfigured} />
 
-	<main class="main">
-		{@render children()}
-	</main>
+			<main class="main">
+				{@render children()}
+			</main>
 
-	<footer class="footer">
-		<div class="container">
-			<p class="footer-text">
-				Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
-				<a href="https://kit.svelte.dev" target="_blank" rel="noopener">SvelteKit</a> •
-				<a href="https://www.typescriptlang.org" target="_blank" rel="noopener">TypeScript</a>
-			</p>
+			<footer class="footer">
+				<div class="container">
+					<p class="footer-text">
+						Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
+						<a href="https://kit.svelte.dev" target="_blank" rel="noopener">SvelteKit</a> •
+						<a href="https://www.typescriptlang.org" target="_blank" rel="noopener">TypeScript</a>
+					</p>
+				</div>
+			</footer>
 		</div>
-	</footer>
-</div>
+	</ClerkProvider>
+{:else}
+	<!-- Demo mode when Clerk is not configured -->
+	<div class="app">
+		<Navbar {menuItems} {currentPageTitle} {isClerkConfigured} />
+
+		<main class="main">
+			{@render children()}
+		</main>
+
+		<footer class="footer">
+			<div class="container">
+				<p class="footer-text">
+					Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
+					<a href="https://kit.svelte.dev" target="_blank" rel="noopener">SvelteKit</a> •
+					<a href="https://www.typescriptlang.org" target="_blank" rel="noopener">TypeScript</a>
+				</p>
+			</div>
+		</footer>
+	</div>
+{/if}
 
 <style>
 	:global(*) {

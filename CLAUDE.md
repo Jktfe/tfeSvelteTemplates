@@ -1459,6 +1459,140 @@ npm install @unovis/svelte @unovis/ts --legacy-peer-deps
 - Consider limiting initial visibility (start collapsed)
 - Test with ~100 nodes, should perform smoothly
 
+## Clerk Authentication
+
+### Overview
+
+The project includes optional Clerk authentication integration using `svelte-clerk`. Like database integration, authentication works with graceful fallback - if Clerk keys are not configured, the app functions in "demo mode" with all existing pages remaining accessible.
+
+**Key Features:**
+- All existing component demo pages remain **public** (no auth required)
+- New **protected demo pages** (`/dashboard`, `/profile`) demonstrate authenticated routes
+- Auth demo page (`/auth`) showcases all Clerk components
+- Graceful fallback when Clerk keys are not configured
+
+### Configuration
+
+1. Create account at [clerk.com](https://clerk.com)
+2. Create a new application in the Clerk Dashboard
+3. Navigate to API Keys and copy your keys
+4. Add to `.env`:
+   ```
+   PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
+   ```
+5. Restart dev server
+
+### File Structure
+
+```
+src/
+├── hooks.server.ts              # Clerk middleware
+├── app.d.ts                     # TypeScript declarations
+├── lib/
+│   ├── components/
+│   │   └── AuthStatus.svelte    # Auth status indicator
+│   └── server/
+│       └── auth.ts              # Auth utility functions
+└── routes/
+    ├── +layout.server.ts        # SSR auth props
+    ├── auth/                    # Auth demo pages
+    │   ├── +page.svelte         # Component showcase
+    │   ├── sign-in/[[...rest]]/ # Sign-in page
+    │   └── sign-up/[[...rest]]/ # Sign-up page
+    └── (protected)/             # Protected route group
+        ├── +layout.server.ts    # Auth check
+        ├── dashboard/           # Protected dashboard
+        └── profile/             # Protected profile
+```
+
+### Components
+
+- **AuthStatus**: Status indicator (like DatabaseStatus) showing "Auth Enabled" or "Auth Demo Mode"
+- **Navbar**: Includes SignInButton (signed out) or UserButton (signed in) in the right section
+
+### Auth Utility Functions
+
+Import from `$lib/server/auth` in server-side code:
+
+```typescript
+// Require auth (redirects to sign-in if not authenticated)
+import { requireAuth } from '$lib/server/auth';
+
+export const load: PageServerLoad = async (event) => {
+  const userId = requireAuth(event);
+  return { userId };
+};
+
+// Check auth without redirecting
+import { checkAuth } from '$lib/server/auth';
+
+export const load: PageServerLoad = async (event) => {
+  const { authenticated, userId } = checkAuth(event);
+  return { isLoggedIn: authenticated };
+};
+
+// Require auth for API endpoints (returns 401 if not authenticated)
+import { requireAuthAPI } from '$lib/server/auth';
+
+export const POST: RequestHandler = async (event) => {
+  const userId = requireAuthAPI(event);
+  // Process authenticated request
+};
+```
+
+### Protected Route Pattern
+
+Use the `(protected)` route group for pages requiring authentication:
+
+```typescript
+// src/routes/(protected)/+layout.server.ts
+import { redirect } from '@sveltejs/kit';
+
+export const load = async ({ locals, url }) => {
+  const auth = locals.auth();
+  if (!auth?.userId) {
+    const returnUrl = encodeURIComponent(url.pathname);
+    throw redirect(303, `/auth/sign-in?redirect_url=${returnUrl}`);
+  }
+  return { userId: auth.userId };
+};
+```
+
+### Client-Side Auth Access
+
+Use Clerk context in client components (do NOT destructure to maintain reactivity):
+
+```svelte
+<script lang="ts">
+  import { useClerkContext } from 'svelte-clerk/client';
+  import { SignedIn, SignedOut, UserButton } from 'svelte-clerk';
+
+  const ctx = useClerkContext();
+  const userId = $derived(ctx.auth.userId);
+  const user = $derived(ctx.user);
+</script>
+
+<SignedOut>
+  <p>Please sign in</p>
+</SignedOut>
+<SignedIn>
+  <p>Welcome, {user?.firstName}</p>
+  <UserButton />
+</SignedIn>
+```
+
+### Testing Checklist
+
+- [ ] App loads without Clerk keys (graceful fallback)
+- [ ] Sign In button appears in navbar
+- [ ] After sign-in, UserButton appears
+- [ ] `/auth` demo page shows components
+- [ ] `/dashboard` redirects to sign-in when not authenticated
+- [ ] `/profile` shows UserProfile when authenticated
+- [ ] All existing component pages remain accessible without auth
+- [ ] SSR works correctly (page refresh maintains auth state)
+
 ## Important Notes
 
 - **Do not install additional animation libraries** without considering component portability

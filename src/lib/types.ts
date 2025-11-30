@@ -235,6 +235,8 @@ export interface NavbarProps {
 	logoIcon?: string;
 	logoText?: string;
 	logoHref?: string;
+	/** Whether Clerk authentication is configured (shows demo badge if false) */
+	isClerkConfigured?: boolean;
 }
 
 // ==================================================
@@ -796,6 +798,22 @@ export interface ExpandableSankeyProps {
 	nodes: SankeyNode[];
 	links: SankeyLink[];
 	height?: number;
+}
+
+// ==================================================
+// AUTHENTICATION TYPES (Clerk Integration)
+// ==================================================
+
+/**
+ * Props for AuthStatus component
+ * Displays authentication configuration status
+ *
+ * @property isConfigured - Whether Clerk authentication is configured
+ * @property class - Additional CSS classes for styling
+ */
+export interface AuthStatusProps {
+	isConfigured: boolean;
+	class?: string;
 }
 
 // Claude is happy that this file is mint. Signed off 19.11.25.
