@@ -122,13 +122,29 @@
 		<div class="component-demo">
 			{#if isConfigured}
 				{#if activeTab === 'sign-in'}
-					<div class="demo-wrapper">
-						<SignIn signUpUrl="/auth/sign-up" />
-					</div>
+					<SignedOut>
+						<div class="demo-wrapper">
+							<SignIn signUpUrl="/auth/sign-up" />
+						</div>
+					</SignedOut>
+					<SignedIn>
+						<div class="already-signed-in-notice">
+							<span class="notice-icon">✅</span>
+							<p>You're already signed in! Sign out to see the SignIn component.</p>
+						</div>
+					</SignedIn>
 				{:else if activeTab === 'sign-up'}
-					<div class="demo-wrapper">
-						<SignUp signInUrl="/auth/sign-in" />
-					</div>
+					<SignedOut>
+						<div class="demo-wrapper">
+							<SignUp signInUrl="/auth/sign-in" />
+						</div>
+					</SignedOut>
+					<SignedIn>
+						<div class="already-signed-in-notice">
+							<span class="notice-icon">✅</span>
+							<p>You're already signed in! Sign out to see the SignUp component.</p>
+						</div>
+					</SignedIn>
 				{:else if activeTab === 'profile'}
 					<SignedIn>
 						<div class="demo-wrapper">
@@ -417,13 +433,21 @@ export const handle = withClerkHandler();</pre>
 		text-decoration: underline;
 	}
 
-	.not-signed-in-notice {
+	.not-signed-in-notice,
+	.already-signed-in-notice {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
 		padding: 1rem 1.5rem;
-		background: #ebf8ff;
 		border-radius: 0.5rem;
+	}
+
+	.not-signed-in-notice {
+		background: #ebf8ff;
+	}
+
+	.already-signed-in-notice {
+		background: #f0fff4;
 	}
 
 	.notice-icon {
@@ -433,6 +457,11 @@ export const handle = withClerkHandler();</pre>
 	.not-signed-in-notice p {
 		margin: 0;
 		color: #2b6cb0;
+	}
+
+	.already-signed-in-notice p {
+		margin: 0;
+		color: #276749;
 	}
 
 	/* Protected Routes Grid */
