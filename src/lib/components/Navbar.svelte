@@ -12,10 +12,11 @@
   - Backdrop overlay when panel is open
   - Sticky positioning with backdrop blur
   - Collapsible menu with smooth animations
+  - Conditional auth UI (Clerk when configured, demo mode otherwise)
   - Zero external dependencies
 
   Usage:
-    <Navbar {menuItems} currentPageTitle="Home" />
+    <Navbar {menuItems} currentPageTitle="Home" isClerkConfigured={true} />
 
   Props:
   - menuItems: Array of MenuItem objects for navigation
@@ -23,18 +24,21 @@
   - logoIcon: Logo icon/emoji (default: '⚡')
   - logoText: Logo text (default: 'Svelte Templates')
   - logoHref: Logo link destination (default: '/')
+  - isClerkConfigured: Whether Clerk authentication is configured (default: false)
 -->
 
 <script lang="ts">
 	import type { NavbarProps } from '$lib/types';
 	import { onMount } from 'svelte';
+	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
 
 	let {
 		menuItems,
 		currentPageTitle = 'Home',
 		logoIcon = '⚡',
 		logoText = 'Svelte Templates',
-		logoHref = '/'
+		logoHref = '/',
+		isClerkConfigured = false
 	}: NavbarProps = $props();
 
 	let isPanelOpen = $state(false);
@@ -96,8 +100,28 @@
 			</a>
 		</div>
 
-		<!-- Right Section: Empty for balance -->
-		<div class="navbar-right"></div>
+		<!-- Right Section: Auth UI -->
+		<div class="navbar-right">
+			{#if isClerkConfigured}
+				<!-- Clerk authentication UI when configured -->
+				<div class="auth-buttons">
+					<SignedOut>
+						<SignInButton mode="modal">
+							<button class="auth-button">Sign In</button>
+						</SignInButton>
+					</SignedOut>
+					<SignedIn>
+						<UserButton />
+					</SignedIn>
+				</div>
+			{:else}
+				<!-- Demo mode indicator when Clerk is not configured -->
+				<div class="auth-demo-badge" title="Configure Clerk to enable authentication">
+					<span class="demo-icon">🔓</span>
+					<span class="demo-text">Demo Mode</span>
+				</div>
+			{/if}
+		</div>
 	</div>
 </header>
 
@@ -251,11 +275,67 @@
 	}
 
 	/* ============================================
-	   Right Section
+	   Right Section: Auth UI
 	   ============================================ */
 
 	.navbar-right {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
 		flex: 1;
+	}
+
+	.auth-buttons {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.auth-button {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.5rem 1rem;
+		background-color: #007aff;
+		color: white;
+		border: none;
+		border-radius: 0.375rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s ease;
+		white-space: nowrap;
+	}
+
+	.auth-button:hover {
+		background-color: #0056b3;
+	}
+
+	.auth-button:focus {
+		outline: 2px solid #007aff;
+		outline-offset: 2px;
+	}
+
+	.auth-demo-badge {
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.75rem;
+		background-color: #f3f4f6;
+		border: 1px solid #d1d5db;
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #6b7280;
+		cursor: help;
+	}
+
+	.demo-icon {
+		font-size: 0.875rem;
+	}
+
+	.demo-text {
+		white-space: nowrap;
 	}
 
 	/* ============================================
