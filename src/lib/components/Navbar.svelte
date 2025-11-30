@@ -106,9 +106,7 @@
 				<!-- Clerk authentication UI when configured -->
 				<div class="auth-buttons">
 					<SignedOut>
-						<SignInButton mode="modal">
-							<button class="auth-button">Sign In</button>
-						</SignInButton>
+						<SignInButton mode="modal" class="auth-button" />
 					</SignedOut>
 					<SignedIn>
 						<UserButton />
@@ -291,7 +289,8 @@
 		gap: 0.5rem;
 	}
 
-	.auth-button {
+	/* Style for Clerk's SignInButton - uses :global since button is rendered by Clerk */
+	.auth-buttons :global(button) {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -307,11 +306,11 @@
 		white-space: nowrap;
 	}
 
-	.auth-button:hover {
+	.auth-buttons :global(button:hover) {
 		background-color: #0056b3;
 	}
 
-	.auth-button:focus {
+	.auth-buttons :global(button:focus) {
 		outline: 2px solid #007aff;
 		outline-offset: 2px;
 	}
