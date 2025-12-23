@@ -15,9 +15,9 @@
 	// Get server data
 	let { data }: { data: PageData } = $props();
 
-	// Destructure testimonials from server data
-	const testimonials = data.staticTestimonials;
-	const testimonialsInteractive = data.interactiveTestimonials;
+	// Reactive references to testimonials (stays synced with data prop)
+	let testimonials = $derived(data.staticTestimonials);
+	let testimonialsInteractive = $derived(data.interactiveTestimonials);
 
 	// Company logos (using emojis for demo)
 	const companies = ['🚀 SpaceX', '🍎 Apple', '🔍 Google', '💼 Microsoft', '⚡ Tesla', '🎵 Spotify'];

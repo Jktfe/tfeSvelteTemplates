@@ -26,12 +26,12 @@
 
 	/**
 	 * Component state using Svelte 5 $state rune
-	 * - items: Current list of cards (synced with database or in-memory)
+	 * - items: Reactive reference to server data (stays synced with data prop)
 	 * - editorOpen: Whether the editor modal is visible
 	 * - editingItem: Item being edited (null for create mode)
 	 * - loading: Global loading state for async operations
 	 */
-	let items = $state<EditorData[]>(data.editorData);
+	let items = $derived(data.editorData);
 	let editorOpen = $state(false);
 	let editingItem = $state<EditorData | null>(null);
 	let loading = $state(false);
@@ -121,7 +121,7 @@
 		const { data: newItem } = await response.json();
 
 		// Add to items array
-		items = [...items, newItem];
+		data.editorData = [...data.editorData, newItem];
 	}
 
 	/**
@@ -142,7 +142,7 @@
 		const { data: updatedItem } = await response.json();
 
 		// Update items array
-		items = items.map((item) => (item.id === updatedItem.id ? updatedItem : item));
+		data.editorData = data.editorData.map((item) => (item.id === updatedItem.id ? updatedItem : item));
 	}
 
 	/**
@@ -155,14 +155,14 @@
 			id: -Date.now() // Temporary negative ID
 		};
 
-		items = [...items, newItem];
+		data.editorData = [...data.editorData, newItem];
 	}
 
 	/**
 	 * Update item in-memory (no database)
 	 */
 	function handleInMemoryUpdate(formData: EditorData) {
-		items = items.map((item) => (item.id === formData.id ? formData : item));
+		data.editorData = data.editorData.map((item) => (item.id === formData.id ? formData : item));
 	}
 
 	/**
@@ -204,14 +204,14 @@
 		}
 
 		// Remove from items array
-		items = items.filter((item) => item.id !== id);
+		data.editorData = data.editorData.filter((item) => item.id !== id);
 	}
 
 	/**
 	 * Delete item from in-memory state
 	 */
 	function handleInMemoryDelete(id: number) {
-		items = items.filter((item) => item.id !== id);
+		data.editorData = data.editorData.filter((item) => item.id !== id);
 	}
 </script>
 

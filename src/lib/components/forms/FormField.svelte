@@ -159,6 +159,7 @@
 	.field-input {
 		/* Container for the actual input element */
 		/* Input elements styled by individual field components */
+		display: block; /* Ensures block-level layout */
 	}
 
 	.field-error {

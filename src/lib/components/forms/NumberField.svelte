@@ -179,7 +179,8 @@
 	}
 
 	.number-field-input[type='number'] {
-		-moz-appearance: textfield;
+		appearance: textfield; /* Standard property */
+		-moz-appearance: textfield; /* Firefox fallback */
 	}
 
 	.number-field-input::placeholder {
