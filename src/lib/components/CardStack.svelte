@@ -292,6 +292,31 @@
 		}
 	}
 
+	/**
+	 * REDUCED MOTION SUPPORT
+	 * Respect user preference for reduced animations (accessibility requirement)
+	 */
+	@media (prefers-reduced-motion: reduce) {
+		.card-wrapper {
+			transition: none;
+		}
+
+		.card {
+			transition: none;
+		}
+
+		/* Provide instant visual feedback without animation */
+		.card-wrapper:hover,
+		.card-wrapper:focus,
+		.card-wrapper.hovered {
+			transform: translateY(-10px);
+		}
+
+		.card-wrapper.selected {
+			transform: translateY(-15px) scale(1.05);
+		}
+	}
+
 	/* MOBILE RESPONSIVE STYLES */
 	@media (max-width: 768px) {
 		.stack-container {

@@ -87,6 +87,11 @@
 	let animationFrameId: number | null = null;
 	let lastTimestamp = 0;
 
+	// Visibility-based animation optimization
+	// Only run RAF loop when component is visible to save CPU/battery
+	let isVisible = $state(true);
+	let observer: IntersectionObserver | null = null;
+
 	// Calculate widths on mount and when content changes
 	onMount(() => {
 		// Use requestAnimationFrame to ensure DOM is fully rendered
@@ -106,15 +111,36 @@
 			}
 		};
 
+		// Set up Intersection Observer for visibility-based animation pausing
+		// This saves CPU/battery by stopping RAF when marquee is off-screen
+		if (containerEl && typeof IntersectionObserver !== 'undefined') {
+			observer = new IntersectionObserver(
+				(entries) => {
+					const wasVisible = isVisible;
+					isVisible = entries[0]?.isIntersecting ?? true;
+
+					// Resume animation when becoming visible, pause when hidden
+					if (isVisible && !wasVisible && !isDragging) {
+						startAnimation();
+					} else if (!isVisible && wasVisible) {
+						stopAnimation();
+					}
+				},
+				{ threshold: 0 }
+			);
+			observer.observe(containerEl);
+		}
+
 		window.addEventListener('resize', handleResize);
 		return () => {
 			window.removeEventListener('resize', handleResize);
 			stopAnimation();
+			observer?.disconnect();
 		};
 	});
 
 	function startAnimation() {
-		if (isDragging || !contentWidth) return;
+		if (isDragging || !contentWidth || !isVisible) return;
 
 		stopAnimation();
 		lastTimestamp = 0;
@@ -212,7 +238,7 @@
 
 	// Restart animation when direction or duration changes
 	$effect(() => {
-		if (!isDragging) {
+		if (!isDragging && isVisible) {
 			duration;
 			currentDirection;
 			stopAnimation();
