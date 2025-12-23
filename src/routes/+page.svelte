@@ -228,6 +228,20 @@
       ],
       status: "ready",
     },
+    {
+      title: "Maps",
+      description:
+        "Interactive mapping components using Leaflet.js and OpenStreetMap. Four variants: basic map, location search with geocoding, database markers with filtering, and real-time marker additions.",
+      href: "/maps",
+      icon: "🗺️",
+      features: [
+        "Location search",
+        "Database markers",
+        "Live pin additions",
+        "Category filtering",
+      ],
+      status: "ready",
+    },
   ];
 </script>
 

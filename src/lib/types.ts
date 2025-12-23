@@ -960,3 +960,188 @@ export interface FolderFilesProps {
 	showMetadata?: boolean;
 	enable3DEffect?: boolean;
 }
+
+// ==================================================
+// MAPPING COMPONENT TYPES
+// ==================================================
+
+/**
+ * Geographic coordinates for map positioning
+ *
+ * @property lat - Latitude in decimal degrees (-90 to 90)
+ * @property lng - Longitude in decimal degrees (-180 to 180)
+ */
+export interface LatLng {
+	lat: number;
+	lng: number;
+}
+
+/**
+ * Additional metadata for map markers
+ * Extensible structure for location-specific information
+ */
+export interface MapMarkerMetadata {
+	address?: string;
+	phone?: string;
+	website?: string;
+	hours?: string;
+	rating?: number;
+	tags?: string[];
+}
+
+/**
+ * Map marker data structure
+ * Represents a single point on the map with associated information
+ *
+ * @property id - Unique identifier for the marker
+ * @property position - Geographic coordinates (lat/lng)
+ * @property title - Display title for the marker (shown in popup header)
+ * @property description - Optional detailed description (shown in popup body)
+ * @property category - Optional category for filtering/styling (e.g., 'restaurant', 'hotel')
+ * @property iconType - Optional icon type for custom marker styling
+ * @property imageUrl - Optional image URL for popup display
+ * @property metadata - Optional additional data (phone, website, hours, etc.)
+ */
+export interface MapMarker {
+	id: number;
+	position: LatLng;
+	title: string;
+	description?: string;
+	category?: string;
+	iconType?: 'default' | 'pin' | 'circle' | 'custom';
+	imageUrl?: string;
+	metadata?: MapMarkerMetadata;
+}
+
+/**
+ * Database row structure from the map_markers table
+ * Maps to the schema defined in database/schema_maps.sql
+ */
+export interface MapMarkerRow {
+	id: number;
+	latitude: number;
+	longitude: number;
+	title: string;
+	description: string | null;
+	category: string;
+	icon_type: string;
+	image_url: string | null;
+	metadata: string | null; // JSON string
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * Search result from geocoding service (Nominatim)
+ * Used by MapSearch component for location suggestions
+ */
+export interface GeoSearchResult {
+	displayName: string;
+	position: LatLng;
+	boundingBox?: [number, number, number, number]; // [south, north, west, east]
+	type?: string; // Place type (city, road, building, etc.)
+	importance?: number; // Relevance score from Nominatim
+}
+
+/**
+ * Configuration for map view state
+ * Used to set initial view and track current view
+ */
+export interface MapViewState {
+	center: LatLng;
+	zoom: number;
+}
+
+/**
+ * Props for MapBasic component
+ * Simple interactive map with zoom/pan controls
+ *
+ * @property center - Initial map center coordinates
+ * @property zoom - Initial zoom level (1-18, default: 13)
+ * @property height - Map container height in pixels (default: 400)
+ * @property enableScrollZoom - Allow mouse wheel zoom (default: true)
+ * @property showZoomControl - Show +/- zoom buttons (default: true)
+ * @property showAttribution - Show OpenStreetMap attribution (default: true)
+ * @property class - Additional CSS classes for container
+ */
+export interface MapBasicProps {
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	enableScrollZoom?: boolean;
+	showZoomControl?: boolean;
+	showAttribution?: boolean;
+	class?: string;
+}
+
+/**
+ * Props for MapSearch component
+ * Map with location search functionality
+ *
+ * @property center - Initial map center coordinates
+ * @property zoom - Initial zoom level (default: 13)
+ * @property height - Map container height in pixels (default: 400)
+ * @property placeholder - Search input placeholder text
+ * @property debounceMs - Debounce time for search input (default: 300)
+ * @property maxResults - Maximum search results to show (default: 5)
+ * @property onLocationSelect - Callback when user selects a location
+ */
+export interface MapSearchProps {
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	placeholder?: string;
+	debounceMs?: number;
+	maxResults?: number;
+	onLocationSelect?: (result: GeoSearchResult) => void;
+}
+
+/**
+ * Props for MapMarkers component
+ * Map displaying markers from database with popups
+ *
+ * @property markers - Array of marker data to display
+ * @property center - Initial map center (auto-calculated from markers if not provided)
+ * @property zoom - Initial zoom level (auto-calculated if not provided)
+ * @property height - Map container height in pixels (default: 500)
+ * @property enableClustering - Group nearby markers into clusters (default: false)
+ * @property showCategories - Show category filter UI (default: true)
+ * @property onMarkerClick - Callback when marker is clicked
+ */
+export interface MapMarkersProps {
+	markers: MapMarker[];
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	enableClustering?: boolean;
+	showCategories?: boolean;
+	onMarkerClick?: (marker: MapMarker) => void;
+}
+
+/**
+ * Props for MapLive component
+ * Map with real-time marker additions
+ *
+ * @property markers - Array of marker data (bindable for external updates)
+ * @property center - Initial map center
+ * @property zoom - Initial zoom level (default: 13)
+ * @property height - Map container height in pixels (default: 500)
+ * @property enableAddMode - Allow clicking map to add markers (default: true)
+ * @property animateNewMarkers - Animate markers when added (default: true)
+ * @property maxMarkers - Maximum markers allowed (0 = unlimited, default: 0)
+ * @property onMarkerAdd - Callback when marker is added
+ * @property onMarkerRemove - Callback when marker is removed
+ */
+export interface MapLiveProps {
+	markers?: MapMarker[];
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	enableAddMode?: boolean;
+	animateNewMarkers?: boolean;
+	maxMarkers?: number;
+	onMarkerAdd?: (marker: MapMarker) => void;
+	onMarkerRemove?: (marker: MapMarker) => void;
+}
