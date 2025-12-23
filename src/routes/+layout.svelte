@@ -109,6 +109,12 @@
 			active: currentPath.startsWith('/folderfiles')
 		},
 		{
+			label: 'Maps',
+			href: '/maps',
+			icon: '🗺️',
+			active: currentPath.startsWith('/maps')
+		},
+		{
 			label: 'Auth Demo',
 			href: '/auth',
 			icon: '🔐',
