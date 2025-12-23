@@ -131,6 +131,20 @@
       status: "ready",
     },
     {
+      title: "SpeedDial",
+      description:
+        "Floating action button with expandable menu supporting linear, circle, semi-circle, and quarter-circle layouts. Features staggered animations, tooltips, and modal backdrop.",
+      href: "/speeddial",
+      icon: "🚀",
+      features: [
+        "4 layout types",
+        "Staggered animations",
+        "Smart tooltips",
+        "Modal backdrop",
+      ],
+      status: "ready",
+    },
+    {
       title: "ExpandingCard",
       description:
         "Interactive card that smoothly transitions between compact and expanded layouts using Svelte's crossfade. Perfect for galleries, portfolios, or progressive content disclosure.",
