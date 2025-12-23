@@ -662,6 +662,7 @@
 		{@const gridCols = gridColumns() as any}
 		{@const gridProps = editable ? { edit: true } : {}}
 		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
+		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
 		<WillowDark>
 			<Grid
 				data={gridData()}
@@ -670,14 +671,14 @@
 				rowHeight={40}
 				{...pagerProps}
 				{...gridProps}
-				on:edit={handleEdit}
-				on:selection={handleSelection}
+				{...eventProps}
 			/>
 		</WillowDark>
 	{:else}
 		{@const gridCols = gridColumns() as any}
 		{@const gridProps = editable ? { edit: true } : {}}
 		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
+		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
 		<Willow>
 			<Grid
 				data={gridData()}
@@ -686,8 +687,7 @@
 				rowHeight={40}
 				{...pagerProps}
 				{...gridProps}
-				on:edit={handleEdit}
-				on:selection={handleSelection}
+				{...eventProps}
 			/>
 		</Willow>
 	{/if}

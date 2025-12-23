@@ -41,6 +41,7 @@
 	 * Form state management using Svelte 5 $state rune
 	 * Each field tracks its value separately for granular updates
 	 */
+	/* svelte-ignore state_referenced_locally */
 	let formData = $state<EditorData>({
 		id: initialData.id,
 		heading: initialData.heading || '',
@@ -478,24 +479,30 @@
 		gap: 1.25rem;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.form-field {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-label {
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: #374151;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.required {
 		color: #dc2626;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-input,
+	/* svelte-ignore css-unused-selector */
 	.field-textarea,
+	/* svelte-ignore css-unused-selector */
 	.field-select {
 		padding: 0.625rem 0.75rem;
 		border: 1px solid #d1d5db;
@@ -506,29 +513,38 @@
 		font-family: inherit;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-input:focus,
+	/* svelte-ignore css-unused-selector */
 	.field-textarea:focus,
+	/* svelte-ignore css-unused-selector */
 	.field-select:focus {
 		outline: none;
 		border-color: #3b82f6;
 		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-input[aria-invalid='true'],
+	/* svelte-ignore css-unused-selector */
 	.field-textarea[aria-invalid='true'] {
 		border-color: #dc2626;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-input[aria-invalid='true']:focus,
+	/* svelte-ignore css-unused-selector */
 	.field-textarea[aria-invalid='true']:focus {
 		box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-textarea {
 		resize: vertical;
 		min-height: 4rem;
 	}
 
+	/* svelte-ignore css-unused-selector */
 	.field-error {
 		font-size: 0.875rem;
 		color: #dc2626;

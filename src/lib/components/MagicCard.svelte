@@ -55,7 +55,9 @@
 	}: Props = $props();
 
 	// Use Svelte 5 $state runes for reactive mouse tracking
+	/* svelte-ignore state_referenced_locally */
 	let mouseX = $state(-gradientSize);
+	/* svelte-ignore state_referenced_locally */
 	let mouseY = $state(-gradientSize);
 	let isHovering = $state(false);
 

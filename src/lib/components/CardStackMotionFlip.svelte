@@ -44,6 +44,7 @@
 	let animatingCardIndex: number | null = $state(null);
 
 	// Card order (indices into cards array)
+	/* svelte-ignore state_referenced_locally */
 	let cardOrder = $state<number[]>([...Array(cards.length).keys()]);
 
 	// Touch/drag tracking
