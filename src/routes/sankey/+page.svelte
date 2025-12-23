@@ -97,7 +97,7 @@
 
 		<h2>Usage Example</h2>
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import ExpandableSankey from '$lib/components/ExpandableSankey.svelte';
   import { FALLBACK_SANKEY_DATA } from '$lib/constants';
 </script>

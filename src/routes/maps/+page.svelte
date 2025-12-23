@@ -233,9 +233,9 @@
 
 		<div class="code-block">
 			{#if activeExample === 'basic'}
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import MapBasic from '$lib/components/MapBasic.svelte';
-</script>
+${'<'}/script>
 
 <MapBasic
   center={{ lat: 51.5074, lng: -0.1278 }}
@@ -245,7 +245,7 @@
   showZoomControl={true}
 />`}</code></pre>
 			{:else if activeExample === 'search'}
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import MapSearch from '$lib/components/MapSearch.svelte';
   import type { GeoSearchResult } from '$lib/types';
 
@@ -253,7 +253,7 @@
     console.log('Selected:', result.displayName);
     console.log('Position:', result.position);
   }
-</script>
+${'<'}/script>
 
 <MapSearch
   center={{ lat: 51.5074, lng: -0.1278 }}
@@ -273,11 +273,11 @@ export const load = async () => {
 };
 
 // +page.svelte
-<script>
+${'<'}script>
   import MapMarkers from '$lib/components/MapMarkers.svelte';
 
   let { data } = $props();
-</script>
+${'<'}/script>
 
 <MapMarkers
   markers={data.markers}
@@ -286,7 +286,7 @@ export const load = async () => {
   onMarkerClick={(m) => console.log(m)}
 />`}</code></pre>
 			{:else}
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import MapLive from '$lib/components/MapLive.svelte';
   import type { MapMarker } from '$lib/types';
 
@@ -296,7 +296,7 @@ export const load = async () => {
     console.log('Added:', marker);
     // Save to database if needed
   }
-</script>
+${'<'}/script>
 
 <MapLive
   bind:markers

@@ -58,7 +58,7 @@
       <details class="code-block">
         <summary>View Code Example</summary>
         <pre><code
-            >{`<script>
+            >{`${'<'}script>
   import CardStack from '$lib/components/CardStack.svelte';
 
   const cards = [
@@ -105,7 +105,7 @@
       <details class="code-block">
         <summary>View Code Example</summary>
         <pre><code
-            >{`<script>
+            >{`${'<'}script>
   import CardStackAdvanced from '$lib/components/CardStackAdvanced.svelte';
 
   const cards = [
@@ -149,7 +149,7 @@
       <details class="code-block">
         <summary>View Code Example</summary>
         <pre><code
-            >{`<script>
+            >{`${'<'}script>
   import CardStackMotionFlip from '$lib/components/CardStackMotionFlip.svelte';
 
   const cards = [

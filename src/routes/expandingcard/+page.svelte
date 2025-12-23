@@ -63,7 +63,7 @@
       <details class="code-block">
         <summary>View Code Example</summary>
         <pre><code
-            >{`<script>
+            >{`${'<'}script>
   import ExpandingCard from '$lib/components/ExpandingCard.svelte';
 </script>
 
@@ -106,7 +106,7 @@
       <details class="code-block">
         <summary>View Code Example</summary>
         <pre><code
-            >{`<script>
+            >{`${'<'}script>
   // Data loaded from server
   let { data } = $props();
 </script>
