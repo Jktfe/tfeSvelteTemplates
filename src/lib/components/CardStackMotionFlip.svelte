@@ -24,6 +24,7 @@
 
 <script lang="ts">
 	import type { CardStackMotionFlipProps } from '$lib/types';
+	import { lockScroll } from '$lib/scrollLock';
 
 	// Props with defaults
 	let {
@@ -44,6 +45,7 @@
 	let animatingCardIndex: number | null = $state(null);
 
 	// Card order (indices into cards array)
+	// Tracks display position of each card - mutated by rollCard to reorder without changing cards prop
 	/* svelte-ignore state_referenced_locally */
 	let cardOrder = $state<number[]>([...Array(cards.length).keys()]);
 
@@ -54,25 +56,29 @@
 	let touchCurrentY = $state(0);
 	let isDragging = $state(false);
 
+	// Scroll lock cleanup function - coordinated via scrollLock utility
+	let unlockScroll: (() => void) | null = null;
+
 	// Derived values for drag preview
 	let dragDeltaX = $derived(isDragging ? touchCurrentX - touchStartX : 0);
 	let dragDeltaY = $derived(isDragging ? touchCurrentY - touchStartY : 0);
 
-	// Reduced motion preference
+	// Reduced motion preference - SSR-safe
 	let prefersReducedMotion = $state(false);
 
 	$effect(() => {
-		if (typeof window !== 'undefined') {
-			const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-			prefersReducedMotion = mediaQuery.matches;
+		// SSR guard
+		if (typeof window === 'undefined') return;
 
-			const handler = (e: MediaQueryListEvent) => {
-				prefersReducedMotion = e.matches;
-			};
+		const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+		prefersReducedMotion = mediaQuery.matches;
 
-			mediaQuery.addEventListener('change', handler);
-			return () => mediaQuery.removeEventListener('change', handler);
-		}
+		const handler = (e: MediaQueryListEvent) => {
+			prefersReducedMotion = e.matches;
+		};
+
+		mediaQuery.addEventListener('change', handler);
+		return () => mediaQuery.removeEventListener('change', handler);
 	});
 
 	/**
@@ -188,20 +194,22 @@
 	}
 
 	/**
-	 * Lock body scroll
+	 * Lock body scroll using coordinated scroll lock utility
+	 * This prevents conflicts with other components (modals, drawers) that also lock scroll
 	 */
 	function lockBodyScroll() {
-		if (typeof document !== 'undefined') {
-			document.body.style.overflow = 'hidden';
+		if (unlockScroll === null) {
+			unlockScroll = lockScroll();
 		}
 	}
 
 	/**
-	 * Unlock body scroll
+	 * Unlock body scroll using coordinated scroll lock utility
 	 */
 	function unlockBodyScroll() {
-		if (typeof document !== 'undefined') {
-			document.body.style.overflow = '';
+		if (unlockScroll !== null) {
+			unlockScroll();
+			unlockScroll = null;
 		}
 	}
 

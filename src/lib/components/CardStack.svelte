@@ -46,6 +46,8 @@
 	// Track mouse movement direction for dynamic partial reveal
 	// When partialRevealSide is 'right', we start assuming leftward mouse movement (card shifts left, hiding right edge)
 	// When partialRevealSide is 'left', we start assuming rightward mouse movement (card shifts right, hiding left edge)
+	// mouseDirection is initialized from partialRevealSide prop but then updated by user interaction
+	// The svelte-ignore is safe because we're intentionally deriving initial state from props
 	/* svelte-ignore state_referenced_locally */
 	let mouseDirection = $state<'left' | 'right' | null>(partialRevealSide === 'right' ? 'right' : 'left');
 	let previousMouseX = $state<number>(0);

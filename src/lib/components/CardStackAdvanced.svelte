@@ -46,7 +46,6 @@
 -->
 
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import type { Card, CardStackProps } from '$lib/types';
 
 	// Component props with default values
@@ -55,6 +54,8 @@
 	// Reactive state
 	let hoveredIndex = $state<number | null>(null);
 	let selectedIndex = $state<number | null>(null);
+	// cardOrder tracks the display position of each card - initialized from cards array indices
+	// This array is mutated by cycleForward/cycleBackward to reorder cards without changing the cards prop
 	/* svelte-ignore state_referenced_locally */
 	let cardOrder = $state([...Array(cards.length).keys()]); // [0, 1, 2, 3, ...]
 	let isAnimating = $state(false);
@@ -64,9 +65,13 @@
 	// Track mouse movement direction for dynamic partial reveal
 	// When partialRevealSide is 'right', we start assuming leftward mouse movement (card shifts left, hiding right edge)
 	// When partialRevealSide is 'left', we start assuming rightward mouse movement (card shifts right, hiding left edge)
+	// mouseDirection is derived from user interaction but initialized based on partialRevealSide prop
 	/* svelte-ignore state_referenced_locally */
 	let mouseDirection = $state<'left' | 'right' | null>(partialRevealSide === 'right' ? 'right' : 'left');
 	let previousMouseX = $state<number>(0);
+
+	// Reduced motion preference - SSR-safe with fallback
+	let prefersReducedMotion = $state(false);
 
 	/**
 	 * Calculate dynamic hover shift based on mouse movement direction
@@ -75,6 +80,42 @@
 	 * This creates a realistic "peeking" effect that follows the mouse
 	 */
 	const hoverShift = $derived(mouseDirection === 'left' ? -60 : 60);
+
+	/**
+	 * Effect to detect reduced motion preference and keyboard events
+	 * Uses $effect for SSR-safe initialization and cleanup
+	 */
+	$effect(() => {
+		// SSR guard - only run in browser
+		if (typeof window === 'undefined') return;
+
+		// Check reduced motion preference
+		const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+		prefersReducedMotion = mediaQuery.matches;
+
+		const handleMotionChange = (e: MediaQueryListEvent) => {
+			prefersReducedMotion = e.matches;
+		};
+
+		// Keyboard navigation handler
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === 'ArrowRight') {
+				e.preventDefault();
+				cycleForward();
+			} else if (e.key === 'ArrowLeft') {
+				e.preventDefault();
+				cycleBackward();
+			}
+		};
+
+		mediaQuery.addEventListener('change', handleMotionChange);
+		document.addEventListener('keydown', handleKeyDown);
+
+		return () => {
+			mediaQuery.removeEventListener('change', handleMotionChange);
+			document.removeEventListener('keydown', handleKeyDown);
+		};
+	});
 
 	/**
 	 * Cycle the front card to the back
@@ -90,9 +131,10 @@
 		cardOrder = [...cardOrder.slice(1), first];
 
 		// Reset animation flag after transition
+		const duration = prefersReducedMotion ? 100 : 500;
 		setTimeout(() => {
 			isAnimating = false;
-		}, 500);
+		}, duration);
 	}
 
 	/**
@@ -109,9 +151,10 @@
 		cardOrder = [last, ...cardOrder.slice(0, -1)];
 
 		// Reset animation flag after transition
+		const duration = prefersReducedMotion ? 100 : 500;
 		setTimeout(() => {
 			isAnimating = false;
-		}, 500);
+		}, duration);
 	}
 
 	/**
@@ -164,33 +207,6 @@
 			}
 		}
 	}
-
-	/**
-	 * Handle keyboard navigation events
-	 * Right arrow: cycle forward, Left arrow: cycle backward
-	 * Prevents default browser behaviour to avoid page scrolling
-	 * @param e - KeyboardEvent from the browser
-	 */
-	function handleKeyDown(e: KeyboardEvent) {
-		if (e.key === 'ArrowRight') {
-			e.preventDefault();
-			cycleForward();
-		} else if (e.key === 'ArrowLeft') {
-			e.preventDefault();
-			cycleBackward();
-		}
-	}
-
-	/**
-	 * Set up keyboard listener on component mount
-	 * Cleanup function removes listener on component unmount to prevent memory leaks
-	 */
-	onMount(() => {
-		document.addEventListener('keydown', handleKeyDown);
-		return () => {
-			document.removeEventListener('keydown', handleKeyDown);
-		};
-	});
 </script>
 
 <!-- Main container that holds all cards -->
@@ -531,6 +547,40 @@
 	@media (min-width: 769px) {
 		.swipe-hint {
 			display: none;
+		}
+	}
+
+	/**
+	 * REDUCED MOTION SUPPORT
+	 * Respect user preference for reduced animations (accessibility requirement)
+	 * Users with vestibular disorders can experience nausea from animations
+	 */
+	@media (prefers-reduced-motion: reduce) {
+		.card-wrapper {
+			transition: none;
+		}
+
+		.card-wrapper.animating {
+			transition: none;
+		}
+
+		.card {
+			transition: none;
+		}
+
+		/* Provide instant visual feedback without animation */
+		.card-wrapper:hover,
+		.card-wrapper:focus,
+		.card-wrapper.hovered {
+			transform: translateY(-10px);
+		}
+
+		.card-wrapper.selected {
+			transform: translateY(-15px) scale(1.05);
+		}
+
+		.swipe-hint {
+			transition: none;
 		}
 	}
 </style>
