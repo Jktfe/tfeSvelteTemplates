@@ -33,7 +33,9 @@ const isClerkConfigured = (): boolean => {
  */
 const fallbackHandler: Handle = async ({ event, resolve }) => {
 	// Provide a mock auth function that returns null (unauthenticated)
-	event.locals.auth = () => null;
+	// Type assertion needed because svelte-clerk expects SessionAuthObject
+	// but we return null when Clerk is not configured (graceful fallback)
+	event.locals.auth = (() => null) as unknown as typeof event.locals.auth;
 	return resolve(event);
 };
 
