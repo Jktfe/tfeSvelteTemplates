@@ -13,7 +13,9 @@ import type {
 	EditorData,
 	Employee,
 	Folder,
-	FileItem
+	FileItem,
+	MapMarker,
+	LatLng
 } from './types';
 
 /**
@@ -902,5 +904,175 @@ export const FALLBACK_FILES: FileItem[] = [
 			pageCount: 1
 		},
 		fileType: 'document'
+	}
+];
+
+// =============================================================================
+// MAPPING COMPONENT FALLBACK DATA
+// =============================================================================
+
+/**
+ * Default map center for UK-focused demos
+ * Central London coordinates
+ */
+export const DEFAULT_MAP_CENTER: LatLng = { lat: 51.5074, lng: -0.1278 };
+
+/**
+ * Category options for map markers
+ * Used for filtering in MapMarkers component
+ */
+export const MAP_MARKER_CATEGORIES = [
+	'landmark',
+	'museum',
+	'attraction',
+	'restaurant',
+	'hotel',
+	'park'
+] as const;
+
+/**
+ * Fallback map marker data for when database is unavailable
+ * Used by MapMarkers component when DATABASE_URL is not configured
+ *
+ * Showcases UK landmarks for demo purposes
+ * Kept in sync with database/schema_maps.sql seed data
+ */
+export const FALLBACK_MAP_MARKERS: MapMarker[] = [
+	// London landmarks
+	{
+		id: 1,
+		position: { lat: 51.5014, lng: -0.1419 },
+		title: 'Buckingham Palace',
+		description:
+			"The official London residence of the UK's sovereigns since 1837, featuring the famous Changing of the Guard ceremony.",
+		category: 'landmark',
+		iconType: 'default',
+		metadata: {
+			address: 'Westminster, London SW1A 1AA',
+			website: 'https://www.royal.uk/royal-residences-buckingham-palace',
+			hours: 'Seasonal opening hours'
+		}
+	},
+	{
+		id: 2,
+		position: { lat: 51.5081, lng: -0.0759 },
+		title: 'Tower of London',
+		description:
+			'Historic castle and former royal residence. Home to the Crown Jewels and famous Beefeater guards.',
+		category: 'landmark',
+		iconType: 'default',
+		metadata: {
+			address: 'London EC3N 4AB',
+			phone: '+44 20 3166 6000',
+			website: 'https://www.hrp.org.uk/tower-of-london/'
+		}
+	},
+	{
+		id: 3,
+		position: { lat: 51.5194, lng: -0.127 },
+		title: 'British Museum',
+		description:
+			'World-famous museum housing a vast collection of world art and artefacts, including the Rosetta Stone.',
+		category: 'museum',
+		iconType: 'default',
+		metadata: {
+			address: 'Great Russell St, London WC1B 3DG',
+			hours: 'Daily 10:00-17:00',
+			rating: 4.8
+		}
+	},
+	{
+		id: 4,
+		position: { lat: 51.5033, lng: -0.1195 },
+		title: 'London Eye',
+		description:
+			'Iconic 135m observation wheel on the South Bank offering stunning views across London.',
+		category: 'attraction',
+		iconType: 'default',
+		metadata: {
+			address: 'Riverside Building, London SE1 7PB',
+			website: 'https://www.londoneye.com/'
+		}
+	},
+	{
+		id: 5,
+		position: { lat: 51.5007, lng: -0.1246 },
+		title: 'Houses of Parliament',
+		description:
+			'The meeting place of the House of Commons and House of Lords, home to Big Ben.',
+		category: 'landmark',
+		iconType: 'default',
+		metadata: {
+			address: 'Westminster, London SW1A 0AA',
+			website: 'https://www.parliament.uk/'
+		}
+	},
+	// Other UK cities
+	{
+		id: 6,
+		position: { lat: 53.4808, lng: -2.2426 },
+		title: 'Manchester Town Hall',
+		description:
+			'Victorian neo-Gothic building and iconic Manchester landmark. Grade I listed.',
+		category: 'landmark',
+		iconType: 'default',
+		metadata: {
+			address: 'Albert Square, Manchester M2 5DB',
+			tags: ['architecture', 'victorian']
+		}
+	},
+	{
+		id: 7,
+		position: { lat: 55.9533, lng: -3.1883 },
+		title: 'Edinburgh Castle',
+		description:
+			'Historic fortress dominating the skyline of Edinburgh from its position atop Castle Rock.',
+		category: 'landmark',
+		iconType: 'default',
+		metadata: {
+			address: 'Castlehill, Edinburgh EH1 2NG',
+			website: 'https://www.edinburghcastle.scot/'
+		}
+	},
+	{
+		id: 8,
+		position: { lat: 51.4545, lng: -2.5879 },
+		title: 'Clifton Suspension Bridge',
+		description:
+			'Iconic suspension bridge spanning the Avon Gorge, designed by Isambard Kingdom Brunel.',
+		category: 'landmark',
+		iconType: 'default',
+		metadata: {
+			address: 'Bridge Road, Leigh Woods, Bristol BS8 3PA',
+			tags: ['engineering', 'brunel']
+		}
+	},
+	// Restaurants (for category filtering demo)
+	{
+		id: 9,
+		position: { lat: 51.5116, lng: -0.1197 },
+		title: 'Dishoom Covent Garden',
+		description:
+			'Bombay-style cafe serving Indian comfort food in a colonial-era setting.',
+		category: 'restaurant',
+		iconType: 'pin',
+		metadata: {
+			address: "12 Upper St Martin's Lane, London WC2H 9FB",
+			phone: '+44 20 7420 9320',
+			hours: '08:00-23:00'
+		}
+	},
+	{
+		id: 10,
+		position: { lat: 51.5137, lng: -0.0988 },
+		title: 'Borough Market',
+		description:
+			"London's most renowned food market, offering fresh produce and street food.",
+		category: 'restaurant',
+		iconType: 'pin',
+		metadata: {
+			address: '8 Southwark St, London SE1 1TL',
+			hours: 'Mon-Sat 10:00-17:00'
+		}
 	}
 ];
