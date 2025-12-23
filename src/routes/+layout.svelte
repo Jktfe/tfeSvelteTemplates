@@ -103,6 +103,12 @@
 			active: currentPath.startsWith('/sankey')
 		},
 		{
+			label: 'FolderFiles',
+			href: '/folderfiles',
+			icon: '🗂️',
+			active: currentPath.startsWith('/folderfiles')
+		},
+		{
 			label: 'Auth Demo',
 			href: '/auth',
 			icon: '🔐',

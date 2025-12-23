@@ -201,6 +201,20 @@
       status: "ready",
     },
     {
+      title: "FolderFiles",
+      description:
+        "3D filing cabinet with stacked folders and drag-and-drop organisation. Features visible folder bodies, staggered tabs, hover animations revealing folders beneath, and a large modal with two-panel content organisation.",
+      href: "/folderfiles",
+      icon: "🗂️",
+      features: [
+        "3D filing cabinet",
+        "Staggered folder tabs",
+        "Hover reveal animation",
+        "Drag & drop panels",
+      ],
+      status: "ready",
+    },
+    {
       title: "Forms",
       description:
         "Comprehensive collection of reusable form field components with validation, accessibility, and consistent styling. Includes text inputs, selects, checkboxes, radios, ranges, dates, switches, and colour pickers.",
