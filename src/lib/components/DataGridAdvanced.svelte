@@ -593,7 +593,7 @@
   4. Custom styling for grid appearance
 -->
 
-<div class="datagrid-advanced-wrapper">
+<div class="datagrid-advanced-wrapper" aria-busy={isUpdating} role="region" aria-label="Employee data grid">
 	<!-- Global Search -->
 	<div class="search-container">
 		<input

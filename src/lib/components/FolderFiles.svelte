@@ -143,6 +143,49 @@
 		draggedItem = null;
 		dragOverPanel = null;
 	}
+
+	/**
+	 * Focus trap for modal accessibility
+	 * Keeps focus within modal when Tab/Shift+Tab pressed
+	 */
+	function setupFocusTrap(node: HTMLElement) {
+		const focusableSelector =
+			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [draggable="true"]';
+
+		function updateFocusableElements() {
+			return node.querySelectorAll<HTMLElement>(focusableSelector);
+		}
+
+		function handleTabKey(e: KeyboardEvent) {
+			if (e.key !== 'Tab') return;
+
+			const focusableElements = updateFocusableElements();
+			if (focusableElements.length === 0) return;
+
+			const firstElement = focusableElements[0];
+			const lastElement = focusableElements[focusableElements.length - 1];
+
+			if (e.shiftKey && document.activeElement === firstElement) {
+				e.preventDefault();
+				lastElement?.focus();
+			} else if (!e.shiftKey && document.activeElement === lastElement) {
+				e.preventDefault();
+				firstElement?.focus();
+			}
+		}
+
+		node.addEventListener('keydown', handleTabKey);
+
+		// Focus close button on mount for accessibility
+		const closeButton = node.querySelector<HTMLElement>('.close-btn');
+		closeButton?.focus();
+
+		return {
+			destroy() {
+				node.removeEventListener('keydown', handleTabKey);
+			}
+		};
+	}
 </script>
 
 <!-- FILING CABINET VIEW (closed state) -->
@@ -201,10 +244,10 @@
 {#if openFolder}
 	<div class="folder-modal" role="dialog" aria-modal="true" aria-label="{openFolder.label} folder">
 		<!-- Modal backdrop -->
-		<div class="modal-backdrop" onclick={closeFolderView}></div>
+		<div class="modal-backdrop" onclick={closeFolderView} aria-hidden="true"></div>
 
-		<!-- Modal content -->
-		<div class="modal-content">
+		<!-- Modal content with focus trap for accessibility -->
+		<div class="modal-content" use:setupFocusTrap>
 			<!-- Close button -->
 			<button class="close-btn" onclick={closeFolderView} aria-label="Close folder view">
 				<svg
