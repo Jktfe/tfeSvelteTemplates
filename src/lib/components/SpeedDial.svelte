@@ -10,7 +10,7 @@
  * - Tooltips with auto-positioning based on direction
  * - Full keyboard navigation (Tab, Enter, Escape)
  * - ARIA compliance for accessibility
- * - Zero external dependencies (inline SVG icons)
+ * - XSS-safe SVG icon rendering via DOMPurify
  * - Respects reduced motion preferences
  * - Bindable isOpen state for programmatic control
  *
@@ -25,8 +25,9 @@
  * - Pure CSS animations with GPU-accelerated transforms
  * - Trigonometric positioning for circular layouts
  * - CSS custom properties for dynamic positioning
- * - Focus trap within action items when open
+ * - Focus trap within action items when open (Tab cycles through items)
  * - Click-outside detection for auto-close
+ * - SVG icons sanitized with DOMPurify to prevent XSS attacks
  *
  * Layout Types:
  * - linear: Items in a straight line (default)
@@ -57,6 +58,7 @@
 		SpeedDialDirection,
 		SpeedDialType
 	} from '$lib/types';
+	import { sanitizeSVG } from '$lib/utils';
 
 	/**
 	 * Props for SpeedDial component
@@ -84,6 +86,16 @@
 	let containerRef: HTMLDivElement | undefined = $state();
 
 	/**
+	 * Reference to the main trigger button for focus management
+	 */
+	let triggerButtonRef: HTMLButtonElement | undefined = $state();
+
+	/**
+	 * References to action buttons for focus trapping
+	 */
+	let actionButtonRefs: HTMLButtonElement[] = $state([]);
+
+	/**
 	 * Toggle the SpeedDial open/closed state
 	 */
 	function toggle(): void {
@@ -93,10 +105,12 @@
 	}
 
 	/**
-	 * Close the SpeedDial
+	 * Close the SpeedDial and return focus to trigger button
 	 */
 	function close(): void {
 		isOpen = false;
+		// Return focus to the trigger button
+		triggerButtonRef?.focus();
 	}
 
 	/**
@@ -111,14 +125,45 @@
 	}
 
 	/**
-	 * Handle keyboard navigation
+	 * Handle keyboard navigation with focus trapping
 	 * - Escape: Close menu
-	 * - Enter/Space on main button: Toggle menu
+	 * - Tab/Shift+Tab: Cycle through action items (trapped when open)
 	 */
 	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape' && isOpen) {
+		if (!isOpen) return;
+
+		if (event.key === 'Escape') {
 			close();
 			event.preventDefault();
+			return;
+		}
+
+		// Focus trapping within action items
+		if (event.key === 'Tab' && actionButtonRefs.length > 0) {
+			const enabledButtons = actionButtonRefs.filter((btn) => btn && !btn.disabled);
+			if (enabledButtons.length === 0) return;
+
+			const currentIndex = enabledButtons.findIndex((btn) => btn === document.activeElement);
+
+			if (event.shiftKey) {
+				// Shift+Tab: Move backwards
+				if (currentIndex <= 0) {
+					// At first item or trigger, wrap to last
+					event.preventDefault();
+					enabledButtons[enabledButtons.length - 1]?.focus();
+				}
+			} else {
+				// Tab: Move forwards
+				if (currentIndex === enabledButtons.length - 1) {
+					// At last item, wrap to first
+					event.preventDefault();
+					enabledButtons[0]?.focus();
+				} else if (currentIndex === -1 && document.activeElement === triggerButtonRef) {
+					// From trigger, go to first action
+					event.preventDefault();
+					enabledButtons[0]?.focus();
+				}
+			}
 		}
 	}
 
@@ -129,6 +174,25 @@
 		if (containerRef && !containerRef.contains(event.target as Node)) {
 			close();
 		}
+	}
+
+	/**
+	 * Safely render icon content
+	 * Sanitizes SVG/HTML to prevent XSS attacks
+	 */
+	function getSafeIcon(icon: string): string {
+		if (icon.startsWith('<')) {
+			// Sanitize any HTML/SVG content
+			return sanitizeSVG(icon);
+		}
+		return icon;
+	}
+
+	/**
+	 * Check if icon is HTML/SVG (needs {@html} rendering)
+	 */
+	function isHtmlIcon(icon: string): boolean {
+		return icon.startsWith('<');
 	}
 
 	/**
@@ -296,11 +360,12 @@
 				disabled={action.disabled || !isOpen}
 				aria-label={action.label}
 				tabindex={isOpen ? 0 : -1}
+				bind:this={actionButtonRefs[index]}
 			>
-				<!-- Icon: Support for emoji, SVG, or custom HTML -->
+				<!-- Icon: Support for emoji or sanitized SVG -->
 				<span class="action-icon" aria-hidden="true">
-					{#if action.icon.startsWith('<svg') || action.icon.startsWith('<')}
-						{@html action.icon}
+					{#if isHtmlIcon(action.icon)}
+						{@html getSafeIcon(action.icon)}
 					{:else}
 						{action.icon}
 					{/if}
@@ -324,12 +389,13 @@
 		aria-expanded={isOpen}
 		aria-haspopup="true"
 		aria-label={buttonLabel}
+		bind:this={triggerButtonRef}
 	>
 		{#if buttonIcon}
-			<!-- Custom icon -->
+			<!-- Custom icon (sanitized) -->
 			<span class="button-icon" aria-hidden="true">
-				{#if buttonIcon.startsWith('<svg') || buttonIcon.startsWith('<')}
-					{@html buttonIcon}
+				{#if isHtmlIcon(buttonIcon)}
+					{@html getSafeIcon(buttonIcon)}
 				{:else}
 					{buttonIcon}
 				{/if}
