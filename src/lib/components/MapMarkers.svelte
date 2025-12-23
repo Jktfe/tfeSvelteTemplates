@@ -39,7 +39,7 @@
 <script lang="ts">
 	import type { MapMarkersProps, MapMarker, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
-	import { escapeHtml } from '$lib/utils';
+	import { escapeHtml } from '$lib/htmlUtils';
 	import type { Map as LeafletMap, Marker as LeafletMarker, LayerGroup } from 'leaflet';
 
 	// ==================================================

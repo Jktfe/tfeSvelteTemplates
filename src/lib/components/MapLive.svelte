@@ -47,7 +47,7 @@
 <script lang="ts">
 	import type { MapLiveProps, MapMarker, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
-	import { escapeHtml } from '$lib/utils';
+	import { escapeHtml } from '$lib/htmlUtils';
 	import type { Map as LeafletMap, Marker as LeafletMarker, LayerGroup, LeafletMouseEvent } from 'leaflet';
 
 	// ==================================================

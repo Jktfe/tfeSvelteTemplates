@@ -11,22 +11,10 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Escapes HTML special characters to prevent XSS attacks
- * Use this for inserting user data into HTML content or attributes
- *
- * @param str - Raw string to escape
- * @returns String with HTML entities escaped
+ * Re-export escapeHtml from htmlUtils for backward compatibility
+ * Moved to separate file to avoid pulling in isomorphic-dompurify on server-side
  */
-export function escapeHtml(str: string): string {
-	const htmlEscapes: Record<string, string> = {
-		'&': '&amp;',
-		'<': '&lt;',
-		'>': '&gt;',
-		'"': '&quot;',
-		"'": '&#39;'
-	};
-	return str.replace(/[&<>"']/g, (char) => htmlEscapes[char]);
-}
+export { escapeHtml } from './htmlUtils';
 
 /**
  * Sanitizes HTML content to prevent XSS attacks
