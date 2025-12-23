@@ -294,18 +294,24 @@
 
 	/**
 	 * Get start angle for quarter-circle based on direction
-	 * Perfect for positioning in corners
+	 * Perfect for positioning in corners - items fan into the visible quadrant
+	 *
+	 * Corner placement guide:
+	 * - Bottom-right corner: use direction="up" → items go up-left (90° to 180°)
+	 * - Bottom-left corner: use direction="right" → items go up-right (0° to 90°)
+	 * - Top-right corner: use direction="left" → items go down-left (180° to 270°)
+	 * - Top-left corner: use direction="down" → items go down-right (270° to 360°)
 	 */
 	function getQuarterCircleStart(dir: SpeedDialDirection): number {
 		switch (dir) {
 			case 'up':
-				return 45; // Upper-left to upper-right
+				return 90; // Bottom-right corner: up (90°) to left (180°)
 			case 'down':
-				return 225; // Lower-right to lower-left
+				return 270; // Top-left corner: down (270°) to right (360°/0°)
 			case 'left':
-				return 135; // Upper-left to lower-left
+				return 180; // Top-right corner: left (180°) to down (270°)
 			case 'right':
-				return -45; // Lower-right to upper-right
+				return 0; // Bottom-left corner: right (0°) to up (90°)
 		}
 	}
 

@@ -160,11 +160,14 @@
 				center: [initialCenter.lat, initialCenter.lng],
 				zoom: initialZoom,
 				scrollWheelZoom: true,
-				zoomControl: true,
+				zoomControl: false,
 				attributionControl: true,
 				zoomAnimation: !prefersReducedMotion,
 				fadeAnimation: !prefersReducedMotion
 			});
+
+			// Add zoom control to bottom-right to avoid overlapping UI elements
+			L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
 
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution:
@@ -221,9 +224,13 @@
 		for (const markerData of markersToAdd) {
 			const leafletMarker = L.marker([markerData.position.lat, markerData.position.lng]);
 
-			// Create popup content
+			// Create popup content with autoPan to ensure popup is fully visible
 			const popupContent = createPopupContent(markerData);
-			leafletMarker.bindPopup(popupContent);
+			leafletMarker.bindPopup(popupContent, {
+				autoPan: true,
+				autoPanPaddingTopLeft: L.point(50, 80),
+				autoPanPaddingBottomRight: L.point(50, 50)
+			});
 
 			// Add click handler
 			leafletMarker.on('click', () => {
