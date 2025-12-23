@@ -70,6 +70,8 @@
 	let containerWidth = $state(0);
 	let contentWidth = $state(0);
 	let isDragging = $state(false);
+	// currentDirection is initialized from the `reverse` prop but then updated by user drag interaction
+	// The svelte-ignore is safe because we're intentionally deriving initial state from props
 	/* svelte-ignore state_referenced_locally */
 	let currentDirection = $state(reverse ? 1 : -1); // -1 = left, 1 = right
 	let dragStartX = 0;
@@ -86,6 +88,11 @@
 	// Animation control
 	let animationFrameId: number | null = null;
 	let lastTimestamp = 0;
+
+	// Visibility-based animation optimization
+	// Only run RAF loop when component is visible to save CPU/battery
+	let isVisible = $state(true);
+	let observer: IntersectionObserver | null = null;
 
 	// Calculate widths on mount and when content changes
 	onMount(() => {
@@ -106,15 +113,36 @@
 			}
 		};
 
+		// Set up Intersection Observer for visibility-based animation pausing
+		// This saves CPU/battery by stopping RAF when marquee is off-screen
+		if (containerEl && typeof IntersectionObserver !== 'undefined') {
+			observer = new IntersectionObserver(
+				(entries) => {
+					const wasVisible = isVisible;
+					isVisible = entries[0]?.isIntersecting ?? true;
+
+					// Resume animation when becoming visible, pause when hidden
+					if (isVisible && !wasVisible && !isDragging) {
+						startAnimation();
+					} else if (!isVisible && wasVisible) {
+						stopAnimation();
+					}
+				},
+				{ threshold: 0 }
+			);
+			observer.observe(containerEl);
+		}
+
 		window.addEventListener('resize', handleResize);
 		return () => {
 			window.removeEventListener('resize', handleResize);
 			stopAnimation();
+			observer?.disconnect();
 		};
 	});
 
 	function startAnimation() {
-		if (isDragging || !contentWidth) return;
+		if (isDragging || !contentWidth || !isVisible) return;
 
 		stopAnimation();
 		lastTimestamp = 0;
@@ -212,7 +240,7 @@
 
 	// Restart animation when direction or duration changes
 	$effect(() => {
-		if (!isDragging) {
+		if (!isDragging && isVisible) {
 			duration;
 			currentDirection;
 			stopAnimation();

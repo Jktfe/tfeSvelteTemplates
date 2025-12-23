@@ -29,8 +29,8 @@
 
 <script lang="ts">
 	import type { NavbarProps } from '$lib/types';
-	import { onMount } from 'svelte';
 	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
+	import { lockScroll } from '$lib/scrollLock';
 
 	let {
 		menuItems,
@@ -43,6 +43,10 @@
 
 	let isPanelOpen = $state(false);
 
+	// Scroll lock cleanup function - coordinated via scrollLock utility
+	// This prevents conflicts with other components (Editor, FolderFiles) that also lock scroll
+	let unlockScroll: (() => void) | null = null;
+
 	function togglePanel() {
 		isPanelOpen = !isPanelOpen;
 	}
@@ -51,28 +55,74 @@
 		isPanelOpen = false;
 	}
 
-	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape' && isPanelOpen) {
+	// Reference to the panel element for focus management
+	let panelElement: HTMLElement | null = null;
+
+	/**
+	 * Handle keyboard events on the panel (element-scoped, not window-level)
+	 * This is more robust and encapsulated than attaching to window
+	 */
+	function handlePanelKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
 			closePanel();
 		}
 	}
 
-	$effect(() => {
-		if (isPanelOpen) {
-			document.body.style.overflow = 'hidden';
-		} else {
-			document.body.style.overflow = '';
+	/**
+	 * Focus trap for panel accessibility (WCAG 2.4.3)
+	 * Keeps Tab/Shift+Tab navigation within the panel when open
+	 */
+	function setupFocusTrap(node: HTMLElement) {
+		panelElement = node;
+
+		function handleFocusTrap(e: KeyboardEvent) {
+			if (e.key !== 'Tab') return;
+
+			const focusableElements = node.querySelectorAll<HTMLElement>(
+				'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+			);
+			const firstElement = focusableElements[0];
+			const lastElement = focusableElements[focusableElements.length - 1];
+
+			if (e.shiftKey && document.activeElement === firstElement) {
+				e.preventDefault();
+				lastElement?.focus();
+			} else if (!e.shiftKey && document.activeElement === lastElement) {
+				e.preventDefault();
+				firstElement?.focus();
+			}
 		}
 
-		return () => {
-			document.body.style.overflow = '';
-		};
-	});
+		node.addEventListener('keydown', handleFocusTrap);
 
-	onMount(() => {
-		window.addEventListener('keydown', handleKeydown);
+		return {
+			destroy() {
+				node.removeEventListener('keydown', handleFocusTrap);
+				panelElement = null;
+			}
+		};
+	}
+
+	// Manage scroll lock and focus based on panel state
+	$effect(() => {
+		if (isPanelOpen) {
+			// Lock scroll when panel opens
+			unlockScroll = lockScroll();
+			// Focus the panel for keyboard navigation
+			// Use setTimeout to ensure panel is rendered before focusing
+			setTimeout(() => panelElement?.focus(), 0);
+		} else if (unlockScroll) {
+			// Unlock scroll when panel closes
+			unlockScroll();
+			unlockScroll = null;
+		}
+
+		// Cleanup on component unmount
 		return () => {
-			window.removeEventListener('keydown', handleKeydown);
+			if (unlockScroll) {
+				unlockScroll();
+				unlockScroll = null;
+			}
 		};
 	});
 </script>
@@ -129,7 +179,18 @@
 {/if}
 
 <!-- Left Panel Menu -->
-<nav id="panel-menu" class="panel" class:open={isPanelOpen} aria-label="Main navigation">
+<!-- Focus trap and element-scoped keyboard handling for accessibility -->
+<!-- tabindex="-1" allows programmatic focus without being in tab order when closed -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions - Intentional: nav needs keyboard handling for escape key and focus trap (WCAG 2.1.1, 2.4.3) -->
+<nav
+	id="panel-menu"
+	class="panel"
+	class:open={isPanelOpen}
+	aria-label="Main navigation"
+	tabindex="-1"
+	onkeydown={handlePanelKeydown}
+	use:setupFocusTrap
+>
 	<div class="panel-content">
 		<ul class="panel-menu">
 			{#each menuItems as item, index}

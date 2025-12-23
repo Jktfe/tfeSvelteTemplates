@@ -21,6 +21,7 @@
 	 */
 
 	import type { Folder, FileItem } from '$lib/types';
+	import { lockScroll } from '$lib/scrollLock';
 
 	/**
 	 * Component props
@@ -50,6 +51,9 @@
 	// Drag-and-drop state
 	let draggedItem = $state<FileItem | null>(null);
 	let dragOverPanel = $state<'left' | 'right' | null>(null);
+
+	// Scroll lock cleanup function - coordinated via scrollLock utility
+	let unlockScroll: (() => void) | null = null;
 
 	/**
 	 * Computed values
@@ -81,12 +85,21 @@
 		// Initialize panels (all files in right, left empty)
 		leftPanelItems = [];
 		rightPanelItems = folderFiles;
+
+		// Lock body scroll using coordinated utility (prevents conflicts with other modals)
+		unlockScroll = lockScroll();
 	}
 
 	function closeFolderView() {
 		openFolder = null;
 		leftPanelItems = [];
 		rightPanelItems = [];
+
+		// Unlock body scroll
+		if (unlockScroll) {
+			unlockScroll();
+			unlockScroll = null;
+		}
 	}
 
 	/**
@@ -142,6 +155,49 @@
 	function handleDragEnd() {
 		draggedItem = null;
 		dragOverPanel = null;
+	}
+
+	/**
+	 * Focus trap for modal accessibility
+	 * Keeps focus within modal when Tab/Shift+Tab pressed
+	 */
+	function setupFocusTrap(node: HTMLElement) {
+		const focusableSelector =
+			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [draggable="true"]';
+
+		function updateFocusableElements() {
+			return node.querySelectorAll<HTMLElement>(focusableSelector);
+		}
+
+		function handleTabKey(e: KeyboardEvent) {
+			if (e.key !== 'Tab') return;
+
+			const focusableElements = updateFocusableElements();
+			if (focusableElements.length === 0) return;
+
+			const firstElement = focusableElements[0];
+			const lastElement = focusableElements[focusableElements.length - 1];
+
+			if (e.shiftKey && document.activeElement === firstElement) {
+				e.preventDefault();
+				lastElement?.focus();
+			} else if (!e.shiftKey && document.activeElement === lastElement) {
+				e.preventDefault();
+				firstElement?.focus();
+			}
+		}
+
+		node.addEventListener('keydown', handleTabKey);
+
+		// Focus close button on mount for accessibility
+		const closeButton = node.querySelector<HTMLElement>('.close-btn');
+		closeButton?.focus();
+
+		return {
+			destroy() {
+				node.removeEventListener('keydown', handleTabKey);
+			}
+		};
 	}
 </script>
 
@@ -201,10 +257,10 @@
 {#if openFolder}
 	<div class="folder-modal" role="dialog" aria-modal="true" aria-label="{openFolder.label} folder">
 		<!-- Modal backdrop -->
-		<div class="modal-backdrop" onclick={closeFolderView}></div>
+		<div class="modal-backdrop" onclick={closeFolderView} aria-hidden="true"></div>
 
-		<!-- Modal content -->
-		<div class="modal-content">
+		<!-- Modal content with focus trap for accessibility -->
+		<div class="modal-content" use:setupFocusTrap>
 			<!-- Close button -->
 			<button class="close-btn" onclick={closeFolderView} aria-label="Close folder view">
 				<svg
