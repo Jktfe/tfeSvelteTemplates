@@ -22,7 +22,7 @@ DROP TABLE IF EXISTS folders CASCADE;
 CREATE TABLE folders (
     id SERIAL PRIMARY KEY,
     label VARCHAR(255) NOT NULL,                      -- Display name (e.g., 'Lexical Interruptions')
-    color VARCHAR(50) DEFAULT 'bg-blue-500',          -- Tailwind class for background colour
+    color VARCHAR(50) DEFAULT '#3b82f6',              -- Hex colour code (e.g., '#3b82f6')
     text_color VARCHAR(50) DEFAULT 'text-white',      -- Tailwind class for text colour
     icon VARCHAR(10),                                 -- Emoji or single character icon
     description TEXT,                                 -- Shown in tooltip on hover
@@ -99,7 +99,7 @@ INSERT INTO folders (label, color, text_color, icon, description, category, disp
 VALUES
     (
         'Lexical Interruptions',
-        'bg-purple-500',
+        '#a855f7',
         'text-white',
         '📘',
         'Research on lexical patterns in conversation',
@@ -108,7 +108,7 @@ VALUES
     ),
     (
         'Concord Variants',
-        'bg-teal-500',
+        '#14b8a6',
         'text-white',
         '📗',
         'Analysis of concordance variations across dialects',
@@ -117,7 +117,7 @@ VALUES
     ),
     (
         'Prosodic Features',
-        'bg-blue-500',
+        '#3b82f6',
         'text-white',
         '📙',
         'Studies on prosodic elements in speech',
@@ -126,7 +126,7 @@ VALUES
     ),
     (
         'Ink Displacement',
-        'bg-indigo-500',
+        '#6366f1',
         'text-white',
         '🖋️',
         'Examination of ink displacement patterns in handwriting',
@@ -135,7 +135,7 @@ VALUES
     ),
     (
         'Referent Ghosts',
-        'bg-gray-700',
+        '#374151',
         'text-white',
         '👻',
         'Analysis of referent ambiguity in discourse',
@@ -144,7 +144,7 @@ VALUES
     ),
     (
         'Unanchored Statements',
-        'bg-orange-500',
+        '#f97316',
         'text-white',
         '⚓',
         'Study of context-free utterances in dialogue',
