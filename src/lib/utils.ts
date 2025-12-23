@@ -97,7 +97,7 @@ export function calculateMapBounds(
 	const lngSpread = Math.max(...lngs) - Math.min(...lngs);
 	const maxSpread = Math.max(latSpread, lngSpread);
 
-	let zoom = 13;
+	let zoom: number;
 	if (maxSpread > 5) zoom = 6;
 	else if (maxSpread > 2) zoom = 8;
 	else if (maxSpread > 0.5) zoom = 10;
