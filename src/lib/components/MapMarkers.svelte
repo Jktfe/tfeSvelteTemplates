@@ -39,6 +39,7 @@
 <script lang="ts">
 	import type { MapMarkersProps, MapMarker, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
+	import { escapeHtml } from '$lib/utils';
 	import type { Map as LeafletMap, Marker as LeafletMarker, LayerGroup } from 'leaflet';
 
 	// ==================================================
@@ -245,49 +246,51 @@
 
 	/**
 	 * Create popup HTML content for a marker
+	 * All user data is escaped to prevent XSS attacks
 	 */
 	function createPopupContent(markerData: MapMarker): string {
 		let content = '<div class="marker-popup">';
 
-		// Image if available
+		// Image if available - escape URL and alt text
 		if (markerData.imageUrl) {
-			content += `<img src="${markerData.imageUrl}" alt="${markerData.title}" class="popup-image" />`;
+			content += `<img src="${escapeHtml(markerData.imageUrl)}" alt="${escapeHtml(markerData.title)}" class="popup-image" />`;
 		}
 
-		// Title
-		content += `<h3 class="popup-title">${markerData.title}</h3>`;
+		// Title - escaped
+		content += `<h3 class="popup-title">${escapeHtml(markerData.title)}</h3>`;
 
-		// Description
+		// Description - escaped
 		if (markerData.description) {
-			content += `<p class="popup-description">${markerData.description}</p>`;
+			content += `<p class="popup-description">${escapeHtml(markerData.description)}</p>`;
 		}
 
-		// Metadata
+		// Metadata - all values escaped
 		if (markerData.metadata) {
 			content += '<div class="popup-metadata">';
 
 			if (markerData.metadata.address) {
-				content += `<div class="popup-meta-item"><strong>Address:</strong> ${markerData.metadata.address}</div>`;
+				content += `<div class="popup-meta-item"><strong>Address:</strong> ${escapeHtml(markerData.metadata.address)}</div>`;
 			}
 			if (markerData.metadata.phone) {
-				content += `<div class="popup-meta-item"><strong>Phone:</strong> <a href="tel:${markerData.metadata.phone}">${markerData.metadata.phone}</a></div>`;
+				const safePhone = escapeHtml(markerData.metadata.phone);
+				content += `<div class="popup-meta-item"><strong>Phone:</strong> <a href="tel:${safePhone}">${safePhone}</a></div>`;
 			}
 			if (markerData.metadata.website) {
-				content += `<div class="popup-meta-item"><strong>Website:</strong> <a href="${markerData.metadata.website}" target="_blank" rel="noopener">Visit</a></div>`;
+				content += `<div class="popup-meta-item"><strong>Website:</strong> <a href="${escapeHtml(markerData.metadata.website)}" target="_blank" rel="noopener">Visit</a></div>`;
 			}
 			if (markerData.metadata.hours) {
-				content += `<div class="popup-meta-item"><strong>Hours:</strong> ${markerData.metadata.hours}</div>`;
+				content += `<div class="popup-meta-item"><strong>Hours:</strong> ${escapeHtml(markerData.metadata.hours)}</div>`;
 			}
 			if (markerData.metadata.rating) {
-				content += `<div class="popup-meta-item"><strong>Rating:</strong> ${markerData.metadata.rating}/5</div>`;
+				content += `<div class="popup-meta-item"><strong>Rating:</strong> ${Number(markerData.metadata.rating)}/5</div>`;
 			}
 
 			content += '</div>';
 		}
 
-		// Category badge
+		// Category badge - escaped
 		if (markerData.category) {
-			content += `<span class="popup-category">${markerData.category}</span>`;
+			content += `<span class="popup-category">${escapeHtml(markerData.category)}</span>`;
 		}
 
 		content += '</div>';

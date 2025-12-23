@@ -47,6 +47,7 @@
 <script lang="ts">
 	import type { MapLiveProps, MapMarker, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
+	import { escapeHtml } from '$lib/utils';
 	import type { Map as LeafletMap, Marker as LeafletMarker, LayerGroup, LeafletMouseEvent } from 'leaflet';
 
 	// ==================================================
@@ -111,7 +112,7 @@
 	const isBrowser = typeof window !== 'undefined';
 
 	/** Whether we can add more markers */
-	let canAddMore = $derived(maxMarkers === 0 || (markers?.length ?? 0) < maxMarkers);
+	let canAddMore = $derived(maxMarkers === 0 || markers.length < maxMarkers);
 
 	// ==================================================
 	// EFFECTS - Lifecycle and reactive updates
@@ -131,8 +132,8 @@
 			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 			mapInstance = L.map(mapContainer, {
-				center: [center?.lat ?? DEFAULT_MAP_CENTER.lat, center?.lng ?? DEFAULT_MAP_CENTER.lng],
-				zoom: zoom ?? 13,
+				center: [center.lat, center.lng],
+				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: true,
 				attributionControl: true,
@@ -159,13 +160,13 @@
 			map = mapInstance;
 
 			// Find highest existing ID and set next ID
-			if (markers && markers.length > 0) {
+			if (markers.length > 0) {
 				const maxId = Math.max(...markers.map((m) => m.id));
 				nextMarkerId = maxId + 1;
 			}
 
 			// Add existing markers
-			for (const markerData of markers ?? []) {
+			for (const markerData of markers) {
 				await addLeafletMarker(markerData, false);
 			}
 		})();
@@ -192,13 +193,13 @@
 		const newMarker: MapMarker = {
 			id: nextMarkerId++,
 			position,
-			title: `Location ${markers?.length ?? 0 + 1}`,
+			title: `Location ${markers.length + 1}`,
 			description: '',
 			category: 'user-added'
 		};
 
 		// Add to markers array
-		markers = [...(markers ?? []), newMarker];
+		markers = [...markers, newMarker];
 
 		// Add Leaflet marker
 		await addLeafletMarker(newMarker, animateNewMarkers);
@@ -252,6 +253,7 @@
 
 	/**
 	 * Create popup HTML content
+	 * All user data is escaped to prevent XSS attacks
 	 */
 	function createPopupContent(markerData: MapMarker): string {
 		return `
@@ -260,7 +262,7 @@
 					<input
 						type="text"
 						class="popup-title-input"
-						value="${markerData.title}"
+						value="${escapeHtml(markerData.title)}"
 						placeholder="Location name"
 						data-field="title"
 					/>
@@ -269,7 +271,7 @@
 					class="popup-description-input"
 					placeholder="Add a description..."
 					data-field="description"
-				>${markerData.description || ''}</textarea>
+				>${escapeHtml(markerData.description || '')}</textarea>
 				<div class="popup-coords">
 					${markerData.position.lat.toFixed(6)}, ${markerData.position.lng.toFixed(6)}
 				</div>
@@ -317,7 +319,7 @@
 	 * Update marker position
 	 */
 	function updateMarkerPosition(id: number, newPosition: LatLng): void {
-		markers = (markers ?? []).map((m) =>
+		markers = markers.map((m) =>
 			m.id === id ? { ...m, position: newPosition } : m
 		);
 	}
@@ -326,13 +328,13 @@
 	 * Update marker title and description
 	 */
 	function updateMarkerDetails(id: number, title: string, description: string): void {
-		markers = (markers ?? []).map((m) =>
+		markers = markers.map((m) =>
 			m.id === id ? { ...m, title, description } : m
 		);
 
 		// Update popup content
 		const leafletMarker = markerMap.get(id);
-		const markerData = markers?.find((m) => m.id === id);
+		const markerData = markers.find((m) => m.id === id);
 		if (leafletMarker && markerData) {
 			leafletMarker.setPopupContent(createPopupContent(markerData));
 		}
@@ -342,11 +344,11 @@
 	 * Remove a marker
 	 */
 	function removeMarker(id: number): void {
-		const markerData = markers?.find((m) => m.id === id);
+		const markerData = markers.find((m) => m.id === id);
 		if (!markerData) return;
 
 		// Remove from array
-		markers = (markers ?? []).filter((m) => m.id !== id);
+		markers = markers.filter((m) => m.id !== id);
 
 		// Remove Leaflet marker
 		const leafletMarker = markerMap.get(id);
@@ -363,7 +365,7 @@
 	 * Clear all markers
 	 */
 	function clearAllMarkers(): void {
-		for (const marker of markers ?? []) {
+		for (const marker of markers) {
 			onMarkerRemove?.(marker);
 		}
 		markers = [];
@@ -408,10 +410,10 @@
 		{/if}
 
 		<span class="marker-count" aria-live="polite">
-			{markers?.length ?? 0}{maxMarkers > 0 ? ` / ${maxMarkers}` : ''} markers
+			{markers.length}{maxMarkers > 0 ? ` / ${maxMarkers}` : ''} markers
 		</span>
 
-		{#if (markers?.length ?? 0) > 0}
+		{#if markers.length > 0}
 			<button
 				type="button"
 				class="control-btn danger"

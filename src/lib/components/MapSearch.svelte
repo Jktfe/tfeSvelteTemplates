@@ -123,8 +123,8 @@
 			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 			mapInstance = L.map(mapContainer, {
-				center: [center?.lat ?? DEFAULT_MAP_CENTER.lat, center?.lng ?? DEFAULT_MAP_CENTER.lng],
-				zoom: zoom ?? 13,
+				center: [center.lat, center.lng],
+				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: true,
 				attributionControl: true,

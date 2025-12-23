@@ -69,8 +69,8 @@
 
 	/** Current map view state (reactive) */
 	let currentView: { center: LatLng; zoom: number } = $state({
-		center: center ?? DEFAULT_MAP_CENTER,
-		zoom: zoom ?? 13
+		center: center,
+		zoom: zoom
 	});
 
 	// ==================================================
@@ -104,8 +104,8 @@
 
 			// Create the map instance
 			mapInstance = L.map(mapContainer, {
-				center: [center?.lat ?? DEFAULT_MAP_CENTER.lat, center?.lng ?? DEFAULT_MAP_CENTER.lng],
-				zoom: zoom ?? 13,
+				center: [center.lat, center.lng],
+				zoom: zoom,
 				scrollWheelZoom: enableScrollZoom,
 				zoomControl: showZoomControl,
 				attributionControl: showAttribution,
@@ -152,8 +152,8 @@
 	 * Update map view when center/zoom props change
 	 */
 	$effect(() => {
-		if (map && center) {
-			map.setView([center.lat, center.lng], zoom ?? map.getZoom());
+		if (map) {
+			map.setView([center.lat, center.lng], zoom);
 		}
 	});
 

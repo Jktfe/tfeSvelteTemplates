@@ -12,6 +12,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { MapMarker, MapMarkerRow, MapMarkerMetadata } from '$lib/types';
 import { FALLBACK_MAP_MARKERS } from '$lib/constants';
+import { calculateMapBounds } from '$lib/utils';
 
 /**
  * Load map markers from database with fallback to constants
@@ -100,13 +101,37 @@ function transformRowToMarker(row: MapMarkerRow): MapMarker {
 
 /**
  * Get unique categories from markers
+ * Uses SELECT DISTINCT for efficiency rather than loading all markers
  *
  * @returns Promise<string[]> - Sorted array of unique categories
  */
 export async function getMarkerCategories(): Promise<string[]> {
-	const markers = await loadMapMarkersFromDatabase();
-	const categories = new Set(markers.map((m) => m.category).filter(Boolean));
-	return Array.from(categories).sort() as string[];
+	try {
+		const databaseUrl = process.env.DATABASE_URL;
+
+		if (!databaseUrl) {
+			// Extract unique categories from fallback data
+			const categories = new Set(FALLBACK_MAP_MARKERS.map((m) => m.category).filter(Boolean));
+			return Array.from(categories).sort() as string[];
+		}
+
+		const sql = neon(databaseUrl);
+
+		// Use SELECT DISTINCT for efficiency
+		const rows = (await sql`
+			SELECT DISTINCT category
+			FROM map_markers
+			WHERE is_active = TRUE AND category IS NOT NULL
+			ORDER BY category ASC
+		`) as unknown as { category: string }[];
+
+		return rows.map((r) => r.category);
+	} catch (error) {
+		console.error('[Maps] Error loading categories:', error);
+		// Fallback to extracting from constants
+		const categories = new Set(FALLBACK_MAP_MARKERS.map((m) => m.category).filter(Boolean));
+		return Array.from(categories).sort() as string[];
+	}
 }
 
 /**
@@ -189,6 +214,7 @@ export async function deleteMapMarker(id: number): Promise<boolean> {
 
 /**
  * Calculate map bounds to fit all markers
+ * Wrapper around shared calculateMapBounds utility
  *
  * @param markers - Array of markers
  * @returns Object with center and recommended zoom
@@ -197,34 +223,5 @@ export function calculateMarkerBounds(markers: MapMarker[]): {
 	center: { lat: number; lng: number };
 	zoom: number;
 } {
-	if (markers.length === 0) {
-		return { center: { lat: 51.5074, lng: -0.1278 }, zoom: 13 };
-	}
-
-	if (markers.length === 1) {
-		return { center: markers[0].position, zoom: 15 };
-	}
-
-	const lats = markers.map((m) => m.position.lat);
-	const lngs = markers.map((m) => m.position.lng);
-
-	const center = {
-		lat: (Math.min(...lats) + Math.max(...lats)) / 2,
-		lng: (Math.min(...lngs) + Math.max(...lngs)) / 2
-	};
-
-	// Calculate appropriate zoom based on spread
-	const latSpread = Math.max(...lats) - Math.min(...lats);
-	const lngSpread = Math.max(...lngs) - Math.min(...lngs);
-	const maxSpread = Math.max(latSpread, lngSpread);
-
-	let zoom = 13;
-	if (maxSpread > 5) zoom = 6;
-	else if (maxSpread > 2) zoom = 8;
-	else if (maxSpread > 0.5) zoom = 10;
-	else if (maxSpread > 0.1) zoom = 12;
-	else if (maxSpread > 0.01) zoom = 14;
-	else zoom = 15;
-
-	return { center, zoom };
+	return calculateMapBounds(markers.map((m) => m.position));
 }
