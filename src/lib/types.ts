@@ -801,6 +801,79 @@ export interface ExpandableSankeyProps {
 }
 
 // ==================================================
+// SPEEDDIAL COMPONENT TYPES (Floating Action Button Menu)
+// ==================================================
+
+/**
+ * Action item for SpeedDial menu
+ * Represents a single action button that appears when the SpeedDial is opened
+ *
+ * @property id - Unique identifier for the action
+ * @property label - Accessible label for the action (shown as tooltip)
+ * @property icon - SVG path data, emoji, or HTML string for the action icon
+ * @property onclick - Callback function when action is clicked
+ * @property disabled - Whether the action is disabled (default: false)
+ * @property class - Additional CSS classes for customisation
+ */
+export interface SpeedDialAction {
+	id: string;
+	label: string;
+	icon: string;
+	onclick?: () => void;
+	disabled?: boolean;
+	class?: string;
+}
+
+/**
+ * Direction for linear SpeedDial layouts
+ * Determines which direction the action items expand from the main button
+ */
+export type SpeedDialDirection = 'up' | 'down' | 'left' | 'right';
+
+/**
+ * Layout type for SpeedDial
+ * - linear: Items arranged in a straight line (default)
+ * - circle: Items arranged in a full circle around the button
+ * - semi-circle: Items arranged in a half circle
+ * - quarter-circle: Items arranged in a quarter circle (corner positioning)
+ */
+export type SpeedDialType = 'linear' | 'circle' | 'semi-circle' | 'quarter-circle';
+
+/**
+ * Props for SpeedDial component
+ * Floating action button with expandable action menu
+ *
+ * @property actions - Array of action items to display when opened
+ * @property direction - Direction for linear layouts: 'up' | 'down' | 'left' | 'right' (default: 'up')
+ * @property type - Layout type: 'linear' | 'circle' | 'semi-circle' | 'quarter-circle' (default: 'linear')
+ * @property radius - Distance from center for circular layouts in pixels (default: 80)
+ * @property transitionDelay - Delay between each item animation in ms (default: 30)
+ * @property showTooltip - Show tooltip labels on hover (default: true)
+ * @property tooltipPosition - Position of tooltips relative to items (default: 'auto')
+ * @property mask - Show modal backdrop when open (default: false)
+ * @property disabled - Disable the SpeedDial (default: false)
+ * @property buttonIcon - Custom icon for main button (default: '+' icon)
+ * @property buttonLabel - Accessible label for main button (default: 'Open menu')
+ * @property class - Additional CSS classes for the container
+ * @property isOpen - Bindable state for open/closed (default: false)
+ */
+export interface SpeedDialProps {
+	actions: SpeedDialAction[];
+	direction?: SpeedDialDirection;
+	type?: SpeedDialType;
+	radius?: number;
+	transitionDelay?: number;
+	showTooltip?: boolean;
+	tooltipPosition?: 'left' | 'right' | 'top' | 'bottom' | 'auto';
+	mask?: boolean;
+	disabled?: boolean;
+	buttonIcon?: string;
+	buttonLabel?: string;
+	class?: string;
+	isOpen?: boolean;
+}
+
+// ==================================================
 // AUTHENTICATION TYPES (Clerk Integration)
 // ==================================================
 
