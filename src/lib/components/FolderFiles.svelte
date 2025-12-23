@@ -48,12 +48,34 @@
 	let leftPanelItems = $state<FileItem[]>([]);
 	let rightPanelItems = $state<FileItem[]>([]);
 
-	// Drag-and-drop state
+	// Drag-and-drop state (desktop only)
 	let draggedItem = $state<FileItem | null>(null);
 	let dragOverPanel = $state<'left' | 'right' | null>(null);
 
+	// Mobile touch device detection
+	// Only true on actual touch devices with coarse pointer (finger) AND mobile width
+	// Desktop users with touchscreens will still get drag-and-drop
+	let isTouchDevice = $state(false);
+
+	// Mobile selection state - for tap-to-select on touch devices
+	let selectedItems = $state<Set<number>>(new Set());
+
 	// Scroll lock cleanup function - coordinated via scrollLock utility
 	let unlockScroll: (() => void) | null = null;
+
+	/**
+	 * Mobile Detection Effect
+	 * Detects touch devices with coarse pointer (finger) as primary input
+	 * Combined with screen width check to catch actual mobile devices
+	 * Desktop touchscreens will get drag-and-drop (fine pointer + larger width)
+	 */
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+			const isMobileWidth = window.innerWidth <= 768;
+			isTouchDevice = coarsePointer && isMobileWidth;
+		}
+	});
 
 	/**
 	 * Computed values
@@ -157,6 +179,60 @@
 	function handleDragEnd() {
 		draggedItem = null;
 		dragOverPanel = null;
+	}
+
+	/**
+	 * Mobile Touch Selection Functions
+	 * These only activate on touch devices (isTouchDevice === true)
+	 * Desktop users continue to use drag-and-drop
+	 */
+
+	/**
+	 * Toggle selection of an item (mobile tap-to-select)
+	 */
+	function toggleSelection(item: FileItem) {
+		const newSet = new Set(selectedItems);
+		if (newSet.has(item.id)) {
+			newSet.delete(item.id);
+		} else {
+			newSet.add(item.id);
+		}
+		selectedItems = newSet; // Reassign to trigger reactivity
+	}
+
+	/**
+	 * Clear all selected items
+	 */
+	function clearSelection() {
+		selectedItems = new Set();
+	}
+
+	/**
+	 * Move selected items from right panel to left (Selected) panel
+	 */
+	function moveSelectedToLeft() {
+		const itemsToMove = rightPanelItems.filter((item) => selectedItems.has(item.id));
+		rightPanelItems = rightPanelItems.filter((item) => !selectedItems.has(item.id));
+		leftPanelItems = [...leftPanelItems, ...itemsToMove];
+		clearSelection();
+	}
+
+	/**
+	 * Move selected items from left (Selected) panel to right panel
+	 */
+	function moveSelectedToRight() {
+		const itemsToMove = leftPanelItems.filter((item) => selectedItems.has(item.id));
+		leftPanelItems = leftPanelItems.filter((item) => !selectedItems.has(item.id));
+		rightPanelItems = [...rightPanelItems, ...itemsToMove];
+		clearSelection();
+	}
+
+	/**
+	 * Get count of selected items in a specific panel
+	 */
+	function getSelectedCountInPanel(panel: 'left' | 'right'): number {
+		const items = panel === 'left' ? leftPanelItems : rightPanelItems;
+		return items.filter((item) => selectedItems.has(item.id)).length;
 	}
 
 	/**
@@ -300,7 +376,7 @@
 						<div class="panel-label">Selected</div>
 						{#if leftPanelItems.length === 0}
 							<div class="empty-message" role="status" aria-live="polite">
-								Drag items here to select them
+								{isTouchDevice ? 'Tap items to select, then move here' : 'Drag items here to select them'}
 							</div>
 						{:else}
 							<div class="sr-only" role="status" aria-live="polite">
@@ -309,16 +385,33 @@
 						{/if}
 					</div>
 
-					<div class="content-grid">
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+					<div class="content-grid" role="listbox" aria-label="Selected items list">
 						{#each leftPanelItems as item (item.id)}
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div
-								draggable="true"
-								ondragstart={(e) => handleDragStart(e, item)}
+								draggable={!isTouchDevice}
+								ondragstart={(e) => !isTouchDevice && handleDragStart(e, item)}
 								ondragend={handleDragEnd}
+								onclick={() => isTouchDevice && toggleSelection(item)}
+								onkeydown={(e) => isTouchDevice && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), toggleSelection(item))}
 								class="content-item"
 								class:dragging={draggedItem?.id === item.id}
-								role="listitem"
+								class:selected={selectedItems.has(item.id)}
+								class:touch-mode={isTouchDevice}
+								role="option"
+								tabindex={isTouchDevice ? 0 : -1}
+								aria-selected={selectedItems.has(item.id)}
 							>
+								{#if isTouchDevice}
+									<div class="selection-indicator" aria-hidden="true">
+										{#if selectedItems.has(item.id)}
+											<svg class="checkmark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+										{/if}
+									</div>
+								{/if}
 								<div class="content-item-title">{item.title}</div>
 								{#if item.subtitle}
 									<div class="content-item-subtitle">{item.subtitle}</div>
@@ -329,6 +422,19 @@
 							</div>
 						{/each}
 					</div>
+
+					<!-- Mobile Action Bar for Left Panel -->
+					{#if isTouchDevice && getSelectedCountInPanel('left') > 0}
+						<div class="mobile-action-bar">
+							<span class="selection-count">{getSelectedCountInPanel('left')} selected</span>
+							<button type="button" class="action-btn clear-btn" onclick={clearSelection}>
+								Clear
+							</button>
+							<button type="button" class="action-btn move-btn" onclick={moveSelectedToRight}>
+								Move to All →
+							</button>
+						</div>
+					{/if}
 				</div>
 
 				<!-- Right panel (all files initially) -->
@@ -351,16 +457,33 @@
 						</div>
 					</div>
 
-					<div class="content-grid">
+					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+					<div class="content-grid" role="listbox" aria-label="All items list">
 						{#each rightPanelItems as item (item.id)}
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div
-								draggable="true"
-								ondragstart={(e) => handleDragStart(e, item)}
+								draggable={!isTouchDevice}
+								ondragstart={(e) => !isTouchDevice && handleDragStart(e, item)}
 								ondragend={handleDragEnd}
+								onclick={() => isTouchDevice && toggleSelection(item)}
+								onkeydown={(e) => isTouchDevice && (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), toggleSelection(item))}
 								class="content-item"
 								class:dragging={draggedItem?.id === item.id}
-								role="listitem"
+								class:selected={selectedItems.has(item.id)}
+								class:touch-mode={isTouchDevice}
+								role="option"
+								tabindex={isTouchDevice ? 0 : -1}
+								aria-selected={selectedItems.has(item.id)}
 							>
+								{#if isTouchDevice}
+									<div class="selection-indicator" aria-hidden="true">
+										{#if selectedItems.has(item.id)}
+											<svg class="checkmark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+												<path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+											</svg>
+										{/if}
+									</div>
+								{/if}
 								<div class="content-item-title">{item.title}</div>
 								{#if item.subtitle}
 									<div class="content-item-subtitle">{item.subtitle}</div>
@@ -371,6 +494,19 @@
 							</div>
 						{/each}
 					</div>
+
+					<!-- Mobile Action Bar for Right Panel -->
+					{#if isTouchDevice && getSelectedCountInPanel('right') > 0}
+						<div class="mobile-action-bar">
+							<span class="selection-count">{getSelectedCountInPanel('right')} selected</span>
+							<button type="button" class="action-btn clear-btn" onclick={clearSelection}>
+								Clear
+							</button>
+							<button type="button" class="action-btn move-btn" onclick={moveSelectedToLeft}>
+								← Move to Selected
+							</button>
+						</div>
+					{/if}
 				</div>
 			</div>
 		</div>
@@ -761,6 +897,199 @@
 		.folder-wrapper.is-beneath-hover {
 			/* Maintain reveal functionality but without animation */
 			transform: translateY(calc(var(--folder-index, 0) * 60px + 80px)) !important;
+		}
+	}
+
+	/**
+	 * MOBILE TOUCH SELECTION STYLES
+	 * Tap-to-select UI for touch devices
+	 * Only visible on mobile (isTouchDevice === true)
+	 */
+
+	/* Selection indicator container (top-right of card) */
+	.selection-indicator {
+		position: absolute;
+		top: 0.75rem;
+		right: 0.75rem;
+		width: 24px;
+		height: 24px;
+		border-radius: 50%;
+		border: 2px solid #cbd5e0;
+		background: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.15s ease;
+	}
+
+	/* Checkmark icon */
+	.checkmark {
+		width: 16px;
+		height: 16px;
+		color: white;
+	}
+
+	/* Content item in touch mode - pointer cursor, relative for indicator */
+	.content-item.touch-mode {
+		cursor: pointer;
+		position: relative;
+		/* Ensure room for selection indicator */
+		padding-right: 3rem;
+	}
+
+	.content-item.touch-mode:hover {
+		/* Override desktop hover lift on mobile */
+		transform: none;
+	}
+
+	.content-item.touch-mode:active {
+		/* Active press feedback */
+		transform: scale(0.98);
+		cursor: pointer;
+	}
+
+	/* Selected state styling */
+	.content-item.selected {
+		background: #ebf5ff;
+		border-color: #3b82f6;
+	}
+
+	.content-item.selected .selection-indicator {
+		background: #3b82f6;
+		border-color: #3b82f6;
+	}
+
+	/**
+	 * MOBILE ACTION BAR
+	 * Sticky bar at bottom of panel for move/clear actions
+	 */
+	.mobile-action-bar {
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: white;
+		padding: 0.875rem 1rem;
+		border-top: 1px solid #e2e8f0;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+		margin-top: 1rem;
+		border-radius: 0 0 8px 8px;
+		z-index: 10;
+	}
+
+	.selection-count {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #4a5568;
+		flex-shrink: 0;
+	}
+
+	.action-btn {
+		padding: 0.625rem 1rem;
+		border-radius: 6px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.15s ease;
+		border: none;
+		white-space: nowrap;
+	}
+
+	.clear-btn {
+		background: #f1f5f9;
+		color: #64748b;
+		margin-left: auto;
+	}
+
+	.clear-btn:hover {
+		background: #e2e8f0;
+		color: #475569;
+	}
+
+	.move-btn {
+		background: #3b82f6;
+		color: white;
+	}
+
+	.move-btn:hover {
+		background: #2563eb;
+	}
+
+	.action-btn:focus-visible {
+		outline: 2px solid #3b82f6;
+		outline-offset: 2px;
+	}
+
+	/**
+	 * MOBILE-SPECIFIC ENHANCEMENTS
+	 * Compact layout and larger touch targets
+	 */
+	@media (max-width: 768px) {
+		/* Compact card padding on mobile */
+		.content-item {
+			padding: 1rem;
+			min-height: 44px; /* Touch target minimum */
+		}
+
+		.content-item.touch-mode {
+			padding-right: 2.5rem;
+		}
+
+		.content-item-title {
+			font-size: 1rem;
+		}
+
+		.content-item-subtitle {
+			font-size: 0.8125rem;
+			margin-bottom: 0.5rem;
+		}
+
+		.content-item-preview {
+			font-size: 0.875rem;
+			line-height: 1.5;
+		}
+
+		/* Smaller selection indicator on mobile */
+		.selection-indicator {
+			width: 22px;
+			height: 22px;
+			top: 0.625rem;
+			right: 0.625rem;
+		}
+
+		.checkmark {
+			width: 14px;
+			height: 14px;
+		}
+
+		/* Adjust action bar for mobile */
+		.mobile-action-bar {
+			padding: 0.75rem;
+			gap: 0.5rem;
+			flex-wrap: wrap;
+		}
+
+		.selection-count {
+			font-size: 0.8125rem;
+		}
+
+		.action-btn {
+			padding: 0.5rem 0.875rem;
+			font-size: 0.8125rem;
+		}
+
+		/* Stack panels need overflow visible for action bars */
+		.panel {
+			display: flex;
+			flex-direction: column;
+			overflow-y: auto;
+		}
+
+		.content-grid {
+			flex: 1;
 		}
 	}
 
