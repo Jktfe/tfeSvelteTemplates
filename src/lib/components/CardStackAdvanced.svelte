@@ -82,7 +82,7 @@
 	const hoverShift = $derived(mouseDirection === 'left' ? -60 : 60);
 
 	/**
-	 * Effect to detect reduced motion preference and keyboard events
+	 * Effect to detect reduced motion preference
 	 * Uses $effect for SSR-safe initialization and cleanup
 	 */
 	$effect(() => {
@@ -97,25 +97,27 @@
 			prefersReducedMotion = e.matches;
 		};
 
-		// Keyboard navigation handler
-		const handleKeyDown = (e: KeyboardEvent) => {
-			if (e.key === 'ArrowRight') {
-				e.preventDefault();
-				cycleForward();
-			} else if (e.key === 'ArrowLeft') {
-				e.preventDefault();
-				cycleBackward();
-			}
-		};
-
 		mediaQuery.addEventListener('change', handleMotionChange);
-		document.addEventListener('keydown', handleKeyDown);
 
 		return () => {
 			mediaQuery.removeEventListener('change', handleMotionChange);
-			document.removeEventListener('keydown', handleKeyDown);
 		};
 	});
+
+	/**
+	 * Keyboard navigation handler - scoped to component container
+	 * This prevents multiple CardStackAdvanced instances from all responding
+	 * to the same keypress. The container must be focused for keys to work.
+	 */
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'ArrowRight') {
+			e.preventDefault();
+			cycleForward();
+		} else if (e.key === 'ArrowLeft') {
+			e.preventDefault();
+			cycleBackward();
+		}
+	}
 
 	/**
 	 * Cycle the front card to the back
@@ -210,13 +212,19 @@
 </script>
 
 <!-- Main container that holds all cards -->
+<!-- tabindex="0" makes the container focusable for keyboard navigation -->
+<!-- Keyboard events are scoped to this element to prevent conflicts with multiple instances -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex - Intentional: region with tabindex="0" enables keyboard navigation per WCAG 2.1.1 -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions - Intentional: touch/keyboard handlers required for card cycling accessibility -->
 <div
 	class="stack-container"
 	ontouchstart={handleTouchStart}
 	ontouchmove={handleTouchMove}
 	ontouchend={handleTouchEnd}
+	onkeydown={handleKeyDown}
 	role="region"
-	aria-label="Card stack with swipe navigation"
+	aria-label="Card stack with swipe navigation. Use arrow keys to cycle cards when focused."
+	tabindex="0"
 >
 	<div class="cards-wrapper">
 		<!-- Render each card in current order -->
