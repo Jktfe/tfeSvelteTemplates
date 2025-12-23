@@ -120,18 +120,18 @@
 	});
 
 	// Get unique departments and statuses from data
-	const departments = $derived(() => {
+	const departments = $derived.by(() => {
 		const uniqueDepts = new Set(data.employees.map(e => e.department));
 		return Array.from(uniqueDepts).sort();
 	});
 
-	const statuses = $derived(() => {
+	const statuses = $derived.by(() => {
 		const uniqueStatuses = new Set(data.employees.map(e => e.status));
 		return Array.from(uniqueStatuses).sort();
 	});
 
 	// Apply filters to employee data
-	const filteredEmployees = $derived<Employee[]>(() => {
+	const filteredEmployees = $derived.by<Employee[]>(() => {
 		return data.employees.filter(employee => {
 			// Department filter
 			if (filters.departments.length > 0 && !filters.departments.includes(employee.department)) {
@@ -148,11 +148,14 @@
 				return false;
 			}
 
-			// Hire date range filter
-			if (filters.hireDateFrom && employee.hireDate < filters.hireDateFrom) {
+			// Hire date range filter (compare as ISO strings for consistent ordering)
+			const hireDateStr = employee.hireDate instanceof Date
+				? employee.hireDate.toISOString().split('T')[0]
+				: String(employee.hireDate);
+			if (filters.hireDateFrom && hireDateStr < filters.hireDateFrom) {
 				return false;
 			}
-			if (filters.hireDateTo && employee.hireDate > filters.hireDateTo) {
+			if (filters.hireDateTo && hireDateStr > filters.hireDateTo) {
 				return false;
 			}
 
@@ -445,8 +448,8 @@ const columns: DataGridColumn[] = [
 
 				<!-- Filter Component -->
 				<DataGridFilters
-					departments={departments()}
-					statuses={statuses()}
+					departments={departments}
+					statuses={statuses}
 					salaryRange={{ min: 30000, max: 150000 }}
 					initiallyExpanded={false}
 					onFiltersChange={handleFiltersChange}
@@ -454,15 +457,15 @@ const columns: DataGridColumn[] = [
 
 				<!-- Filtered Results Count -->
 				<div class="filter-results">
-					<strong>Showing {filteredEmployees().length} of {data.employees.length} employees</strong>
-					{#if filteredEmployees().length !== data.employees.length}
+					<strong>Showing {filteredEmployees.length} of {data.employees.length} employees</strong>
+					{#if filteredEmployees.length !== data.employees.length}
 						<span class="filter-active-indicator">• Filters active</span>
 					{/if}
 				</div>
 
 				<!-- Data Grid with Filtered Data -->
 				<DataGridAdvanced
-					data={filteredEmployees()}
+					data={filteredEmployees}
 					editable={false}
 					selectable={false}
 					pageSize={20}
