@@ -83,7 +83,8 @@
 	 * @returns The value at that column, or undefined
 	 */
 	function getRowValue(row: Employee, columnId: string): unknown {
-		return (row as Record<string, unknown>)[columnId];
+		// Double cast through unknown to safely access dynamic column values
+		return (row as unknown as Record<string, unknown>)[columnId];
 	}
 
 	/**
