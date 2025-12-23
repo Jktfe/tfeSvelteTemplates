@@ -434,7 +434,7 @@
 <!-- SVG button icon -->
 <SpeedDial
   actions={actions}
-  buttonIcon={menuSvg}
+  buttonIcon={menuIcon}
   buttonLabel="Navigation"
 />`}</code></pre>
 			</details>

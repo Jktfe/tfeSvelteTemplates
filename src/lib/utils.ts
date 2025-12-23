@@ -107,3 +107,64 @@ export function calculateMapBounds(
 
 	return { center, zoom };
 }
+
+/**
+ * Sanitizes SVG content to prevent XSS attacks while allowing SVG elements
+ * Used by SpeedDial and other components that accept SVG icon strings
+ *
+ * Only allows safe SVG elements and attributes - strips event handlers,
+ * scripts, and other potentially dangerous content.
+ *
+ * @param svg - Raw SVG string to sanitize
+ * @returns Sanitized SVG string safe for rendering with {@html}
+ */
+export function sanitizeSVG(svg: string): string {
+	return DOMPurify.sanitize(svg, {
+		USE_PROFILES: { svg: true, svgFilters: true },
+		ALLOWED_TAGS: [
+			'svg',
+			'path',
+			'circle',
+			'ellipse',
+			'line',
+			'polyline',
+			'polygon',
+			'rect',
+			'g',
+			'defs',
+			'use',
+			'symbol',
+			'text',
+			'tspan'
+		],
+		ALLOWED_ATTR: [
+			'viewBox',
+			'width',
+			'height',
+			'fill',
+			'stroke',
+			'stroke-width',
+			'stroke-linecap',
+			'stroke-linejoin',
+			'd',
+			'cx',
+			'cy',
+			'r',
+			'rx',
+			'ry',
+			'x',
+			'x1',
+			'x2',
+			'y',
+			'y1',
+			'y2',
+			'points',
+			'transform',
+			'class',
+			'id',
+			'opacity',
+			'fill-opacity',
+			'stroke-opacity'
+		]
+	});
+}
