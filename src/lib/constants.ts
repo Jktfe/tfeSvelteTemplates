@@ -11,7 +11,9 @@ import type {
 	ExpandingCardData,
 	LinkPreview,
 	EditorData,
-	Employee
+	Employee,
+	Folder,
+	FileItem
 } from './types';
 
 /**
@@ -311,7 +313,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Engineering',
 		position: 'Senior Developer',
 		salary: 95000,
-		hireDate: '2020-03-15',
+		hireDate: new Date('2020-03-15'),
 		status: 'active',
 		location: 'London',
 		phone: '+44 20 7946 0958',
@@ -325,7 +327,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Engineering',
 		position: 'DevOps Engineer',
 		salary: 88000,
-		hireDate: '2021-06-01',
+		hireDate: new Date('2021-06-01'),
 		status: 'active',
 		location: 'Manchester',
 		phone: '+44 161 850 2000',
@@ -339,7 +341,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Design',
 		position: 'UX Designer',
 		salary: 72000,
-		hireDate: '2019-09-20',
+		hireDate: new Date('2019-09-20'),
 		status: 'active',
 		location: 'London',
 		phone: '+44 20 7946 0123',
@@ -353,7 +355,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Sales',
 		position: 'Account Executive',
 		salary: 65000,
-		hireDate: '2022-01-10',
+		hireDate: new Date('2022-01-10'),
 		status: 'active',
 		location: 'Birmingham',
 		phone: '+44 121 234 5678',
@@ -367,7 +369,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Marketing',
 		position: 'Marketing Manager',
 		salary: 78000,
-		hireDate: '2020-11-05',
+		hireDate: new Date('2020-11-05'),
 		status: 'active',
 		location: 'London',
 		phone: '+44 20 7946 0456',
@@ -381,7 +383,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Engineering',
 		position: 'Frontend Developer',
 		salary: 82000,
-		hireDate: '2021-03-22',
+		hireDate: new Date('2021-03-22'),
 		status: 'active',
 		location: 'Leeds',
 		phone: '+44 113 243 2635',
@@ -395,7 +397,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'HR',
 		position: 'HR Manager',
 		salary: 70000,
-		hireDate: '2018-07-14',
+		hireDate: new Date('2018-07-14'),
 		status: 'active',
 		location: 'London',
 		phone: '+44 20 7946 0789',
@@ -409,7 +411,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Finance',
 		position: 'Financial Analyst',
 		salary: 68000,
-		hireDate: '2021-08-30',
+		hireDate: new Date('2021-08-30'),
 		status: 'active',
 		location: 'Edinburgh',
 		phone: '+44 131 225 2383',
@@ -423,7 +425,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Engineering',
 		position: 'QA Engineer',
 		salary: 75000,
-		hireDate: '2020-05-18',
+		hireDate: new Date('2020-05-18'),
 		status: 'active',
 		location: 'Bristol',
 		phone: '+44 117 927 7000',
@@ -437,7 +439,7 @@ export const FALLBACK_EMPLOYEES: Employee[] = [
 		department: 'Design',
 		position: 'Product Designer',
 		salary: 76000,
-		hireDate: '2019-12-03',
+		hireDate: new Date('2019-12-03'),
 		status: 'active',
 		location: 'London',
 		phone: '+44 20 7946 0321',
@@ -662,4 +664,244 @@ export const FALLBACK_SANKEY_DATA = {
 	]
 };
 
-// Claude is happy that this file is mint. Signed off 19.11.25.
+/**
+ * Fallback folder data for FolderFiles component
+ * Used when database is unavailable
+ *
+ * Kept in sync with database/schema_folderfiles.sql seed data
+ */
+export const FALLBACK_FOLDERS: Folder[] = [
+	{
+		id: 1,
+		label: 'Lexical Interruptions',
+		color: 'bg-purple-500',
+		textColor: 'text-white',
+		icon: '📘',
+		description: 'Research on lexical patterns in conversation',
+		category: 'folderfiles-demo'
+	},
+	{
+		id: 2,
+		label: 'Concord Variants',
+		color: 'bg-teal-500',
+		textColor: 'text-white',
+		icon: '📗',
+		description: 'Analysis of concordance variations across dialects',
+		category: 'folderfiles-demo'
+	},
+	{
+		id: 3,
+		label: 'Prosodic Features',
+		color: 'bg-blue-500',
+		textColor: 'text-white',
+		icon: '📙',
+		description: 'Studies on prosodic elements in speech',
+		category: 'folderfiles-demo'
+	},
+	{
+		id: 4,
+		label: 'Ink Displacement',
+		color: 'bg-indigo-500',
+		textColor: 'text-white',
+		icon: '🖋️',
+		description: 'Examination of ink displacement patterns in handwriting',
+		category: 'folderfiles-demo'
+	},
+	{
+		id: 5,
+		label: 'Referent Ghosts',
+		color: 'bg-gray-700',
+		textColor: 'text-white',
+		icon: '👻',
+		description: 'Analysis of referent ambiguity in discourse',
+		category: 'folderfiles-demo'
+	},
+	{
+		id: 6,
+		label: 'Unanchored Statements',
+		color: 'bg-orange-500',
+		textColor: 'text-white',
+		icon: '⚓',
+		description: 'Study of context-free utterances in dialogue',
+		category: 'folderfiles-demo'
+	}
+];
+
+/**
+ * Fallback file data for FolderFiles component
+ * Used when database is unavailable
+ *
+ * Kept in sync with database/schema_folderfiles.sql seed data
+ */
+export const FALLBACK_FILES: FileItem[] = [
+	// Files for 'Lexical Interruptions' folder
+	{
+		id: 1,
+		folderId: 1,
+		title: 'Introduction to Lexical Interruptions',
+		subtitle: 'Chapter 1: Foundations',
+		previewText:
+			'This document explores the fundamental concepts of lexical interruptions in natural conversation, examining how speakers interject, pause, and modify their speech patterns.',
+		pages: [
+			'<h1>Introduction to Lexical Interruptions</h1><p>Lexical interruptions represent a fascinating aspect of conversational dynamics. When speakers engage in dialogue, they frequently interrupt their own or others\' speech patterns with various lexical elements...</p><p>This phenomenon occurs across all languages and cultures, though the specific patterns and social acceptability vary significantly. Understanding these patterns helps us decode the underlying cognitive processes of speech production.</p>',
+			'<h2>Types of Interruptions</h2><p>We can categorise lexical interruptions into several distinct types:</p><ul><li><strong>Self-corrections:</strong> When speakers pause to correct their own speech</li><li><strong>Filler words:</strong> Um, uh, like, you know</li><li><strong>Clarifications:</strong> Interjections to clarify meaning</li><li><strong>Emphasis markers:</strong> Words added for emphasis</li></ul>',
+			'<h2>Research Methodology</h2><p>Our research employed a mixed-methods approach, combining quantitative analysis of conversation transcripts with qualitative interviews. We analysed over 500 hours of natural conversation across different contexts...</p>'
+		],
+		metadata: {
+			author: 'Dr. Sarah Johnson',
+			date: 'Mar 15, 1966',
+			tags: ['linguistics', 'conversation', 'interruptions'],
+			pageCount: 3,
+			wordCount: 450,
+			fileNumber: 'LXC'
+		},
+		fileType: 'document'
+	},
+	{
+		id: 2,
+		folderId: 1,
+		title: 'Filler Words Across Cultures',
+		subtitle: 'Comparative Study',
+		previewText:
+			'A comprehensive analysis of filler words (um, uh, like) across 12 different languages and their cultural implications.',
+		pages: [
+			'<h1>Filler Words Across Cultures</h1><p>Filler words serve as conversational lubricants, giving speakers time to think whilst maintaining the flow of dialogue. However, their usage, acceptability, and frequency vary dramatically across cultures...</p>',
+			'<h2>English Filler Words</h2><p>In English, the most common fillers include \'um\', \'uh\', \'like\', \'you know\', and \'so\'. Younger speakers tend to use \'like\' more frequently, whilst older generations favour \'um\' and \'uh\'.</p>'
+		],
+		metadata: {
+			author: 'Prof. Michael Chen',
+			date: 'Feb 20, 1966',
+			tags: ['linguistics', 'cross-cultural', 'fillers'],
+			pageCount: 2,
+			wordCount: 320
+		},
+		fileType: 'document'
+	},
+	{
+		id: 3,
+		folderId: 1,
+		title: 'Turn-Taking Mechanisms',
+		subtitle: 'Sequential Analysis',
+		previewText:
+			'Examination of how speakers negotiate turn-taking through lexical cues and interruption patterns in multi-party conversations.',
+		content:
+			'<h1>Turn-Taking Mechanisms</h1><p>Turn-taking in conversation is a remarkably sophisticated coordination system. Speakers use subtle lexical and prosodic cues to signal when they\'re finishing a turn or intending to continue...</p>',
+		metadata: {
+			author: 'Dr. Emily Watson',
+			date: 'Jan 10, 1966',
+			tags: ['conversation-analysis', 'turn-taking'],
+			pageCount: 1,
+			wordCount: 280
+		},
+		fileType: 'document'
+	},
+	// Files for 'Concord Variants' folder
+	{
+		id: 4,
+		folderId: 2,
+		title: 'Subject-Verb Agreement Patterns',
+		subtitle: 'Regional Variations in British English',
+		previewText:
+			'Analysis of subject-verb agreement variations across different British dialects, exploring both standard and non-standard forms.',
+		content:
+			'<h1>Subject-Verb Agreement Patterns</h1><p>Subject-verb agreement represents one of the most variable aspects of English grammar across dialects...</p>',
+		metadata: {
+			author: 'Dr. James Morrison',
+			date: 'Mar 1, 1966',
+			tags: ['grammar', 'dialects', 'British-English'],
+			pageCount: 1,
+			wordCount: 190
+		},
+		fileType: 'document'
+	},
+	{
+		id: 5,
+		folderId: 2,
+		title: 'Number Concordance Study',
+		subtitle: 'Corpus Analysis',
+		previewText:
+			'Large-scale corpus study examining number concordance patterns in formal vs informal written English.',
+		content:
+			'<h1>Number Concordance Study</h1><p>Using a 10-million-word corpus, we examined patterns of number concordance...</p>',
+		metadata: {
+			author: 'Prof. Lisa Anderson',
+			date: 'Feb 15, 1966',
+			tags: ['corpus-linguistics', 'concordance'],
+			pageCount: 1,
+			wordCount: 240
+		},
+		fileType: 'document'
+	},
+	// Files for 'Prosodic Features' folder
+	{
+		id: 6,
+		folderId: 3,
+		title: 'Intonation Patterns in Questions',
+		subtitle: 'Acoustic Analysis',
+		previewText:
+			'Detailed acoustic analysis of rising and falling intonation patterns in interrogative sentences across English dialects.',
+		pages: [
+			'<h1>Intonation Patterns in Questions</h1><p>Intonation plays a crucial role in signalling question types in English...</p>',
+			'<h2>Rising Intonation</h2><p>Rising intonation typically indicates yes/no questions or uncertainty...</p>'
+		],
+		metadata: {
+			author: 'Dr. Robert Taylor',
+			date: 'Mar 10, 1966',
+			tags: ['prosody', 'intonation', 'phonetics'],
+			pageCount: 2,
+			wordCount: 380
+		},
+		fileType: 'document'
+	},
+	// Files for other folders
+	{
+		id: 7,
+		folderId: 4,
+		title: 'Excerpt A',
+		subtitle: 'Peripheral Entry',
+		previewText:
+			'Believed to be part of a larger set. No other parts located. Retrieved unbound. Source pending.',
+		pages: [
+			'<h1 style="font-style: italic; font-family: Georgia, serif;">Excerpt A</h1><p>The original arrives already altered—a copy turned latter by its journey through the gauntlet of scepticism. Interrogation loops back on itself, turning layers of erasure and silence.</p><p>The sequence, if it ever was one, appears broken, but each break insists on secondary logic of its annotation.</p>'
+		],
+		metadata: {
+			author: 'Unknown',
+			date: 'Jan 21, 1966',
+			fileNumber: 'File 003',
+			pageCount: 1
+		},
+		fileType: 'document'
+	},
+	{
+		id: 8,
+		folderId: 5,
+		title: 'Unverified',
+		subtitle: 'Margin Events',
+		previewText:
+			'There are signs of use: annotations, omissions, the pressure of someone else\'s urgency. No conclusion is evident, but the document resists being closed.',
+		content:
+			'<h1 style="font-style: italic; font-family: Georgia, serif;">Unverified</h1><p>There are signs of use: annotations, omissions, the pressure of someone else\'s urgency. No conclusion is evident, but the document resists being closed. It remains held in transit, not as an answer but as evidence of asking.</p>',
+		metadata: {
+			date: 'Jan 23, 1966',
+			fileNumber: 'File 004',
+			pageCount: 1
+		},
+		fileType: 'document'
+	},
+	{
+		id: 9,
+		folderId: 6,
+		title: 'Varnell Collection',
+		subtitle: 'Duplicated Silence',
+		previewText:
+			'Filed without status. Referenced frequently, yet volume titer in full. Peripheral impact.',
+		content:
+			'<h1 style="font-style: italic; font-family: Georgia, serif;">Varnell Collection</h1><p>Filed without status. Referenced frequently, yet volume titer in full. Peripheral impact on discourse remains substantial despite lack of formal acknowledgement.</p>',
+		metadata: {
+			date: 'Jan 18, 1966',
+			pageCount: 1
+		},
+		fileType: 'document'
+	}
+];
+>>>>>>> 07f786c (fix: resolve all real errors and achieve clean production build)

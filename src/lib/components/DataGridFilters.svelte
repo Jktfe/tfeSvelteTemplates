@@ -61,6 +61,7 @@
 	 * Filter state
 	 * Tracks all active filter values
 	 */
+	/* svelte-ignore state_referenced_locally */
 	let filters = $state<DataGridFilterValues>({
 		departments: [],
 		statuses: [],
@@ -73,6 +74,7 @@
 	/**
 	 * UI state
 	 */
+	/* svelte-ignore state_referenced_locally */
 	let isExpanded = $state(initiallyExpanded);
 
 	/**

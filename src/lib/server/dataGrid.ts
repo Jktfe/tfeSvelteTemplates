@@ -70,7 +70,7 @@ export async function loadEmployeesFromDatabase(): Promise<Employee[]> {
 			department: row.department,
 			position: row.position,
 			salary: Number(row.salary), // Convert DECIMAL to number
-			hireDate: row.hire_date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+			hireDate: row.hire_date, // Database returns Date object
 			status: row.status,
 			location: row.location || undefined,
 			phone: row.phone || undefined,
@@ -184,7 +184,7 @@ export async function updateEmployee(
 				department = COALESCE(${data.department}, department),
 				position = COALESCE(${data.position}, position),
 				salary = COALESCE(${data.salary}, salary),
-				hire_date = COALESCE(${data.hireDate ? new Date(data.hireDate) : null}, hire_date),
+				hire_date = COALESCE(${data.hireDate || null}, hire_date),
 				status = COALESCE(${data.status}, status),
 				location = COALESCE(${data.location}, location),
 				phone = COALESCE(${data.phone}, phone),
@@ -210,7 +210,7 @@ export async function updateEmployee(
 			department: row.department,
 			position: row.position,
 			salary: Number(row.salary), // Convert DECIMAL to number
-			hireDate: row.hire_date.toISOString().split('T')[0],
+			hireDate: row.hire_date, // Database returns Date object
 			status: row.status,
 			location: row.location || undefined,
 			phone: row.phone || undefined,
@@ -324,7 +324,7 @@ export async function createEmployee(
 			) VALUES (
 				${data.firstName}, ${data.lastName}, ${data.email},
 				${data.department}, ${data.position}, ${data.salary},
-				${new Date(data.hireDate)}, ${data.status},
+				${data.hireDate}, ${data.status},
 				${data.location || null}, ${data.phone || null}, ${data.notes || null}
 			)
 			RETURNING *
@@ -341,7 +341,7 @@ export async function createEmployee(
 			department: row.department,
 			position: row.position,
 			salary: Number(row.salary), // Convert DECIMAL to number
-			hireDate: row.hire_date.toISOString().split('T')[0],
+			hireDate: row.hire_date, // Database returns Date object
 			status: row.status,
 			location: row.location || undefined,
 			phone: row.phone || undefined,

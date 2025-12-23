@@ -40,7 +40,7 @@
 	 * Computed editor mode based on editingItem
 	 * If editingItem exists, we're in edit mode; otherwise create mode
 	 */
-	let editorMode = $derived(editingItem ? 'edit' : 'create');
+	let editorMode = $derived<'create' | 'edit'>(editingItem ? 'edit' : 'create');
 
 	/**
 	 * Open editor in create mode

@@ -33,6 +33,7 @@
 
 	// Create the expandable data manager with all nodes and links
 	// This handles visibility logic based on expanded state
+	/* svelte-ignore state_referenced_locally */
 	const sankeyData = createSankeyData(nodes, links);
 
 	// Reactive data object for VisSingleContainer

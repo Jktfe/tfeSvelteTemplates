@@ -611,7 +611,7 @@ export interface Employee {
 	department: string;
 	position: string;
 	salary: number;
-	hireDate: string;
+	hireDate: Date; // Changed from string to Date for type consistency with database
 	status: string;
 	location?: string;
 	phone?: string;
@@ -816,4 +816,147 @@ export interface AuthStatusProps {
 	class?: string;
 }
 
-// Claude is happy that this file is mint. Signed off 19.11.25.
+// ==================================================
+// FOLDERFILES COMPONENT TYPES (Hierarchical Document Viewer)
+// ==================================================
+
+/**
+ * Folder data structure
+ * Represents a tab-based folder containing files in the FolderFiles component
+ *
+ * @property id - Unique folder identifier
+ * @property label - Display name for the folder tab (e.g., 'Lexical Interruptions')
+ * @property color - Tailwind background colour class for folder tab (e.g., 'bg-blue-500')
+ * @property textColor - Tailwind text colour class (e.g., 'text-white')
+ * @property icon - Optional emoji or icon character for folder tab
+ * @property description - Optional description shown in tooltip on hover
+ * @property category - Optional category for filtering/grouping
+ */
+export interface Folder {
+	id: number;
+	label: string;
+	color: string;
+	textColor?: string;
+	icon?: string;
+	description?: string;
+	category?: string;
+}
+
+/**
+ * Database row structure from the folders table
+ * Maps to the schema defined in database/schema_folderfiles.sql
+ */
+export interface FolderRow {
+	id: number;
+	label: string;
+	color: string;
+	text_color: string;
+	icon: string | null;
+	description: string | null;
+	category: string;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * File data structure
+ * Represents a document file within a folder
+ *
+ * @property id - Unique file identifier
+ * @property folderId - ID of parent folder
+ * @property title - File title/name
+ * @property subtitle - Optional subtitle or description
+ * @property previewText - Short preview text shown in hover tooltip
+ * @property content - Full document content (HTML string for single page)
+ * @property pages - Array of page content (HTML strings for multi-page documents)
+ * @property thumbnailUrl - Optional thumbnail image URL
+ * @property metadata - Additional metadata (author, date, tags, etc.)
+ * @property fileType - Type of file ('document', 'image', 'pdf', 'text')
+ */
+export interface FileItem {
+	id: number;
+	folderId: number;
+	title: string;
+	subtitle?: string;
+	previewText: string;
+	content?: string;
+	pages?: string[];
+	thumbnailUrl?: string;
+	metadata?: FileMetadata;
+	fileType?: 'document' | 'image' | 'pdf' | 'text';
+}
+
+/**
+ * Database row structure from the files table
+ * Maps to the schema defined in database/schema_folderfiles.sql
+ */
+export interface FileItemRow {
+	id: number;
+	folder_id: number;
+	title: string;
+	subtitle: string | null;
+	preview_text: string;
+	content: string | null;
+	pages: string | null;
+	thumbnail_url: string | null;
+	metadata: string | null;
+	file_type: string;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * File metadata structure
+ * Additional information about a file
+ *
+ * @property author - Document author
+ * @property date - Creation or modification date
+ * @property tags - Array of tags for categorisation
+ * @property pageCount - Number of pages in document
+ * @property wordCount - Approximate word count
+ * @property fileNumber - Optional file reference number (e.g., 'File 003')
+ */
+export interface FileMetadata {
+	author?: string;
+	date?: string;
+	tags?: string[];
+	pageCount?: number;
+	wordCount?: number;
+	fileNumber?: string;
+}
+
+/**
+ * Complete folder with its files
+ * Used for hierarchical data structure
+ *
+ * @property folder - Folder information
+ * @property files - Array of files within this folder
+ */
+export interface FolderWithFiles {
+	folder: Folder;
+	files: FileItem[];
+}
+
+/**
+ * Props for FolderFiles component
+ * Hierarchical folder/file viewer with document display capabilities
+ *
+ * @property folders - Array of all folders
+ * @property files - Array of all files (will be grouped by folderId)
+ * @property initialFolderId - Optional folder to open on mount
+ * @property viewMode - Document viewer mode: 'single' or 'spread' (bindable)
+ * @property showMetadata - Whether to show file metadata in viewer (bindable)
+ * @property enable3DEffect - Enable 3D folder opening animation (default: false)
+ */
+export interface FolderFilesProps {
+	folders: Folder[];
+	files: FileItem[];
+	initialFolderId?: number;
+	viewMode?: 'single' | 'spread';
+	showMetadata?: boolean;
+	enable3DEffect?: boolean;
+}

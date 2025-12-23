@@ -70,6 +70,7 @@
 	let containerWidth = $state(0);
 	let contentWidth = $state(0);
 	let isDragging = $state(false);
+	/* svelte-ignore state_referenced_locally */
 	let currentDirection = $state(reverse ? 1 : -1); // -1 = left, 1 = right
 	let dragStartX = 0;
 	let dragStartY = 0;
