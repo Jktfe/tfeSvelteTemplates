@@ -70,6 +70,8 @@
 	let containerWidth = $state(0);
 	let contentWidth = $state(0);
 	let isDragging = $state(false);
+	// currentDirection is initialized from the `reverse` prop but then updated by user drag interaction
+	// The svelte-ignore is safe because we're intentionally deriving initial state from props
 	/* svelte-ignore state_referenced_locally */
 	let currentDirection = $state(reverse ? 1 : -1); // -1 = left, 1 = right
 	let dragStartX = 0;

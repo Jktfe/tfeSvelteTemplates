@@ -21,6 +21,7 @@
 	 */
 
 	import type { Folder, FileItem } from '$lib/types';
+	import { lockScroll } from '$lib/scrollLock';
 
 	/**
 	 * Component props
@@ -50,6 +51,9 @@
 	// Drag-and-drop state
 	let draggedItem = $state<FileItem | null>(null);
 	let dragOverPanel = $state<'left' | 'right' | null>(null);
+
+	// Scroll lock cleanup function - coordinated via scrollLock utility
+	let unlockScroll: (() => void) | null = null;
 
 	/**
 	 * Computed values
@@ -81,12 +85,21 @@
 		// Initialize panels (all files in right, left empty)
 		leftPanelItems = [];
 		rightPanelItems = folderFiles;
+
+		// Lock body scroll using coordinated utility (prevents conflicts with other modals)
+		unlockScroll = lockScroll();
 	}
 
 	function closeFolderView() {
 		openFolder = null;
 		leftPanelItems = [];
 		rightPanelItems = [];
+
+		// Unlock body scroll
+		if (unlockScroll) {
+			unlockScroll();
+			unlockScroll = null;
+		}
 	}
 
 	/**

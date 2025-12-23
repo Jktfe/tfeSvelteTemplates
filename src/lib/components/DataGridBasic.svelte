@@ -74,6 +74,19 @@
 	let currentPage = $state(1);
 
 	/**
+	 * Type-safe accessor for row values by column ID
+	 * Uses Record<string, unknown> assertion which is safer than `any`
+	 * because it maintains type checking on the return value
+	 *
+	 * @param row - The data row
+	 * @param columnId - The column ID to access
+	 * @returns The value at that column, or undefined
+	 */
+	function getRowValue(row: Employee, columnId: string): unknown {
+		return (row as Record<string, unknown>)[columnId];
+	}
+
+	/**
 	 * Filtered Data
 	 * Apply global search filter to data
 	 */
@@ -87,7 +100,7 @@
 		return data.filter((row) => {
 			// Search across all column values
 			return columns.some((col) => {
-				const value = (row as any)[col.id];
+				const value = getRowValue(row, col.id);
 				if (value === null || value === undefined) return false;
 				return String(value).toLowerCase().includes(searchTerm);
 			});
@@ -110,8 +123,8 @@
 		const columnKey = sortColumn;
 
 		sorted.sort((a, b) => {
-			const aValue = (a as any)[columnKey];
-			const bValue = (b as any)[columnKey];
+			const aValue = getRowValue(a, columnKey);
+			const bValue = getRowValue(b, columnKey);
 
 			// Handle null/undefined values
 			if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;
@@ -335,14 +348,15 @@
 					{#each paginatedData() as row, rowIndex}
 						<tr>
 							{#each columns as column}
+								{@const cellValue = getRowValue(row, column.id)}
 								<td
-									class={getCellClass((row as any)[column.id], column, row)}
-									style={getCellStyle((row as any)[column.id], column, row)}
+									class={getCellClass(cellValue, column, row)}
+									style={getCellStyle(cellValue, column, row)}
 								>
 									{#if column.cellRenderer}
-										{@html sanitizeHTML(formatCellValue((row as any)[column.id], column, row))}
+										{@html sanitizeHTML(formatCellValue(cellValue, column, row))}
 									{:else}
-										{formatCellValue((row as any)[column.id], column, row)}
+										{formatCellValue(cellValue, column, row)}
 									{/if}
 								</td>
 							{/each}

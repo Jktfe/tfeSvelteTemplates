@@ -29,8 +29,8 @@
 
 <script lang="ts">
 	import type { NavbarProps } from '$lib/types';
-	import { onMount } from 'svelte';
 	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
+	import { lockScroll } from '$lib/scrollLock';
 
 	let {
 		menuItems,
@@ -42,6 +42,10 @@
 	}: NavbarProps = $props();
 
 	let isPanelOpen = $state(false);
+
+	// Scroll lock cleanup function - coordinated via scrollLock utility
+	// This prevents conflicts with other components (Editor, FolderFiles) that also lock scroll
+	let unlockScroll: (() => void) | null = null;
 
 	function togglePanel() {
 		isPanelOpen = !isPanelOpen;
@@ -57,23 +61,32 @@
 		}
 	}
 
+	// Manage scroll lock based on panel state using coordinated utility
 	$effect(() => {
 		if (isPanelOpen) {
-			document.body.style.overflow = 'hidden';
-		} else {
-			document.body.style.overflow = '';
+			// Lock scroll when panel opens
+			unlockScroll = lockScroll();
+		} else if (unlockScroll) {
+			// Unlock scroll when panel closes
+			unlockScroll();
+			unlockScroll = null;
 		}
 
+		// Cleanup on component unmount
 		return () => {
-			document.body.style.overflow = '';
+			if (unlockScroll) {
+				unlockScroll();
+				unlockScroll = null;
+			}
 		};
 	});
 
-	onMount(() => {
+	// SSR-safe keyboard listener setup
+	$effect(() => {
+		if (typeof window === 'undefined') return;
+
 		window.addEventListener('keydown', handleKeydown);
-		return () => {
-			window.removeEventListener('keydown', handleKeydown);
-		};
+		return () => window.removeEventListener('keydown', handleKeydown);
 	});
 </script>
 
