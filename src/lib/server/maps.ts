@@ -12,7 +12,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { MapMarker, MapMarkerRow, MapMarkerMetadata } from '$lib/types';
 import { FALLBACK_MAP_MARKERS } from '$lib/constants';
-import { calculateMapBounds } from '$lib/utils';
+import { calculateMapBounds } from '$lib/mapUtils';
 
 /**
  * Load map markers from database with fallback to constants
