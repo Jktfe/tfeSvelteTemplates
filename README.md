@@ -101,7 +101,7 @@ Animated navigation menu with staggered entrance animations and active state hig
 
 2. **Install dependencies:**
    ```bash
-   npm install
+   bun install
    ```
 
 3. **Set up environment variables (optional):**
@@ -112,7 +112,7 @@ Animated navigation menu with staggered entrance animations and active state hig
 
 4. **Run the development server:**
    ```bash
-   npm run dev
+   bun run dev
    ```
 
 5. **Open your browser:**
@@ -280,7 +280,7 @@ For issues or questions:
 
 ### Development
 - Node.js 18.x or higher
-- npm 9.x or higher
+- bun 1.0.0 or higher
 
 ### Optional
 - Neon account for database hosting
@@ -300,7 +300,7 @@ For issues or questions:
 - App will use fallback data if database unavailable
 
 ### Build Errors
-- Run `npm install` to ensure dependencies are up-to-date
+- Run `bun install` to ensure dependencies are up-to-date
 - Clear `.svelte-kit` directory and rebuild
 - Check Node.js version matches requirements
 

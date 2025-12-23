@@ -39,19 +39,19 @@ TFE Svelte Templates is a collection of production-ready, well-documented Svelte
 
 ```bash
 # Development server (hot reload enabled)
-npm run dev
+bun run dev
 
 # Production build
-npm run build
+bun run build
 
 # Preview production build locally
-npm run preview
+bun run preview
 
 # Type checking (run before commits)
-npm run check
+bun run check
 
 # Type checking in watch mode
-npm run check:watch
+bun run check:watch
 ```
 
 ## Project Architecture
@@ -345,7 +345,7 @@ const duration = prefersReducedMotion ? 0.1 : 0.5;
 
 ### Known svelte-check Warnings (Safe to Ignore)
 
-The project has **zero build warnings** (`npm run build` is clean) and **zero TypeScript errors**. Some warnings from `npm run check` are documented below as safe to ignore:
+The project has **zero build warnings** (`bun run build` is clean) and **zero TypeScript errors**. Some warnings from `bun run check` are documented below as safe to ignore:
 
 #### CSS Unused Selector Warnings (14 warnings)
 **Location**: `Editor.svelte`
@@ -409,7 +409,7 @@ If you see errors about `@neondatabase/serverless`:
 - Verify `DATABASE_URL` is properly formatted
 
 ### TypeScript Errors
-- Run `npm run check` to see all type errors (expect 53 false positives in route files)
+- Run `bun run check` to see all type errors (expect 53 false positives in route files)
 - Ensure all imports use correct paths (`$lib/...`)
 - Check that interfaces are exported from `src/lib/types.ts`
 
@@ -1432,10 +1432,10 @@ const callbacks = {
 ### Dependencies
 
 ```bash
-npm install @unovis/svelte @unovis/ts --legacy-peer-deps
+bun add @unovis/svelte @unovis/ts
 ```
 
-**Note**: The `--legacy-peer-deps` flag may be needed due to peer dependency version requirements. The Unovis library is actively maintained and provides excellent TypeScript support.
+**Note**: Bun handles peer dependencies automatically, so no additional flags are needed. The Unovis library is actively maintained and provides excellent TypeScript support.
 
 ### Troubleshooting
 
