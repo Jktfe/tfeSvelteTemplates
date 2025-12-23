@@ -241,26 +241,6 @@
 		margin-bottom: 1.5rem;
 	}
 
-	.component-options {
-		margin-bottom: 1.5rem;
-		padding: 1rem;
-		background: #f9fafb;
-		border-radius: 0.5rem;
-	}
-
-	.option {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		cursor: pointer;
-	}
-
-	.option input[type='checkbox'] {
-		width: 1.25rem;
-		height: 1.25rem;
-		cursor: pointer;
-	}
-
 	.demo-container {
 		border: 1px solid #e5e7eb;
 		border-radius: 0.5rem;
