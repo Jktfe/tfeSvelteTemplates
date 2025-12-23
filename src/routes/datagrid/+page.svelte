@@ -482,7 +482,7 @@ const columns: DataGridColumn[] = [
 
 		<div class="guide-section">
 			<h3>Column Styling & Formatting</h3>
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import DataGridBasic from '$lib/components/DataGridBasic.svelte';
   import ${'{'}
     formatCurrencyCompact,
@@ -524,7 +524,7 @@ const columns: DataGridColumn[] = [
 
 		<div class="guide-section">
 			<h3>DataGridBasic - Copy & Paste Ready</h3>
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import DataGridBasic from '$lib/components/DataGridBasic.svelte';
 
   const columns = [
@@ -555,7 +555,7 @@ const columns: DataGridColumn[] = [
 
 		<div class="guide-section">
 			<h3>DataGridAdvanced - Production Features</h3>
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
 
   // Auto-generates columns from data structure
@@ -574,7 +574,7 @@ const columns: DataGridColumn[] = [
 
 		<div class="guide-section">
 			<h3>DataGridFilters - Advanced Filtering</h3>
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import DataGridFilters from '$lib/components/DataGridFilters.svelte';
   import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
 

@@ -91,7 +91,7 @@
 		<h2>Usage Example</h2>
 
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import FolderFiles from '$lib/components/FolderFiles.svelte';
 
   let { data } = $props();

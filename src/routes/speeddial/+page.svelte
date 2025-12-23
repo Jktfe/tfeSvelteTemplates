@@ -148,7 +148,7 @@
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import SpeedDial from '$lib/components/SpeedDial.svelte';
 
   const actions = [

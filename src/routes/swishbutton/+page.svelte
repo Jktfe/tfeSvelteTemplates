@@ -55,7 +55,7 @@
 			<!-- Usage Example -->
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import SwishButton from '$lib/components/SwishButton.svelte';
 </script>
 
@@ -82,7 +82,7 @@
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import SwishButton from '$lib/components/SwishButton.svelte';
 
   let count = $state(0);

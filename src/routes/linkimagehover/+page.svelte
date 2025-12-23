@@ -63,7 +63,7 @@
 			<!-- Usage Example -->
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import LinkImageHover from '$lib/components/LinkImageHover.svelte';
 </script>
 

@@ -54,7 +54,7 @@
 			<!-- Usage Example -->
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import ShineBorder from '$lib/components/ShineBorder.svelte';
 </script>
 

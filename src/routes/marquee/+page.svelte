@@ -120,7 +120,7 @@
 				<details class="code-block">
 					<summary>View Code Example</summary>
 					<pre><code
-							>{`<script>
+							>{`${'<'}script>
   import Marquee from '$lib/components/Marquee.svelte';
 
   const testimonials = [
@@ -252,7 +252,7 @@
 				<details class="code-block">
 					<summary>View Code Example</summary>
 					<pre><code
-							>{`<script>
+							>{`${'<'}script>
   import MarqueeDraggable from '$lib/components/MarqueeDraggable.svelte';
 
   const products = [
