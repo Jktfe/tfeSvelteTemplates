@@ -133,7 +133,9 @@
 
 		if (!draggedItem) return;
 
-		const sourcePanel = leftPanelItems.includes(draggedItem) ? 'left' : 'right';
+		// Capture reference to satisfy TypeScript narrowing for $state variables
+		const item = draggedItem;
+		const sourcePanel = leftPanelItems.includes(item) ? 'left' : 'right';
 
 		if (sourcePanel === targetPanel) {
 			dragOverPanel = null;
@@ -142,11 +144,11 @@
 
 		// Move item between panels
 		if (targetPanel === 'left') {
-			rightPanelItems = rightPanelItems.filter((f) => f.id !== draggedItem.id);
-			leftPanelItems = [...leftPanelItems, draggedItem];
+			rightPanelItems = rightPanelItems.filter((f) => f.id !== item.id);
+			leftPanelItems = [...leftPanelItems, item];
 		} else {
-			leftPanelItems = leftPanelItems.filter((f) => f.id !== draggedItem.id);
-			rightPanelItems = [...rightPanelItems, draggedItem];
+			leftPanelItems = leftPanelItems.filter((f) => f.id !== item.id);
+			rightPanelItems = [...rightPanelItems, item];
 		}
 
 		dragOverPanel = null;

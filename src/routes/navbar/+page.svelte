@@ -49,7 +49,7 @@
 	<section class="section">
 		<h2 class="section-title">Usage</h2>
 		<div class="code-block">
-			<pre><code>{`<script lang="ts">
+			<pre><code>{`${'<'}script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
   import type { MenuItem } from '$lib/types';
 
@@ -67,7 +67,7 @@
       active: false
     }
   ];
-</script>
+${'<'}/script>
 
 <Navbar {menuItems} />`}</code></pre>
 		</div>
