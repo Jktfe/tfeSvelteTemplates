@@ -600,7 +600,7 @@
 	.folder-body {
 		background: var(--folder-color);
 		width: 100%;
-		height: 120px;
+		height: 400px;
 		border-radius: 0 8px 8px 8px;
 		box-shadow:
 			0 4px 12px rgba(0, 0, 0, 0.2),
