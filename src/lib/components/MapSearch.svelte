@@ -126,11 +126,14 @@
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: true,
-				zoomControl: true,
+				zoomControl: false,
 				attributionControl: true,
 				zoomAnimation: !prefersReducedMotion,
 				fadeAnimation: !prefersReducedMotion
 			});
+
+			// Add zoom control to bottom-right to avoid overlapping UI elements
+			L.control.zoom({ position: 'bottomright' }).addTo(mapInstance);
 
 			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				attribution:
@@ -259,7 +262,11 @@
 
 		// Add marker at selected location
 		marker = L.marker([result.position.lat, result.position.lng]).addTo(map);
-		marker.bindPopup(`<strong>${result.displayName.split(',')[0]}</strong>`).openPopup();
+		marker.bindPopup(`<strong>${result.displayName.split(',')[0]}</strong>`, {
+			autoPan: true,
+			autoPanPaddingTopLeft: L.point(50, 80),
+			autoPanPaddingBottomRight: L.point(50, 50)
+		}).openPopup();
 
 		// Pan to location
 		if (result.boundingBox) {
