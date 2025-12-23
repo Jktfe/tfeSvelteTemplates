@@ -13,9 +13,9 @@
 	// Get server data
 	let { data }: { data: PageData } = $props();
 
-	// Destructure link data from server
-	const cityLinks = data.cityLinks;
-	const natureLinks = data.natureLinks;
+	// Reactive references to link data (stays synced with data prop)
+	let cityLinks = $derived(data.cityLinks);
+	let natureLinks = $derived(data.natureLinks);
 </script>
 
 <svelte:head>
