@@ -92,8 +92,17 @@
 
 	/**
 	 * References to action buttons for focus trapping
+	 * Note: Array may contain null/undefined refs if actions change dynamically
 	 */
-	let actionButtonRefs: HTMLButtonElement[] = $state([]);
+	let actionButtonRefs: (HTMLButtonElement | null)[] = $state([]);
+
+	/**
+	 * Derived list of valid, enabled action buttons for focus trapping
+	 * Filters out stale refs and disabled buttons automatically
+	 */
+	let enabledActionButtons = $derived(
+		actionButtonRefs.filter((btn): btn is HTMLButtonElement => btn !== null && !btn?.disabled)
+	);
 
 	/**
 	 * Toggle the SpeedDial open/closed state
@@ -138,30 +147,27 @@
 			return;
 		}
 
-		// Focus trapping within action items
-		if (event.key === 'Tab' && actionButtonRefs.length > 0) {
-			const enabledButtons = actionButtonRefs.filter((btn) => btn && !btn.disabled);
-			if (enabledButtons.length === 0) return;
-
-			const currentIndex = enabledButtons.findIndex((btn) => btn === document.activeElement);
+		// Focus trapping within action items (uses derived enabledActionButtons)
+		if (event.key === 'Tab' && enabledActionButtons.length > 0) {
+			const currentIndex = enabledActionButtons.findIndex((btn) => btn === document.activeElement);
 
 			if (event.shiftKey) {
 				// Shift+Tab: Move backwards
 				if (currentIndex <= 0) {
 					// At first item or trigger, wrap to last
 					event.preventDefault();
-					enabledButtons[enabledButtons.length - 1]?.focus();
+					enabledActionButtons[enabledActionButtons.length - 1]?.focus();
 				}
 			} else {
 				// Tab: Move forwards
-				if (currentIndex === enabledButtons.length - 1) {
+				if (currentIndex === enabledActionButtons.length - 1) {
 					// At last item, wrap to first
 					event.preventDefault();
-					enabledButtons[0]?.focus();
+					enabledActionButtons[0]?.focus();
 				} else if (currentIndex === -1 && document.activeElement === triggerButtonRef) {
 					// From trigger, go to first action
 					event.preventDefault();
-					enabledButtons[0]?.focus();
+					enabledActionButtons[0]?.focus();
 				}
 			}
 		}
@@ -169,9 +175,17 @@
 
 	/**
 	 * Handle click outside to close
+	 * Checks that click is outside container AND not on the trigger button
+	 * (prevents race condition where opening click immediately closes menu)
 	 */
 	function handleClickOutside(event: MouseEvent): void {
-		if (containerRef && !containerRef.contains(event.target as Node)) {
+		const target = event.target as Node;
+		// Ignore clicks on the trigger button (handled by toggle)
+		if (triggerButtonRef?.contains(target)) {
+			return;
+		}
+		// Close if click is outside the container
+		if (containerRef && !containerRef.contains(target)) {
 			close();
 		}
 	}
@@ -332,15 +346,9 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Modal mask/backdrop (optional) -->
+<!-- Escape key handled at window level via handleKeydown -->
 {#if mask && isOpen}
-	<div
-		class="speed-dial-mask"
-		onclick={close}
-		onkeydown={(e) => e.key === 'Enter' && close()}
-		role="button"
-		tabindex="-1"
-		aria-label="Close menu"
-	></div>
+	<div class="speed-dial-mask" onclick={close} aria-hidden="true"></div>
 {/if}
 
 <div
