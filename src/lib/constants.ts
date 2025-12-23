@@ -674,8 +674,8 @@ export const FALLBACK_FOLDERS: Folder[] = [
 	{
 		id: 1,
 		label: 'Lexical Interruptions',
-		color: 'bg-purple-500',
-		textColor: 'text-white',
+		color: '#a855f7', // purple-500
+		textColor: 'white',
 		icon: '📘',
 		description: 'Research on lexical patterns in conversation',
 		category: 'folderfiles-demo'
@@ -683,8 +683,8 @@ export const FALLBACK_FOLDERS: Folder[] = [
 	{
 		id: 2,
 		label: 'Concord Variants',
-		color: 'bg-teal-500',
-		textColor: 'text-white',
+		color: '#14b8a6', // teal-500
+		textColor: 'white',
 		icon: '📗',
 		description: 'Analysis of concordance variations across dialects',
 		category: 'folderfiles-demo'
@@ -692,8 +692,8 @@ export const FALLBACK_FOLDERS: Folder[] = [
 	{
 		id: 3,
 		label: 'Prosodic Features',
-		color: 'bg-blue-500',
-		textColor: 'text-white',
+		color: '#3b82f6', // blue-500
+		textColor: 'white',
 		icon: '📙',
 		description: 'Studies on prosodic elements in speech',
 		category: 'folderfiles-demo'
@@ -701,8 +701,8 @@ export const FALLBACK_FOLDERS: Folder[] = [
 	{
 		id: 4,
 		label: 'Ink Displacement',
-		color: 'bg-indigo-500',
-		textColor: 'text-white',
+		color: '#6366f1', // indigo-500
+		textColor: 'white',
 		icon: '🖋️',
 		description: 'Examination of ink displacement patterns in handwriting',
 		category: 'folderfiles-demo'
@@ -710,8 +710,8 @@ export const FALLBACK_FOLDERS: Folder[] = [
 	{
 		id: 5,
 		label: 'Referent Ghosts',
-		color: 'bg-gray-700',
-		textColor: 'text-white',
+		color: '#374151', // gray-700
+		textColor: 'white',
 		icon: '👻',
 		description: 'Analysis of referent ambiguity in discourse',
 		category: 'folderfiles-demo'
@@ -719,8 +719,8 @@ export const FALLBACK_FOLDERS: Folder[] = [
 	{
 		id: 6,
 		label: 'Unanchored Statements',
-		color: 'bg-orange-500',
-		textColor: 'text-white',
+		color: '#f97316', // orange-500
+		textColor: 'white',
 		icon: '⚓',
 		description: 'Study of context-free utterances in dialogue',
 		category: 'folderfiles-demo'

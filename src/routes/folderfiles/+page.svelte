@@ -3,10 +3,6 @@
 	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 
 	let { data } = $props();
-
-	let viewMode = $state<'single' | 'spread'>('single');
-	let showMetadata = $state(true);
-	let enable3DEffect = $state(true);
 </script>
 
 <svelte:head>
@@ -16,34 +12,18 @@
 <div class="page-container">
 	<header class="page-header">
 		<h1>FolderFiles Component</h1>
-		<p>Hierarchical folder/file viewer with document display capabilities</p>
+		<p>3D filing cabinet with stacked folders and drag-and-drop organisation</p>
 		<DatabaseStatus usingDatabase={data.usingDatabase} />
 	</header>
 
 	<section class="demo-section">
 		<h2>Interactive Demo</h2>
 		<p class="demo-instructions">
-			<strong>How to use:</strong> Click a folder tab to view its files → Click a file to open
-			the document viewer → Use keyboard shortcuts (← → to navigate, V to toggle view, Esc to
-			close)
+			<strong>How to use:</strong> Hover over a folder to reveal more tabs beneath → Click a folder to open it → Drag items between "Selected" and "All Items" panels to organise content
 		</p>
 
-		<!-- Component Options -->
-		<div class="component-options">
-			<label class="option">
-				<input type="checkbox" bind:checked={enable3DEffect} />
-				<span>Enable 3D folder opening animation</span>
-			</label>
-		</div>
-
 		<div class="demo-container">
-			<FolderFiles
-				folders={data.folders}
-				files={data.files}
-				bind:viewMode
-				bind:showMetadata
-				{enable3DEffect}
-			/>
+			<FolderFiles folders={data.folders} files={data.files} />
 		</div>
 	</section>
 
@@ -51,38 +31,33 @@
 		<h2>Component Features</h2>
 		<div class="features-grid">
 			<div class="feature-card">
-				<h3>🗂️ Two-Level Hierarchy</h3>
-				<p>Folders contain files. Navigate through folders to explore their contents.</p>
+				<h3>🗂️ 3D Filing Cabinet</h3>
+				<p>Folders stacked with subtle 3D transforms and depth effects, like a physical filing cabinet drawer.</p>
 			</div>
 
 			<div class="feature-card">
-				<h3>🎨 Colour-Coded Tabs</h3>
-				<p>Each folder has customisable background colour, text colour, and icon.</p>
+				<h3>🎨 Colour-Coded Folders</h3>
+				<p>Each folder has a vibrant colour with visible body and protruding tab for easy identification.</p>
 			</div>
 
 			<div class="feature-card">
-				<h3>👁️ Hover Previews</h3>
-				<p>Tooltips show file metadata and preview text when hovering over folder tabs.</p>
+				<h3>📑 Staggered Tabs</h3>
+				<p>Folder tabs positioned in left-center-right pattern for easy access, like real filing folders.</p>
 			</div>
 
 			<div class="feature-card">
-				<h3>📐 3D Animations</h3>
-				<p>Optional 3D folder opening animation with CSS perspective transforms.</p>
+				<h3>👁️ Hover Animation</h3>
+				<p>Hovering over a folder drops folders beneath to reveal more tabs with smooth animation.</p>
 			</div>
 
 			<div class="feature-card">
-				<h3>📄 Document Viewer</h3>
-				<p>Rich HTML document rendering with single-page and two-page spread modes.</p>
+				<h3>🔄 Drag & Drop</h3>
+				<p>Native HTML5 drag-and-drop between two panels for organising content items.</p>
 			</div>
 
 			<div class="feature-card">
-				<h3>📖 Multi-Page Support</h3>
-				<p>Navigate through multi-page documents with page indicators and controls.</p>
-			</div>
-
-			<div class="feature-card">
-				<h3>⌨️ Keyboard Shortcuts</h3>
-				<p>Arrow keys for navigation, V to toggle view mode, Esc to close viewer.</p>
+				<h3>💬 Smart Tooltips</h3>
+				<p>Tooltips appear below tabs in the revealed space, showing folder name and item count.</p>
 			</div>
 
 			<div class="feature-card">
@@ -120,14 +95,11 @@
   import FolderFiles from '$lib/components/FolderFiles.svelte';
 
   let { data } = $props();
-  let viewMode = $state('single');
 </script>
 
 <FolderFiles
   folders={data.folders}
   files={data.files}
-  bind:viewMode
-  enable3DEffect={true}
 />`}</code></pre>
 		</div>
 
@@ -146,37 +118,13 @@
 					<td><code>folders</code></td>
 					<td>Folder[]</td>
 					<td>[]</td>
-					<td>Array of folder objects</td>
+					<td>Array of folder objects with id, label, color</td>
 				</tr>
 				<tr>
 					<td><code>files</code></td>
 					<td>FileItem[]</td>
 					<td>[]</td>
-					<td>Array of file objects</td>
-				</tr>
-				<tr>
-					<td><code>initialFolderId</code></td>
-					<td>number?</td>
-					<td>undefined</td>
-					<td>Folder to open on mount</td>
-				</tr>
-				<tr>
-					<td><code>viewMode</code></td>
-					<td>'single' | 'spread'</td>
-					<td>'single'</td>
-					<td>Document viewer mode (bindable)</td>
-				</tr>
-				<tr>
-					<td><code>showMetadata</code></td>
-					<td>boolean</td>
-					<td>true</td>
-					<td>Show file metadata panel (bindable)</td>
-				</tr>
-				<tr>
-					<td><code>enable3DEffect</code></td>
-					<td>boolean</td>
-					<td>false</td>
-					<td>Enable 3D folder opening animation</td>
+					<td>Array of file items with title, subtitle, previewText</td>
 				</tr>
 			</tbody>
 		</table>
@@ -205,12 +153,7 @@
   folderId: number;           // Parent folder ID
   title: string;
   subtitle?: string;
-  previewText: string;        // For tooltip preview
-  content?: string;           // Single page HTML
-  pages?: string[];           // Multi-page HTML array
-  thumbnailUrl?: string;
-  metadata?: FileMetadata;
-  fileType?: 'document' | 'image' | 'pdf' | 'text';
+  previewText: string;        // Brief description
 }`}</code></pre>
 		</div>
 	</section>
@@ -220,27 +163,26 @@
 
 		<div class="tips-grid">
 			<div class="tip-card">
-				<h3>📝 Content Format</h3>
+				<h3>🎨 Folder Colours</h3>
 				<p>
-					Store content as HTML strings in the <code>content</code> field (single page) or
-					<code>pages</code>
-					array (multi-page). HTML is sanitized automatically with DOMPurify.
+					Use hex colour codes for folders (e.g., <code>#a855f7</code>). The component applies
+					these colours to both the folder tab and body with automatic depth shading.
 				</p>
 			</div>
 
 			<div class="tip-card">
-				<h3>🎨 Styling Documents</h3>
+				<h3>📑 Tab Positioning</h3>
 				<p>
-					Use inline styles in your HTML content for custom formatting. Typography uses serif fonts
-					(Georgia, Times New Roman) for document authenticity.
+					Tabs automatically stagger left-center-right using modulo pattern. First folder left,
+					second center-left, third center-right, then repeats.
 				</p>
 			</div>
 
 			<div class="tip-card">
 				<h3>🗃️ Database Schema</h3>
 				<p>
-					Run <code>database/schema_folderfiles.sql</code> in Neon to create tables. Uses JSON columns
-					for flexible metadata and pages storage.
+					Run <code>database/schema_folderfiles.sql</code> in Neon to create tables. Simple
+					structure with folders and files tables linked by folderId.
 				</p>
 			</div>
 

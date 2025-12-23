@@ -1,1024 +1,725 @@
-<!--
-FolderFiles - Hierarchical Folder/File Viewer with Document Display
-
-Features:
-- Two-level hierarchy: Folders contain files
-- Colour-coded folder tabs with icons and tooltips
-- Hover preview tooltips showing file metadata
-- Optional 3D folder opening animation
-- File list grid with click-to-open functionality
-- Document viewer with single-page and two-page spread modes
-- Page navigation for multi-page documents
-- Keyboard shortcuts for navigation
-- Fully responsive design
-- Zero external dependencies (except Svelte built-in transitions)
-
-Perfect for:
-- Document management systems
-- File browsers with preview
-- Hierarchical content viewers
-- Archive exploration interfaces
-
-Technical Implementation:
-- Svelte 5 runes for reactive state
-- CSS 3D transforms for folder opening animation
-- Crossfade transitions for smooth content changes
-- Scoped CSS styles (fully self-contained)
-- HTML sanitization with DOMPurify
-- Accessibility: ARIA labels, keyboard navigation, focus management
-
-@component
--->
-
 <script lang="ts">
-	import type { FolderFilesProps, Folder, FileItem } from '$lib/types';
-	import { sanitizeHTML } from '$lib/utils';
-	import { crossfade, fade } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	/**
+	 * FolderFiles Component - 3D Filing Cabinet Design
+	 *
+	 * A 3D filing cabinet drawer system with stacked folders inspired by physical file folders:
+	 * - Folders stacked vertically showing only their colored tabs
+	 * - Hover over a tab to reveal folders beneath (cascade effect)
+	 * - Click to open 95vw × 95vh modal with two-panel organization system
+	 * - Native HTML5 drag-and-drop between panels
+	 * - Zero external libraries (pure Svelte 5 + CSS 3D transforms)
+	 *
+	 * Features:
+	 * - 3D perspective with subtle depth and tilt
+	 * - Smooth hover animations (folders drop down)
+	 * - Click opens large modal container
+	 * - Drag content items between left/right panels
+	 * - Fully responsive with mobile support
+	 * - Database integration with graceful fallback
+	 *
+	 * @component
+	 */
 
-	// Props with defaults
+	import type { Folder, FileItem } from '$lib/types';
+
+	/**
+	 * Component props
+	 */
 	let {
 		folders = [],
-		files = [],
-		initialFolderId,
-		viewMode = $bindable('single'),
-		showMetadata = $bindable(true),
-		enable3DEffect = false
-	}: FolderFilesProps = $props();
+		files = []
+	}: {
+		folders: Folder[];
+		files: FileItem[];
+	} = $props();
 
-	// ==================================================
-	// STATE MANAGEMENT
-	// ==================================================
+	/**
+	 * State Management (Svelte 5 Runes)
+	 */
 
-	type FolderState = 'idle' | 'hovering' | 'opening' | 'opened' | 'viewing';
+	// Hover state - track which folder tab is hovered
+	let hoveredIndex = $state<number | null>(null);
 
-	let selectedFolder = $state<Folder | null>(null);
-	let selectedFile = $state<FileItem | null>(null);
-	let folderState = $state<FolderState>('idle');
-	let currentPage = $state(0);
-	let isAnimating = $state(false);
+	// Open state - track which folder is opened
+	let openFolder = $state<Folder | null>(null);
 
-	// Tooltip state
-	let hoveredFolder = $state<Folder | null>(null);
-	let tooltipPosition = $state<{ x: number; y: number } | null>(null);
+	// Panel organization (for modal)
+	let leftPanelItems = $state<FileItem[]>([]);
+	let rightPanelItems = $state<FileItem[]>([]);
 
-	// Derived state
-	let filesInFolder = $derived(
-		selectedFolder ? files.filter((f) => f.folderId === selectedFolder!.id) : []
-	);
+	// Drag-and-drop state
+	let draggedItem = $state<FileItem | null>(null);
+	let dragOverPanel = $state<'left' | 'right' | null>(null);
 
-	let canInteract = $derived(!isAnimating);
+	/**
+	 * Computed values
+	 */
 
-	let pageCount = $derived(selectedFile?.pages?.length ?? 1);
+	// Get file count for each folder (for tooltip)
+	function getFileCount(folder: Folder): number {
+		return files.filter((f) => f.folderId === folder.id).length;
+	}
 
-	// For spread view mode
-	let leftPage = $derived.by(() => {
-		if (!selectedFile || viewMode !== 'spread') return null;
-		if (selectedFile.pages) {
-			return selectedFile.pages[currentPage * 2];
-		}
-		return selectedFile.content;
-	});
+	/**
+	 * Folder Management Functions
+	 */
 
-	let rightPage = $derived.by(() => {
-		if (!selectedFile || viewMode !== 'spread') return null;
-		if (selectedFile.pages && currentPage * 2 + 1 < selectedFile.pages.length) {
-			return selectedFile.pages[currentPage * 2 + 1];
-		}
-		return null;
-	});
-
-	// Crossfade for content transitions
-	const [send, receive] = crossfade({
-		duration: 400,
-		easing: quintOut,
-		fallback: (node) => {
-			return {
-				duration: 400,
-				css: (t) => `opacity: ${t}`
-			};
-		}
-	});
-
-	// ==================================================
-	// FOLDER TAB INTERACTIONS
-	// ==================================================
-
-	function handleFolderHover(folder: Folder, event: MouseEvent) {
-		if (isAnimating || folderState === 'viewing') return;
-
-		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-		const tooltipHeight = 100;
-		const spaceAbove = rect.top;
-		const y =
-			spaceAbove > tooltipHeight + 10 ? rect.top - tooltipHeight - 10 : rect.bottom + 10;
-
-		hoveredFolder = folder;
-		folderState = 'hovering';
-		tooltipPosition = { x: rect.left, y };
+	function handleFolderHover(index: number) {
+		hoveredIndex = index;
 	}
 
 	function handleFolderLeave() {
-		if (folderState === 'hovering') {
-			hoveredFolder = null;
-			folderState = selectedFolder ? 'opened' : 'idle';
-			tooltipPosition = null;
+		hoveredIndex = null;
+	}
+
+	function openFolderView(folder: Folder) {
+		openFolder = folder;
+
+		// Get files for this folder
+		const folderFiles = files.filter((f) => f.folderId === folder.id);
+
+		// Initialize panels (all files in right, left empty)
+		leftPanelItems = [];
+		rightPanelItems = folderFiles;
+	}
+
+	function closeFolderView() {
+		openFolder = null;
+		leftPanelItems = [];
+		rightPanelItems = [];
+	}
+
+	/**
+	 * Drag-and-Drop Handlers (Native HTML5 API)
+	 */
+
+	function handleDragStart(e: DragEvent, item: FileItem) {
+		draggedItem = item;
+
+		if (e.dataTransfer) {
+			e.dataTransfer.effectAllowed = 'move';
+			e.dataTransfer.setData('text/plain', item.id.toString());
 		}
 	}
 
-	async function openFolder(folder: Folder) {
-		if (isAnimating || selectedFolder?.id === folder.id) return;
-
-		isAnimating = true;
-		selectedFolder = folder;
-		selectedFile = null;
-		currentPage = 0;
-		folderState = 'opening';
-
-		// Simulate folder opening animation
-		await new Promise((resolve) => setTimeout(resolve, enable3DEffect ? 900 : 200));
-
-		folderState = 'opened';
-		isAnimating = false;
+	function handleDragOver(e: DragEvent) {
+		e.preventDefault();
+		if (e.dataTransfer) {
+			e.dataTransfer.dropEffect = 'move';
+		}
 	}
 
-	// ==================================================
-	// FILE INTERACTIONS
-	// ==================================================
-
-	function selectFile(file: FileItem) {
-		if (isAnimating) return;
-
-		selectedFile = file;
-		currentPage = 0;
-		folderState = 'viewing';
+	function handleDragLeave(e: DragEvent) {
+		if (e.currentTarget === e.target) {
+			dragOverPanel = null;
+		}
 	}
 
-	function closeViewer() {
-		selectedFile = null;
-		folderState = 'opened';
-		currentPage = 0;
-	}
+	function handleDrop(e: DragEvent, targetPanel: 'left' | 'right') {
+		e.preventDefault();
 
-	// ==================================================
-	// PAGE NAVIGATION
-	// ==================================================
+		if (!draggedItem) return;
 
-	function nextPage() {
-		if (viewMode === 'single') {
-			if (currentPage < pageCount - 1) currentPage++;
+		const sourcePanel = leftPanelItems.includes(draggedItem) ? 'left' : 'right';
+
+		if (sourcePanel === targetPanel) {
+			dragOverPanel = null;
+			return;
+		}
+
+		// Move item between panels
+		if (targetPanel === 'left') {
+			rightPanelItems = rightPanelItems.filter((f) => f.id !== draggedItem.id);
+			leftPanelItems = [...leftPanelItems, draggedItem];
 		} else {
-			// Spread view: advance by 2
-			if (currentPage * 2 + 2 < pageCount) currentPage++;
-		}
-	}
-
-	function prevPage() {
-		if (currentPage > 0) currentPage--;
-	}
-
-	function toggleViewMode() {
-		if (!selectedFile || isAnimating) return;
-		viewMode = viewMode === 'single' ? 'spread' : 'single';
-		// Reset to page 0 when switching modes to avoid confusion
-		currentPage = 0;
-	}
-
-	// ==================================================
-	// KEYBOARD SHORTCUTS
-	// ==================================================
-
-	$effect(() => {
-		if (typeof window === 'undefined') return;
-
-		function handleKeydown(e: KeyboardEvent) {
-			if (folderState !== 'viewing' || !selectedFile) return;
-
-			switch (e.key) {
-				case 'ArrowRight':
-					e.preventDefault();
-					nextPage();
-					break;
-				case 'ArrowLeft':
-					e.preventDefault();
-					prevPage();
-					break;
-				case 'v':
-					e.preventDefault();
-					toggleViewMode();
-					break;
-				case 'Escape':
-					e.preventDefault();
-					closeViewer();
-					break;
-			}
+			leftPanelItems = leftPanelItems.filter((f) => f.id !== draggedItem.id);
+			rightPanelItems = [...rightPanelItems, draggedItem];
 		}
 
-		window.addEventListener('keydown', handleKeydown);
-		return () => window.removeEventListener('keydown', handleKeydown);
-	});
+		dragOverPanel = null;
+	}
 
-	// ==================================================
-	// INITIALIZATION
-	// ==================================================
-
-	$effect(() => {
-		if (initialFolderId && folders.length > 0) {
-			const folder = folders.find((f) => f.id === initialFolderId);
-			if (folder) openFolder(folder);
-		}
-	});
+	function handleDragEnd() {
+		draggedItem = null;
+		dragOverPanel = null;
+	}
 </script>
 
-<div class="folderfiles-container">
-	<!-- Folder Tabs -->
-	<div class="folder-tabs">
-		{#each folders as folder (folder.id)}
-			<button
-				class="folder-tab {folder.color} {folder.textColor}"
-				class:active={selectedFolder?.id === folder.id}
-				onclick={() => openFolder(folder)}
-				onmouseenter={(e) => handleFolderHover(folder, e)}
-				onmouseleave={handleFolderLeave}
-				disabled={!canInteract}
-				aria-label="Open {folder.label} folder"
-			>
-				{#if folder.icon}<span class="icon">{folder.icon}</span>{/if}
-				<span class="label">{folder.label}</span>
-			</button>
-		{/each}
-	</div>
-
-	<!-- Hover Tooltip -->
-	{#if hoveredFolder && tooltipPosition && folderState === 'hovering'}
-		<div
-			class="tooltip"
-			style="left: {tooltipPosition.x}px; top: {tooltipPosition.y}px;"
-			in:fade={{ duration: 200 }}
-			out:fade={{ duration: 150 }}
-			role="tooltip"
-		>
-			<div class="tooltip-header">{hoveredFolder.label}</div>
-			{#if hoveredFolder.description}
-				<div class="tooltip-description">{hoveredFolder.description}</div>
-			{/if}
-			{#if filesInFolder.length > 0}
-				<div class="tooltip-preview">{filesInFolder[0].previewText}</div>
-				{#if filesInFolder[0].metadata?.date}
-					<div class="tooltip-date">{filesInFolder[0].metadata.date}</div>
-				{/if}
-			{/if}
-		</div>
-	{/if}
-
-	<!-- 3D Folder Opening Animation Layer -->
-	{#if enable3DEffect && isAnimating && folderState === 'opening' && selectedFolder}
-		<div class="folder-3d-animation" in:fade={{ duration: 300 }} out:fade={{ duration: 200 }}>
-			<div class="folder-3d-container">
-				<div class="folder-front {selectedFolder.color}">
-					<span class="folder-label">{selectedFolder.label}</span>
-				</div>
-			</div>
-		</div>
-	{/if}
-
-	<!-- File List (shown when folder selected but no file selected) -->
-	{#if selectedFolder && !selectedFile && folderState !== 'opening'}
-		<div class="file-list" in:fade={{ duration: 300 }}>
-			<div class="file-list-header">
-				<h2>{selectedFolder.label}</h2>
-				<p class="file-count">{filesInFolder.length} file{filesInFolder.length !== 1 ? 's' : ''}</p>
-			</div>
-
-			{#if filesInFolder.length > 0}
-				<div class="file-grid">
-					{#each filesInFolder as file (file.id)}
-						<button
-							class="file-item"
-							onclick={() => selectFile(file)}
-							in:fade={{ duration: 300, delay: 50 }}
-						>
-							{#if file.thumbnailUrl}
-								<img src={file.thumbnailUrl} alt={file.title} class="file-thumbnail" />
-							{/if}
-							<div class="file-info">
-								<div class="file-title">{file.title}</div>
-								{#if file.subtitle}
-									<div class="file-subtitle">{file.subtitle}</div>
-								{/if}
-								<div class="file-preview-snippet">{file.previewText.slice(0, 120)}...</div>
-							</div>
-						</button>
-					{/each}
-				</div>
-			{:else}
-				<div class="empty-state">
-					<p>No files in this folder</p>
-				</div>
-			{/if}
-		</div>
-	{/if}
-
-	<!-- Document Viewer -->
-	{#if selectedFile && folderState === 'viewing'}
-		<div class="document-viewer" in:receive={{ key: selectedFile.id }} out:send={{ key: selectedFile.id }}>
-			<!-- Viewer Toolbar -->
-			<div class="viewer-toolbar">
-				<button onclick={closeViewer} class="toolbar-btn" aria-label="Back to file list">
-					← Back to Files
-				</button>
-
-				<div class="toolbar-center">
-					<h3>{selectedFile.title}</h3>
-					{#if selectedFile.subtitle}
-						<span class="subtitle">{selectedFile.subtitle}</span>
-					{/if}
-				</div>
-
-				<div class="toolbar-actions">
-					{#if selectedFile.pages && selectedFile.pages.length > 1}
-						<button
-							onclick={toggleViewMode}
-							class="toolbar-btn"
-							aria-label="Toggle between single and spread view"
-						>
-							{viewMode === 'single' ? '📖 Spread View' : '📄 Single Page'}
-						</button>
-					{/if}
-
+<!-- FILING CABINET VIEW (closed state) -->
+{#if !openFolder}
+	<div class="filing-cabinet-container" role="region" aria-label="Filing cabinet with folders">
+		<div class="folder-stack">
+			{#each folders as folder, index (folder.id)}
+				<div
+					class="folder-wrapper"
+					class:is-beneath-hover={hoveredIndex !== null && index > hoveredIndex}
+					style="--folder-index: {index}; --folder-color: {folder.color}; z-index: {index};"
+					role="group"
+				>
 					<button
-						onclick={() => (showMetadata = !showMetadata)}
-						class="toolbar-btn"
-						aria-label="Toggle metadata display"
+						class="folder-container"
+						onclick={() => openFolderView(folder)}
+						onmouseenter={() => handleFolderHover(index)}
+						onmouseleave={handleFolderLeave}
+						aria-label="Open {folder.label} folder ({getFileCount(folder)} items)"
 					>
-						{showMetadata ? 'Hide Info' : 'Show Info'}
-					</button>
-				</div>
-			</div>
+						<!-- Folder Tab (protruding top portion) -->
+						<div
+							class="folder-tab"
+							style="{index % 3 === 2 ? 'margin-left: auto; margin-right: 0;' : `margin-left: calc(${index % 3} * 15%);`}"
+						>
+							<span class="folder-label">{folder.label}</span>
 
-			<!-- Metadata Panel -->
-			{#if showMetadata && selectedFile.metadata}
-				<div class="metadata-panel" transition:fade={{ duration: 200 }}>
-					{#if selectedFile.metadata.author}
-						<span><strong>Author:</strong> {selectedFile.metadata.author}</span>
-					{/if}
-					{#if selectedFile.metadata.date}
-						<span><strong>Date:</strong> {selectedFile.metadata.date}</span>
-					{/if}
-					{#if selectedFile.metadata.pageCount}
-						<span><strong>Pages:</strong> {selectedFile.metadata.pageCount}</span>
-					{/if}
-					{#if selectedFile.metadata.wordCount}
-						<span><strong>Words:</strong> {selectedFile.metadata.wordCount.toLocaleString()}</span>
-					{/if}
-					{#if selectedFile.metadata.fileNumber}
-						<span><strong>File:</strong> {selectedFile.metadata.fileNumber}</span>
-					{/if}
-				</div>
-			{/if}
-
-			<!-- Page Container -->
-			<div class="page-container" class:spread={viewMode === 'spread'}>
-				{#if viewMode === 'single'}
-					<!-- Single Page View -->
-					{#key currentPage}
-						<div class="document-page" in:fade={{ duration: 200 }}>
-							<!-- Binder holes on left -->
-							<div class="binder-holes holes-left">
-								<div class="hole"></div>
-								<div class="hole"></div>
-								<div class="hole"></div>
-							</div>
-
-							<!-- Content -->
-							<div class="content-area">
-								{@html sanitizeHTML(selectedFile.pages?.[currentPage] ?? selectedFile.content ?? '')}
-							</div>
-
-							<!-- File number -->
-							{#if selectedFile.metadata?.fileNumber}
-								<div class="file-number">{selectedFile.metadata.fileNumber}</div>
+							<!-- Hover tooltip -->
+							{#if hoveredIndex === index}
+								<div class="tooltip">
+									{folder.label} ({getFileCount(folder)} items)
+								</div>
 							{/if}
 						</div>
-					{/key}
-				{:else}
-					<!-- Spread View (Two Pages Side-by-Side) -->
-					<div class="spread-pages">
-						{#if leftPage}
-							{#key currentPage}
-								<div class="document-page page-left" in:fade={{ duration: 200 }}>
-									<!-- Binder holes on right for left page -->
-									<div class="binder-holes holes-right">
-										<div class="hole"></div>
-										<div class="hole"></div>
-										<div class="hole"></div>
-									</div>
 
-									<div class="content-area">
-										{@html sanitizeHTML(leftPage)}
-									</div>
+						<!-- Folder Body (visible rectangular portion) -->
+						<div class="folder-body"></div>
+					</button>
+				</div>
+			{/each}
+		</div>
+	</div>
+{/if}
 
-									{#if selectedFile.metadata?.fileNumber}
-										<div class="file-number">{selectedFile.metadata.fileNumber}</div>
-									{/if}
-								</div>
-							{/key}
-						{/if}
+<!-- Keyboard support: Escape key closes modal (must be at top level, not in {#if}) -->
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === 'Escape' && openFolder) {
+			e.preventDefault();
+			closeFolderView();
+		}
+	}}
+/>
 
-						{#if rightPage}
-							{#key currentPage}
-								<div class="document-page page-right" in:fade={{ duration: 200 }}>
-									<!-- Binder holes on left for right page -->
-									<div class="binder-holes holes-left">
-										<div class="hole"></div>
-										<div class="hole"></div>
-										<div class="hole"></div>
-									</div>
+<!-- MODAL VIEW (open state) - 95vw × 95vh -->
+{#if openFolder}
+	<div class="folder-modal" role="dialog" aria-modal="true" aria-label="{openFolder.label} folder">
+		<!-- Modal backdrop -->
+		<div class="modal-backdrop" onclick={closeFolderView}></div>
 
-									<div class="content-area">
-										{@html sanitizeHTML(rightPage)}
-									</div>
-								</div>
-							{/key}
+		<!-- Modal content -->
+		<div class="modal-content">
+			<!-- Close button -->
+			<button class="close-btn" onclick={closeFolderView} aria-label="Close folder view">
+				<svg
+					width="24"
+					height="24"
+					viewBox="0 0 24 24"
+					fill="none"
+					xmlns="http://www.w3.org/2000/svg"
+				>
+					<path
+						d="M18 6L6 18M6 6l12 12"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+					/>
+				</svg>
+			</button>
+
+			<!-- Two-panel drag system -->
+			<div class="folder-panels">
+				<!-- Left panel (initially empty) -->
+				<div
+					class="panel panel-left"
+					class:drag-over={dragOverPanel === 'left'}
+					style="background-color: {openFolder.color};"
+					ondragover={handleDragOver}
+					ondragenter={() => (dragOverPanel = 'left')}
+					ondragleave={handleDragLeave}
+					ondrop={(e) => handleDrop(e, 'left')}
+					role="region"
+					aria-label="Selected items"
+					aria-live="polite"
+				>
+					<div class="panel-header">
+						<div class="panel-label">Selected</div>
+						{#if leftPanelItems.length === 0}
+							<div class="empty-message" role="status" aria-live="polite">
+								Drag items here to select them
+							</div>
+						{:else}
+							<div class="sr-only" role="status" aria-live="polite">
+								{leftPanelItems.length} item{leftPanelItems.length !== 1 ? 's' : ''} selected
+							</div>
 						{/if}
 					</div>
-				{/if}
+
+					<div class="content-grid">
+						{#each leftPanelItems as item (item.id)}
+							<div
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragend={handleDragEnd}
+								class="content-item"
+								class:dragging={draggedItem?.id === item.id}
+								role="listitem"
+							>
+								<div class="content-item-title">{item.title}</div>
+								{#if item.subtitle}
+									<div class="content-item-subtitle">{item.subtitle}</div>
+								{/if}
+								{#if item.previewText}
+									<p class="content-item-preview">{item.previewText}</p>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</div>
+
+				<!-- Right panel (all files initially) -->
+				<div
+					class="panel panel-right"
+					class:drag-over={dragOverPanel === 'right'}
+					style="background-color: {openFolder.color};"
+					ondragover={handleDragOver}
+					ondragenter={() => (dragOverPanel = 'right')}
+					ondragleave={handleDragLeave}
+					ondrop={(e) => handleDrop(e, 'right')}
+					role="region"
+					aria-label="All items"
+					aria-live="polite"
+				>
+					<div class="panel-header">
+						<div class="panel-label">All Items</div>
+						<div class="sr-only" role="status" aria-live="polite">
+							{rightPanelItems.length} item{rightPanelItems.length !== 1 ? 's' : ''} available
+						</div>
+					</div>
+
+					<div class="content-grid">
+						{#each rightPanelItems as item (item.id)}
+							<div
+								draggable="true"
+								ondragstart={(e) => handleDragStart(e, item)}
+								ondragend={handleDragEnd}
+								class="content-item"
+								class:dragging={draggedItem?.id === item.id}
+								role="listitem"
+							>
+								<div class="content-item-title">{item.title}</div>
+								{#if item.subtitle}
+									<div class="content-item-subtitle">{item.subtitle}</div>
+								{/if}
+								{#if item.previewText}
+									<p class="content-item-preview">{item.previewText}</p>
+								{/if}
+							</div>
+						{/each}
+					</div>
+				</div>
 			</div>
-
-			<!-- Page Navigation -->
-			{#if selectedFile.pages && selectedFile.pages.length > 1}
-				<div class="page-navigation">
-					<button
-						onclick={prevPage}
-						disabled={currentPage === 0}
-						class="nav-btn"
-						aria-label="Previous page"
-					>
-						← Previous
-					</button>
-
-					<span class="page-indicator">
-						{#if viewMode === 'single'}
-							Page {currentPage + 1} of {pageCount}
-						{:else}
-							Pages {currentPage * 2 + 1}{rightPage ? `-${currentPage * 2 + 2}` : ''} of {pageCount}
-						{/if}
-					</span>
-
-					<button
-						onclick={nextPage}
-						disabled={viewMode === 'single' ? currentPage >= pageCount - 1 : currentPage * 2 + 2 >= pageCount}
-						class="nav-btn"
-						aria-label="Next page"
-					>
-						Next →
-					</button>
-				</div>
-
-				<!-- Keyboard shortcut hints -->
-				<div class="keyboard-hints">
-					<span>← → Navigate</span>
-					<span>V Toggle View</span>
-					<span>Esc Close</span>
-				</div>
-			{/if}
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
 
 <style>
-	/* ==================================================
-   * CONTAINER & LAYOUT
-   * ================================================== */
+	/**
+	 * FILING CABINET CONTAINER
+	 * 3D perspective for folder stack
+	 */
 
-	.folderfiles-container {
+	.filing-cabinet-container {
+		perspective: 1000px;
+		min-height: 600px;
+		padding: 3rem 2rem;
+		background: linear-gradient(to bottom, #f5f5f5 0%, #e8e8e8 100%);
+		overflow: visible;
+	}
+
+	.folder-stack {
+		position: relative;
 		width: 100%;
-		min-height: 400px;
-		background: #f9fafb;
-		border-radius: 8px;
-		overflow: hidden;
+		max-width: 800px;
+		margin: 0 auto;
+		/* Reserve space for all stacked folders with bodies */
+		min-height: 550px;
 	}
 
-	/* ==================================================
-   * FOLDER TABS
-   * ================================================== */
+	/**
+	 * FOLDER WRAPPER AND CONTAINER
+	 * 3D transform-based stacking with hover effects
+	 */
 
-	.folder-tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		padding: 1.5rem;
-		background: #ffffff;
-		border-bottom: 2px solid #e5e7eb;
-	}
-
-	.folder-tab {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.75rem 1.5rem;
-		border-radius: 0.5rem;
-		border: none;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		font-weight: 500;
-		font-size: 0.9375rem;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	}
-
-	.folder-tab:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-	}
-
-	.folder-tab.active {
-		transform: translateY(-3px);
-		box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-		font-weight: 600;
-	}
-
-	.folder-tab:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.folder-tab .icon {
-		font-size: 1.25rem;
-	}
-
-	/* ==================================================
-   * TOOLTIP
-   * ================================================== */
-
-	.tooltip {
-		position: fixed;
-		z-index: 1000;
-		background: rgba(0, 0, 0, 0.92);
-		color: white;
-		border-radius: 8px;
-		padding: 1rem;
-		max-width: 320px;
-		pointer-events: none;
-		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-		backdrop-filter: blur(10px);
-	}
-
-	.tooltip-header {
-		font-weight: 600;
-		font-size: 0.9375rem;
-		margin-bottom: 0.5rem;
-		color: #60a5fa;
-	}
-
-	.tooltip-description {
-		font-size: 0.8125rem;
-		color: rgba(255, 255, 255, 0.8);
-		margin-bottom: 0.5rem;
-	}
-
-	.tooltip-preview {
-		font-size: 0.8125rem;
-		line-height: 1.4;
-		color: rgba(255, 255, 255, 0.9);
-		margin-bottom: 0.5rem;
-	}
-
-	.tooltip-date {
-		font-size: 0.75rem;
-		color: rgba(255, 255, 255, 0.6);
-		font-style: italic;
-	}
-
-	/* ==================================================
-   * 3D FOLDER ANIMATION
-   * ================================================== */
-
-	.folder-3d-animation {
-		position: fixed;
+	.folder-wrapper {
+		position: absolute;
 		top: 0;
 		left: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 999;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: rgba(0, 0, 0, 0.5);
-		backdrop-filter: blur(4px);
+		width: 100%;
+		transform-origin: top center;
+
+		/* Base stacking: larger vertical offset to show more of each folder */
+		transform: translateY(calc(var(--folder-index, 0) * 60px))
+			translateZ(calc(var(--folder-index, 0) * -5px)) rotateX(2deg);
+
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
-	.folder-3d-container {
-		perspective: 1200px;
-		transform-style: preserve-3d;
+	/* When hovering, folders beneath drop down */
+	.folder-wrapper.is-beneath-hover {
+		transform: translateY(calc(var(--folder-index, 0) * 60px + 80px))
+			translateZ(calc(var(--folder-index, 0) * -5px)) rotateX(2deg);
 	}
 
-	.folder-front {
-		width: 400px;
-		height: 250px;
-		padding: 2rem;
-		border-radius: 8px;
+	.folder-container {
+		width: 100%;
+		border: none;
+		background: transparent;
+		cursor: pointer;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.folder-container:focus-visible {
+		outline: 3px solid #146ef5;
+		outline-offset: 2px;
+		z-index: 1000;
+	}
+
+	/* Folder Tab - protruding top portion with label */
+	.folder-tab {
+		background: var(--folder-color);
+		color: white;
+		height: 45px;
+		width: 70%;
+		border-radius: 8px 8px 0 0;
+		box-shadow:
+			0 -2px 4px rgba(0, 0, 0, 0.1),
+			inset 0 1px 2px rgba(255, 255, 255, 0.2);
+		padding: 0 2rem;
 		display: flex;
 		align-items: center;
-		justify-content: center;
-		box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-		animation: folder-open-3d 600ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-		will-change: transform;
-		backface-visibility: hidden;
+		font-size: 1rem;
+		font-weight: 500;
+		transition: all 0.2s ease;
+		position: relative;
+	}
+
+	/* Folder Body - visible rectangular portion */
+	.folder-body {
+		background: var(--folder-color);
+		width: 100%;
+		height: 120px;
+		border-radius: 0 8px 8px 8px;
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.2),
+			inset 0 -2px 6px rgba(0, 0, 0, 0.1),
+			inset 0 2px 4px rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(0, 0, 0, 0.15);
+		transition: all 0.2s ease;
+	}
+
+	.folder-container:hover .folder-tab {
+		box-shadow:
+			0 -2px 6px rgba(0, 0, 0, 0.15),
+			inset 0 1px 3px rgba(255, 255, 255, 0.3);
+	}
+
+	.folder-container:hover .folder-body {
+		box-shadow:
+			0 6px 16px rgba(0, 0, 0, 0.25),
+			inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+			inset 0 2px 6px rgba(255, 255, 255, 0.15);
+		transform: translateZ(5px);
 	}
 
 	.folder-label {
-		font-size: 1.5rem;
-		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Tooltip */
+	.tooltip {
+		position: absolute;
+		top: calc(100% + 0.75rem);
+		left: 50%;
+		transform: translateX(-50%);
+		padding: 0.625rem 1rem;
+		background: rgba(0, 0, 0, 0.9);
 		color: white;
-	}
-
-	@keyframes folder-open-3d {
-		0% {
-			transform: perspective(1200px) rotateX(0deg) translateZ(0px) scale(1);
-		}
-		40% {
-			transform: perspective(1200px) rotateX(-15deg) translateZ(100px) scale(1.05);
-		}
-		60% {
-			transform: perspective(1200px) rotateX(-25deg) translateZ(150px) scale(1.1);
-		}
-		100% {
-			transform: perspective(1200px) rotateX(0deg) translateZ(0px) scale(1);
-		}
-	}
-
-	/* ==================================================
-   * FILE LIST
-   * ================================================== */
-
-	.file-list {
-		padding: 2rem;
-	}
-
-	.file-list-header {
-		margin-bottom: 1.5rem;
-	}
-
-	.file-list-header h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		margin-bottom: 0.25rem;
-	}
-
-	.file-count {
-		color: #6b7280;
+		border-radius: 6px;
+		white-space: nowrap;
 		font-size: 0.875rem;
+		font-weight: 400;
+		pointer-events: none;
+		z-index: 10000;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
-	.file-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-		gap: 1.5rem;
+	.tooltip::after {
+		content: '';
+		position: absolute;
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		border: 6px solid transparent;
+		border-bottom-color: rgba(0, 0, 0, 0.9);
 	}
 
-	.file-item {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		padding: 1.25rem;
-		text-align: left;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-	}
+	/**
+	 * MODAL VIEW (95vw × 95vh)
+	 * Full-screen modal with backdrop
+	 */
 
-	.file-item:hover {
-		box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-		transform: translateY(-4px);
-		border-color: #3b82f6;
-	}
-
-	.file-thumbnail {
-		width: 100%;
-		height: 150px;
-		object-fit: cover;
-		border-radius: 0.25rem;
-		margin-bottom: 1rem;
-	}
-
-	.file-title {
-		font-weight: 600;
-		font-size: 1rem;
-		margin-bottom: 0.25rem;
-		color: #111827;
-	}
-
-	.file-subtitle {
-		font-size: 0.875rem;
-		color: #6b7280;
-		margin-bottom: 0.5rem;
-	}
-
-	.file-preview-snippet {
-		font-size: 0.8125rem;
-		color: #4b5563;
-		line-height: 1.5;
-	}
-
-	.empty-state {
-		text-align: center;
-		padding: 4rem 2rem;
-		color: #6b7280;
-	}
-
-	/* ==================================================
-   * DOCUMENT VIEWER
-   * ================================================== */
-
-	.document-viewer {
-		max-width: 1400px;
-		margin: 0 auto;
-		padding: 2rem;
-	}
-
-	.viewer-toolbar {
+	.folder-modal {
+		position: fixed;
+		inset: 0;
 		display: flex;
 		align-items: center;
-		gap: 1rem;
-		margin-bottom: 1.5rem;
-		padding: 1rem;
-		background: white;
-		border-radius: 0.5rem;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-		flex-wrap: wrap;
-	}
-
-	.toolbar-btn {
-		padding: 0.5rem 1rem;
-		background: #f3f4f6;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem;
-		cursor: pointer;
-		font-size: 0.875rem;
-		font-weight: 500;
-		transition: all 0.2s;
-	}
-
-	.toolbar-btn:hover {
-		background: #e5e7eb;
-	}
-
-	.toolbar-center {
-		flex: 1;
-		text-align: center;
-	}
-
-	.toolbar-center h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		margin: 0;
-	}
-
-	.toolbar-center .subtitle {
-		font-size: 0.875rem;
-		color: #6b7280;
-	}
-
-	.toolbar-actions {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.metadata-panel {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-		padding: 1rem;
-		background: #f9fafb;
-		border-radius: 0.5rem;
-		margin-bottom: 1.5rem;
-		font-size: 0.875rem;
-	}
-
-	.metadata-panel span {
-		color: #374151;
-	}
-
-	/* ==================================================
-   * DOCUMENT PAGES
-   * ================================================== */
-
-	.page-container {
-		margin: 2rem 0;
-		transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-	}
-
-	.page-container.spread {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 2rem;
-	}
-
-	@media (min-width: 900px) {
-		.page-container.spread {
-			grid-template-columns: 1fr 1fr;
-		}
-	}
-
-	.spread-pages {
-		display: flex;
-		gap: 2rem;
 		justify-content: center;
+		z-index: 2000;
 	}
 
-	.document-page {
-		background: white;
-		padding: 3rem 2.5rem;
-		min-height: 600px;
-		border-radius: 0.375rem;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-		position: relative;
-		font-family: Georgia, 'Times New Roman', serif;
-		line-height: 1.8;
-	}
-
-	.page-left,
-	.page-right {
-		flex: 1;
-		max-width: 500px;
-	}
-
-	/* Binder holes */
-	.binder-holes {
+	.modal-backdrop {
 		position: absolute;
-		top: 0;
-		bottom: 0;
-		display: flex;
-		flex-direction: column;
-		justify-content: space-evenly;
-		padding: 3rem 0;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.6);
+		backdrop-filter: blur(2px);
 	}
 
-	.binder-holes.holes-left {
-		left: 1rem;
+	.modal-content {
+		position: relative;
+		width: 95vw;
+		height: 95vh;
+		background: white;
+		border-radius: 12px;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
+		z-index: 1;
 	}
 
-	.binder-holes.holes-right {
-		right: 1rem;
-	}
-
-	.hole {
-		width: 40px;
-		height: 40px;
+	.close-btn {
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+		width: 3rem;
+		height: 3rem;
 		border-radius: 50%;
-		background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
-		box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+		background: white;
+		border: 2px solid #e2e8f0;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #4a5568;
 	}
 
-	/* Content styling */
-	.content-area :global(h1) {
-		font-size: 2rem;
-		font-style: italic;
-		margin-bottom: 1.5rem;
-		font-weight: 400;
+	.close-btn:hover {
+		background: #f7fafc;
+		border-color: #cbd5e0;
+		transform: rotate(90deg);
+		color: #2d3748;
 	}
 
-	.content-area :global(h2) {
-		font-size: 1.5rem;
-		margin-top: 2rem;
-		margin-bottom: 1rem;
+	.close-btn:focus-visible {
+		outline: 3px solid #146ef5;
+		outline-offset: 2px;
 	}
 
-	.content-area :global(p) {
-		margin-bottom: 1.25rem;
-		text-align: justify;
+	/**
+	 * TWO-PANEL SYSTEM
+	 * Left and right panels for organizing content
+	 */
+
+	.folder-panels {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		height: 100%;
+		gap: 1px;
+		background: #e2e8f0;
 	}
 
-	.content-area :global(ul),
-	.content-area :global(ol) {
-		margin-bottom: 1.25rem;
-		padding-left: 2rem;
+	.panel {
+		padding: 2rem;
+		overflow-y: auto;
 	}
 
-	.content-area :global(li) {
+	.panel-header {
+		margin-bottom: 2rem;
+	}
+
+	.panel-label {
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: rgba(0, 0, 0, 0.8);
 		margin-bottom: 0.5rem;
 	}
 
-	.file-number {
-		position: absolute;
-		bottom: 1rem;
-		right: 1.5rem;
-		font-size: 0.875rem;
+	.empty-message {
+		font-size: 1rem;
 		color: rgba(0, 0, 0, 0.5);
 		font-style: italic;
 	}
 
-	/* ==================================================
-   * PAGE NAVIGATION
-   * ================================================== */
-
-	.page-navigation {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		gap: 2rem;
-		margin-top: 2rem;
-		padding: 1rem;
-		background: white;
-		border-radius: 0.5rem;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	.panel.drag-over {
+		border: 3px dashed rgba(0, 0, 0, 0.3);
+		background: rgba(255, 255, 255, 0.2) !important;
 	}
 
-	.nav-btn {
-		padding: 0.5rem 1.5rem;
-		background: #3b82f6;
-		color: white;
-		border: none;
-		border-radius: 0.375rem;
-		cursor: pointer;
-		font-weight: 500;
-		transition: all 0.2s;
-	}
+	/**
+	 * CONTENT GRID AND ITEMS
+	 * Draggable content items in panels
+	 */
 
-	.nav-btn:hover:not(:disabled) {
-		background: #2563eb;
-	}
-
-	.nav-btn:disabled {
-		background: #d1d5db;
-		cursor: not-allowed;
-	}
-
-	.page-indicator {
-		font-weight: 500;
-		color: #374151;
-	}
-
-	.keyboard-hints {
-		display: flex;
-		justify-content: center;
+	.content-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
 		gap: 1.5rem;
-		margin-top: 1rem;
-		font-size: 0.75rem;
-		color: #6b7280;
 	}
 
-	.keyboard-hints span {
-		background: #f3f4f6;
-		padding: 0.25rem 0.5rem;
-		border-radius: 0.25rem;
+	.content-item {
+		background: white;
+		border: 2px solid #4ade80;
+		border-radius: 8px;
+		padding: 1.5rem;
+		cursor: grab;
+		transition: all 0.2s ease;
+		user-select: none;
 	}
 
-	/* ==================================================
-   * RESPONSIVE
-   * ================================================== */
+	.content-item:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.content-item:active {
+		cursor: grabbing;
+	}
+
+	.content-item.dragging {
+		opacity: 0.5;
+		cursor: grabbing;
+	}
+
+	.content-item:focus-visible {
+		outline: 3px solid #146ef5;
+		outline-offset: 2px;
+	}
+
+	.content-item-title {
+		font-size: 1.125rem;
+		font-weight: 600;
+		margin-bottom: 0.5rem;
+		color: #1a202c;
+	}
+
+	.content-item-subtitle {
+		font-size: 0.875rem;
+		color: #718096;
+		margin-bottom: 0.75rem;
+	}
+
+	.content-item-preview {
+		font-size: 0.9375rem;
+		color: #4a5568;
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	/**
+	 * RESPONSIVE DESIGN
+	 * Mobile and tablet adaptations
+	 */
 
 	@media (max-width: 768px) {
-		.folder-tabs {
-			padding: 1rem;
+		.filing-cabinet-container {
+			padding: 2rem 1rem;
+			min-height: 500px;
+		}
+
+		.folder-stack {
+			min-height: 450px;
+		}
+
+		.folder-wrapper {
+			/* Reduce spacing on mobile */
+			transform: translateY(calc(var(--folder-index, 0) * 50px)) !important;
+		}
+
+		.folder-wrapper.is-beneath-hover {
+			transform: translateY(calc(var(--folder-index, 0) * 50px + 60px)) !important;
 		}
 
 		.folder-tab {
-			padding: 0.625rem 1rem;
-			font-size: 0.875rem;
+			height: 40px;
+			padding: 0 1rem;
+			font-size: 0.9375rem;
+			width: 75%;
 		}
 
-		.file-grid {
+		.folder-body {
+			height: 100px;
+		}
+
+		.modal-content {
+			width: 100vw;
+			height: 100vh;
+			border-radius: 0;
+		}
+
+		.folder-panels {
 			grid-template-columns: 1fr;
+			grid-template-rows: 1fr 1fr;
 		}
 
-		.document-page {
-			padding: 2rem 1.5rem;
+		.panel {
+			padding: 1rem;
 		}
 
-		.content-area :global(h1) {
-			font-size: 1.5rem;
-		}
-
-		.binder-holes .hole {
-			width: 30px;
-			height: 30px;
-		}
-
-		.spread-pages {
-			flex-direction: column;
-		}
-
-		.toolbar-actions {
-			width: 100%;
+		.content-grid {
+			grid-template-columns: 1fr;
 		}
 	}
 
-	/* ==================================================
-   * REDUCED MOTION
-   * ================================================== */
-
+	/**
+	 * REDUCED MOTION SUPPORT
+	 * Respect user preference for reduced animations (accessibility requirement)
+	 * Users with vestibular disorders can experience nausea from animations
+	 */
 	@media (prefers-reduced-motion: reduce) {
-		* {
-			animation-duration: 0.2s !important;
-			transition-duration: 0.2s !important;
+		.folder-wrapper,
+		.folder-tab,
+		.folder-body,
+		.content-item,
+		.close-btn {
+			transition: none;
 		}
 
-		@keyframes folder-open-3d {
-			0%,
-			100% {
-				opacity: 1;
-			}
+		.folder-wrapper {
+			/* Disable 3D transforms for reduced motion - use simple vertical offset */
+			transform: translateY(calc(var(--folder-index, 0) * 60px)) !important;
 		}
+
+		.folder-wrapper.is-beneath-hover {
+			/* Maintain reveal functionality but without animation */
+			transform: translateY(calc(var(--folder-index, 0) * 60px + 80px)) !important;
+		}
+	}
+
+	/**
+	 * SCREEN READER ONLY CONTENT
+	 * Visually hidden but announced to screen readers for accessibility
+	 * Used for live announcements of panel state changes
+	 */
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
 	}
 </style>
