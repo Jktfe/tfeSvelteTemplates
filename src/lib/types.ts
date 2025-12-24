@@ -1289,5 +1289,59 @@ export interface AnimatedBeamProps {
 }
 
 // =============================================================================
+// SCRATCH TO REVEAL COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Props for ScratchToReveal component
+ * Interactive scratch-off component revealing hidden content
+ *
+ * @property scratchColor - Scratch surface color (default: '#999999')
+ * @property scratchImage - Optional texture image URL for scratch surface
+ * @property scratchText - Overlay text on scratch surface (e.g., "Scratch Here!")
+ * @property scratchTextColor - Color of overlay text (default: '#ffffff')
+ * @property scratchTextSize - Font size of overlay text (default: '24px')
+ * @property revealThreshold - Percentage scratched to trigger auto-reveal (default: 70)
+ * @property autoReveal - Automatically reveal when threshold reached (default: true)
+ * @property brushSize - Size of scratch brush in pixels (default: 40)
+ * @property brushShape - Shape of scratch brush: 'circle' or 'square' (default: 'circle')
+ * @property width - Canvas width in pixels or 'auto' to match content (default: 'auto')
+ * @property height - Canvas height in pixels or 'auto' to match content (default: 'auto')
+ * @property showProgress - Show progress bar indicator (default: false)
+ * @property progressColor - Color of progress bar (default: '#3b82f6')
+ * @property allowReset - Show reset button after reveal (default: true)
+ * @property resetButtonText - Text for reset button (default: 'Reset')
+ * @property skipText - Text for skip button (default: 'Skip')
+ * @property onReveal - Callback fired when content is fully revealed
+ * @property onProgress - Callback fired with scratch percentage (0-100)
+ * @property disabled - Disable scratching interaction (default: false)
+ * @property class - Additional CSS classes for container
+ * @property children - Svelte 5 snippet for revealed content
+ */
+export interface ScratchToRevealProps {
+	scratchColor?: string;
+	scratchImage?: string;
+	scratchText?: string;
+	scratchTextColor?: string;
+	scratchTextSize?: string;
+	revealThreshold?: number;
+	autoReveal?: boolean;
+	brushSize?: number;
+	brushShape?: 'circle' | 'square';
+	width?: number | 'auto';
+	height?: number | 'auto';
+	showProgress?: boolean;
+	progressColor?: string;
+	allowReset?: boolean;
+	resetButtonText?: string;
+	skipText?: string;
+	onReveal?: () => void;
+	onProgress?: (percentage: number) => void;
+	disabled?: boolean;
+	class?: string;
+	children?: import('svelte').Snippet;
+}
+
+// =============================================================================
 // BEFORE/AFTER COMPONENT TYPES
 // =============================================================================
