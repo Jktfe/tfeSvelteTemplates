@@ -1445,7 +1445,7 @@ export interface RadialClusterLayoutNode {
  * @property fontFamily - Font family for labels (default: 'system-ui, sans-serif')
  * @property labelColor - Colour for text labels (default: '#333')
  * @property showLabels - Whether to display node labels (default: true)
- * @property rotateLables - Rotate labels to follow radial direction (default: true)
+ * @property rotateLabels - Rotate labels to follow radial direction (default: true)
  * @property separation - Separation factor between sibling nodes (default: 1)
  * @property class - Additional CSS classes for container
  */

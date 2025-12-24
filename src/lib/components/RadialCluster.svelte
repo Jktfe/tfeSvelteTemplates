@@ -82,14 +82,26 @@
 	// =============================================================================
 
 	/**
-	 * Count total number of leaf nodes in the tree
-	 * Used to distribute leaf nodes evenly around the circle
+	 * Pre-calculate leaf counts for all nodes in the tree using post-order traversal.
+	 * This avoids redundant recalculations during layout building.
+	 *
+	 * @returns A Map from node reference to its leaf count
 	 */
-	function countLeaves(node: RadialClusterNode): number {
-		if (!node.children || node.children.length === 0) {
-			return 1;
+	function precomputeLeafCounts(node: RadialClusterNode): Map<RadialClusterNode, number> {
+		const leafCounts = new Map<RadialClusterNode, number>();
+
+		function traverse(n: RadialClusterNode): number {
+			if (!n.children || n.children.length === 0) {
+				leafCounts.set(n, 1);
+				return 1;
+			}
+			const count = n.children.reduce((sum, child) => sum + traverse(child), 0);
+			leafCounts.set(n, count);
+			return count;
 		}
-		return node.children.reduce((sum, child) => sum + countLeaves(child), 0);
+
+		traverse(node);
+		return leafCounts;
 	}
 
 	/**
@@ -107,13 +119,14 @@
 	 * Build the cluster layout from hierarchical data
 	 *
 	 * Algorithm:
-	 * 1. First pass: count leaves and calculate angle span for each subtree
-	 * 2. Second pass: assign angles to each node (leaves get exact positions,
+	 * 1. Pre-compute leaf counts in a single pass (stored in Map)
+	 * 2. Assign angles to each node (leaves get exact positions,
 	 *    internal nodes get the mean angle of their descendants)
 	 * 3. Assign radius based on depth (all leaves at same depth for cluster layout)
 	 */
 	function buildLayout(
 		node: RadialClusterNode,
+		leafCounts: Map<RadialClusterNode, number>,
 		parent: RadialClusterLayoutNode | null = null,
 		depth = 0,
 		angleStart = 0,
@@ -121,7 +134,7 @@
 		maxDepth = 0
 	): RadialClusterLayoutNode {
 		const isLeaf = !node.children || node.children.length === 0;
-		const totalLeaves = countLeaves(node);
+		const totalLeaves = leafCounts.get(node) ?? 1;
 
 		// For cluster layout, all leaves are at the same radius (outerRadius)
 		// Internal nodes are positioned proportionally by depth
@@ -149,7 +162,7 @@
 			let currentAngle = angleStart;
 
 			layoutNode.children = node.children.map((child) => {
-				const childLeaves = countLeaves(child);
+				const childLeaves = leafCounts.get(child) ?? 1;
 				const childAngleSpan = (childLeaves / totalLeaves) * angleSpan * separation;
 				const childAngleStart = currentAngle;
 				const childAngleEnd = currentAngle + childAngleSpan;
@@ -157,6 +170,7 @@
 
 				return buildLayout(
 					child,
+					leafCounts,
 					layoutNode,
 					depth + 1,
 					childAngleStart,
@@ -199,8 +213,10 @@
 	}
 
 	// Build the layout from input data
+	// Pre-compute leaf counts once, then use in layout building
+	const leafCounts = $derived(precomputeLeafCounts(data));
 	const maxTreeDepth = $derived(getMaxDepth(data));
-	const rootNode = $derived(buildLayout(data, null, 0, 0, 2 * Math.PI, maxTreeDepth));
+	const rootNode = $derived(buildLayout(data, leafCounts, null, 0, 0, 2 * Math.PI, maxTreeDepth));
 	const allNodes = $derived(flattenNodes(rootNode));
 	const allLinks = $derived(getLinks(rootNode));
 
@@ -317,6 +333,20 @@
 	function handleNodeMouseMove(event: MouseEvent): void {
 		mousePos = { x: event.clientX, y: event.clientY };
 	}
+
+	/**
+	 * Handle keyboard focus on a node - show tooltip using element position
+	 * Uses getBoundingClientRect() to position tooltip relative to the focused element
+	 */
+	function handleNodeFocus(node: RadialClusterLayoutNode, event: FocusEvent): void {
+		hoveredNode = node;
+		const target = event.currentTarget as HTMLElement | SVGElement;
+		if (target) {
+			const rect = target.getBoundingClientRect();
+			// Position tooltip to the right and slightly above the focused element
+			mousePos = { x: rect.right + 10, y: rect.top };
+		}
+	}
 </script>
 
 <div class="radial-cluster-container {className}" role="img" aria-label="Radial cluster diagram showing hierarchical data">
@@ -350,7 +380,7 @@
 					onmouseenter={(e) => handleNodeMouseEnter(node, e)}
 					onmouseleave={handleNodeMouseLeave}
 					onmousemove={handleNodeMouseMove}
-					onfocus={(e) => handleNodeMouseEnter(node, e as unknown as MouseEvent)}
+					onfocus={(e) => handleNodeFocus(node, e)}
 					onblur={handleNodeMouseLeave}
 				>
 					<circle
