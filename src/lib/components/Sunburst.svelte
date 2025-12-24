@@ -82,19 +82,53 @@
 	const TWO_PI = 2 * Math.PI;
 	const LABEL_MIN_ANGLE_RAD = (labelMinAngle * Math.PI) / 180;
 
+	/** Minimum radius in pixels for label visibility */
+	const LABEL_MIN_RADIUS = 20;
+
+	/** Ratio of max radius for center zoom-out circle */
+	const CENTER_RADIUS_RATIO = 0.15;
+
 	// ==========================================================================
 	// HIERARCHY COMPUTATION
 	// ==========================================================================
 
 	/**
-	 * Calculate the total value of a node and its descendants
-	 * Leaf nodes use their value property; parent nodes sum children
+	 * Pre-computed values cache using WeakMap for memory efficiency
+	 * Stores computed total values for each node to avoid redundant calculations
 	 */
-	function computeValue(node: SunburstNode): number {
+	const valueCache = new WeakMap<SunburstNode, number>();
+
+	/**
+	 * Pre-compute all node values in a single post-order traversal
+	 * This eliminates O(n²) complexity from repeated computeValue calls
+	 *
+	 * @param node - Root node to start computation from
+	 * @returns Total value of the node (including all descendants)
+	 */
+	function precomputeValues(node: SunburstNode): number {
+		// Check cache first
+		const cached = valueCache.get(node);
+		if (cached !== undefined) return cached;
+
+		let value: number;
 		if (!node.children || node.children.length === 0) {
-			return node.value ?? 1;
+			// Leaf node - use its value property or default to 1
+			value = node.value ?? 1;
+		} else {
+			// Parent node - sum all children's values (post-order traversal)
+			value = node.children.reduce((sum, child) => sum + precomputeValues(child), 0);
 		}
-		return node.children.reduce((sum, child) => sum + computeValue(child), 0);
+
+		valueCache.set(node, value);
+		return value;
+	}
+
+	/**
+	 * Get the pre-computed value for a node
+	 * Must be called after precomputeValues has been run on the tree
+	 */
+	function getNodeValue(node: SunburstNode): number {
+		return valueCache.get(node) ?? precomputeValues(node);
 	}
 
 	/**
@@ -116,7 +150,7 @@
 		parent: SunburstArcNode | null,
 		colorIndex: number
 	): SunburstArcNode {
-		const totalValue = computeValue(node);
+		const totalValue = getNodeValue(node);
 
 		// Inherit colour from parent or assign from scheme
 		const color =
@@ -139,7 +173,7 @@
 			const angleRange = x1 - x0;
 
 			arcNode.children = node.children.map((child, i) => {
-				const childValue = computeValue(child);
+				const childValue = getNodeValue(child);
 				const childAngle = (childValue / totalValue) * angleRange;
 				const childNode = buildArcTree(
 					child,
@@ -160,8 +194,11 @@
 	/**
 	 * Compute the arc tree from data
 	 * Reactive to data changes
+	 * Pre-computes all values first for O(n) performance
 	 */
 	let arcTree = $derived.by(() => {
+		// Pre-compute all values in single traversal before building tree
+		precomputeValues(data);
 		return buildArcTree(data, 0, 0, TWO_PI, null, 0);
 	});
 
@@ -339,7 +376,7 @@
 
 		// Determine visibility based on arc size
 		const angleSize = x1 - x0;
-		const visible = angleSize > LABEL_MIN_ANGLE_RAD && midRadius > 20;
+		const visible = angleSize > LABEL_MIN_ANGLE_RAD && midRadius > LABEL_MIN_RADIUS;
 
 		// Rotate text to follow arc (convert to degrees)
 		let angle = (midAngle * 180) / Math.PI;
@@ -397,7 +434,7 @@
 		const tooltipX = event.clientX - rect.left;
 		const tooltipY = event.clientY - rect.top;
 
-		const value = computeValue(node);
+		const value = getNodeValue(node);
 		const text = tooltipFormatter
 			? tooltipFormatter(node)
 			: `${node.name}: ${value.toLocaleString()}`;
@@ -488,7 +525,7 @@
 						style="--animation-duration: {animationDuration}ms"
 						role="button"
 						tabindex={hasChildren ? 0 : -1}
-						aria-label="{node.name}: {computeValue(node).toLocaleString()}"
+						aria-label="{node.name}: {getNodeValue(node).toLocaleString()}"
 						onclick={() => handleClick(node)}
 						onmouseenter={(e) => showTooltipHandler(e, node)}
 						onmouseleave={hideTooltip}
@@ -524,7 +561,7 @@
 			<circle
 				{cx}
 				{cy}
-				r={maxRadius * 0.15}
+				r={maxRadius * CENTER_RADIUS_RATIO}
 				class="center-circle"
 				role="button"
 				tabindex="0"
