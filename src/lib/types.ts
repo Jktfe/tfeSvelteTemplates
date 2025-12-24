@@ -2015,7 +2015,6 @@ export interface ExplainerCanvasData {
  * @property src - URL to JSON file (alternative to data)
  * @property loader - Custom async loader function (alternative to data/src)
  * @property initialCardId - Override defaultCardId from data
- * @property lazyLoadDepth - Levels of children to preload (default: 2)
  * @property class - Additional CSS classes
  * @property lineStyle - Override config.lineStyle
  * @property onNavigate - Callback when navigating to a card
@@ -2028,7 +2027,6 @@ export interface ExplainerCanvasProps {
 	src?: string;
 	loader?: () => Promise<ExplainerCanvasData>;
 	initialCardId?: string;
-	lazyLoadDepth?: number;
 	class?: string;
 	lineStyle?: ConnectionLineStyle;
 	onNavigate?: (cardId: string, path: string[]) => void;

@@ -56,7 +56,6 @@
 		src,
 		loader,
 		initialCardId,
-		lazyLoadDepth = 2,
 		class: className = '',
 		lineStyle: propLineStyle,
 		onNavigate,
@@ -392,8 +391,8 @@
 	aria-label="Interactive knowledge canvas"
 	onmouseover={handleTooltipShow}
 	onmouseout={handleTooltipHide}
-	onfocus={handleTooltipShow}
-	onblur={handleTooltipHide}
+	onfocusin={handleTooltipShow}
+	onfocusout={handleTooltipHide}
 >
 	{#if loading}
 		<!-- Loading state -->
@@ -481,6 +480,8 @@
 							onCollapse={handleCardCollapse}
 							onDiveIn={() => handleDiveIn(card.id)}
 							onLinkClick={handleLinkClick}
+							onHover={() => (hoveredCardId = card.id)}
+							onHoverEnd={() => (hoveredCardId = null)}
 						/>
 					{/each}
 				</CanvasViewport>

@@ -10,6 +10,7 @@
 
 	import type { ExplainerCard, ExplainerPosition } from '$lib/types';
 	import CardContent from './CardContent.svelte';
+	import { DEFAULT_CARD_WIDTH, DEFAULT_CARD_HEIGHT } from './utils/geometry';
 
 	interface Props {
 		card: ExplainerCard;
@@ -21,6 +22,8 @@
 		onCollapse?: () => void;
 		onDiveIn?: () => void;
 		onLinkClick?: (linkId: string) => void;
+		onHover?: () => void;
+		onHoverEnd?: () => void;
 	}
 
 	let {
@@ -32,12 +35,14 @@
 		onExpand,
 		onCollapse,
 		onDiveIn,
-		onLinkClick
+		onLinkClick,
+		onHover,
+		onHoverEnd
 	}: Props = $props();
 
-	// Card dimensions for styling
-	const CARD_WIDTH = 280;
-	const CARD_MIN_HEIGHT = 120;
+	// Card dimensions - use shared constants from geometry.ts
+	const CARD_WIDTH = DEFAULT_CARD_WIDTH;
+	const CARD_MIN_HEIGHT = DEFAULT_CARD_HEIGHT;
 
 	// Derived: should we show as a dot at very low zoom?
 	let showAsDot = $derived(zoom < 0.25);
@@ -114,6 +119,8 @@
 		tabindex="0"
 		onclick={handleClick}
 		onkeydown={handleKeydown}
+		onmouseenter={onHover}
+		onmouseleave={onHoverEnd}
 		aria-expanded={isExpanded}
 	>
 		<!-- Card header -->
@@ -224,7 +231,7 @@
 			width 0.3s ease;
 		display: flex;
 		flex-direction: column;
-		min-height: 120px;
+		min-height: 160px; /* DEFAULT_CARD_HEIGHT from geometry.ts */
 		overflow: hidden;
 	}
 
