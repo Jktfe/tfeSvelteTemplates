@@ -100,15 +100,21 @@
 			if (isOrangeScale) {
 				return scaleSequential(interpolateOrRd).domain([min, max]);
 			}
-			// Custom color array - use linear scale with range
+			// Custom color array - create multi-step domain to use ALL colors
+			const colors = colorScale.colors;
+			const step = (max - min) / (colors.length - 1);
+			const domain = colors.map((_, i) => min + step * i);
 			return scaleLinear<string>()
-				.domain([min, max])
-				.range([colorScale.colors[0], colorScale.colors[colorScale.colors.length - 1]]);
+				.domain(domain)
+				.range([...colors]);
 		}
-		// Diverging scale - midpoint at 0
+		// Diverging scale - create multi-step domain using all colors
+		const colors = colorScale.colors;
+		const step = (max - min) / (colors.length - 1);
+		const domain = colors.map((_, i) => min + step * i);
 		return scaleLinear<string>()
-			.domain([min, 0, max])
-			.range([colorScale.colors[0], colorScale.colors[Math.floor(colorScale.colors.length / 2)], colorScale.colors[colorScale.colors.length - 1]]);
+			.domain(domain)
+			.range([...colors]);
 	});
 
 	/**
