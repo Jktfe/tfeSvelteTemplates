@@ -18,7 +18,8 @@ import type {
 	LatLng,
 	BeamNode,
 	BeamConnection,
-	CalendarDataPoint
+	CalendarDataPoint,
+	SunburstNode
 } from './types';
 
 /**
@@ -1190,3 +1191,193 @@ export const FALLBACK_CALENDAR_DATA: CalendarDataPoint[] = (() => {
 	// Reverse to have oldest first (more natural for calendar display)
 	return data.reverse();
 })();
+
+// =============================================================================
+// SUNBURST CHART FALLBACK DATA
+// =============================================================================
+
+/**
+ * Default colour scheme for Sunburst chart segments
+ * Categorical palette with good visual distinction
+ */
+export const SUNBURST_COLOR_SCHEME = [
+	'#3b82f6', // blue-500
+	'#10b981', // emerald-500
+	'#f59e0b', // amber-500
+	'#ef4444', // red-500
+	'#8b5cf6', // violet-500
+	'#06b6d4', // cyan-500
+	'#f97316', // orange-500
+	'#84cc16', // lime-500
+	'#ec4899', // pink-500
+	'#6366f1' // indigo-500
+];
+
+/**
+ * Fallback Sunburst data representing a file system structure
+ * Demonstrates hierarchical data visualization with multiple levels
+ *
+ * Structure:
+ * - Root (Website)
+ *   - src/ (source code)
+ *     - components/
+ *     - routes/
+ *     - lib/
+ *   - public/ (static assets)
+ *   - config/ (configuration files)
+ */
+export const FALLBACK_SUNBURST_DATA: SunburstNode = {
+	id: 'root',
+	name: 'Website',
+	children: [
+		{
+			id: 'src',
+			name: 'src',
+			color: '#3b82f6',
+			children: [
+				{
+					id: 'components',
+					name: 'components',
+					children: [
+						{ id: 'ui', name: 'UI', value: 120 },
+						{ id: 'layout', name: 'Layout', value: 80 },
+						{ id: 'forms', name: 'Forms', value: 95 },
+						{ id: 'charts', name: 'Charts', value: 65 }
+					]
+				},
+				{
+					id: 'routes',
+					name: 'routes',
+					children: [
+						{ id: 'home', name: 'Home', value: 45 },
+						{ id: 'about', name: 'About', value: 30 },
+						{ id: 'blog', name: 'Blog', value: 85 },
+						{ id: 'api', name: 'API', value: 110 }
+					]
+				},
+				{
+					id: 'lib',
+					name: 'lib',
+					children: [
+						{ id: 'utils', name: 'Utils', value: 55 },
+						{ id: 'types', name: 'Types', value: 40 },
+						{ id: 'server', name: 'Server', value: 75 }
+					]
+				}
+			]
+		},
+		{
+			id: 'public',
+			name: 'public',
+			color: '#10b981',
+			children: [
+				{ id: 'images', name: 'Images', value: 200 },
+				{ id: 'fonts', name: 'Fonts', value: 45 },
+				{ id: 'icons', name: 'Icons', value: 35 }
+			]
+		},
+		{
+			id: 'config',
+			name: 'config',
+			color: '#f59e0b',
+			children: [
+				{ id: 'svelte', name: 'Svelte Config', value: 15 },
+				{ id: 'vite', name: 'Vite Config', value: 20 },
+				{ id: 'tailwind', name: 'Tailwind', value: 25 },
+				{ id: 'typescript', name: 'TypeScript', value: 18 }
+			]
+		}
+	]
+};
+
+/**
+ * Alternative Sunburst data: Sales breakdown by region and product
+ * Useful for business analytics visualizations
+ */
+export const FALLBACK_SUNBURST_SALES: SunburstNode = {
+	id: 'sales',
+	name: 'Sales 2024',
+	children: [
+		{
+			id: 'europe',
+			name: 'Europe',
+			color: '#3b82f6',
+			children: [
+				{
+					id: 'uk',
+					name: 'UK',
+					children: [
+						{ id: 'uk-electronics', name: 'Electronics', value: 450 },
+						{ id: 'uk-clothing', name: 'Clothing', value: 320 },
+						{ id: 'uk-home', name: 'Home', value: 180 }
+					]
+				},
+				{
+					id: 'germany',
+					name: 'Germany',
+					children: [
+						{ id: 'de-electronics', name: 'Electronics', value: 380 },
+						{ id: 'de-automotive', name: 'Automotive', value: 520 },
+						{ id: 'de-home', name: 'Home', value: 210 }
+					]
+				},
+				{
+					id: 'france',
+					name: 'France',
+					children: [
+						{ id: 'fr-fashion', name: 'Fashion', value: 290 },
+						{ id: 'fr-food', name: 'Food', value: 340 },
+						{ id: 'fr-electronics', name: 'Electronics', value: 260 }
+					]
+				}
+			]
+		},
+		{
+			id: 'americas',
+			name: 'Americas',
+			color: '#10b981',
+			children: [
+				{
+					id: 'usa',
+					name: 'USA',
+					children: [
+						{ id: 'us-tech', name: 'Tech', value: 780 },
+						{ id: 'us-retail', name: 'Retail', value: 560 },
+						{ id: 'us-services', name: 'Services', value: 420 }
+					]
+				},
+				{
+					id: 'canada',
+					name: 'Canada',
+					children: [
+						{ id: 'ca-resources', name: 'Resources', value: 340 },
+						{ id: 'ca-tech', name: 'Tech', value: 280 }
+					]
+				}
+			]
+		},
+		{
+			id: 'asia',
+			name: 'Asia Pacific',
+			color: '#f59e0b',
+			children: [
+				{
+					id: 'japan',
+					name: 'Japan',
+					children: [
+						{ id: 'jp-electronics', name: 'Electronics', value: 620 },
+						{ id: 'jp-automotive', name: 'Automotive', value: 480 }
+					]
+				},
+				{
+					id: 'australia',
+					name: 'Australia',
+					children: [
+						{ id: 'au-mining', name: 'Mining', value: 390 },
+						{ id: 'au-services', name: 'Services', value: 270 }
+					]
+				}
+			]
+		}
+	]
+};
