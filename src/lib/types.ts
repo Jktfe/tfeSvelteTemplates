@@ -1218,3 +1218,76 @@ export interface MapLiveProps {
 	onMarkerAdd?: (marker: MapMarker) => void;
 	onMarkerRemove?: (marker: MapMarker) => void;
 }
+
+// ==================================================
+// ANIMATED BEAM COMPONENT TYPES
+// ==================================================
+
+/**
+ * AnimatedBeam Component Types
+ * For visualizing connections and data flows with animated beams
+ */
+
+/**
+ * Beam node data structure
+ * Represents a circular node that beams connect to/from
+ *
+ * @property id - Unique node identifier
+ * @property x - X position in pixels
+ * @property y - Y position in pixels
+ * @property label - Optional display label for the node
+ */
+export interface BeamNode {
+	id: string;
+	x: number;
+	y: number;
+	label?: string;
+}
+
+/**
+ * Beam connection data structure
+ * Defines a connection between two nodes
+ *
+ * @property from - Source node ID
+ * @property to - Target node ID
+ * @property bidirectional - Whether beam flows both ways (overrides global setting)
+ */
+export interface BeamConnection {
+	from: string;
+	to: string;
+	bidirectional?: boolean;
+}
+
+/**
+ * Props for AnimatedBeam component
+ * SVG-based animated beams connecting nodes
+ *
+ * @property width - Container width in pixels (default: 600)
+ * @property height - Container height in pixels (default: 400)
+ * @property nodes - Array of node objects with positions and labels
+ * @property beamColor - Color of the animated beams (default: '#3b82f6')
+ * @property beamWidth - Width of beam lines in pixels (default: 2)
+ * @property beamSpeed - Animation duration in seconds (default: 2)
+ * @property bidirectional - Enable bi-directional flow animation (default: false)
+ * @property gradient - Use gradient instead of dashed line (default: false)
+ * @property nodeSize - Radius of node circles in pixels (default: 12)
+ * @property nodeColor - Fill color for node circles (default: '#3b82f6')
+ * @property connections - Array defining which nodes connect to which
+ */
+export interface AnimatedBeamProps {
+	width?: number;
+	height?: number;
+	nodes?: BeamNode[];
+	beamColor?: string;
+	beamWidth?: number;
+	beamSpeed?: number;
+	bidirectional?: boolean;
+	gradient?: boolean;
+	nodeSize?: number;
+	nodeColor?: string;
+	connections?: BeamConnection[];
+}
+
+// =============================================================================
+// BEFORE/AFTER COMPONENT TYPES
+// =============================================================================
