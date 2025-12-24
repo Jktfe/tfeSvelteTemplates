@@ -187,6 +187,20 @@
       status: "ready",
     },
     {
+      title: "ScratchToReveal",
+      description:
+        "Interactive scratch-off component revealing hidden content underneath. Canvas-based mechanics with mouse/touch support, progress tracking, and auto-reveal threshold. Perfect for gamification, marketing promotions, and interactive experiences.",
+      href: "/scratchtoreveal",
+      icon: "🎫",
+      features: [
+        "Canvas-based scratch mechanics",
+        "Mouse & touch support",
+        "Progress tracking",
+        "Accessible with skip button",
+      ],
+      status: "new",
+    },
+    {
       title: "Editor (CRUD)",
       description:
         "Complete CRUD demonstration with database integration and graceful fallback. Features full Create, Read, Update, and Delete operations with validation, loading states, and accessible modal UI.",
