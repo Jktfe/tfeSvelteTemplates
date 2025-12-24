@@ -173,6 +173,20 @@
       status: "ready",
     },
     {
+      title: "AnimatedBeam",
+      description:
+        "Animated beams connecting nodes for data flow visualization. Pure SVG and CSS implementation with uni-directional, bi-directional, and multi-input patterns. Perfect for system architecture diagrams and process flows.",
+      href: "/animatedbeam",
+      icon: "⚡",
+      features: [
+        "Pure CSS animations",
+        "SVG-based graphics",
+        "Customisable colours",
+        "Zero dependencies",
+      ],
+      status: "ready",
+    },
+    {
       title: "Editor (CRUD)",
       description:
         "Complete CRUD demonstration with database integration and graceful fallback. Features full Create, Read, Update, and Delete operations with validation, loading states, and accessible modal UI.",

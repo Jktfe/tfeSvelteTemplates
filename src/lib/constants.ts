@@ -15,7 +15,10 @@ import type {
 	Folder,
 	FileItem,
 	MapMarker,
-	LatLng
+	LatLng,
+	BeamNode,
+	BeamConnection,
+	CalendarDataPoint
 } from './types';
 
 /**
@@ -1075,4 +1078,63 @@ export const FALLBACK_MAP_MARKERS: MapMarker[] = [
 			hours: 'Mon-Sat 10:00-17:00'
 		}
 	}
+];
+
+// =============================================================================
+// ANIMATED BEAM FALLBACK DATA
+// =============================================================================
+
+/**
+ * Default node configuration for uni-directional beam demo
+ * Shows a simple source-to-target flow with one animated beam
+ */
+export const DEFAULT_BEAM_NODES_UNI: BeamNode[] = [
+	{ id: 'source', x: 100, y: 200, label: 'Source' },
+	{ id: 'target', x: 500, y: 200, label: 'Target' }
+];
+
+/**
+ * Default connection for uni-directional demo
+ * Single beam flowing from source to target
+ */
+export const DEFAULT_BEAM_CONNECTIONS_UNI: BeamConnection[] = [
+	{ from: 'source', to: 'target' }
+];
+
+/**
+ * Default node configuration for bi-directional beam demo
+ * Shows two nodes with beams flowing both directions simultaneously
+ */
+export const DEFAULT_BEAM_NODES_BI: BeamNode[] = [
+	{ id: 'a', x: 100, y: 200, label: 'A' },
+	{ id: 'b', x: 500, y: 200, label: 'B' }
+];
+
+/**
+ * Default connection for bi-directional demo
+ * Beam flows both ways between nodes A and B
+ */
+export const DEFAULT_BEAM_CONNECTIONS_BI: BeamConnection[] = [
+	{ from: 'a', to: 'b', bidirectional: true }
+];
+
+/**
+ * Default node configuration for multiple inputs demo
+ * Shows three input sources converging to a single output
+ */
+export const DEFAULT_BEAM_NODES_MULTI: BeamNode[] = [
+	{ id: 'input1', x: 100, y: 100, label: 'Input 1' },
+	{ id: 'input2', x: 100, y: 200, label: 'Input 2' },
+	{ id: 'input3', x: 100, y: 300, label: 'Input 3' },
+	{ id: 'output', x: 500, y: 200, label: 'Output' }
+];
+
+/**
+ * Default connections for multiple inputs demo
+ * Three beams from different sources converging to one target
+ */
+export const DEFAULT_BEAM_CONNECTIONS_MULTI: BeamConnection[] = [
+	{ from: 'input1', to: 'output' },
+	{ from: 'input2', to: 'output' },
+	{ from: 'input3', to: 'output' }
 ];
