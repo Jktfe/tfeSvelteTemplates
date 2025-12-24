@@ -1345,3 +1345,96 @@ export interface ScratchToRevealProps {
 // =============================================================================
 // BEFORE/AFTER COMPONENT TYPES
 // =============================================================================
+
+/**
+ * Props for BeforeAfter component
+ * Interactive before/after comparison with draggable divider
+ *
+ * @property beforeImage - URL for before image
+ * @property afterImage - URL for after image
+ * @property beforeAlt - Alt text for before image (default: 'Before')
+ * @property afterAlt - Alt text for after image (default: 'After')
+ * @property beforeLabel - Optional label shown on before side
+ * @property afterLabel - Optional label shown on after side
+ * @property aspectRatio - CSS aspect ratio (default: '16/9')
+ * @property width - Container width (default: '100%')
+ * @property initialPosition - Initial divider position 0-100 (default: 50)
+ * @property disabled - Disable dragging (default: false)
+ * @property dividerColor - Divider line color (default: '#ffffff')
+ * @property dividerWidth - Divider line width in px (default: 2)
+ * @property handleSize - Handle circle size in px (default: 48)
+ * @property handleColor - Handle background color (default: '#ffffff')
+ * @property onChange - Callback fired when divider position changes
+ * @property class - Additional CSS classes
+ */
+export interface BeforeAfterProps {
+	beforeImage: string;
+	afterImage: string;
+	beforeAlt?: string;
+	afterAlt?: string;
+	beforeLabel?: string;
+	afterLabel?: string;
+	aspectRatio?: string;
+	width?: number | string;
+	initialPosition?: number;
+	disabled?: boolean;
+	dividerColor?: string;
+	dividerWidth?: number;
+	handleSize?: number;
+	handleColor?: string;
+	onChange?: (position: number) => void;
+	class?: string;
+}
+
+// =============================================================================
+// CALENDAR HEATMAP TYPES
+// =============================================================================
+
+/**
+ * Calendar heatmap data point
+ * Represents activity for a single day
+ *
+ * @property date - ISO date string (YYYY-MM-DD)
+ * @property value - Activity intensity/count (0 = no activity)
+ */
+export interface CalendarDataPoint {
+	date: string;
+	value: number;
+}
+
+/**
+ * Props for CalendarHeatmap component
+ * GitHub-style contribution calendar with interactive features
+ *
+ * @property data - Array of date/value pairs for each day
+ * @property startDate - First date to display (default: 365 days ago)
+ * @property endDate - Last date to display (default: today)
+ * @property colorLow - Colour for lowest values (default: '#ebedf0' GitHub light gray)
+ * @property colorHigh - Colour for highest values (default: '#216e39' GitHub dark green)
+ * @property cellSize - Size of each calendar cell in pixels (default: 12)
+ * @property cellGap - Gap between cells in pixels (default: 3)
+ * @property showWeekLabels - Show weekday labels (Mon/Wed/Fri) on left (default: true)
+ * @property showMonthLabels - Show month labels at top (default: true)
+ * @property showLegend - Show colour legend below calendar (default: true)
+ * @property levels - Number of discrete colour levels (default: 5)
+ * @property tooltipFormatter - Custom tooltip formatter function
+ * @property onCellClick - Callback when a cell is clicked
+ * @property class - Additional CSS classes
+ */
+export interface CalendarHeatmapProps {
+	data: CalendarDataPoint[];
+	startDate?: Date;
+	endDate?: Date;
+	colorLow?: string;
+	colorHigh?: string;
+	cellSize?: number;
+	cellGap?: number;
+	showWeekLabels?: boolean;
+	showMonthLabels?: boolean;
+	showLegend?: boolean;
+	levels?: number;
+	tooltipFormatter?: (date: string, value: number) => string;
+	onCellClick?: (date: string, value: number) => void;
+	class?: string;
+}
+

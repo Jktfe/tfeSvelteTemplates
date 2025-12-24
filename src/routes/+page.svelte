@@ -201,6 +201,34 @@
       status: "new",
     },
     {
+      title: "BeforeAfter",
+      description:
+        "Interactive before/after comparison with draggable divider. CSS clip-path for smooth image reveals, unified pointer events for mouse/touch/pen, and keyboard navigation. Perfect for product improvements, image editing, and design iterations.",
+      href: "/beforeafter",
+      icon: "↔️",
+      features: [
+        "CSS-based clipping for smooth reveals",
+        "Draggable divider (mouse/touch/pen)",
+        "Keyboard navigation with arrow keys",
+        "Customisable aspect ratio & styling",
+      ],
+      status: "new",
+    },
+    {
+      title: "CalendarHeatmap",
+      description:
+        "GitHub-style contribution calendar with interactive features. SVG-based calendar grid showing 52 weeks × 7 days with 5-level discrete color system, tooltips, click handlers, and keyboard navigation. Perfect for activity tracking, habit visualization, and time-series data.",
+      href: "/calendarheatmap",
+      icon: "📅",
+      features: [
+        "52 weeks × 7 days grid layout",
+        "5-level color intensity system",
+        "Interactive tooltips on hover",
+        "Keyboard navigation with arrow keys",
+      ],
+      status: "new",
+    },
+    {
       title: "Editor (CRUD)",
       description:
         "Complete CRUD demonstration with database integration and graceful fallback. Features full Create, Read, Update, and Delete operations with validation, loading states, and accessible modal UI.",
