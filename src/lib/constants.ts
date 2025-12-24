@@ -1138,3 +1138,55 @@ export const DEFAULT_BEAM_CONNECTIONS_MULTI: BeamConnection[] = [
 	{ from: 'input2', to: 'output' },
 	{ from: 'input3', to: 'output' }
 ];
+
+// =============================================================================
+// CALENDAR HEATMAP FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback calendar activity data for past 365 days
+ * Simulates realistic contribution patterns:
+ * - Lower activity on weekends (0-5 contributions)
+ * - Higher activity on weekdays (5-20 contributions)
+ * - Occasional zero days for realism
+ * - Some random variation to create visual patterns
+ */
+export const FALLBACK_CALENDAR_DATA: CalendarDataPoint[] = (() => {
+	const data: CalendarDataPoint[] = [];
+	const today = new Date();
+
+	for (let i = 0; i < 365; i++) {
+		const date = new Date(today);
+		date.setDate(date.getDate() - i);
+
+		// Get day of week (0 = Sunday, 6 = Saturday)
+		const dayOfWeek = date.getDay();
+		const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+		// Generate realistic activity value
+		let value: number;
+		if (Math.random() < 0.1) {
+			// 10% chance of zero activity (no contribution)
+			value = 0;
+		} else if (isWeekend) {
+			// Weekend: 0-5 contributions
+			value = Math.floor(Math.random() * 6);
+		} else {
+			// Weekday: 5-20 contributions with some higher spikes
+			const baseActivity = 5 + Math.floor(Math.random() * 10);
+			const spike = Math.random() < 0.15 ? Math.floor(Math.random() * 6) : 0;
+			value = baseActivity + spike;
+		}
+
+		// Format date as YYYY-MM-DD
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const dateString = `${year}-${month}-${day}`;
+
+		data.push({ date: dateString, value });
+	}
+
+	// Reverse to have oldest first (more natural for calendar display)
+	return data.reverse();
+})();
