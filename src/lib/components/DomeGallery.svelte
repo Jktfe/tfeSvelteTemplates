@@ -44,13 +44,35 @@
 		dragSensitivity = 20,
 		enlargeTransitionMs = 300,
 		segments = 35,
-		dragDampening = 2,
+		dragDampening = 0.8, // 0-1 range: higher = longer coast
 		openedImageWidth = '250px',
 		openedImageHeight = '350px',
 		imageBorderRadius = '30px',
 		openedImageBorderRadius = '30px',
 		grayscale = true
 	}: DomeGalleryProps = $props();
+
+	// ========================================
+	// PHYSICS CONSTANTS
+	// ========================================
+	/** Maximum velocity magnitude for inertia (prevents excessive speed) */
+	const MAX_VELOCITY = 1.4;
+	/** Velocity multiplier to scale input velocity for animation */
+	const VELOCITY_SCALE = 80;
+	/** Base friction multiplier - controls how quickly motion decays */
+	const FRICTION_BASE = 0.94;
+	/** Friction adjustment factor based on dampening prop */
+	const FRICTION_DAMPENING_FACTOR = 0.055;
+	/** Base threshold for stopping inertia animation */
+	const STOP_THRESHOLD_BASE = 0.015;
+	/** Threshold adjustment factor based on dampening prop */
+	const STOP_THRESHOLD_DAMPENING_FACTOR = 0.01;
+	/** Minimum frames for inertia animation */
+	const MIN_INERTIA_FRAMES = 90;
+	/** Additional frames based on dampening (0-1 adds 0-270 frames) */
+	const MAX_INERTIA_FRAMES_FACTOR = 270;
+	/** Squared distance threshold (4px) to distinguish drag from click */
+	const DRAG_THRESHOLD_SQUARED = 16;
 
 	// ========================================
 	// REFS (element bindings)
@@ -105,10 +127,25 @@
 	// BUILD ITEMS ON SPHERE
 	// ========================================
 	function buildItems(pool: (string | DomeGalleryImage)[], seg: number): DomeGalleryItem[] {
-		// Create grid coordinates for tiles arranged on the sphere
-		const xCols = Array.from({ length: seg }, (_, i) => -37 + i * 2);
-		const evenYs = [-4, -2, 0, 2, 4];
-		const oddYs = [-3, -1, 1, 3, 5];
+		/**
+		 * Create grid coordinates for tiles arranged on the sphere surface.
+		 *
+		 * The sphere is divided into columns (X axis) and rows (Y axis).
+		 * - X columns: Start at -37 and increment by 2, creating `seg` columns
+		 *   spanning from left (-37) to right across the sphere's circumference.
+		 * - Y rows: Alternate between even (-4,-2,0,2,4) and odd (-3,-1,1,3,5)
+		 *   offsets to create a staggered brick-like pattern that tiles well on a sphere.
+		 *
+		 * Each tile has size 2x2 units, and the staggered pattern prevents
+		 * visible grid lines when the sphere rotates.
+		 */
+		const GRID_X_START = -37; // Starting X offset for first column
+		const GRID_X_STEP = 2; // X increment between columns
+		const xCols = Array.from({ length: seg }, (_, i) => GRID_X_START + i * GRID_X_STEP);
+
+		// Staggered Y positions create a brick-like pattern on the sphere
+		const evenYs = [-4, -2, 0, 2, 4]; // Y offsets for even-indexed columns
+		const oddYs = [-3, -1, 1, 3, 5]; // Y offsets for odd-indexed columns (offset by 1)
 
 		const coords = xCols.flatMap((x, c) => {
 			const ys = c % 2 === 0 ? evenYs : oddYs;
@@ -216,14 +253,13 @@
 	}
 
 	function startInertia(vx: number, vy: number) {
-		const MAX_V = 1.4;
-		let vX = clamp(vx, -MAX_V, MAX_V) * 80;
-		let vY = clamp(vy, -MAX_V, MAX_V) * 80;
+		let vX = clamp(vx, -MAX_VELOCITY, MAX_VELOCITY) * VELOCITY_SCALE;
+		let vY = clamp(vy, -MAX_VELOCITY, MAX_VELOCITY) * VELOCITY_SCALE;
 		let frames = 0;
-		const d = clamp(dragDampening ?? 0.6, 0, 1);
-		const frictionMul = 0.94 + 0.055 * d;
-		const stopThreshold = 0.015 - 0.01 * d;
-		const maxFrames = Math.round(90 + 270 * d);
+		const d = clamp(dragDampening ?? 0.8, 0, 1);
+		const frictionMul = FRICTION_BASE + FRICTION_DAMPENING_FACTOR * d;
+		const stopThreshold = STOP_THRESHOLD_BASE - STOP_THRESHOLD_DAMPENING_FACTOR * d;
+		const maxFrames = Math.round(MIN_INERTIA_FRAMES + MAX_INERTIA_FRAMES_FACTOR * d);
 
 		const step = () => {
 			vX *= frictionMul;
@@ -292,7 +328,7 @@
 
 		if (!moved) {
 			const dist2 = dxTotal * dxTotal + dyTotal * dyTotal;
-			if (dist2 > 16) moved = true;
+			if (dist2 > DRAG_THRESHOLD_SQUARED) moved = true;
 		}
 
 		const nextX = clamp(
@@ -723,7 +759,9 @@
 							aria-label={item.alt || 'Open image'}
 							onclick={handleTileClick}
 							onpointerup={handleTilePointerUp}
-							onkeydown={(e) => e.key === 'Enter' && handleTileClick(e as unknown as MouseEvent)}
+							onkeydown={(e) =>
+							(e.key === 'Enter' || e.key === ' ') &&
+							(e.preventDefault(), handleTileClick(e as unknown as MouseEvent))}
 						>
 							<img src={item.src} draggable="false" alt={item.alt} />
 						</div>
