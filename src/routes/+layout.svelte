@@ -115,6 +115,12 @@
 			active: currentPath.startsWith('/maps')
 		},
 		{
+			label: 'Geo',
+			href: '/geo',
+			icon: '🌍',
+			active: currentPath.startsWith('/geo')
+		},
+		{
 			label: 'Auth Demo',
 			href: '/auth',
 			icon: '🔐',
