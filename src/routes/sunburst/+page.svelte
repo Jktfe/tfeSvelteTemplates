@@ -831,4 +831,111 @@ const data: SunburstNode = {
 			padding: 0.5rem;
 		}
 	}
+
+	/**
+	 * Dark mode support
+	 */
+	@media (prefers-color-scheme: dark) {
+		.demo-page {
+			background: #111827;
+		}
+
+		h1,
+		h2 {
+			color: #f9fafb;
+		}
+
+		.subtitle,
+		.example-description {
+			color: #9ca3af;
+		}
+
+		.feature-card,
+		.use-case-card {
+			background: #1f2937;
+			border-color: #374151;
+		}
+
+		.feature-card h3,
+		.use-case-card h3 {
+			color: #f9fafb;
+		}
+
+		.feature-card p,
+		.use-case-card p {
+			color: #9ca3af;
+		}
+
+		.example-demo {
+			background: #1f2937;
+			border-color: #374151;
+		}
+
+		.example-button,
+		.scheme-button {
+			background: #1f2937;
+			border-color: #4b5563;
+			color: #e5e7eb;
+		}
+
+		.example-button:hover,
+		.scheme-button:hover {
+			background: #374151;
+			border-color: #6b7280;
+		}
+
+		.example-button.active,
+		.scheme-button.active {
+			background: #1e3a5f;
+			border-color: #3b82f6;
+			color: #93c5fd;
+		}
+
+		.selection-display {
+			background: #374151;
+			color: #f3f4f6;
+		}
+
+		.compact-label {
+			color: #9ca3af;
+		}
+
+		.props-table-container {
+			background: #1f2937;
+			border-color: #374151;
+		}
+
+		.props-table thead {
+			background: #374151;
+			border-color: #4b5563;
+		}
+
+		.props-table th {
+			color: #f9fafb;
+		}
+
+		.props-table td {
+			color: #e5e7eb;
+			border-color: #374151;
+		}
+
+		.props-table code,
+		.data-section code {
+			background: #374151;
+			color: #f472b6;
+		}
+
+		.technical-card {
+			background: #064e3b;
+			border-color: #047857;
+		}
+
+		.technical-card h3 {
+			color: #a7f3d0;
+		}
+
+		.technical-card p {
+			color: #6ee7b7;
+		}
+	}
 </style>
