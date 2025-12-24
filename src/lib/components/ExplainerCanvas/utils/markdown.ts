@@ -2,13 +2,14 @@
  * Markdown rendering utilities for ExplainerCanvas
  *
  * Uses marked for markdown parsing and highlight.js for code syntax highlighting.
- * Includes sanitisation for security.
+ * Uses DOMPurify for robust HTML sanitisation.
  *
  * @module ExplainerCanvas/utils/markdown
  */
 
 import { marked, type Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
+import DOMPurify from 'isomorphic-dompurify';
 
 /**
  * Custom renderer for code blocks with syntax highlighting
@@ -46,34 +47,41 @@ marked.use({
 });
 
 /**
- * Simple HTML sanitisation for security
- * Removes potentially dangerous elements and attributes
+ * DOMPurify configuration for safe HTML rendering
+ * Allows common markdown elements while blocking dangerous content
+ */
+const DOMPURIFY_CONFIG: DOMPurify.Config = {
+	ALLOWED_TAGS: [
+		'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+		'p', 'br', 'hr',
+		'ul', 'ol', 'li',
+		'blockquote', 'pre', 'code',
+		'a', 'strong', 'em', 'b', 'i', 'u', 's', 'del', 'ins',
+		'table', 'thead', 'tbody', 'tr', 'th', 'td',
+		'img', 'figure', 'figcaption',
+		'span', 'div',
+		'sup', 'sub', 'mark', 'abbr', 'kbd'
+	],
+	ALLOWED_ATTR: [
+		'href', 'target', 'rel', 'title', 'alt', 'src',
+		'class', 'id', 'data-definition', 'data-*',
+		'width', 'height', 'colspan', 'rowspan'
+	],
+	ALLOW_DATA_ATTR: true,
+	// Force all links to open in new tab safely
+	ADD_ATTR: ['target', 'rel'],
+	// Block dangerous URL schemes
+	ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i
+};
+
+/**
+ * Sanitise HTML using DOMPurify for robust XSS protection
  *
  * @param html - Raw HTML string
  * @returns Sanitised HTML string
  */
 function sanitiseHtml(html: string): string {
-	// Remove script tags and their content
-	let sanitised = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-
-	// Remove on* event attributes
-	sanitised = sanitised.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
-	sanitised = sanitised.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '');
-
-	// Remove javascript: URLs
-	sanitised = sanitised.replace(/href\s*=\s*["']javascript:[^"']*["']/gi, 'href="#"');
-
-	// Remove style tags (can be used for attacks)
-	sanitised = sanitised.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '');
-
-	// Remove iframe tags
-	sanitised = sanitised.replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '');
-
-	// Remove object and embed tags
-	sanitised = sanitised.replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '');
-	sanitised = sanitised.replace(/<embed\b[^>]*\/?>/gi, '');
-
-	return sanitised;
+	return DOMPurify.sanitize(html, DOMPURIFY_CONFIG);
 }
 
 /**

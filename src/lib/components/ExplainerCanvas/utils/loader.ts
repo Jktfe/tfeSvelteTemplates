@@ -25,14 +25,14 @@ export class DataLoadError extends Error {
 }
 
 /**
- * Validate that a card object has the required properties
- *
- * @param card - Object to validate
- * @param path - Path string for error messages
- * @returns True if valid
- * @throws DataLoadError if invalid
+ * Maximum allowed nesting depth for cards to prevent stack overflow
  */
-function validateCard(card: unknown, path: string): card is ExplainerCard {
+const MAX_CARD_DEPTH = 20;
+
+/**
+ * Validate a single card's properties (without children)
+ */
+function validateCardProperties(card: unknown, path: string): void {
 	if (!card || typeof card !== 'object') {
 		throw new DataLoadError(`Invalid card at ${path}: not an object`, 'validation');
 	}
@@ -67,13 +67,50 @@ function validateCard(card: unknown, path: string): card is ExplainerCard {
 		);
 	}
 
-	// Validate children recursively
-	if (c.children) {
-		if (!Array.isArray(c.children)) {
-			throw new DataLoadError(`Invalid card at ${path}: 'children' must be an array`, 'validation');
+	if (c.children !== undefined && !Array.isArray(c.children)) {
+		throw new DataLoadError(`Invalid card at ${path}: 'children' must be an array`, 'validation');
+	}
+}
+
+/**
+ * Validate that a card object and all its children have required properties
+ * Uses iterative approach with depth limiting to prevent stack overflow
+ *
+ * @param card - Object to validate
+ * @param path - Path string for error messages
+ * @returns True if valid
+ * @throws DataLoadError if invalid or exceeds maximum depth
+ */
+function validateCard(card: unknown, path: string): card is ExplainerCard {
+	// Use a stack for iterative validation instead of recursion
+	const stack: Array<{ card: unknown; path: string; depth: number }> = [
+		{ card, path, depth: 0 }
+	];
+
+	while (stack.length > 0) {
+		const { card: currentCard, path: currentPath, depth } = stack.pop()!;
+
+		// Check depth limit
+		if (depth > MAX_CARD_DEPTH) {
+			throw new DataLoadError(
+				`Card nesting exceeds maximum depth of ${MAX_CARD_DEPTH} at ${currentPath}`,
+				'validation'
+			);
 		}
-		for (let i = 0; i < c.children.length; i++) {
-			validateCard(c.children[i], `${path}.children[${i}]`);
+
+		// Validate this card's properties
+		validateCardProperties(currentCard, currentPath);
+
+		// Add children to stack for validation
+		const c = currentCard as Record<string, unknown>;
+		if (c.children && Array.isArray(c.children)) {
+			for (let i = c.children.length - 1; i >= 0; i--) {
+				stack.push({
+					card: c.children[i],
+					path: `${currentPath}.children[${i}]`,
+					depth: depth + 1
+				});
+			}
 		}
 	}
 

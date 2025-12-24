@@ -11,6 +11,7 @@
 	import { onMount, onDestroy, type Snippet } from 'svelte';
 	import Panzoom from '@panzoom/panzoom';
 	import type { ExplainerViewport, CanvasBackground, ExplainerPosition } from '$lib/types';
+	import { DEFAULT_CARD_WIDTH, DEFAULT_CARD_HEIGHT } from './utils/geometry';
 
 	interface Props {
 		viewport?: ExplainerViewport;
@@ -111,6 +112,14 @@
 		});
 	}
 
+	/**
+	 * Handle wheel events for zoom
+	 */
+	function handleWheel(e: WheelEvent) {
+		if (!panzoomInstance) return;
+		panzoomInstance.zoomWithWheel(e);
+	}
+
 	onMount(() => {
 		if (!contentRef) return;
 
@@ -133,13 +142,13 @@
 		contentRef.addEventListener('panzoomend', handlePanzoomChange);
 
 		// Enable scroll wheel zoom
-		containerRef?.addEventListener('wheel', (e) => {
-			if (!panzoomInstance) return;
-			panzoomInstance.zoomWithWheel(e);
-		});
+		containerRef?.addEventListener('wheel', handleWheel);
 	});
 
 	onDestroy(() => {
+		// Clean up wheel event listener
+		containerRef?.removeEventListener('wheel', handleWheel);
+		// Clean up panzoom events
 		if (contentRef) {
 			contentRef.removeEventListener('panzoomchange', handlePanzoomChange);
 			contentRef.removeEventListener('panzoomend', handlePanzoomChange);
@@ -186,9 +195,11 @@
 		const containerRect = containerRef.getBoundingClientRect();
 		const currentScale = scale ?? panzoomInstance.getScale();
 
-		// Calculate pan to center the position
-		const targetX = containerRect.width / 2 - position.x * currentScale - 140 * currentScale;
-		const targetY = containerRect.height / 2 - position.y * currentScale - 80 * currentScale;
+		// Calculate pan to center the position (offset by half card dimensions)
+		const cardCenterOffsetX = (DEFAULT_CARD_WIDTH / 2) * currentScale;
+		const cardCenterOffsetY = (DEFAULT_CARD_HEIGHT / 2) * currentScale;
+		const targetX = containerRect.width / 2 - position.x * currentScale - cardCenterOffsetX;
+		const targetY = containerRect.height / 2 - position.y * currentScale - cardCenterOffsetY;
 
 		skipViewportSync = true;
 		if (scale) {
