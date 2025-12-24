@@ -19,6 +19,7 @@ import type {
 	BeamNode,
 	BeamConnection,
 	CalendarDataPoint,
+	BubbleItem,
 	SunburstNode,
 	RadialClusterNode
 } from './types';
@@ -1192,6 +1193,66 @@ export const FALLBACK_CALENDAR_DATA: CalendarDataPoint[] = (() => {
 	// Reverse to have oldest first (more natural for calendar display)
 	return data.reverse();
 })();
+
+// =============================================================================
+// BUBBLE PACKING FALLBACK DATA
+// =============================================================================
+
+/**
+ * Default colour palette for bubble groups
+ * Based on Tableau10 for maximum visual distinction
+ */
+export const BUBBLE_COLOR_SCHEME = [
+	'#4e79a7', // Blue
+	'#f28e2c', // Orange
+	'#e15759', // Red
+	'#76b7b2', // Teal
+	'#59a14f', // Green
+	'#edc949', // Yellow
+	'#af7aa1', // Purple
+	'#ff9da7', // Pink
+	'#9c755f', // Brown
+	'#bab0ab' // Grey
+];
+
+/**
+ * Fallback bubble data for BubblePacking component
+ * Demonstrates various bubble sizes and groups
+ *
+ * Sample dataset: Technology market segments by revenue (billions)
+ */
+export const FALLBACK_BUBBLE_DATA: BubbleItem[] = [
+	// Cloud Computing
+	{ id: 'aws', label: 'AWS', value: 80, group: 'Cloud' },
+	{ id: 'azure', label: 'Azure', value: 65, group: 'Cloud' },
+	{ id: 'gcp', label: 'Google Cloud', value: 35, group: 'Cloud' },
+	{ id: 'oracle-cloud', label: 'Oracle Cloud', value: 15, group: 'Cloud' },
+
+	// Social Media
+	{ id: 'facebook', label: 'Facebook', value: 115, group: 'Social' },
+	{ id: 'youtube', label: 'YouTube', value: 30, group: 'Social' },
+	{ id: 'tiktok', label: 'TikTok', value: 25, group: 'Social' },
+	{ id: 'twitter', label: 'X/Twitter', value: 8, group: 'Social' },
+	{ id: 'linkedin', label: 'LinkedIn', value: 15, group: 'Social' },
+
+	// E-commerce
+	{ id: 'amazon', label: 'Amazon', value: 140, group: 'E-commerce' },
+	{ id: 'alibaba', label: 'Alibaba', value: 85, group: 'E-commerce' },
+	{ id: 'shopify', label: 'Shopify', value: 18, group: 'E-commerce' },
+	{ id: 'ebay', label: 'eBay', value: 10, group: 'E-commerce' },
+
+	// AI & ML
+	{ id: 'openai', label: 'OpenAI', value: 29, group: 'AI' },
+	{ id: 'nvidia', label: 'NVIDIA AI', value: 45, group: 'AI' },
+	{ id: 'anthropic', label: 'Anthropic', value: 10, group: 'AI' },
+	{ id: 'google-ai', label: 'Google AI', value: 35, group: 'AI' },
+
+	// Streaming
+	{ id: 'netflix', label: 'Netflix', value: 33, group: 'Streaming' },
+	{ id: 'spotify', label: 'Spotify', value: 14, group: 'Streaming' },
+	{ id: 'disney-plus', label: 'Disney+', value: 20, group: 'Streaming' },
+	{ id: 'hbo-max', label: 'HBO Max', value: 8, group: 'Streaming' }
+];
 
 // =============================================================================
 // SUNBURST CHART FALLBACK DATA
