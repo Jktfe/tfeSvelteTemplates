@@ -1387,6 +1387,7 @@ export interface BeforeAfterProps {
 }
 
 // =============================================================================
+<<<<<<< HEAD
 // BUBBLE PACKING TYPES
 // =============================================================================
 
@@ -1522,6 +1523,84 @@ export interface RadialClusterProps {
 	rotateLabels?: boolean;
 	separation?: number;
 	class?: string;
+}
+
+// =============================================================================
+// DOME GALLERY TYPES
+// =============================================================================
+
+/**
+ * Image data for DomeGallery component
+ * Can be a simple string URL or an object with src and alt
+ *
+ * @property src - Image URL
+ * @property alt - Alt text for accessibility
+ */
+export interface DomeGalleryImage {
+	src: string;
+	alt?: string;
+}
+
+/**
+ * Internal item structure for DomeGallery
+ * Represents a positioned tile on the sphere surface
+ *
+ * @property x - X coordinate offset on sphere
+ * @property y - Y coordinate offset on sphere
+ * @property sizeX - Width multiplier
+ * @property sizeY - Height multiplier
+ * @property src - Image URL
+ * @property alt - Alt text
+ */
+export interface DomeGalleryItem {
+	x: number;
+	y: number;
+	sizeX: number;
+	sizeY: number;
+	src: string;
+	alt: string;
+}
+
+/**
+ * Props for DomeGallery component
+ * Interactive 3D spherical image gallery with drag rotation and click-to-enlarge
+ *
+ * @property images - Array of images (string URLs or {src, alt} objects)
+ * @property fit - Radius as fraction of container dimension (default: 0.5)
+ * @property fitBasis - Which dimension to base radius on: 'auto' | 'min' | 'max' | 'width' | 'height' (default: 'auto')
+ * @property minRadius - Minimum radius in pixels (default: 600)
+ * @property maxRadius - Maximum radius in pixels (default: Infinity)
+ * @property padFactor - Viewer padding as fraction of container (default: 0.25)
+ * @property overlayBlurColor - Edge fade/blur overlay colour (default: '#060010')
+ * @property maxVerticalRotationDeg - Max vertical rotation in degrees (default: 5)
+ * @property dragSensitivity - Drag sensitivity (higher = less sensitive, default: 20)
+ * @property enlargeTransitionMs - Transition duration for enlarge/close in ms (default: 300)
+ * @property segments - Number of segments on sphere (affects tile count, default: 35)
+ * @property dragDampening - Inertia dampening 0-1 (higher = longer coast, default: 0.8)
+ * @property openedImageWidth - CSS width of enlarged image (default: '250px')
+ * @property openedImageHeight - CSS height of enlarged image (default: '350px')
+ * @property imageBorderRadius - Border radius of tiles (default: '30px')
+ * @property openedImageBorderRadius - Border radius of enlarged image (default: '30px')
+ * @property grayscale - Apply grayscale filter to images (default: true)
+ */
+export interface DomeGalleryProps {
+	images?: (string | DomeGalleryImage)[];
+	fit?: number;
+	fitBasis?: 'auto' | 'min' | 'max' | 'width' | 'height';
+	minRadius?: number;
+	maxRadius?: number;
+	padFactor?: number;
+	overlayBlurColor?: string;
+	maxVerticalRotationDeg?: number;
+	dragSensitivity?: number;
+	enlargeTransitionMs?: number;
+	segments?: number;
+	dragDampening?: number;
+	openedImageWidth?: string;
+	openedImageHeight?: string;
+	imageBorderRadius?: string;
+	openedImageBorderRadius?: string;
+	grayscale?: boolean;
 }
 
 // =============================================================================
