@@ -84,7 +84,7 @@
 	}
 </script>
 
-<div class="flex h-full w-full items-center justify-center flex-col md:my-44">
+<div class="flex h-full w-full items-center justify-center flex-col my-0 md:my-44">
 	{#if layout === 'compact'}
 		<!-- Compact Layout: Vertical stack with image on top -->
 		<button
@@ -96,7 +96,7 @@
 		>
 			<!-- Image element with crossfade -->
 			<div class="imgTag" in:receive={{ key: 'imgTag' }} out:send={{ key: 'imgTag' }}>
-				<img src={imageSrc} alt={imageAlt} class="h-56 w-56 rounded-2xl" />
+				<img src={imageSrc} alt={imageAlt} class="h-48 w-48 sm:h-56 sm:w-56 rounded-2xl" />
 			</div>
 
 			<!-- Content area -->
@@ -128,7 +128,7 @@
 		>
 			<!-- Image element with crossfade -->
 			<div class="imgTag" in:receive={{ key: 'imgTag' }} out:send={{ key: 'imgTag' }}>
-				<img src={imageSrc} alt={imageAlt} class="h-32 w-36 rounded-2xl md:h-64 md:w-64" />
+				<img src={imageSrc} alt={imageAlt} class="h-28 w-28 sm:h-32 sm:w-36 md:h-56 md:w-56 rounded-2xl" />
 			</div>
 
 			<!-- Content area -->

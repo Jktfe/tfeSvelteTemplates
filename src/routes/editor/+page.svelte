@@ -407,6 +407,11 @@
 
 	.card-wrapper {
 		position: relative;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 400px; /* Provides space for animation */
+		padding: 2rem 1rem;
 	}
 
 	/* Card Actions */
@@ -546,6 +551,11 @@
 		.cards-grid {
 			grid-template-columns: 1fr;
 			gap: 1.5rem;
+		}
+
+		.card-wrapper {
+			min-height: 350px; /* Slightly shorter on mobile */
+			padding: 1.5rem 0.5rem;
 		}
 
 		.card-actions {
