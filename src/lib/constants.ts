@@ -21,7 +21,9 @@ import type {
 	CalendarDataPoint,
 	BubbleItem,
 	SunburstNode,
-	RadialClusterNode
+	RadialClusterNode,
+	GeoDataPoint,
+	GeoRegionData
 } from './types';
 
 /**
@@ -1831,3 +1833,219 @@ export const FALLBACK_RADIAL_CLUSTER_DATA: RadialClusterNode = {
 		}
 	]
 };
+
+// =============================================================================
+// GEO VISUALIZATION FALLBACK DATA
+// =============================================================================
+
+/**
+ * UK region data for choropleth map demos
+ * Population values in millions (2021 census data)
+ *
+ * Region IDs match ONS geography codes used in UK GeoJSON data
+ */
+export const FALLBACK_UK_REGION_DATA: GeoRegionData[] = [
+	{ regionId: 'E12000001', value: 2.65, label: 'North East' },
+	{ regionId: 'E12000002', value: 7.42, label: 'North West' },
+	{ regionId: 'E12000003', value: 5.48, label: 'Yorkshire and The Humber' },
+	{ regionId: 'E12000004', value: 4.88, label: 'East Midlands' },
+	{ regionId: 'E12000005', value: 5.95, label: 'West Midlands' },
+	{ regionId: 'E12000006', value: 6.35, label: 'East of England' },
+	{ regionId: 'E12000007', value: 8.80, label: 'London' },
+	{ regionId: 'E12000008', value: 9.28, label: 'South East' },
+	{ regionId: 'E12000009', value: 5.71, label: 'South West' },
+	{ regionId: 'W92000004', value: 3.11, label: 'Wales' },
+	{ regionId: 'S92000003', value: 5.47, label: 'Scotland' },
+	{ regionId: 'N92000002', value: 1.90, label: 'Northern Ireland' }
+];
+
+/**
+ * Fallback geo data points for bubble/spike map demos
+ * Major UK cities with population values
+ *
+ * Used when DATABASE_URL is not configured
+ * Population values in thousands
+ */
+export const FALLBACK_GEO_DATA_POINTS: GeoDataPoint[] = [
+	// Major cities - population category
+	{
+		id: 'london',
+		name: 'London',
+		lat: 51.5074,
+		long: -0.1278,
+		value: 8982,
+		category: 'population'
+	},
+	{
+		id: 'birmingham',
+		name: 'Birmingham',
+		lat: 52.4862,
+		long: -1.8904,
+		value: 1149,
+		category: 'population'
+	},
+	{
+		id: 'manchester',
+		name: 'Manchester',
+		lat: 53.4808,
+		long: -2.2426,
+		value: 553,
+		category: 'population'
+	},
+	{
+		id: 'leeds',
+		name: 'Leeds',
+		lat: 53.8008,
+		long: -1.5491,
+		value: 793,
+		category: 'population'
+	},
+	{
+		id: 'glasgow',
+		name: 'Glasgow',
+		lat: 55.8642,
+		long: -4.2518,
+		value: 635,
+		category: 'population'
+	},
+	{
+		id: 'liverpool',
+		name: 'Liverpool',
+		lat: 53.4084,
+		long: -2.9916,
+		value: 498,
+		category: 'population'
+	},
+	{
+		id: 'newcastle',
+		name: 'Newcastle',
+		lat: 54.9783,
+		long: -1.6178,
+		value: 302,
+		category: 'population'
+	},
+	{
+		id: 'sheffield',
+		name: 'Sheffield',
+		lat: 53.3811,
+		long: -1.4701,
+		value: 584,
+		category: 'population'
+	},
+	{
+		id: 'bristol',
+		name: 'Bristol',
+		lat: 51.4545,
+		long: -2.5879,
+		value: 467,
+		category: 'population'
+	},
+	{
+		id: 'edinburgh',
+		name: 'Edinburgh',
+		lat: 55.9533,
+		long: -3.1883,
+		value: 527,
+		category: 'population'
+	},
+	{
+		id: 'cardiff',
+		name: 'Cardiff',
+		lat: 51.4816,
+		long: -3.1791,
+		value: 369,
+		category: 'population'
+	},
+	{
+		id: 'belfast',
+		name: 'Belfast',
+		lat: 54.5973,
+		long: -5.9301,
+		value: 343,
+		category: 'population'
+	},
+	// Tech hubs - startup category
+	{
+		id: 'cambridge',
+		name: 'Cambridge',
+		lat: 52.2053,
+		long: 0.1218,
+		value: 145,
+		category: 'tech-hub',
+		color: '#10b981'
+	},
+	{
+		id: 'oxford',
+		name: 'Oxford',
+		lat: 51.752,
+		long: -1.2577,
+		value: 125,
+		category: 'tech-hub',
+		color: '#10b981'
+	},
+	{
+		id: 'reading',
+		name: 'Reading',
+		lat: 51.4543,
+		long: -0.9781,
+		value: 98,
+		category: 'tech-hub',
+		color: '#10b981'
+	}
+];
+
+/**
+ * Sample sales data by region for choropleth demos
+ * Values represent quarterly sales in £millions
+ */
+export const FALLBACK_SALES_BY_REGION: GeoRegionData[] = [
+	{ regionId: 'E12000001', value: 45.2, label: 'North East: £45.2M' },
+	{ regionId: 'E12000002', value: 128.5, label: 'North West: £128.5M' },
+	{ regionId: 'E12000003', value: 89.3, label: 'Yorkshire: £89.3M' },
+	{ regionId: 'E12000004', value: 72.1, label: 'East Midlands: £72.1M' },
+	{ regionId: 'E12000005', value: 95.8, label: 'West Midlands: £95.8M' },
+	{ regionId: 'E12000006', value: 156.2, label: 'East of England: £156.2M' },
+	{ regionId: 'E12000007', value: 342.7, label: 'London: £342.7M' },
+	{ regionId: 'E12000008', value: 198.4, label: 'South East: £198.4M' },
+	{ regionId: 'E12000009', value: 87.6, label: 'South West: £87.6M' },
+	{ regionId: 'W92000004', value: 52.3, label: 'Wales: £52.3M' },
+	{ regionId: 'S92000003', value: 94.1, label: 'Scotland: £94.1M' },
+	{ regionId: 'N92000002', value: 38.9, label: 'N. Ireland: £38.9M' }
+];
+
+/**
+ * URL for UK regions GeoJSON from ONS Open Geography Portal
+ * This is a simplified version suitable for web display
+ */
+export const UK_REGIONS_GEOJSON_URL =
+	'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2024_EN_BUC/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson';
+
+/**
+ * Alternative fallback: UK Countries GeoJSON URL
+ * Simpler geometry for faster loading
+ */
+export const UK_COUNTRIES_GEOJSON_URL =
+	'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Countries_December_2024_UK_BUC/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson';
+
+/**
+ * World countries GeoJSON for globe demos
+ * Low-resolution version for performance
+ */
+export const WORLD_GEOJSON_URL =
+	'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
+
+/**
+ * Default colour scales for geo visualizations
+ */
+export const GEO_COLOR_SCALES = {
+	/** Blue sequential scale for population/density */
+	blues: ['#f7fbff', '#deebf7', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594'],
+	/** Green sequential scale for environmental data */
+	greens: ['#f7fcf5', '#e5f5e0', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#005a32'],
+	/** Orange-Red sequential scale for sales/heat data */
+	orangeRed: ['#fff5eb', '#fee6ce', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04'],
+	/** Purple sequential scale */
+	purples: ['#fcfbfd', '#efedf5', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
+	/** Diverging red-white-blue for +/- values */
+	divergingRdBu: ['#67001f', '#b2182b', '#d6604d', '#f4a582', '#fddbc7', '#d1e5f0', '#92c5de', '#4393c3', '#2166ac', '#053061']
+} as const;
