@@ -358,7 +358,7 @@
 					<tr>
 						<td><code>fontFamily</code></td>
 						<td><code>string</code></td>
-						<td><code>'system-ui'</code></td>
+						<td><code>'system-ui, sans-serif'</code></td>
 						<td>Font family for labels</td>
 					</tr>
 					<tr>
