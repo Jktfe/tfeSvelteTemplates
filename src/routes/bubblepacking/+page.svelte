@@ -1,21 +1,12 @@
 <script lang="ts">
 	import BubblePacking from '$lib/components/BubblePacking.svelte';
-	import {
-		FALLBACK_BUBBLE_DATA,
-		FALLBACK_BUBBLE_DATA_HIERARCHICAL,
-		BUBBLE_COLOR_SCHEME
-	} from '$lib/constants';
+	import { FALLBACK_BUBBLE_DATA, BUBBLE_COLOR_SCHEME } from '$lib/constants';
 	import type { BubbleItem } from '$lib/types';
 
 	/**
 	 * Selected bubble for display
 	 */
 	let selectedBubble = $state<BubbleItem | null>(null);
-
-	/**
-	 * Active example tab
-	 */
-	let activeExample = $state<'basic' | 'custom-colors' | 'small' | 'no-force'>('basic');
 
 	/**
 	 * Alternative color schemes
@@ -53,8 +44,19 @@
 
 	/**
 	 * Calculate statistics from bubble data
+	 * Includes guard clause for empty data arrays
 	 */
 	const stats = $derived(() => {
+		// Guard clause: return defaults if data is empty
+		if (FALLBACK_BUBBLE_DATA.length === 0) {
+			return {
+				totalValue: 0,
+				count: 0,
+				groups: 0,
+				largestBubble: { id: '', label: 'N/A', value: 0 }
+			};
+		}
+
 		const totalValue = FALLBACK_BUBBLE_DATA.reduce((sum, b) => sum + b.value, 0);
 		const groups = new Set(FALLBACK_BUBBLE_DATA.map((b) => b.group)).size;
 		const largestBubble = FALLBACK_BUBBLE_DATA.reduce(
