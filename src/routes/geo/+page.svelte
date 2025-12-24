@@ -202,8 +202,8 @@
 		{#if selectedItem}
 			<div class="selection-info">
 				<strong>Selected:</strong>
-				{'name' in selectedItem ? selectedItem.name : ''}
-				{#if 'value' in selectedItem && selectedItem.value !== undefined}
+				{selectedItem.name}
+				{#if selectedItem.value !== undefined}
 					<span class="selection-value">
 						({selectedItem.value.toLocaleString('en-GB')})
 					</span>

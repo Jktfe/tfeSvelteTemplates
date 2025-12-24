@@ -252,7 +252,8 @@
 			<div class="legend-item">
 				<svg width={spikeWidth * 2 + 4} height={minSpikeHeight + 4}>
 					<path
-						d="M {spikeWidth + 2},{minSpikeHeight + 2} L {spikeWidth + 2 - spikeWidth/2},{minSpikeHeight + 2} L {spikeWidth + 2},{2} L {spikeWidth + 2 + spikeWidth/2},{minSpikeHeight + 2} Z"
+						d={getSpikePath(minSpikeHeight)}
+						transform="translate({spikeWidth + 2}, {minSpikeHeight + 2})"
 						fill={spikeColor}
 					/>
 				</svg>
@@ -261,7 +262,8 @@
 			<div class="legend-item">
 				<svg width={spikeWidth * 2 + 4} height={maxSpikeHeight + 4}>
 					<path
-						d="M {spikeWidth + 2},{maxSpikeHeight + 2} L {spikeWidth + 2 - spikeWidth/2},{maxSpikeHeight + 2} L {spikeWidth + 2},{2} L {spikeWidth + 2 + spikeWidth/2},{maxSpikeHeight + 2} Z"
+						d={getSpikePath(maxSpikeHeight)}
+						transform="translate({spikeWidth + 2}, {maxSpikeHeight + 2})"
 						fill={spikeColor}
 					/>
 				</svg>

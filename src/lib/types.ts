@@ -1809,7 +1809,7 @@ export interface GeoRegionData {
  * @property domain - Optional [min, max] domain (auto-calculated if not provided)
  */
 export interface GeoColorScale {
-	type: 'sequential' | 'diverging' | 'categorical';
+	type: 'sequential' | 'diverging';
 	colors: string[];
 	domain?: [number, number];
 }
