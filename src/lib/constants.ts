@@ -23,7 +23,8 @@ import type {
 	SunburstNode,
 	RadialClusterNode,
 	GeoDataPoint,
-	GeoRegionData
+	GeoRegionData,
+	ExplainerCanvasData
 } from './types';
 
 /**
@@ -2049,3 +2050,301 @@ export const GEO_COLOR_SCALES = {
 	/** Diverging red-white-blue for +/- values */
 	divergingRdBu: ['#67001f', '#b2182b', '#d6604d', '#f4a582', '#fddbc7', '#d1e5f0', '#92c5de', '#4393c3', '#2166ac', '#053061']
 } as const;
+
+// =============================================================================
+// EXPLAINER CANVAS FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback data for ExplainerCanvas component
+ * A sample Svelte 5 tutorial canvas for demo/testing
+ */
+export const FALLBACK_EXPLAINER_CANVAS_DATA: ExplainerCanvasData = {
+	id: 'svelte-5-fundamentals',
+	title: 'Svelte 5 Fundamentals',
+	description: 'An interactive guide to understanding Svelte 5 concepts',
+	defaultCardId: 'reactivity',
+	config: {
+		lineStyle: 'bezier',
+		background: { type: 'dots', color: 'rgba(0, 0, 0, 0.08)', size: 2, gap: 24 },
+		enableSearch: true,
+		maxZoomOut: 0.1,
+		maxZoomIn: 2
+	},
+	cards: [
+		{
+			id: 'reactivity',
+			title: 'Reactivity',
+			summary: 'How Svelte tracks and responds to state changes using runes',
+			position: { x: 0, y: 0 },
+			content: [
+				{
+					type: 'markdown',
+					content: `## Runes: The Heart of Svelte 5 Reactivity
+
+Svelte 5 introduces **runes** - special symbols that tell the compiler how to handle reactivity. Unlike Svelte 4's implicit reactivity, runes make reactive declarations explicit and more powerful.
+
+\`\`\`javascript
+// Reactive state
+let count = $state(0);
+
+// Derived values
+let doubled = $derived(count * 2);
+
+// Side effects
+$effect(() => {
+  console.log('Count is now:', count);
+});
+\`\`\`
+
+Runes work everywhere - in components, in regular \`.js\` files, and even in shared modules.`
+				}
+			],
+			links: ['components', 'effects'],
+			tooltips: [
+				{
+					term: 'runes',
+					definition: 'Special symbols starting with `$` that control reactivity in Svelte 5'
+				},
+				{
+					term: 'compiler',
+					definition: "Svelte's build-time tool that transforms .svelte files into optimised JavaScript"
+				}
+			],
+			children: [
+				{
+					id: 'state-rune',
+					title: '$state',
+					summary: 'Declare reactive state that triggers updates when changed',
+					position: { x: 0, y: 0 },
+					content: [
+						{
+							type: 'markdown',
+							content: `## The \`$state\` Rune
+
+The \`$state\` rune creates reactive variables. When you update a \`$state\` variable, Svelte automatically updates anything that depends on it.
+
+\`\`\`javascript
+let count = $state(0);
+
+// Objects and arrays are deeply reactive
+let user = $state({
+  name: 'Alice',
+  preferences: { theme: 'dark' }
+});
+
+// This triggers updates!
+user.preferences.theme = 'light';
+\`\`\`
+
+### Key Points
+- Works with primitives, objects, and arrays
+- Objects are **deeply reactive** by default
+- Use \`$state.raw()\` for non-reactive objects`
+						}
+					],
+					links: ['derived-rune']
+				},
+				{
+					id: 'derived-rune',
+					title: '$derived',
+					summary: 'Computed values that update automatically when dependencies change',
+					position: { x: 320, y: 0 },
+					content: [
+						{
+							type: 'markdown',
+							content: `## The \`$derived\` Rune
+
+Use \`$derived\` for values computed from other reactive state. They automatically update when their dependencies change.
+
+\`\`\`javascript
+let count = $state(0);
+let doubled = $derived(count * 2);
+let quadrupled = $derived(doubled * 2);
+
+// For complex derivations
+let filtered = $derived.by(() => {
+  return items.filter(item => item.active);
+});
+\`\`\`
+
+### When to Use
+- Computed values based on state
+- Filtered or transformed collections
+- Any value that depends on other reactive data`
+						}
+					],
+					links: ['state-rune']
+				}
+			]
+		},
+		{
+			id: 'components',
+			title: 'Components',
+			summary: 'Building blocks of Svelte applications with props and snippets',
+			position: { x: 400, y: 0 },
+			content: [
+				{
+					type: 'markdown',
+					content: `## Components in Svelte 5
+
+Components are reusable, self-contained pieces of UI. Svelte 5 introduces a new way to define props using the \`$props()\` rune.
+
+\`\`\`svelte
+<script>
+  let { name, count = 0 } = $props();
+</script>
+
+<h1>Hello, {name}!</h1>
+<p>Count: {count}</p>
+\`\`\`
+
+### New in Svelte 5
+- **\`$props()\`** for type-safe prop declarations
+- **Snippets** replace slots for content composition
+- **Bindable props** with \`$bindable()\``
+				}
+			],
+			links: ['reactivity', 'effects'],
+			children: [
+				{
+					id: 'props',
+					title: 'Props & $bindable',
+					summary: 'Passing data into components and two-way binding',
+					position: { x: 0, y: 0 },
+					content: [
+						{
+							type: 'markdown',
+							content: `## Props with \`$props()\`
+
+The \`$props()\` rune replaces \`export let\` for declaring component props.
+
+\`\`\`svelte
+<script lang="ts">
+  interface Props {
+    name: string;
+    count?: number;
+    onUpdate?: (value: number) => void;
+  }
+
+  let { name, count = 0, onUpdate }: Props = $props();
+</script>
+\`\`\`
+
+## Two-way Binding with \`$bindable()\`
+
+\`\`\`svelte
+<script>
+  let { value = $bindable(0) } = $props();
+</script>
+
+<input type="number" bind:value />
+\`\`\``
+						}
+					]
+				},
+				{
+					id: 'snippets',
+					title: 'Snippets',
+					summary: 'Reusable template fragments that replace slots',
+					position: { x: 320, y: 0 },
+					content: [
+						{
+							type: 'markdown',
+							content: `## Snippets: The New Slots
+
+Snippets are reusable template fragments that replace the slot system from Svelte 4.
+
+\`\`\`svelte
+<!-- Defining a snippet -->
+{#snippet greeting(name)}
+  <h1>Hello, {name}!</h1>
+{/snippet}
+
+<!-- Using a snippet -->
+{@render greeting('World')}
+
+<!-- Passing snippets as props -->
+<Card>
+  {#snippet header()}
+    <h2>Card Title</h2>
+  {/snippet}
+</Card>
+\`\`\`
+
+### Benefits
+- Can be passed as props
+- Support parameters
+- More explicit than slots`
+						}
+					]
+				}
+			]
+		},
+		{
+			id: 'effects',
+			title: 'Effects',
+			summary: 'Side effects and lifecycle management with $effect',
+			position: { x: 200, y: 250 },
+			content: [
+				{
+					type: 'markdown',
+					content: `## The \`$effect\` Rune
+
+Effects run code in response to state changes. They replace \`$:\` reactive statements and lifecycle functions.
+
+\`\`\`javascript
+$effect(() => {
+  // Runs when any reactive value inside changes
+  console.log('Count changed to:', count);
+
+  // Optional cleanup function
+  return () => {
+    console.log('Cleaning up...');
+  };
+});
+\`\`\`
+
+### Effect Variants
+- **\`$effect\`** - Runs after DOM updates
+- **\`$effect.pre\`** - Runs before DOM updates
+- **\`$effect.root\`** - Creates an isolated effect scope`
+				}
+			],
+			links: ['reactivity', 'components']
+		},
+		{
+			id: 'events',
+			title: 'Event Handling',
+			summary: 'Simplified event handling with standard JavaScript patterns',
+			position: { x: 550, y: 250 },
+			content: [
+				{
+					type: 'markdown',
+					content: `## Events in Svelte 5
+
+Svelte 5 simplifies event handling by using standard JavaScript callback props instead of custom event syntax.
+
+\`\`\`svelte
+<!-- Svelte 4 -->
+<button on:click={handleClick}>Click me</button>
+
+<!-- Svelte 5 -->
+<button onclick={handleClick}>Click me</button>
+
+<!-- With arguments -->
+<button onclick={() => handleClick(id)}>
+  Click me
+</button>
+\`\`\`
+
+### Key Changes
+- Use standard \`onclick\`, \`onchange\`, etc.
+- No more \`createEventDispatcher\`
+- Pass callback functions as props instead`
+				}
+			],
+			links: ['components']
+		}
+	]
+};
