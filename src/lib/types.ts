@@ -1402,6 +1402,77 @@ export interface CalendarDataPoint {
 	value: number;
 }
 
+// =============================================================================
+// SUNBURST CHART TYPES
+// =============================================================================
+
+/**
+ * Node in a Sunburst chart
+ * Represents a segment in the hierarchical radial visualization
+ *
+ * @property id - Unique identifier for the node
+ * @property name - Display name shown on the segment
+ * @property value - Size/value of the segment (determines arc width)
+ * @property color - Optional hex colour for the segment
+ * @property children - Optional array of child nodes for hierarchy
+ */
+export interface SunburstNode {
+	id: string;
+	name: string;
+	value?: number;
+	color?: string;
+	children?: SunburstNode[];
+}
+
+/**
+ * Internal node structure used during rendering
+ * Extends SunburstNode with computed arc coordinates
+ *
+ * @property x0 - Start angle in radians
+ * @property x1 - End angle in radians
+ * @property y0 - Inner radius (0-1 normalised)
+ * @property y1 - Outer radius (0-1 normalised)
+ * @property depth - Depth level in hierarchy (0 = root)
+ * @property parent - Reference to parent node (null for root)
+ */
+export interface SunburstArcNode extends SunburstNode {
+	x0: number;
+	x1: number;
+	y0: number;
+	y1: number;
+	depth: number;
+	parent: SunburstArcNode | null;
+	children?: SunburstArcNode[];
+}
+
+/**
+ * Props for Sunburst component
+ * Interactive hierarchical radial visualization with zoom functionality
+ *
+ * @property data - Root node of hierarchical data structure
+ * @property width - Chart width in pixels (default: 500)
+ * @property height - Chart height in pixels (default: 500)
+ * @property colorScheme - Array of colours for automatic colouring (default: categorical palette)
+ * @property showLabels - Show text labels on segments (default: true)
+ * @property labelMinAngle - Minimum angle in degrees to show label (default: 10)
+ * @property animationDuration - Transition duration in ms (default: 750)
+ * @property onNodeClick - Callback when a node is clicked
+ * @property tooltipFormatter - Custom tooltip formatter function
+ * @property class - Additional CSS classes for container
+ */
+export interface SunburstProps {
+	data: SunburstNode;
+	width?: number;
+	height?: number;
+	colorScheme?: string[];
+	showLabels?: boolean;
+	labelMinAngle?: number;
+	animationDuration?: number;
+	onNodeClick?: (node: SunburstNode) => void;
+	tooltipFormatter?: (node: SunburstNode) => string;
+	class?: string;
+}
+
 /**
  * Props for CalendarHeatmap component
  * GitHub-style contribution calendar with interactive features
