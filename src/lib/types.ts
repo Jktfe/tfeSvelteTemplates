@@ -1441,6 +1441,90 @@ export interface BubblePackingProps {
 }
 
 // =============================================================================
+// RADIAL CLUSTER TYPES (Hierarchical Tree Visualization)
+// =============================================================================
+
+/**
+ * Hierarchical node data for RadialCluster component
+ * Represents a node in a tree structure with optional children
+ *
+ * @property name - Display label for the node
+ * @property children - Optional array of child nodes (creates hierarchy)
+ * @property value - Optional numeric value for the node (for sizing or data)
+ */
+export interface RadialClusterNode {
+	name: string;
+	children?: RadialClusterNode[];
+	value?: number;
+}
+
+/**
+ * Internal node representation with computed layout positions
+ * Used internally by the RadialCluster component after layout calculation
+ *
+ * @property name - Display label for the node
+ * @property x - Computed angle position in radians (0 to 2π)
+ * @property y - Computed radius position from center
+ * @property depth - Node depth in the tree (0 = root)
+ * @property parent - Reference to parent node (null for root)
+ * @property children - Array of child nodes
+ * @property isLeaf - Whether this is a leaf node (no children)
+ */
+export interface RadialClusterLayoutNode {
+	name: string;
+	x: number; // angle in radians
+	y: number; // radius
+	depth: number;
+	parent: RadialClusterLayoutNode | null;
+	children: RadialClusterLayoutNode[];
+	isLeaf: boolean;
+}
+
+/**
+ * Props for RadialCluster component
+ * Interactive radial dendrogram/cluster tree visualization
+ *
+ * @property data - Hierarchical tree data structure
+ * @property width - Container width in pixels (default: 800)
+ * @property height - Container height in pixels (default: 800)
+ * @property innerRadius - Inner radius where root starts (default: 100)
+ * @property outerRadius - Outer radius where leaves end (default: calculated from size)
+ * @property nodeRadius - Radius of node circles in pixels (default: 3)
+ * @property nodeColorParent - Colour for parent nodes with children (default: '#555')
+ * @property nodeColorLeaf - Colour for leaf nodes (default: '#999')
+ * @property linkColor - Colour for connecting lines (default: '#555')
+ * @property linkOpacity - Opacity of connecting lines 0-1 (default: 0.4)
+ * @property linkWidth - Width of connecting lines in pixels (default: 1.5)
+ * @property fontSize - Font size for labels in pixels (default: 11)
+ * @property fontFamily - Font family for labels (default: 'system-ui, sans-serif')
+ * @property labelColor - Colour for text labels (default: '#333')
+ * @property showLabels - Whether to display node labels (default: true)
+ * @property rotateLabels - Rotate labels to follow radial direction (default: true)
+ * @property separation - Separation factor between sibling nodes (default: 1)
+ * @property class - Additional CSS classes for container
+ */
+export interface RadialClusterProps {
+	data: RadialClusterNode;
+	width?: number;
+	height?: number;
+	innerRadius?: number;
+	outerRadius?: number;
+	nodeRadius?: number;
+	nodeColorParent?: string;
+	nodeColorLeaf?: string;
+	linkColor?: string;
+	linkOpacity?: number;
+	linkWidth?: number;
+	fontSize?: number;
+	fontFamily?: string;
+	labelColor?: string;
+	showLabels?: boolean;
+	rotateLabels?: boolean;
+	separation?: number;
+	class?: string;
+}
+
+// =============================================================================
 // CALENDAR HEATMAP TYPES
 // =============================================================================
 
@@ -1454,6 +1538,77 @@ export interface BubblePackingProps {
 export interface CalendarDataPoint {
 	date: string;
 	value: number;
+}
+
+// =============================================================================
+// SUNBURST CHART TYPES
+// =============================================================================
+
+/**
+ * Node in a Sunburst chart
+ * Represents a segment in the hierarchical radial visualization
+ *
+ * @property id - Unique identifier for the node
+ * @property name - Display name shown on the segment
+ * @property value - Size/value of the segment (determines arc width)
+ * @property color - Optional hex colour for the segment
+ * @property children - Optional array of child nodes for hierarchy
+ */
+export interface SunburstNode {
+	id: string;
+	name: string;
+	value?: number;
+	color?: string;
+	children?: SunburstNode[];
+}
+
+/**
+ * Internal node structure used during rendering
+ * Extends SunburstNode with computed arc coordinates
+ *
+ * @property x0 - Start angle in radians
+ * @property x1 - End angle in radians
+ * @property y0 - Inner radius (0-1 normalised)
+ * @property y1 - Outer radius (0-1 normalised)
+ * @property depth - Depth level in hierarchy (0 = root)
+ * @property parent - Reference to parent node (null for root)
+ */
+export interface SunburstArcNode extends SunburstNode {
+	x0: number;
+	x1: number;
+	y0: number;
+	y1: number;
+	depth: number;
+	parent: SunburstArcNode | null;
+	children?: SunburstArcNode[];
+}
+
+/**
+ * Props for Sunburst component
+ * Interactive hierarchical radial visualization with zoom functionality
+ *
+ * @property data - Root node of hierarchical data structure
+ * @property width - Chart width in pixels (default: 500)
+ * @property height - Chart height in pixels (default: 500)
+ * @property colorScheme - Array of colours for automatic colouring (default: categorical palette)
+ * @property showLabels - Show text labels on segments (default: true)
+ * @property labelMinAngle - Minimum angle in degrees to show label (default: 10)
+ * @property animationDuration - Transition duration in ms (default: 750)
+ * @property onNodeClick - Callback when a node is clicked
+ * @property tooltipFormatter - Custom tooltip formatter function
+ * @property class - Additional CSS classes for container
+ */
+export interface SunburstProps {
+	data: SunburstNode;
+	width?: number;
+	height?: number;
+	colorScheme?: string[];
+	showLabels?: boolean;
+	labelMinAngle?: number;
+	animationDuration?: number;
+	onNodeClick?: (node: SunburstNode) => void;
+	tooltipFormatter?: (node: SunburstNode) => string;
+	class?: string;
 }
 
 /**
