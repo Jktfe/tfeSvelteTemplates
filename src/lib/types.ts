@@ -1902,3 +1902,157 @@ export interface GeoSpikeMapProps {
 	class?: string;
 }
 
+// =============================================================================
+// EXPLAINER CANVAS COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Position on the canvas (x/y coordinates)
+ * Used for card placement on the canvas
+ */
+export interface ExplainerPosition {
+	x: number;
+	y: number;
+}
+
+/**
+ * Content block types for ExplainerCanvas cards
+ * Cards can contain multiple content blocks of different types
+ */
+export type ExplainerContentBlock =
+	| { type: 'markdown'; content: string }
+	| { type: 'image'; src: string; alt?: string; caption?: string }
+	| { type: 'embed'; url: string; aspectRatio?: string };
+
+/**
+ * Tooltip definition for inline term explanations
+ * Terms are matched in content and show popup on hover
+ */
+export interface ExplainerTooltip {
+	term: string;
+	definition: string;
+}
+
+/**
+ * Card data structure for ExplainerCanvas
+ * Cards are the fundamental building blocks of the canvas
+ *
+ * @property id - Unique card identifier
+ * @property title - Card title text
+ * @property summary - Text shown when card is collapsed (plain text or brief markdown)
+ * @property content - Array of content blocks shown when expanded
+ * @property position - Placement on canvas (x/y coordinates)
+ * @property children - Nested sub-canvas cards (optional)
+ * @property links - IDs of related cards at same level (optional)
+ * @property tooltips - Inline term definitions (optional)
+ * @property meta - Extensible metadata (optional)
+ */
+export interface ExplainerCard {
+	id: string;
+	title: string;
+	summary: string;
+	content: ExplainerContentBlock[];
+	position: ExplainerPosition;
+	children?: ExplainerCard[];
+	links?: string[];
+	tooltips?: ExplainerTooltip[];
+	meta?: Record<string, unknown>;
+}
+
+/**
+ * Connection line style options
+ * Determines how lines between cards are drawn
+ */
+export type ConnectionLineStyle = 'straight' | 'bezier' | 'orthogonal';
+
+/**
+ * Canvas background options
+ * Various background styles for the canvas
+ */
+export type CanvasBackground =
+	| { type: 'none' }
+	| { type: 'dots'; color?: string; size?: number; gap?: number }
+	| { type: 'grid'; color?: string; size?: number }
+	| { type: 'custom'; css: string };
+
+/**
+ * Canvas configuration options
+ * Global settings for the ExplainerCanvas behaviour
+ */
+export interface ExplainerCanvasConfig {
+	lineStyle?: ConnectionLineStyle;
+	background?: CanvasBackground;
+	enableSearch?: boolean;
+	maxZoomOut?: number;
+	maxZoomIn?: number;
+}
+
+/**
+ * Complete ExplainerCanvas data structure
+ * Root data object containing all canvas content
+ *
+ * @property id - Unique canvas identifier
+ * @property title - Canvas title text
+ * @property description - Optional canvas description
+ * @property defaultCardId - Starting card (centred on load)
+ * @property cards - Array of top-level cards
+ * @property config - Optional configuration overrides
+ */
+export interface ExplainerCanvasData {
+	id: string;
+	title: string;
+	description?: string;
+	defaultCardId: string;
+	cards: ExplainerCard[];
+	config?: ExplainerCanvasConfig;
+}
+
+/**
+ * Props for ExplainerCanvas component
+ * Main entry point for the canvas visualisation
+ *
+ * @property data - Direct data object
+ * @property src - URL to JSON file (alternative to data)
+ * @property loader - Custom async loader function (alternative to data/src)
+ * @property initialCardId - Override defaultCardId from data
+ * @property class - Additional CSS classes
+ * @property lineStyle - Override config.lineStyle
+ * @property onNavigate - Callback when navigating to a card
+ * @property onExpand - Callback when a card is expanded
+ * @property onCollapse - Callback when a card is collapsed
+ * @property onSearch - Callback when search is performed
+ */
+export interface ExplainerCanvasProps {
+	data?: ExplainerCanvasData;
+	src?: string;
+	loader?: () => Promise<ExplainerCanvasData>;
+	initialCardId?: string;
+	class?: string;
+	lineStyle?: ConnectionLineStyle;
+	onNavigate?: (cardId: string, path: string[]) => void;
+	onExpand?: (cardId: string) => void;
+	onCollapse?: (cardId: string) => void;
+	onSearch?: (query: string, results: ExplainerCard[]) => void;
+}
+
+/**
+ * Viewport state for canvas pan/zoom
+ * Tracks the current view position and zoom level
+ */
+export interface ExplainerViewport {
+	x: number;
+	y: number;
+	zoom: number;
+}
+
+/**
+ * Search result with match context
+ * Used by the search panel to display results
+ */
+export interface ExplainerSearchResult {
+	card: ExplainerCard;
+	path: string[];
+	matchField: 'title' | 'summary' | 'content';
+	score: number;
+}
+
