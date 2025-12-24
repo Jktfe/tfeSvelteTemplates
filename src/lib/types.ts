@@ -1387,6 +1387,62 @@ export interface BeforeAfterProps {
 }
 
 // =============================================================================
+// BUBBLE PACKING TYPES
+// =============================================================================
+
+/**
+ * Bubble data item for BubblePacking component
+ * Represents a single bubble with value determining size
+ *
+ * @property id - Unique identifier for the bubble
+ * @property label - Display text for the bubble
+ * @property value - Numeric value determining bubble size
+ * @property color - Optional hex colour for the bubble fill
+ * @property group - Optional group name for categorisation/colouring
+ * @property children - Optional nested children for hierarchical packing
+ */
+export interface BubbleItem {
+	id: string;
+	label: string;
+	value: number;
+	color?: string;
+	group?: string;
+	children?: BubbleItem[];
+}
+
+/**
+ * Props for BubblePacking component
+ * Interactive circle packing visualization with force simulation
+ *
+ * @property data - Array of bubble items to display
+ * @property width - Container width in pixels (default: 600)
+ * @property height - Container height in pixels (default: 600)
+ * @property padding - Padding between circles in pixels (default: 3)
+ * @property colorScheme - Array of hex colours for group colouring (default: Tableau10 palette)
+ * @property showLabels - Show text labels on bubbles (default: true)
+ * @property labelThreshold - Minimum radius to show labels (default: 20)
+ * @property useForce - Use force simulation for smooth animation (default: true)
+ * @property onBubbleClick - Callback when a bubble is clicked
+ * @property onBubbleHover - Callback when a bubble is hovered
+ * @property tooltipFormatter - Custom tooltip formatter function
+ * @property class - Additional CSS classes
+ */
+export interface BubblePackingProps {
+	data: BubbleItem[];
+	width?: number;
+	height?: number;
+	padding?: number;
+	colorScheme?: string[];
+	showLabels?: boolean;
+	labelThreshold?: number;
+	useForce?: boolean;
+	onBubbleClick?: (bubble: BubbleItem) => void;
+	onBubbleHover?: (bubble: BubbleItem | null) => void;
+	tooltipFormatter?: (bubble: BubbleItem) => string;
+	class?: string;
+}
+
+// =============================================================================
 // CALENDAR HEATMAP TYPES
 // =============================================================================
 
