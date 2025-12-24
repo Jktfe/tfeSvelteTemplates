@@ -1726,3 +1726,179 @@ export interface CalendarHeatmapProps {
 	class?: string;
 }
 
+// =============================================================================
+// GEO VISUALIZATION TYPES (LayerChart Integration)
+// =============================================================================
+
+/**
+ * GeoJSON Feature properties for choropleth data
+ * Extends standard GeoJSON with our data values
+ *
+ * @property id - Unique region identifier (e.g., 'E12000001' for UK regions)
+ * @property name - Human-readable region name
+ * @property value - Data value for coloring (population, sales, etc.)
+ * @property label - Optional display label (defaults to name)
+ */
+export interface GeoRegionProperties {
+	id: string;
+	name: string;
+	value?: number;
+	label?: string;
+	[key: string]: unknown; // Allow additional properties from GeoJSON
+}
+
+/**
+ * Data point for geo bubble/spike visualizations
+ * Represents a single location with associated data
+ *
+ * @property id - Unique identifier
+ * @property name - Location name
+ * @property lat - Latitude in decimal degrees
+ * @property long - Longitude in decimal degrees
+ * @property value - Data value (determines bubble size or spike height)
+ * @property category - Optional category for filtering/styling
+ * @property color - Optional custom color override
+ */
+export interface GeoDataPoint {
+	id: string;
+	name: string;
+	lat: number;
+	long: number;
+	value: number;
+	category?: string;
+	color?: string;
+}
+
+/**
+ * Database row structure for geo data points
+ * Maps to schema defined in database/schema_geo.sql
+ */
+export interface GeoDataPointRow {
+	id: string;
+	name: string;
+	latitude: number;
+	longitude: number;
+	value: number;
+	category: string;
+	color: string | null;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * Region data for choropleth maps
+ * Links region IDs to data values
+ *
+ * @property regionId - Matches GeoJSON feature id
+ * @property value - Data value for coloring
+ * @property label - Optional tooltip label
+ */
+export interface GeoRegionData {
+	regionId: string;
+	value: number;
+	label?: string;
+}
+
+/**
+ * Colour scale configuration for geo visualizations
+ *
+ * @property type - Scale type: 'sequential' for gradients, 'diverging' for +/- values
+ * @property colors - Array of colors for the scale
+ * @property domain - Optional [min, max] domain (auto-calculated if not provided)
+ */
+export interface GeoColorScale {
+	type: 'sequential' | 'diverging' | 'categorical';
+	colors: string[];
+	domain?: [number, number];
+}
+
+/**
+ * Props for GeoChoropleth component
+ * SVG-based choropleth map using LayerChart
+ *
+ * @property geojson - GeoJSON FeatureCollection with region geometries
+ * @property data - Array of region data with values
+ * @property colorScale - Color scale configuration
+ * @property height - Container height in pixels (default: 500)
+ * @property showLegend - Show color legend (default: true)
+ * @property showTooltip - Show tooltip on hover (default: true)
+ * @property strokeColor - Border stroke color (default: '#fff')
+ * @property strokeWidth - Border stroke width (default: 1)
+ * @property onRegionClick - Callback when region is clicked
+ * @property onRegionHover - Callback when region is hovered
+ * @property class - Additional CSS classes
+ */
+export interface GeoChoroplethProps {
+	geojson: GeoJSON.FeatureCollection;
+	data?: GeoRegionData[];
+	colorScale?: GeoColorScale;
+	height?: number;
+	showLegend?: boolean;
+	showTooltip?: boolean;
+	strokeColor?: string;
+	strokeWidth?: number;
+	onRegionClick?: (region: GeoRegionProperties) => void;
+	onRegionHover?: (region: GeoRegionProperties | null) => void;
+	class?: string;
+}
+
+/**
+ * Props for GeoBubbleMap component
+ * Map with sized bubbles at geographic locations
+ *
+ * @property geojson - Optional background GeoJSON (country/region outlines)
+ * @property data - Array of data points with lat/long and values
+ * @property height - Container height in pixels (default: 500)
+ * @property minRadius - Minimum bubble radius in pixels (default: 4)
+ * @property maxRadius - Maximum bubble radius in pixels (default: 40)
+ * @property bubbleColor - Default bubble fill color (default: 'rgba(59, 130, 246, 0.6)')
+ * @property bubbleStroke - Bubble stroke color (default: '#fff')
+ * @property showLabels - Show labels on bubbles (default: false)
+ * @property showTooltip - Show tooltip on hover (default: true)
+ * @property onBubbleClick - Callback when bubble is clicked
+ * @property class - Additional CSS classes
+ */
+export interface GeoBubbleMapProps {
+	geojson?: GeoJSON.FeatureCollection;
+	data: GeoDataPoint[];
+	height?: number;
+	minRadius?: number;
+	maxRadius?: number;
+	bubbleColor?: string;
+	bubbleStroke?: string;
+	showLabels?: boolean;
+	showTooltip?: boolean;
+	onBubbleClick?: (point: GeoDataPoint) => void;
+	class?: string;
+}
+
+/**
+ * Props for GeoSpikeMap component
+ * Map with vertical spikes at geographic locations
+ *
+ * @property geojson - Optional background GeoJSON (country/region outlines)
+ * @property data - Array of data points with lat/long and values
+ * @property height - Container height in pixels (default: 500)
+ * @property minSpikeHeight - Minimum spike height in pixels (default: 5)
+ * @property maxSpikeHeight - Maximum spike height in pixels (default: 80)
+ * @property spikeWidth - Spike width at base in pixels (default: 3)
+ * @property spikeColor - Spike fill color (default: '#ef4444')
+ * @property showTooltip - Show tooltip on hover (default: true)
+ * @property onSpikeClick - Callback when spike is clicked
+ * @property class - Additional CSS classes
+ */
+export interface GeoSpikeMapProps {
+	geojson?: GeoJSON.FeatureCollection;
+	data: GeoDataPoint[];
+	height?: number;
+	minSpikeHeight?: number;
+	maxSpikeHeight?: number;
+	spikeWidth?: number;
+	spikeColor?: string;
+	showTooltip?: boolean;
+	onSpikeClick?: (point: GeoDataPoint) => void;
+	class?: string;
+}
+
