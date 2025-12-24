@@ -106,20 +106,6 @@
 	}
 
 	/**
-	 * Check if two circles overlap
-	 */
-	function circlesOverlap(
-		c1: { x: number; y: number; r: number },
-		c2: { x: number; y: number; r: number },
-		padding: number
-	): boolean {
-		const dx = c2.x - c1.x;
-		const dy = c2.y - c1.y;
-		const distance = Math.sqrt(dx * dx + dy * dy);
-		return distance < c1.r + c2.r + padding;
-	}
-
-	/**
 	 * Get unique groups from data for colour mapping
 	 */
 	function getGroups(items: BubbleItem[]): string[] {

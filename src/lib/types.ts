@@ -1399,7 +1399,6 @@ export interface BeforeAfterProps {
  * @property value - Numeric value determining bubble size
  * @property color - Optional hex colour for the bubble fill
  * @property group - Optional group name for categorisation/colouring
- * @property children - Optional nested children for hierarchical packing
  */
 export interface BubbleItem {
 	id: string;
@@ -1407,7 +1406,6 @@ export interface BubbleItem {
 	value: number;
 	color?: string;
 	group?: string;
-	children?: BubbleItem[];
 }
 
 /**
