@@ -11,15 +11,13 @@ A collection of reusable, well-documented Svelte 5 component templates. Each com
 
 ## 📚 Available Templates
 
-### 1. CardStack Component (4 variants)
+### 1. CardStack Component (2 variants)
 
 Interactive horizontal card displays with hover and swipe interactions. Perfect for image galleries, product showcases, or content carousels.
 
 **Variants:**
-- [`CardStack.svelte`](src/lib/components/CardStack.svelte) - Basic CSS-only version
-- [`CardStackAdvanced.svelte`](src/lib/components/CardStackAdvanced.svelte) - Enhanced with swipe gestures and keyboard navigation
-- [`CardStackMotionSpring.svelte`](src/lib/components/CardStackMotionSpring.svelte) - Spring physics animations via svelte-motion
-- [`CardStackMotionFlip.svelte`](src/lib/components/CardStackMotionFlip.svelte) - FLIP animation technique
+- [`CardStack.svelte`](src/lib/components/CardStack.svelte) - Interactive selection with direction-detecting hover, keyboard nav, swipe gestures
+- [`CardStackMotionFlip.svelte`](src/lib/components/CardStackMotionFlip.svelte) - 3D roll effect with 4-directional swipe using FLIP animation
 
 ### 2. Marquee Component (2 variants)
 

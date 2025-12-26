@@ -7,7 +7,6 @@
 
 <script lang="ts">
   import CardStack from "$lib/components/CardStack.svelte";
-  import CardStackAdvanced from "$lib/components/CardStackAdvanced.svelte";
   import CardStackMotionFlip from "$lib/components/CardStackMotionFlip.svelte";
   import DatabaseStatus from "$lib/components/DatabaseStatus.svelte";
   import type { PageData } from "./$types";
@@ -36,17 +35,18 @@
       <DatabaseStatus usingDatabase={data.usingDatabase} class="status-badge" />
     </header>
 
-    <!-- Basic CardStack Example -->
+    <!-- CardStack Example -->
     <section class="demo-section">
       <div class="section-header">
-        <h2>Basic CardStack</h2>
-        <div class="badge">Default</div>
+        <h2>CardStack</h2>
+        <div class="badge badge-premium">Interactive</div>
       </div>
 
       <p class="description">
-        Cards arranged in a horizontal overlapping row. <strong>Hover</strong>
-        to preview a card (it rises but stays partially behind its neighbour),
-        then <strong>click</strong> to select and fully reveal it. Perfect for showcasing
+        Cards arranged in a horizontal overlapping row with direction-detecting hover.
+        <strong>Hover</strong> to preview a card (it rises and shifts based on cursor entry direction),
+        then <strong>click</strong> to select and fully reveal it. Use <strong>arrow keys</strong>
+        to navigate between cards, or <strong>swipe</strong> on mobile. Perfect for showcasing
         products, portfolios, or image galleries.
       </p>
 
@@ -78,50 +78,10 @@
   cards={cards}
   cardWidth={350}
   cardHeight={450}
-/>`}</code
-          ></pre>
-      </details>
-    </section>
+/>
 
-    <!-- Advanced CardStack Example -->
-    <section class="demo-section">
-      <div class="section-header">
-        <h2>CardStack Advanced</h2>
-        <div class="badge badge-premium">Enhanced</div>
-      </div>
-
-      <p class="description">
-        Enhanced version with the same two-stage interaction: <strong
-          >hover to preview, click to reveal</strong
-        >. Adds swipe-to-cycle on mobile (swipe left/right to roll cards through
-        the stack) and keyboard navigation on desktop (arrow keys).
-      </p>
-
-      <div class="demo-container">
-        <CardStackAdvanced cards={data.cards} />
-      </div>
-
-      <!-- Usage Example -->
-      <details class="code-block">
-        <summary>View Code Example</summary>
-        <pre><code
-            >{`${'<'}script>
-  import CardStackAdvanced from '$lib/components/CardStackAdvanced.svelte';
-
-  const cards = [
-    {
-      image: '/path/to/image.jpg',
-      title: 'Card Title',
-      content: 'Card description or HTML content'
-    },
-    // ... more cards
-  ];
-</script>
-
-<CardStackAdvanced cards={cards} />
-
-<!-- Supports keyboard navigation -->
-<!-- Press ← and → arrow keys to navigate -->`}</code
+<!-- Keyboard: ← → to navigate, Escape to deselect -->
+<!-- Mobile: swipe left/right to navigate -->`}</code
           ></pre>
       </details>
     </section>
@@ -190,25 +150,23 @@
         </div>
         <div class="feature">
           <div class="feature-icon">📱</div>
-          <h3>Swipe to Cycle</h3>
+          <h3>Swipe Navigation</h3>
           <p>
-            Mobile swipe gestures roll cards through the stack (Advanced &
-            Motion versions)
+            Mobile swipe gestures navigate between cards (CardStack) or roll them through the stack (Motion Flip)
           </p>
         </div>
         <div class="feature">
           <div class="feature-icon">⚡</div>
           <h3>Smooth Animations</h3>
           <p>
-            Cubic-bezier easing for natural transitions, or spring physics for
-            bouncy motion
+            Cubic-bezier easing for natural transitions with zero external animation dependencies
           </p>
         </div>
         <div class="feature">
           <div class="feature-icon">🎯</div>
-          <h3>Drag to Cycle</h3>
+          <h3>Direction Detection</h3>
           <p>
-            Pull and release cards horizontally with momentum (Motion Spring)
+            Hover from left or right - the card shifts in the opposite direction for natural feedback
           </p>
         </div>
         <div class="feature">
@@ -228,8 +186,7 @@
           <div class="feature-icon">⌨️</div>
           <h3>Keyboard Support</h3>
           <p>
-            Arrow key navigation cycles through cards (Advanced & Motion
-            versions)
+            Arrow keys navigate between cards - Escape to deselect (both versions)
           </p>
         </div>
         <div class="feature">
@@ -254,10 +211,8 @@
           <p>
             Copy your chosen component from <code>src/lib/components/</code> to
             your project:
-            <code>CardStack.svelte</code>,
-            <code>CardStackAdvanced.svelte</code>,
-            <code>CardStackMotionSpring.svelte</code>, or
-            <code>CardStackMotionFlip.svelte</code>.
+            <code>CardStack.svelte</code> for interactive selection with direction-detecting hover, or
+            <code>CardStackMotionFlip.svelte</code> for 3D rolling card deck with 4-directional swipe.
           </p>
         </div>
       </div>
