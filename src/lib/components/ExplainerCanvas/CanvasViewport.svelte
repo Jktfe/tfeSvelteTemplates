@@ -113,11 +113,15 @@
 	}
 
 	/**
-	 * Handle wheel events for zoom
+	 * Handle wheel events for zoom (only when Shift is held)
+	 * Without Shift, normal scroll is allowed for page navigation
 	 */
 	function handleWheel(e: WheelEvent) {
 		if (!panzoomInstance) return;
-		panzoomInstance.zoomWithWheel(e);
+		// Only zoom when Shift is held, otherwise allow normal scroll
+		if (e.shiftKey) {
+			panzoomInstance.zoomWithWheel(e);
+		}
 	}
 
 	onMount(() => {
@@ -141,7 +145,7 @@
 		contentRef.addEventListener('panzoomchange', handlePanzoomChange);
 		contentRef.addEventListener('panzoomend', handlePanzoomChange);
 
-		// Enable scroll wheel zoom
+		// Enable Shift+scroll wheel zoom (normal scroll allowed for navigation)
 		containerRef?.addEventListener('wheel', handleWheel);
 	});
 
