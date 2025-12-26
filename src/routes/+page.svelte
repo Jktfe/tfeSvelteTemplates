@@ -14,7 +14,7 @@
     href: string;
     icon: string;
     features: string[];
-    status: "ready" | "coming-soon";
+    status: "ready" | "new" | "coming-soon";
   }
 
   interface IntegrationCard {
@@ -312,6 +312,90 @@
       ],
       status: "ready",
     },
+    {
+      title: "Geo",
+      description:
+        "Interactive choropleth maps and data visualization for geographic data. Features TopoJSON-based UK maps with bubble overlays, spike maps for point data, and choropleth colouring for regional statistics.",
+      href: "/geo",
+      icon: "🌍",
+      features: [
+        "UK choropleth maps",
+        "Bubble map overlays",
+        "Spike map visualization",
+        "Interactive tooltips",
+      ],
+      status: "new",
+    },
+    {
+      title: "BubblePacking",
+      description:
+        "Interactive circle packing visualization using D3.js force simulation. Bubbles dynamically size and position based on data values, with smooth animations, grouping support, and interactive tooltips.",
+      href: "/bubblepacking",
+      icon: "🫧",
+      features: [
+        "D3 force simulation",
+        "Dynamic sizing by value",
+        "Group colour coding",
+        "Interactive tooltips",
+      ],
+      status: "new",
+    },
+    {
+      title: "RadialCluster",
+      description:
+        "Hierarchical radial dendrogram for visualizing tree structures. Native SVG implementation with radial layout, curved links, and configurable styling. Perfect for organization charts, file trees, and taxonomies.",
+      href: "/radialcluster",
+      icon: "🎯",
+      features: [
+        "Radial tree layout",
+        "Curved link paths",
+        "Configurable styling",
+        "Hierarchical data support",
+      ],
+      status: "new",
+    },
+    {
+      title: "Sunburst",
+      description:
+        "Interactive sunburst chart for hierarchical data visualization. Built with Unovis library, featuring drill-down navigation, breadcrumb trails, and smooth transitions between hierarchy levels.",
+      href: "/sunburst",
+      icon: "☀️",
+      features: [
+        "Drill-down navigation",
+        "Breadcrumb trails",
+        "Smooth transitions",
+        "Hierarchical visualization",
+      ],
+      status: "new",
+    },
+    {
+      title: "DomeGallery",
+      description:
+        "3D spherical image gallery with drag rotation and click-to-enlarge. Images are positioned on a virtual sphere surface, with inertia-based physics for natural rotation feel. Touch and mouse support.",
+      href: "/domegallery",
+      icon: "🎪",
+      features: [
+        "3D sphere projection",
+        "Drag rotation with inertia",
+        "Click to enlarge",
+        "Touch and mouse support",
+      ],
+      status: "new",
+    },
+    {
+      title: "ExplainerCanvas",
+      description:
+        "Interactive knowledge visualization with connected cards. Create concept maps, documentation flows, and relationship diagrams. Features drag-and-drop canvas, zoom/pan navigation, markdown support, and arrow connections.",
+      href: "/explainercanvas",
+      icon: "🎓",
+      features: [
+        "Concept mapping",
+        "Drag-and-drop canvas",
+        "Zoom and pan navigation",
+        "Markdown content support",
+      ],
+      status: "new",
+    },
   ];
 </script>
 
@@ -354,9 +438,6 @@
               <div class="card-header">
                 <span class="card-icon">{component.icon}</span>
                 <h3 class="card-title">{component.title}</h3>
-                {#if component.status === "coming-soon"}
-                  <span class="badge badge-soon">Coming Soon</span>
-                {/if}
               </div>
 
               <p class="card-description">{component.description}</p>
@@ -529,12 +610,14 @@
 <style>
   .page {
     padding: 4rem 0;
+    overflow-x: hidden;
   }
 
   .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 2rem;
+    overflow-x: hidden;
   }
 
   /* Hero Section */
@@ -578,21 +661,22 @@
 
   .components-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
     gap: 2rem;
   }
 
   .component-card {
     display: flex;
     flex-direction: column;
-    padding: 2.5rem;
+    padding: 2rem;
     background: #ffffff;
     text-decoration: none;
     transition: all 0.25s ease;
     position: relative;
-    overflow: hidden;
     height: 100%;
     border-radius: 14px;
+    box-sizing: border-box;
+    max-width: 100%;
   }
 
   .component-card::before {
@@ -619,36 +703,26 @@
   .card-header {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.75rem;
     margin-bottom: 1.5rem;
     position: relative;
     z-index: 1;
+    flex-wrap: wrap;
   }
 
   .card-icon {
-    font-size: 2.5rem;
+    font-size: 2rem;
     line-height: 1;
+    flex-shrink: 0;
   }
 
   .card-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
     color: #1a202c;
-    line-height: 1;
-  }
-
-  .badge {
-    margin-left: auto;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-  }
-
-  .badge-soon {
-    background: #edf2f7;
-    color: #718096;
+    line-height: 1.2;
+    word-break: break-word;
   }
 
   .card-description {
@@ -905,20 +979,58 @@
 
   /* Responsive */
   @media (max-width: 768px) {
+    .page {
+      padding: 2rem 0;
+    }
+
+    .container {
+      padding: 0 1rem;
+    }
+
     .hero-title {
-      font-size: 2.5rem;
+      font-size: 2rem;
     }
 
     .hero-subtitle {
-      font-size: 1.1rem;
+      font-size: 1rem;
     }
 
     .section-title {
-      font-size: 1.75rem;
+      font-size: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .components-grid {
       grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    .component-card {
+      padding: 1.5rem;
+    }
+
+    .card-header {
+      gap: 0.5rem;
+    }
+
+    .card-icon {
+      font-size: 1.75rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+    }
+
+    .card-description {
+      font-size: 0.9rem;
+    }
+
+    .feature-item {
+      font-size: 0.875rem;
+    }
+
+    .view-demo {
+      font-size: 0.9rem;
     }
 
     .info-section {
@@ -931,6 +1043,7 @@
     .step {
       flex-direction: column;
       gap: 1rem;
+      padding: 1.5rem;
     }
 
     .integrations-section {
@@ -942,6 +1055,10 @@
 
     .integrations-grid {
       grid-template-columns: 1fr;
+    }
+
+    .integration-card {
+      padding: 1.5rem;
     }
   }
 </style>
