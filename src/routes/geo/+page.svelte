@@ -176,7 +176,7 @@
 				/>
 			{:else if activeExample === 'bubble'}
 				<GeoBubbleMap
-					geojson={data.geojson}
+					geojson={data.countriesGeojson}
 					data={cityData}
 					height={550}
 					minRadius={6}
@@ -187,7 +187,7 @@
 				/>
 			{:else}
 				<GeoSpikeMap
-					geojson={data.geojson}
+					geojson={data.countriesGeojson}
 					data={cityData}
 					height={550}
 					minSpikeHeight={8}

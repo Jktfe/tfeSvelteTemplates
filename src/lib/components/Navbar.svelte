@@ -1,11 +1,17 @@
 <!--
   ============================================================
-  NAVBAR COMPONENT
+  Navbar - Responsive Navigation with Sliding Panel
   ============================================================
 
-  🎯 WHAT IT DOES
+  [CR] WHAT IT DOES
   A responsive navigation bar with a hamburger menu that opens a left-side
-  sliding panel. Now with collapsible category sections for 28+ components!
+  sliding panel. Features collapsible category sections for organising 28+
+  components into logical groups with smooth animations and full a11y support.
+
+  [NTL] THE SIMPLE VERSION
+  This is the menu bar at the top of every page! Click the hamburger button
+  (those three lines) and a panel slides in from the left with all the
+  navigation options organised into categories you can expand and collapse.
 
   ✨ FEATURES
   • Hamburger button that transforms into an X when open
@@ -25,6 +31,12 @@
   📦 DEPENDENCIES
   Zero external dependencies (except optional Clerk for auth)
 
+  ⚠️ WARNINGS
+  • a11y_no_noninteractive_element_interactions: Intentional - nav element needs
+    keyboard handling for Escape key and focus trap (WCAG 2.1.1, 2.4.3)
+  • CSS :global() selectors: Required because ClerkProvider breaks Svelte 5
+    reactivity, forcing manual DOM manipulation that needs unscoped CSS
+
   🎨 USAGE
   <Navbar {menuCategories} currentPageTitle="Home" isClerkConfigured={true} />
 
@@ -43,34 +55,51 @@
 -->
 
 <script lang="ts">
+	// =========================================================================
+	// [CR] IMPORTS
+	// [NTL] These bring in the tools we need - Svelte helpers, types, and auth UI
+	// =========================================================================
+
 	import { untrack } from 'svelte';
 	import type { NavbarProps, MenuCategory } from '$lib/types';
 	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
 	import { lockScroll } from '$lib/scrollLock';
 
+	// =========================================================================
+	// [CR] PROPS - All configurable options with sensible defaults
+	// [NTL] These are the settings you pass when using the Navbar component
+	// =========================================================================
+
 	let {
-		menuCategories = [],
-		menuItems = [],
-		currentPageTitle = 'Home',
-		logoIcon = '⚡',
-		logoText = 'Svelte Templates',
-		logoHref = '/',
-		isClerkConfigured = false
+		menuCategories = [],      // [NTL] Navigation items grouped by category
+		menuItems = [],           // [NTL] Legacy flat list (for backwards compatibility)
+		currentPageTitle = 'Home', // [NTL] Shows which page you're on
+		logoIcon = '⚡',          // [NTL] The emoji/icon next to the logo
+		logoText = 'Svelte Templates', // [NTL] The text in the logo
+		logoHref = '/',           // [NTL] Where clicking the logo takes you
+		isClerkConfigured = false // [NTL] Whether authentication is enabled
 	}: NavbarProps = $props();
 
-	// Track which categories are expanded (by category name)
-	// Start with all categories collapsed - they'll expand when clicked
+	// =========================================================================
+	// [CR] CATEGORY EXPANSION STATE
+	// [NTL] This tracks which menu categories are currently open/closed.
+	//       Think of it like an accordion - only some sections are expanded!
+	// =========================================================================
+
+	// [CR] Using a Set for O(1) lookup performance when checking expanded state
 	let expandedCategories = $state<Set<string>>(new Set());
 
-	// Auto-expand the category containing the active page on initial render
-	// Uses untrack to prevent infinite loop (write without creating dependency)
+	// [CR] Auto-expand the category containing the active page on initial render
+	// [NTL] When the page loads, we automatically open the section that contains
+	//       the current page - so users can see where they are in the menu!
 	$effect(() => {
-		// Only depend on menuCategories, not expandedCategories
+		// [CR] Only depend on menuCategories, not expandedCategories (avoid infinite loop)
 		const activeCategory = menuCategories.find((category) =>
 			category.items.some((item) => item.active)
 		);
 		if (activeCategory) {
-			// Write without creating a dependency on expandedCategories
+			// [CR] Uses untrack() to write state without creating a reactive dependency
+			// [NTL] This prevents the effect from running forever in a loop
 			untrack(() => {
 				expandedCategories.add(activeCategory.name);
 				expandedCategories = new Set(expandedCategories);
@@ -78,36 +107,54 @@
 		}
 	});
 
+	// [CR] Toggle category expansion - add if missing, remove if present
 	function toggleCategory(categoryName: string) {
 		if (expandedCategories.has(categoryName)) {
 			expandedCategories.delete(categoryName);
 		} else {
 			expandedCategories.add(categoryName);
 		}
-		// Trigger Svelte reactivity by creating a new Set
+		// [CR] Create new Set to trigger Svelte 5 reactivity (Sets are reference-compared)
 		expandedCategories = new Set(expandedCategories);
 	}
 
+	// [CR] Helper function for checking expansion state
 	function isCategoryExpanded(categoryName: string): boolean {
 		return expandedCategories.has(categoryName);
 	}
 
+	// =========================================================================
+	// [CR] PANEL STATE
+	// [NTL] This controls whether the sliding menu panel is open or closed
+	// =========================================================================
+
 	let isPanelOpen = $state(false);
 
-	// Workaround for Svelte 5 reactivity issue with ClerkProvider
-	// Force DOM updates by using derived class strings
+	// [CR] Workaround for Svelte 5 reactivity issue with ClerkProvider
+	// [NTL] ClerkProvider sometimes breaks Svelte's automatic updates, so we
+	//       calculate the CSS class names manually to ensure they always update
 	let panelClass = $derived(isPanelOpen ? 'panel open' : 'panel');
 	let hamburgerClass = $derived(isPanelOpen ? 'hamburger-button open' : 'hamburger-button');
 
-	// Scroll lock cleanup function - coordinated via scrollLock utility
-	// This prevents conflicts with other components (Editor, FolderFiles) that also lock scroll
+	// =========================================================================
+	// [CR] SCROLL LOCK MANAGEMENT
+	// [NTL] When the menu is open, we stop the page from scrolling behind it.
+	//       This shared utility prevents conflicts with other components.
+	// =========================================================================
+
 	let unlockScroll: (() => void) | null = null;
+
+	// =========================================================================
+	// [CR] PANEL TOGGLE FUNCTIONS
+	// [NTL] These handle opening/closing the sliding menu panel
+	// =========================================================================
 
 	function togglePanel() {
 		isPanelOpen = !isPanelOpen;
 
-		// WORKAROUND: Force DOM update since ClerkProvider breaks Svelte 5 reactivity
-		// This is a temporary fix until svelte-clerk is updated for Svelte 5 compatibility
+		// [CR] WORKAROUND: Force DOM update since ClerkProvider breaks Svelte 5 reactivity
+		// [NTL] Sometimes Svelte doesn't update the screen properly when Clerk is running,
+		//       so we manually add/remove CSS classes to make sure the animation works
 		if (typeof document !== 'undefined') {
 			const panel = document.getElementById('panel-menu');
 			const button = document.querySelector('.hamburger-button, [class*="hamburger-button"]');
@@ -125,7 +172,7 @@
 	function closePanel() {
 		isPanelOpen = false;
 
-		// WORKAROUND: Force DOM update
+		// [CR] WORKAROUND: Force DOM update (same ClerkProvider issue as togglePanel)
 		if (typeof document !== 'undefined') {
 			const panel = document.getElementById('panel-menu');
 			const button = document.querySelector('.hamburger-button, [class*="hamburger-button"]');
@@ -135,35 +182,40 @@
 		}
 	}
 
-	// Reference to the panel element for focus management
+	// =========================================================================
+	// [CR] KEYBOARD ACCESSIBILITY
+	// [NTL] These functions make sure keyboard users can navigate the menu
+	//       just as easily as mouse users - this is super important for a11y!
+	// =========================================================================
+
+	// [CR] Reference to the panel element for focus management
 	let panelElement: HTMLElement | null = null;
 
-	/**
-	 * Handle keyboard events on the panel (element-scoped, not window-level)
-	 * This is more robust and encapsulated than attaching to window
-	 */
+	// [CR] Handle keyboard events on the panel (element-scoped, not window-level)
+	// [NTL] When you press Escape, the menu closes - nice and intuitive!
 	function handlePanelKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape') {
 			closePanel();
 		}
 	}
 
-	/**
-	 * Focus trap for panel accessibility (WCAG 2.4.3)
-	 * Keeps Tab/Shift+Tab navigation within the panel when open
-	 */
+	// [CR] Focus trap for panel accessibility (WCAG 2.4.3)
+	// [NTL] This is clever! When you Tab through the menu, it wraps around instead
+	//       of letting focus escape to the page behind. Like a merry-go-round!
 	function setupFocusTrap(node: HTMLElement) {
 		panelElement = node;
 
 		function handleFocusTrap(e: KeyboardEvent) {
 			if (e.key !== 'Tab') return;
 
+			// [CR] Find all focusable elements in the panel
 			const focusableElements = node.querySelectorAll<HTMLElement>(
 				'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
 			);
 			const firstElement = focusableElements[0];
 			const lastElement = focusableElements[focusableElements.length - 1];
 
+			// [CR] Wrap focus from last to first (or first to last with Shift+Tab)
 			if (e.shiftKey && document.activeElement === firstElement) {
 				e.preventDefault();
 				lastElement?.focus();
@@ -175,6 +227,7 @@
 
 		node.addEventListener('keydown', handleFocusTrap);
 
+		// [CR] Svelte action cleanup pattern - remove listener when component unmounts
 		return {
 			destroy() {
 				node.removeEventListener('keydown', handleFocusTrap);
@@ -183,21 +236,25 @@
 		};
 	}
 
-	// Manage scroll lock and focus based on panel state
+	// =========================================================================
+	// [CR] PANEL STATE SIDE EFFECTS
+	// [NTL] When the panel opens/closes, we need to do a few housekeeping tasks
+	// =========================================================================
+
 	$effect(() => {
 		if (isPanelOpen) {
-			// Lock scroll when panel opens
+			// [CR] Lock scroll when panel opens to prevent background scrolling
 			unlockScroll = lockScroll();
-			// Focus the panel for keyboard navigation
-			// Use setTimeout to ensure panel is rendered before focusing
+			// [CR] Focus the panel for keyboard navigation after render
+			// [NTL] The setTimeout ensures the panel is visible before we try to focus it
 			setTimeout(() => panelElement?.focus(), 0);
 		} else if (unlockScroll) {
-			// Unlock scroll when panel closes
+			// [CR] Unlock scroll when panel closes
 			unlockScroll();
 			unlockScroll = null;
 		}
 
-		// Cleanup on component unmount
+		// [CR] Cleanup on component unmount - always unlock scroll!
 		return () => {
 			if (unlockScroll) {
 				unlockScroll();

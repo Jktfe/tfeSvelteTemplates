@@ -1,22 +1,27 @@
 <!--
+  ============================================================
   MapBasic.svelte - Simple Interactive Map Component
+  ============================================================
 
-  A self-contained, copy-paste ready interactive map using Leaflet.js and OpenStreetMap tiles.
+  [CR] WHAT IT DOES
+  A self-contained interactive map using Leaflet.js and OpenStreetMap tiles.
   This component provides the foundation for more complex map components.
+  Handles SSR safely by only initialising Leaflet on the client side.
 
-  Features:
-  - Pan and zoom controls
-  - OpenStreetMap tile layer
-  - Keyboard navigation support
-  - Respects prefers-reduced-motion
-  - SSR safe (client-side only initialization)
+  [NTL] THE SIMPLE VERSION
+  This is your basic map widget! It shows a scrollable, zoomable map
+  that starts centered wherever you tell it. Think Google Maps but simpler.
+  Other map components build on top of this one.
 
-  Usage:
+  FEATURES
+  • Pan and zoom controls
+  • OpenStreetMap tile layer (free!)
+  • Keyboard navigation support
+  • Respects prefers-reduced-motion
+  • SSR safe (client-side only initialization)
+
+  USAGE
   ```svelte
-  <script>
-    import MapBasic from '$lib/components/MapBasic.svelte';
-  </script>
-
   <MapBasic
     center={{ lat: 51.5074, lng: -0.1278 }}
     zoom={13}
@@ -24,12 +29,12 @@
   />
   ```
 
-  Dependencies:
-  - leaflet (npm install leaflet @types/leaflet)
-  - Leaflet CSS (add to app.html or import globally)
+  DEPENDENCIES
+  • leaflet - Industry-standard map library (too complex to build natively)
+  • Leaflet CSS (add to app.html or import globally)
 
-  @author TFE Svelte Templates
-  @version 1.0.0
+  ============================================================
+  @component
 -->
 <script lang="ts">
 	import type { MapBasicProps, LatLng } from '$lib/types';

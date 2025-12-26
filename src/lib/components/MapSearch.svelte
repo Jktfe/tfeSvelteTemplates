@@ -1,25 +1,34 @@
 <!--
+  ============================================================
   MapSearch.svelte - Map with Location Search
+  ============================================================
 
-  Interactive map with location search functionality using OpenStreetMap's Nominatim geocoding API.
-  Built on top of MapBasic with added search UI and autocomplete.
+  [CR] WHAT IT DOES
+  Interactive map with location search using OpenStreetMap's Nominatim geocoding
+  API. Implements debounced search (300ms default) to respect API rate limits,
+  keyboard navigation for accessibility (Arrow keys, Enter, Escape), and
+  automatic bounding box zoom for optimal view of selected locations.
 
-  Features:
-  - Location search with autocomplete dropdown
-  - Debounced search requests (respects Nominatim rate limits)
-  - Keyboard navigation for search results
-  - Visual marker at selected location
-  - SSR safe (client-side only)
-  - Accessible search interface
+  [NTL] THE SIMPLE VERSION
+  This is your "find a place" map! Type an address or place name in the search
+  box, pick from the dropdown suggestions, and the map zooms right to it with
+  a pin. It's like having Google Maps search built into your own map widget!
 
-  Usage:
+  FEATURES
+  • Location search with autocomplete dropdown
+  • Debounced search (300ms) - respects Nominatim API rate limits
+  • Keyboard navigation (↑↓ to navigate, Enter to select, Escape to close)
+  • Visual marker at selected location with popup
+  • Bounding box zoom (fits whole area, not just center point)
+  • Clear search button
+  • Loading spinner during search
+  • Accessible interface (ARIA roles, keyboard support)
+  • SSR safe (client-side only initialization)
+
+  USAGE
   ```svelte
   <script>
     import MapSearch from '$lib/components/MapSearch.svelte';
-
-    function handleLocationSelect(result) {
-      console.log('Selected:', result.displayName, result.position);
-    }
   </script>
 
   <MapSearch
@@ -27,16 +36,17 @@
     zoom={10}
     height={500}
     placeholder="Search for a location..."
-    onLocationSelect={handleLocationSelect}
+    onLocationSelect={(result) => console.log(result)}
   />
   ```
 
-  Dependencies:
-  - leaflet (npm install leaflet @types/leaflet)
-  - Leaflet CSS (add to app.html or import globally)
+  DEPENDENCIES
+  • leaflet - Industry-standard map library (too complex to build natively)
+  • Leaflet CSS (add to app.html or import globally)
+  • Nominatim API (free, no key required, rate-limited)
 
-  @author TFE Svelte Templates
-  @version 1.0.0
+  ============================================================
+  @component
 -->
 <script lang="ts">
 	import type { MapSearchProps, LatLng, GeoSearchResult } from '$lib/types';

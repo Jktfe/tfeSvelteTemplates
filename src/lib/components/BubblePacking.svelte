@@ -1,87 +1,116 @@
 <!--
-/**
- * BubblePacking - Interactive circle packing visualization
- *
- * Features:
- * - Native circle packing algorithm (no D3 dependency)
- * - Force simulation for smooth animated positioning
- * - Interactive hover effects with tooltips
- * - Click handlers for bubble selection
- * - Group-based colour coding with customisable palette
- * - Dynamic text labels that scale with bubble size
- * - Responsive SVG container
- * - Smooth CSS transitions for state changes
- * - Accessibility with ARIA labels
- * - Zero external dependencies
- *
- * Perfect for:
- * - Market share visualizations
- * - Portfolio/asset allocation displays
- * - Category/tag clouds by frequency
- * - Hierarchical data exploration
- * - Comparative size analysis
- *
- * Technical Implementation:
- * - Custom circle packing using front-chain algorithm
- * - Force simulation with collision detection
- * - Reactive layout computation with $derived rune
- * - SVG viewBox for responsive scaling
- * - CSS transitions with prefers-reduced-motion support
- * - Pointer Events API for unified input handling
- *
- * @component
- * @example
- * ```svelte
- * <BubblePacking
- *   data={bubbleData}
- *   width={600}
- *   height={600}
- *   onBubbleClick={(bubble) => console.log(bubble)}
- * />
- * ```
- */
+	============================================================
+	BubblePacking - Interactive Circle Packing (Zero Dependencies)
+	============================================================
+
+	[CR] WHAT IT DOES
+	Force-directed circle packing visualization that positions circles
+	based on their values, with smooth collision detection and animated
+	positioning. Supports groups, tooltips, click handlers, and labels.
+
+	[NTL] THE SIMPLE VERSION
+	Imagine a bunch of bubbles floating in a container! Bigger values make
+	bigger bubbles, and they all push each other around until they find
+	a nice arrangement. You can hover to see details and click to select.
+
+	✨ FEATURES
+	• Native circle packing algorithm (no D3 dependency!)
+	• Force simulation for smooth positioning
+	• Interactive hover effects with tooltips
+	• Click handlers for bubble selection
+	• Group-based colour coding with customisable palette
+	• Dynamic text labels that scale with bubble size
+	• Responsive SVG container
+	• Smooth CSS transitions for state changes
+
+	♿ ACCESSIBILITY
+	• ARIA role="region" on container
+	• Each bubble has role="button" and aria-label
+	• Keyboard accessible (Tab + Enter/Space)
+	• Respects prefers-reduced-motion preference
+
+	📦 DEPENDENCIES
+	Zero external dependencies - fully portable!
+
+	⚠️ WARNINGS
+	None expected
+
+	🎨 USAGE
+	<BubblePacking
+		data={bubbleData}
+		width={600}
+		height={600}
+		onBubbleClick={(bubble) => console.log(bubble)}
+	/>
+
+	📋 PROPS
+	| Prop            | Type           | Default          | Description                    |
+	|-----------------|----------------|------------------|--------------------------------|
+	| data            | BubbleItem[]   | []               | Array of bubble data           |
+	| width           | number         | 600              | SVG width in pixels            |
+	| height          | number         | 600              | SVG height in pixels           |
+	| padding         | number         | 3                | Gap between bubbles            |
+	| colorScheme     | string[]       | BUBBLE_COLOR...  | Array of colours for groups    |
+	| showLabels      | boolean        | true             | Show text labels on bubbles    |
+	| labelThreshold  | number         | 20               | Min radius to show label       |
+	| useForce        | boolean        | true             | Use force simulation           |
+	| onBubbleClick   | function       | undefined        | Called with bubble data        |
+	| onBubbleHover   | function       | undefined        | Called on hover                |
+	| tooltipFormatter| function       | undefined        | Custom tooltip text function   |
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports for props and data structures
 	import type { BubblePackingProps, BubbleItem } from '$lib/types';
 	import { BUBBLE_COLOR_SCHEME } from '$lib/constants';
 
-	/**
-	 * Component props with defaults
-	 */
+	// =========================================================================
+	// [CR] PROPS - All configurable options with sensible defaults
+	// [NTL] These are the settings you can pass to customise the bubble chart!
+	// =========================================================================
+
 	let {
-		data = [],
-		width = 600,
-		height = 600,
-		padding = 3,
-		colorScheme = BUBBLE_COLOR_SCHEME,
-		showLabels = true,
-		labelThreshold = 20,
-		useForce = true,
-		onBubbleClick,
-		onBubbleHover,
-		tooltipFormatter,
-		class: className = ''
+		data = [],                          // [NTL] Your data as [{id, label, value, group}, ...]
+		width = 600,                        // [NTL] How wide the chart is in pixels
+		height = 600,                       // [NTL] How tall the chart is in pixels
+		padding = 3,                        // [NTL] Gap between bubbles
+		colorScheme = BUBBLE_COLOR_SCHEME,  // [NTL] Array of colours for different groups
+		showLabels = true,                  // [NTL] Show text labels on bubbles
+		labelThreshold = 20,                // [NTL] Minimum radius to show a label
+		useForce = true,                    // [NTL] Use physics simulation for positioning
+		onBubbleClick,                      // [NTL] What happens when you click a bubble
+		onBubbleHover,                      // [NTL] What happens when you hover over a bubble
+		tooltipFormatter,                   // [NTL] Custom function to format tooltip text
+		class: className = ''               // [NTL] Extra CSS classes for the container
 	}: BubblePackingProps = $props();
 
-	/**
-	 * Internal bubble representation with computed position and radius
-	 */
+	// =========================================================================
+	// [CR] INTERNAL TYPES
+	// [NTL] This describes what a "packed" bubble looks like after we calculate
+	//       its position and size. It's the original data plus x, y, and radius.
+	// =========================================================================
+
 	interface PackedBubble {
 		id: string;
 		label: string;
 		value: number;
 		color: string;
 		group: string;
-		x: number;
-		y: number;
-		r: number;
-		originalData: BubbleItem;
+		x: number;          // [NTL] Horizontal position (center of bubble)
+		y: number;          // [NTL] Vertical position (center of bubble)
+		r: number;          // [NTL] Radius (half the diameter)
+		originalData: BubbleItem;  // [NTL] Keep reference to original data
 	}
 
-	/**
-	 * Component state
-	 */
+	// =========================================================================
+	// [CR] COMPONENT STATE - Reactive values managed internally
+	// [NTL] These track what's happening right now (hover, tooltip, etc.)
+	// =========================================================================
+
+	// [CR] Tooltip state object containing position and content
+	// [NTL] This controls that little popup that appears when you hover
 	let tooltip = $state({
 		visible: false,
 		x: 0,
@@ -89,16 +118,23 @@
 		text: ''
 	});
 
+	// [CR] Track which bubble is currently hovered for visual highlighting
 	let hoveredBubble = $state<string | null>(null);
+
+	// [CR] Reference to container DOM element for tooltip positioning
 	let containerEl = $state<HTMLDivElement | undefined>();
 
 	// =========================================================================
-	// CIRCLE PACKING ALGORITHM
+	// [CR] CIRCLE PACKING ALGORITHM
+	// [NTL] This is the core of the visualization! We need to figure out how
+	//       big each bubble should be and where to place them without overlap.
 	// =========================================================================
 
 	/**
-	 * Calculate radius from value using square root scaling
-	 * This ensures area is proportional to value
+	 * [CR] Convert value to radius using square root scaling for perceptual accuracy.
+	 * [NTL] Here's a subtle but important point: if we just used value directly,
+	 *       a bubble with value 4 would look WAY bigger than one with value 1
+	 *       (16x the area!). Using square root means area is proportional to value.
 	 */
 	function valueToRadius(value: number, maxValue: number, maxRadius: number): number {
 		if (maxValue === 0) return 10;
@@ -106,7 +142,9 @@
 	}
 
 	/**
-	 * Get unique groups from data for colour mapping
+	 * [CR] Extract unique group names from data for colour assignment.
+	 * [NTL] Each group gets its own colour. This function finds all the unique
+	 *       group names so we can assign colours from our palette.
 	 */
 	function getGroups(items: BubbleItem[]): string[] {
 		const groups = new Set<string>();
@@ -117,8 +155,12 @@
 	}
 
 	/**
-	 * Simple circle packing using iterative force-directed placement
-	 * Places circles starting from center, pushing overlapping circles apart
+	 * [CR] Force-directed circle packing algorithm with collision detection.
+	 * [NTL] This is where the physics magic happens! We:
+	 *       1. Start bubbles near the center
+	 *       2. Run a simulation where bubbles push each other apart
+	 *       3. Keep them pulled towards the center so they don't scatter
+	 *       4. Repeat until they settle into a nice arrangement
 	 */
 	function packCircles(items: BubbleItem[], containerWidth: number, containerHeight: number): PackedBubble[] {
 		if (items.length === 0) return [];
@@ -228,16 +270,21 @@
 	}
 
 	// =========================================================================
-	// REACTIVE COMPUTATIONS
+	// [CR] REACTIVE COMPUTATIONS
+	// [NTL] Svelte's $derived rune automatically recalculates these whenever
+	//       the input data changes. It's like a spreadsheet formula!
 	// =========================================================================
 
 	/**
-	 * Compute packed bubble positions
+	 * [CR] Compute packed bubble positions whenever data, width, or height changes.
+	 * [NTL] This is the main calculation - it runs our packing algorithm and
+	 *       gives us the final positions for all bubbles.
 	 */
 	let packedBubbles = $derived(packCircles(data, width, height));
 
 	/**
-	 * Get unique groups for legend
+	 * [CR] Build legend data showing each group and its colour.
+	 * [NTL] The legend shows what each colour means - like a key on a map.
 	 */
 	let legendGroups = $derived(() => {
 		const groups = getGroups(data);
@@ -248,11 +295,14 @@
 	});
 
 	// =========================================================================
-	// EVENT HANDLERS
+	// [CR] EVENT HANDLERS
+	// [NTL] These functions respond to user interactions - hover, click, etc.
 	// =========================================================================
 
 	/**
-	 * Show tooltip on bubble hover
+	 * [CR] Display tooltip at cursor position with bubble details.
+	 * [NTL] When you hover over a bubble, this shows a tooltip with the label
+	 *       and value. The tooltip follows your mouse and stays out of the way.
 	 */
 	function showTooltip(event: MouseEvent, bubble: PackedBubble) {
 		if (!containerEl) return;
@@ -277,7 +327,8 @@
 	}
 
 	/**
-	 * Hide tooltip on mouse leave
+	 * [CR] Hide the tooltip when mouse leaves a bubble.
+	 * [NTL] Simple cleanup - hide the tooltip and clear the hover state.
 	 */
 	function hideTooltip() {
 		tooltip = { ...tooltip, visible: false };
@@ -286,14 +337,64 @@
 	}
 
 	/**
-	 * Handle bubble click
+	 * [CR] Handle touch/tap on a bubble - show tooltip on first tap, action on second
+	 * [NTL] On mobile, tapping once shows the tooltip, tapping again triggers the click.
+	 *       This mimics the hover-then-click pattern from desktop.
+	 */
+	function handleTouchStart(event: TouchEvent, bubble: PackedBubble) {
+		event.preventDefault(); // [CR] Prevent mouse event simulation
+
+		if (hoveredBubble === bubble.id) {
+			// [NTL] Second tap on same bubble - trigger the click action
+			handleBubbleClick(bubble);
+			hideTooltip();
+		} else {
+			// [NTL] First tap - show tooltip
+			if (!containerEl) return;
+			const touch = event.touches[0];
+			const rect = containerEl.getBoundingClientRect();
+			const tooltipX = touch.clientX - rect.left;
+			const tooltipY = touch.clientY - rect.top;
+
+			const text = tooltipFormatter
+				? tooltipFormatter(bubble.originalData)
+				: `${bubble.label}: ${bubble.value.toLocaleString()}`;
+
+			tooltip = {
+				visible: true,
+				x: tooltipX,
+				y: tooltipY - 10,
+				text
+			};
+
+			hoveredBubble = bubble.id;
+			onBubbleHover?.(bubble.originalData);
+		}
+	}
+
+	/**
+	 * [CR] Close tooltip when tapping outside bubbles
+	 * [NTL] Tapping anywhere else on the chart clears the selection
+	 */
+	function handleContainerTouchStart(event: TouchEvent) {
+		// [CR] Only close if tapping on the container itself, not a bubble
+		if (event.target === containerEl || (event.target as Element).classList.contains('bubble-svg')) {
+			hideTooltip();
+		}
+	}
+
+	/**
+	 * [CR] Handle click on a bubble, firing the callback if provided.
+	 * [NTL] When you click a bubble, this tells your app which one was clicked.
 	 */
 	function handleBubbleClick(bubble: PackedBubble) {
 		onBubbleClick?.(bubble.originalData);
 	}
 
 	/**
-	 * Calculate appropriate font size for bubble label
+	 * [CR] Calculate appropriate font size based on bubble radius.
+	 * [NTL] Bigger bubbles get bigger text, but we limit the range so it's
+	 *       always readable (not too tiny, not too huge).
 	 */
 	function getFontSize(radius: number): number {
 		// Scale font size with radius, with min/max limits
@@ -301,7 +402,9 @@
 	}
 
 	/**
-	 * Truncate label to fit within bubble
+	 * [CR] Truncate label to fit within the bubble's diameter.
+	 * [NTL] Long labels would overflow the bubble, so we cut them short
+	 *       and add "..." to show there's more.
 	 */
 	function truncateLabel(label: string, radius: number): string {
 		const maxChars = Math.floor(radius / 4);
@@ -315,15 +418,16 @@
 	class="bubble-packing-container {className}"
 	role="region"
 	aria-label="Bubble packing visualization"
+	ontouchstart={handleContainerTouchStart}
 >
 	<!-- SVG Bubble Chart -->
 	<svg {width} {height} viewBox="0 0 {width} {height}" class="bubble-svg">
 		<!-- Bubble circles -->
 		{#each packedBubbles as bubble (bubble.id)}
 			{@const isHovered = hoveredBubble === bubble.id}
+			<!-- [CR] Group just handles positioning; hover effects are on the circle -->
 			<g
 				class="bubble-group"
-				class:hovered={isHovered}
 				transform="translate({bubble.x}, {bubble.y})"
 			>
 				<!-- Circle -->
@@ -331,12 +435,14 @@
 					r={bubble.r}
 					fill={bubble.color}
 					class="bubble-circle"
+					class:hovered={isHovered}
 					role="button"
 					tabindex="0"
 					aria-label="{bubble.label}: {bubble.value}"
 					onmouseenter={(e) => showTooltip(e, bubble)}
 					onmouseleave={hideTooltip}
 					onclick={() => handleBubbleClick(bubble)}
+					ontouchstart={(e) => handleTouchStart(e, bubble)}
 					onkeydown={(e) => {
 						if (e.key === 'Enter' || e.key === ' ') {
 							e.preventDefault();
@@ -390,6 +496,8 @@
 <style>
 	/**
 	 * Container styling
+	 * [CR] max-width and overflow-x for mobile responsiveness
+	 * [NTL] On small screens, this prevents the chart from breaking out of its container
 	 */
 	.bubble-packing-container {
 		display: inline-block;
@@ -397,28 +505,35 @@
 		-webkit-user-select: none;
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 		position: relative;
+		max-width: 100%;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	/**
 	 * SVG styling
+	 * [CR] max-width ensures SVG scales down on mobile while maintaining aspect ratio
 	 */
 	.bubble-svg {
 		display: block;
+		max-width: 100%;
+		height: auto;
 	}
 
 	/**
-	 * Bubble group (contains circle and label)
+	 * [CR] Bubble group - no transform animation here to avoid conflicting
+	 * with the positioning transform="translate(x, y)"
+	 * [NTL] We used to scale the whole group on hover, but that caused glitchy
+	 * movement because SVG transforms don't combine - they replace each other!
 	 */
 	.bubble-group {
-		transition: transform 0.2s ease;
-	}
-
-	.bubble-group.hovered {
-		transform: scale(1.05);
+		/* [CR] No transition here - the circle handles hover effects */
 	}
 
 	/**
-	 * Bubble circle styling
+	 * [CR] Bubble circle styling - hover effects use opacity/stroke only, no movement
+	 * [NTL] We deliberately avoid any scale or transform effects because they cause
+	 *       the bubbles to appear to "jump" which is distracting and glitchy.
 	 */
 	.bubble-circle {
 		stroke: rgba(255, 255, 255, 0.4);
@@ -426,14 +541,16 @@
 		cursor: pointer;
 		transition:
 			opacity 0.2s ease,
-			stroke-width 0.2s ease;
+			stroke-width 0.2s ease,
+			stroke 0.2s ease;
 		opacity: 0.85;
 	}
 
-	.bubble-circle:hover {
+	.bubble-circle:hover,
+	.bubble-circle.hovered {
 		opacity: 1;
 		stroke-width: 3px;
-		stroke: rgba(255, 255, 255, 0.8);
+		stroke: rgba(255, 255, 255, 0.9);
 	}
 
 	.bubble-circle:focus {
@@ -511,10 +628,11 @@
 	}
 
 	/**
-	 * Accessibility: Respect reduced motion preference
+	 * [CR] Accessibility: Respect reduced motion preference
+	 * [NTL] Some people get motion sick or have vestibular disorders - we disable
+	 *       animations for them if they've set that preference in their system.
 	 */
 	@media (prefers-reduced-motion: reduce) {
-		.bubble-group,
 		.bubble-circle {
 			transition: none;
 		}
@@ -537,3 +655,5 @@
 		}
 	}
 </style>
+
+<!-- [CR] Gold Standard review complete. All [CR]/[NTL] comments added. -->

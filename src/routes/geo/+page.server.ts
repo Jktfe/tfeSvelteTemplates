@@ -1,38 +1,86 @@
 /**
  * Geo Demo Page Server Loader
  *
- * Fetches UK regions GeoJSON from ONS Open Geography Portal
- * with fallback to simplified data if fetch fails.
+ * Fetches UK GeoJSON data from ONS Open Geography Portal:
+ * - UK Countries: For bubble/spike maps (includes Scotland, Wales, NI)
+ * - England Regions: For choropleth (detailed regional breakdown)
+ *
+ * ============================================================
+ * 🌍 FINDING GEOJSON FOR OTHER GEOGRAPHIES
+ * ============================================================
+ *
+ * UK Data (ONS Open Geography Portal):
+ *   https://geoportal.statistics.gov.uk/
+ *   - Search for "boundaries" + year + area type
+ *   - Use FeatureServer REST API with f=geojson&outSR=4326
+ *   - Example: Countries, Regions, Counties, Local Authorities
+ *
+ * US Data (Census Bureau):
+ *   https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html
+ *   - States, Counties, Congressional Districts
+ *
+ * World Data:
+ *   https://github.com/datasets/geo-countries (Natural Earth)
+ *   https://geojson-maps.ash.ms/ (Interactive selector)
+ *
+ * Europe:
+ *   https://ec.europa.eu/eurostat/web/gisco/geodata/reference-data
+ *
+ * Tips:
+ *   - Always use WGS84 (EPSG:4326) for web maps
+ *   - Simplify geometries for performance (mapshaper.org)
+ *   - Cache GeoJSON server-side when possible
+ * ============================================================
  */
 
 import type { PageServerLoad } from './$types';
-import { UK_REGIONS_GEOJSON_URL } from '$lib/constants';
+import { UK_REGIONS_GEOJSON_URL, UK_COUNTRIES_GEOJSON_URL } from '$lib/constants';
 
 export const load: PageServerLoad = async ({ fetch }) => {
-	let geojson: GeoJSON.FeatureCollection | null = null;
+	let regionsGeojson: GeoJSON.FeatureCollection | null = null;
+	let countriesGeojson: GeoJSON.FeatureCollection | null = null;
 	let usingFallback = false;
 
-	try {
-		// Fetch UK regions GeoJSON from ONS
-		const response = await fetch(UK_REGIONS_GEOJSON_URL);
-		if (response.ok) {
-			geojson = await response.json();
-		} else {
-			console.warn('[Geo] Failed to fetch GeoJSON:', response.status);
-			usingFallback = true;
+	// Fetch both datasets in parallel
+	const [regionsRes, countriesRes] = await Promise.all([
+		fetch(UK_REGIONS_GEOJSON_URL).catch(() => null),
+		fetch(UK_COUNTRIES_GEOJSON_URL).catch(() => null)
+	]);
+
+	// Process England Regions (for choropleth)
+	if (regionsRes?.ok) {
+		try {
+			regionsGeojson = await regionsRes.json();
+		} catch {
+			console.warn('[Geo] Failed to parse regions GeoJSON');
 		}
-	} catch (error) {
-		console.warn('[Geo] Error fetching GeoJSON:', error);
-		usingFallback = true;
 	}
 
-	// If fetch failed, use a simplified UK outline
-	if (!geojson) {
-		geojson = createSimplifiedUKGeoJSON();
+	// Process UK Countries (for bubble/spike maps)
+	if (countriesRes?.ok) {
+		try {
+			countriesGeojson = await countriesRes.json();
+		} catch {
+			console.warn('[Geo] Failed to parse countries GeoJSON');
+		}
 	}
+
+	// Use fallback if neither worked
+	if (!regionsGeojson && !countriesGeojson) {
+		console.warn('[Geo] Using fallback GeoJSON');
+		usingFallback = true;
+		const fallback = createSimplifiedUKGeoJSON();
+		regionsGeojson = fallback;
+		countriesGeojson = fallback;
+	}
+
+	// If only one worked, use it for both
+	if (!regionsGeojson) regionsGeojson = countriesGeojson;
+	if (!countriesGeojson) countriesGeojson = regionsGeojson;
 
 	return {
-		geojson,
+		geojson: regionsGeojson,          // For choropleth (England regions)
+		countriesGeojson: countriesGeojson, // For bubble/spike (full UK)
 		usingFallback
 	};
 };

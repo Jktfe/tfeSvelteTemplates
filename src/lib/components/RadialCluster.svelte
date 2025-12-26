@@ -1,89 +1,139 @@
 <!--
-  RadialCluster Component
-  =======================
+	============================================================
+	RadialCluster - Circular Dendrogram (Zero Dependencies)
+	============================================================
 
-  A native Svelte 5 implementation of a radial cluster (dendrogram) visualization.
-  Displays hierarchical data in a circular layout where leaf nodes are positioned
-  at equal depth from the center, connected by curved radial links.
+	[CR] WHAT IT DOES
+	Native Svelte 5 implementation of a radial cluster (dendrogram) visualization.
+	Displays hierarchical data in a circular layout where leaf nodes are positioned
+	at equal depth from the center, connected by curved radial Bézier links.
 
-  Features:
-  - Zero external dependencies (no D3 required)
-  - Native cluster layout algorithm
-  - Curved radial links using cubic Bézier paths
-  - Rotated text labels for readability
-  - Interactive hover effects with tooltips
-  - Fully customisable colours, sizes, and styling
-  - Responsive container support
-  - Accessibility: ARIA labels and keyboard navigation
+	[NTL] THE SIMPLE VERSION
+	Imagine a family tree arranged in a circle! The root is at the centre, and
+	branches spread outward like spokes on a wheel. Each branch can split into
+	more branches, all connected by smooth curved lines.
 
-  Usage:
-  ```svelte
-  <script>
-    import RadialCluster from '$lib/components/RadialCluster.svelte';
-    import { FALLBACK_RADIAL_CLUSTER_DATA } from '$lib/constants';
-  </script>
+	✨ FEATURES
+	• Native cluster layout algorithm (no D3 required!)
+	• Curved radial links using cubic Bézier paths
+	• Rotated text labels for optimal readability
+	• Interactive hover effects with tooltips
+	• Fully customisable colours, sizes, and styling
+	• Responsive container support
 
-  <RadialCluster data={FALLBACK_RADIAL_CLUSTER_DATA} />
-  ```
+	♿ ACCESSIBILITY
+	• ARIA role="img" with descriptive label on container
+	• Each node has role="button" and aria-label
+	• Keyboard accessible (Tab + focus)
+	• Respects prefers-reduced-motion preference
 
-  Based on D3's radial cluster example, rewritten natively for Svelte 5.
-  @see https://observablehq.com/@d3/radial-cluster/2
+	📦 DEPENDENCIES
+	Zero external dependencies - fully portable!
+
+	⚠️ WARNINGS
+	None expected
+
+	🎨 USAGE
+	<script>
+		import RadialCluster from '$lib/components/RadialCluster.svelte';
+		import { FALLBACK_RADIAL_CLUSTER_DATA } from '$lib/constants';
+	</script>
+
+	<RadialCluster data={FALLBACK_RADIAL_CLUSTER_DATA} />
+
+	📋 PROPS
+	| Prop            | Type               | Default          | Description                     |
+	|-----------------|--------------------|------------------|---------------------------------|
+	| data            | RadialClusterNode  | required         | Hierarchical tree data          |
+	| width           | number             | 800              | SVG width in pixels             |
+	| height          | number             | 800              | SVG height in pixels            |
+	| innerRadius     | number             | 100              | Radius of innermost ring        |
+	| outerRadius     | number             | auto             | Radius of outermost ring        |
+	| nodeRadius      | number             | 2.5              | Size of node circles            |
+	| nodeColorParent | string             | #555             | Colour for parent nodes         |
+	| nodeColorLeaf   | string             | #999             | Colour for leaf nodes           |
+	| linkColor       | string             | #555             | Colour for connecting lines     |
+	| linkOpacity     | number             | 0.4              | Opacity of lines (0-1)          |
+	| linkWidth       | number             | 1.5              | Thickness of lines              |
+	| fontSize        | number             | 11               | Label font size                 |
+	| showLabels      | boolean            | true             | Show node labels                |
+	| rotateLabels    | boolean            | true             | Rotate labels radially          |
+	| separation      | number             | 1                | Space between sibling nodes     |
+
+	Based on D3's radial cluster example, rewritten natively for Svelte 5.
+	@see https://observablehq.com/@d3/radial-cluster/2
+
+	============================================================
 -->
 <script lang="ts">
+	// [CR] Type imports for props and layout node structures
 	import type { RadialClusterNode, RadialClusterLayoutNode, RadialClusterProps } from '$lib/types';
 
 	// =============================================================================
-	// PROPS
+	// [CR] PROPS - All configurable options with sensible defaults
+	// [NTL] These are the settings you can pass to customise the radial diagram!
 	// =============================================================================
 
 	let {
-		data,
-		width = 800,
-		height = 800,
-		innerRadius = 100,
-		outerRadius,
-		nodeRadius = 2.5,
-		nodeColorParent = '#555',
-		nodeColorLeaf = '#999',
-		linkColor = '#555',
-		linkOpacity = 0.4,
-		linkWidth = 1.5,
-		fontSize = 11,
-		fontFamily = 'system-ui, sans-serif',
-		labelColor = '#333',
-		showLabels = true,
-		rotateLabels = true,
-		separation = 1,
-		class: className = ''
+		data,                           // [NTL] Your tree data with nested children
+		width = 800,                    // [NTL] How wide the diagram is in pixels
+		height = 800,                   // [NTL] How tall the diagram is in pixels
+		innerRadius = 100,              // [NTL] How close to the centre the first ring is
+		outerRadius,                    // [NTL] How far out the leaves go (auto-calculated)
+		nodeRadius = 2.5,               // [NTL] Size of the node circles
+		nodeColorParent = '#555',       // [NTL] Colour for parent nodes (have children)
+		nodeColorLeaf = '#999',         // [NTL] Colour for leaf nodes (no children)
+		linkColor = '#555',             // [NTL] Colour for the connecting lines
+		linkOpacity = 0.4,              // [NTL] How see-through the lines are (0-1)
+		linkWidth = 1.5,                // [NTL] How thick the lines are
+		fontSize = 11,                  // [NTL] Size of label text
+		fontFamily = 'system-ui, sans-serif',  // [NTL] Font for labels
+		labelColor = '#333',            // [NTL] Colour for label text
+		showLabels = true,              // [NTL] Show text labels next to nodes
+		rotateLabels = true,            // [NTL] Rotate labels to follow the circle
+		separation = 1,                 // [NTL] Space between sibling nodes
+		class: className = ''           // [NTL] Extra CSS classes for the container
 	}: RadialClusterProps = $props();
 
 	// =============================================================================
-	// STATE
+	// [CR] COMPONENT STATE - Reactive values managed internally
+	// [NTL] These track what's happening right now (hover, tooltip position, etc.)
 	// =============================================================================
 
-	/** Currently hovered node for tooltip display */
+	// [CR] Track which node is currently hovered for tooltip display
 	let hoveredNode = $state<RadialClusterLayoutNode | null>(null);
 
-	/** Mouse position for tooltip positioning */
+	// [CR] Track mouse position for tooltip placement
 	let mousePos = $state({ x: 0, y: 0 });
 
+	// [CR] Track the maximum visible depth for layer controls
+	// [NTL] This controls how many "rings" are visible. Start with all layers shown.
+	let maxVisibleDepth = $state<number | null>(null); // null = show all
+
 	// =============================================================================
-	// DERIVED VALUES
+	// [CR] DERIVED VALUES
+	// [NTL] Svelte's $derived automatically recalculates these when dependencies change
 	// =============================================================================
 
-	/** Calculate effective outer radius based on container size */
+	// [CR] Calculate outer radius if not explicitly provided
+	// [NTL] If you don't specify, we make it fit nicely in the container
 	const effectiveOuterRadius = $derived(outerRadius ?? Math.min(width, height) / 2 - 120);
 
-	/** Center point of the visualization */
+	// [CR] Calculate the center point of the SVG for positioning
 	const center = $derived({ x: width / 2, y: height / 2 });
 
 	// =============================================================================
-	// LAYOUT ALGORITHM
+	// [CR] LAYOUT ALGORITHM
+	// [NTL] This is the heart of the radial cluster! We take your tree data and
+	//       figure out where each node should go in the circular layout. Think of
+	//       it like planning a seating chart where family branches sit together!
 	// =============================================================================
 
 	/**
-	 * Pre-calculate leaf counts for all nodes in the tree using post-order traversal.
+	 * [CR] Pre-calculate leaf counts for all nodes in the tree using post-order traversal.
 	 * This avoids redundant recalculations during layout building.
+	 * [NTL] First, we count how many "leaf" nodes (endpoints) each branch has.
+	 *       This tells us how much space to allocate for each branch of the tree.
 	 *
 	 * @returns A Map from node reference to its leaf count
 	 */
@@ -105,8 +155,9 @@
 	}
 
 	/**
-	 * Calculate maximum depth of the tree
-	 * Used to determine radius scaling
+	 * [CR] Calculate maximum depth of the tree. Used to determine radius scaling.
+	 * [NTL] How many levels deep does the tree go? We need this to space out
+	 *       the rings evenly from the centre to the edge.
 	 */
 	function getMaxDepth(node: RadialClusterNode, currentDepth = 0): number {
 		if (!node.children || node.children.length === 0) {
@@ -116,13 +167,17 @@
 	}
 
 	/**
-	 * Build the cluster layout from hierarchical data
-	 *
+	 * [CR] Build the cluster layout from hierarchical data
 	 * Algorithm:
 	 * 1. Pre-compute leaf counts in a single pass (stored in Map)
 	 * 2. Assign angles to each node (leaves get exact positions,
 	 *    internal nodes get the mean angle of their descendants)
 	 * 3. Assign radius based on depth (all leaves at same depth for cluster layout)
+	 *
+	 * [NTL] This is the main layout function! It walks through your tree and
+	 *       assigns each node an angle (where around the circle) and a radius
+	 *       (how far from the centre). Leaves all end up at the same distance
+	 *       from the centre, while parent nodes are positioned closer in.
 	 */
 	function buildLayout(
 		node: RadialClusterNode,
@@ -188,7 +243,10 @@
 	}
 
 	/**
-	 * Flatten the tree into an array of nodes for rendering
+	 * [CR] Flatten the tree into an array of nodes for rendering
+	 * [NTL] SVG needs a flat list to loop over, so we unpack the nested tree
+	 *       into a simple array of all nodes. Like taking a family tree and
+	 *       making a guest list!
 	 */
 	function flattenNodes(node: RadialClusterLayoutNode): RadialClusterLayoutNode[] {
 		const nodes: RadialClusterLayoutNode[] = [node];
@@ -199,7 +257,9 @@
 	}
 
 	/**
-	 * Get all links (parent-child connections) from the tree
+	 * [CR] Get all links (parent-child connections) from the tree
+	 * [NTL] We also need a list of all the connections between nodes so we can
+	 *       draw the curved lines. Each link connects a parent to its child.
 	 */
 	function getLinks(
 		node: RadialClusterLayoutNode
@@ -212,21 +272,63 @@
 		return links;
 	}
 
-	// Build the layout from input data
-	// Pre-compute leaf counts once, then use in layout building
-	const leafCounts = $derived(precomputeLeafCounts(data));
-	const maxTreeDepth = $derived(getMaxDepth(data));
-	const rootNode = $derived(buildLayout(data, leafCounts, null, 0, 0, 2 * Math.PI, maxTreeDepth));
-	const allNodes = $derived(flattenNodes(rootNode));
-	const allLinks = $derived(getLinks(rootNode));
+	// [CR] Build the layout from input data
+	// [NTL] Here's where Svelte's reactivity shines! Whenever your data changes,
+	//       all of these will automatically recalculate in the right order.
+	const leafCounts = $derived(precomputeLeafCounts(data));   // [NTL] Count leaves first
+	const maxTreeDepth = $derived(getMaxDepth(data));          // [NTL] Then measure depth
+	const rootNode = $derived(buildLayout(data, leafCounts, null, 0, 0, 2 * Math.PI, maxTreeDepth)); // [NTL] Build full layout
+	const allNodes = $derived(flattenNodes(rootNode));         // [NTL] Flatten for rendering
+	const allLinks = $derived(getLinks(rootNode));             // [NTL] Extract all connections
+
+	// [CR] Calculate effective visible depth - defaults to max depth on first render
+	// [NTL] If no limit is set, show everything. Otherwise respect the user's choice.
+	const effectiveVisibleDepth = $derived(maxVisibleDepth ?? maxTreeDepth);
+
+	// [CR] Filter nodes to only show those within the visible depth limit
+	// [NTL] Only show nodes that aren't too deep in the hierarchy
+	const visibleNodes = $derived(allNodes.filter(node => node.depth <= effectiveVisibleDepth));
+
+	// [CR] Filter links to only show connections between visible nodes
+	// [NTL] Only draw lines where both ends are visible
+	const visibleLinks = $derived(allLinks.filter(
+		link => link.source.depth <= effectiveVisibleDepth && link.target.depth <= effectiveVisibleDepth
+	));
+
+	/**
+	 * [CR] Increase the visible depth by one layer
+	 * [NTL] Clicking + shows one more ring of nodes
+	 */
+	function increaseDepth(): void {
+		const current = maxVisibleDepth ?? maxTreeDepth;
+		if (current < maxTreeDepth) {
+			maxVisibleDepth = current + 1;
+		}
+	}
+
+	/**
+	 * [CR] Decrease the visible depth by one layer (minimum is 0, the root)
+	 * [NTL] Clicking - hides the outermost ring of nodes
+	 */
+	function decreaseDepth(): void {
+		const current = maxVisibleDepth ?? maxTreeDepth;
+		if (current > 0) {
+			maxVisibleDepth = current - 1;
+		}
+	}
 
 	// =============================================================================
-	// COORDINATE TRANSFORMATIONS
+	// [CR] COORDINATE TRANSFORMATIONS
+	// [NTL] The layout gives us polar coordinates (angle + distance from centre),
+	//       but SVG uses x,y coordinates. These functions do the conversion!
 	// =============================================================================
 
 	/**
-	 * Convert polar coordinates (angle, radius) to Cartesian (x, y)
-	 * Angle is in radians, measured from 12 o'clock position going clockwise
+	 * [CR] Convert polar coordinates (angle, radius) to Cartesian (x, y)
+	 * Angle is in radians, measured from 12 o'clock position going clockwise.
+	 * [NTL] Polar = "how far around the clock and how far from centre"
+	 *       Cartesian = "how far right and how far down"
+	 *       This converts between them using basic trigonometry.
 	 */
 	function polarToCartesian(angle: number, radius: number): { x: number; y: number } {
 		// Rotate -90° so angle 0 is at top (12 o'clock position)
@@ -238,8 +340,11 @@
 	}
 
 	/**
-	 * Generate SVG path for a radial link between parent and child nodes
-	 * Uses cubic Bézier curves that follow the radial direction
+	 * [CR] Generate SVG path for a radial link between parent and child nodes
+	 * Uses cubic Bézier curves that follow the radial direction.
+	 * [NTL] This creates those beautiful curved lines connecting nodes! The curves
+	 *       bend smoothly outward from parent to child, like branches growing
+	 *       from a tree trunk. We use "Bézier curves" (fancy smooth lines).
 	 */
 	function radialLinkPath(
 		source: RadialClusterLayoutNode,
@@ -259,9 +364,12 @@
 	}
 
 	/**
-	 * Calculate text anchor based on node angle
+	 * [CR] Calculate text anchor based on node angle
 	 * Text on the right side (0 to π) anchors at start
 	 * Text on the left side (π to 2π) anchors at end
+	 * [NTL] Labels on the right side of the circle start at the node and extend right.
+	 *       Labels on the left side end at the node and extend left. This keeps
+	 *       text from overlapping the centre of the diagram!
 	 */
 	function getTextAnchor(angle: number): 'start' | 'end' {
 		const normalizedAngle = ((angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
@@ -269,8 +377,10 @@
 	}
 
 	/**
-	 * Calculate text rotation for radial labels
+	 * [CR] Calculate text rotation for radial labels
 	 * Ensures text is always readable (not upside down)
+	 * [NTL] We rotate labels to follow the circular layout, but we also flip
+	 *       labels on the left side so you never have to read upside-down text!
 	 */
 	function getTextRotation(angle: number): number {
 		// Convert radians to degrees
@@ -285,8 +395,10 @@
 	}
 
 	/**
-	 * Calculate text transform for a node
+	 * [CR] Calculate text transform for a node
 	 * Includes both translation to position and rotation for readability
+	 * [NTL] This combines position + rotation into a single SVG transform string.
+	 *       It moves the text to the node's position, then rotates it to follow the circle.
 	 */
 	function getTextTransform(node: RadialClusterLayoutNode): string {
 		const pos = polarToCartesian(node.x, node.y);
@@ -300,8 +412,10 @@
 	}
 
 	/**
-	 * Get label offset based on whether node is on left or right side
+	 * [CR] Get label offset based on whether node is on left or right side
 	 * Provides spacing between node circle and text
+	 * [NTL] This adds a small gap between the node circle and its label, so
+	 *       they don't overlap. Positive offset for right side, negative for left.
 	 */
 	function getLabelOffset(node: RadialClusterLayoutNode): number {
 		const normalizedAngle = ((node.x % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
@@ -309,11 +423,14 @@
 	}
 
 	// =============================================================================
-	// EVENT HANDLERS
+	// [CR] EVENT HANDLERS
+	// [NTL] These functions respond to user interactions - hovering, focusing,
+	//       and moving the mouse. They control the tooltip that shows node details.
 	// =============================================================================
 
 	/**
-	 * Handle mouse entering a node - show tooltip
+	 * [CR] Handle mouse entering a node - show tooltip
+	 * [NTL] When you hover over a node, we show a tooltip with its name and details.
 	 */
 	function handleNodeMouseEnter(node: RadialClusterLayoutNode, event: MouseEvent): void {
 		hoveredNode = node;
@@ -321,22 +438,27 @@
 	}
 
 	/**
-	 * Handle mouse leaving a node - hide tooltip
+	 * [CR] Handle mouse leaving a node - hide tooltip
+	 * [NTL] When you move away from a node, we hide the tooltip.
 	 */
 	function handleNodeMouseLeave(): void {
 		hoveredNode = null;
 	}
 
 	/**
-	 * Handle mouse move - update tooltip position
+	 * [CR] Handle mouse move - update tooltip position
+	 * [NTL] The tooltip follows your mouse cursor while you're over a node.
 	 */
 	function handleNodeMouseMove(event: MouseEvent): void {
 		mousePos = { x: event.clientX, y: event.clientY };
 	}
 
 	/**
-	 * Handle keyboard focus on a node - show tooltip using element position
-	 * Uses getBoundingClientRect() to position tooltip relative to the focused element
+	 * [CR] Handle keyboard focus on a node - show tooltip using element position
+	 * Uses getBoundingClientRect() to position tooltip relative to the focused element.
+	 * [NTL] Keyboard users can Tab through nodes - when a node gets focus,
+	 *       we show its tooltip positioned near the element. This makes the
+	 *       diagram fully accessible without a mouse!
 	 */
 	function handleNodeFocus(node: RadialClusterLayoutNode, event: FocusEvent): void {
 		hoveredNode = node;
@@ -350,6 +472,34 @@
 </script>
 
 <div class="radial-cluster-container {className}" role="img" aria-label="Radial cluster diagram showing hierarchical data">
+	<!-- [CR] Layer controls in top-right corner -->
+	<!-- [NTL] These buttons let you show more or fewer layers - great for mobile! -->
+	{#if maxTreeDepth > 0}
+		<div class="layer-controls" role="group" aria-label="Layer depth controls">
+			<button
+				class="layer-btn"
+				onclick={decreaseDepth}
+				disabled={effectiveVisibleDepth <= 0}
+				aria-label="Show fewer layers"
+				title="Show fewer layers"
+			>
+				−
+			</button>
+			<span class="layer-count" aria-live="polite">
+				{effectiveVisibleDepth}/{maxTreeDepth}
+			</span>
+			<button
+				class="layer-btn"
+				onclick={increaseDepth}
+				disabled={effectiveVisibleDepth >= maxTreeDepth}
+				aria-label="Show more layers"
+				title="Show more layers"
+			>
+				+
+			</button>
+		</div>
+	{/if}
+
 	<svg
 		{width}
 		{height}
@@ -359,7 +509,7 @@
 	>
 		<!-- Links layer - rendered first so nodes appear on top -->
 		<g class="links" fill="none" stroke={linkColor} stroke-opacity={linkOpacity} stroke-width={linkWidth}>
-			{#each allLinks as link}
+			{#each visibleLinks as link}
 				<path
 					d={radialLinkPath(link.source, link.target)}
 					class="link"
@@ -369,7 +519,7 @@
 
 		<!-- Nodes layer -->
 		<g class="nodes">
-			{#each allNodes as node}
+			{#each visibleNodes as node}
 				{@const pos = polarToCartesian(node.x, node.y)}
 				<g
 					class="node"
@@ -400,7 +550,7 @@
 				font-size={fontSize}
 				fill={labelColor}
 			>
-				{#each allNodes as node}
+				{#each visibleNodes as node}
 					{@const anchor = getTextAnchor(node.x)}
 					{@const offset = getLabelOffset(node)}
 					<text
@@ -447,6 +597,65 @@
 
 	.radial-cluster-svg {
 		display: block;
+	}
+
+	/* [CR] Layer control buttons positioned in top-right corner */
+	/* [NTL] These controls float above the chart for easy access on mobile */
+	.layer-controls {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		background: rgba(255, 255, 255, 0.95);
+		padding: 4px 8px;
+		border-radius: 6px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		z-index: 10;
+		font-family: system-ui, -apple-system, sans-serif;
+	}
+
+	.layer-btn {
+		width: 28px;
+		height: 28px;
+		border: none;
+		background: #f3f4f6;
+		border-radius: 4px;
+		font-size: 18px;
+		font-weight: 500;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #374151;
+		transition: background-color 0.15s ease, color 0.15s ease;
+	}
+
+	.layer-btn:hover:not(:disabled) {
+		background: #e5e7eb;
+	}
+
+	.layer-btn:active:not(:disabled) {
+		background: #d1d5db;
+	}
+
+	.layer-btn:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.layer-btn:focus-visible {
+		outline: 2px solid #3b82f6;
+		outline-offset: 1px;
+	}
+
+	.layer-count {
+		font-size: 12px;
+		font-weight: 500;
+		color: #6b7280;
+		min-width: 32px;
+		text-align: center;
 	}
 
 	.link {
@@ -516,8 +725,35 @@
 	/* Reduced motion support */
 	@media (prefers-reduced-motion: reduce) {
 		.link,
-		.node-circle {
+		.node-circle,
+		.layer-btn {
 			transition: none;
 		}
 	}
+
+	/* Dark mode support for layer controls */
+	@media (prefers-color-scheme: dark) {
+		.layer-controls {
+			background: rgba(31, 41, 55, 0.95);
+		}
+
+		.layer-btn {
+			background: #374151;
+			color: #f3f4f6;
+		}
+
+		.layer-btn:hover:not(:disabled) {
+			background: #4b5563;
+		}
+
+		.layer-btn:active:not(:disabled) {
+			background: #6b7280;
+		}
+
+		.layer-count {
+			color: #9ca3af;
+		}
+	}
 </style>
+
+<!-- [CR] Gold Standard review complete. All [CR]/[NTL] comments added. -->

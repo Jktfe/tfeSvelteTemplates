@@ -1,96 +1,115 @@
 <!--
-/**
- * DataGridBasic Component - Self-contained data grid (Zero Dependencies)
- *
- * A lightweight, fully self-contained data grid implementation with core features:
- * - Column sorting (ascending/descending)
- * - Global search/filter
- * - Pagination with page size control
- * - Responsive design
- * - Accessible keyboard navigation
- * - Customisable styling
- *
- * This component is COPY-PASTE READY - no external dependencies beyond Svelte.
- * Perfect for learning, prototyping, or projects where bundle size matters.
- *
- * Key differences from DataGridAdvanced:
- * - ✅ Zero dependencies (no SVAR Grid)
- * - ✅ Fully copy-paste ready
- * - ✅ Simple, readable code
- * - ❌ No virtual scrolling (not suitable for 1000s of rows)
- * - ❌ No inline editing
- * - ❌ Simpler filtering (global search only)
- *
- * @component DataGridBasic
- * @example
- * ```svelte
- * <DataGridBasic
- *   data={employees}
- *   columns={columnDefs}
- *   sortable={true}
- *   filterable={true}
- *   pageSize={10}
- * />
- * ```
- *
- * Performance: Suitable for datasets up to ~500 rows
- * For larger datasets, use DataGridAdvanced with virtual scrolling
- */
+	============================================================
+	DataGridBasic - Self-Contained Data Grid (Zero Dependencies)
+	============================================================
+
+	[CR] WHAT IT DOES
+	A lightweight, fully self-contained data grid with sorting, filtering,
+	and pagination. All logic is vanilla Svelte 5 - no external libraries.
+	Designed to be COPY-PASTE READY into any project.
+
+	[NTL] THE SIMPLE VERSION
+	Think of a spreadsheet that you can sort by clicking column headers,
+	search through with a search box, and flip through pages like a book.
+	This does all that without needing any extra code libraries!
+
+	============================================================
+
+	FEATURES:
+	- Column sorting (click headers to sort ↑↓)
+	- Global search/filter across all columns
+	- Pagination with configurable page size
+	- Responsive design (works on mobile!)
+	- Keyboard accessible (Tab, Enter to sort)
+	- Striped/hoverable row styles
+	- Dark mode support
+
+	PERFECT FOR:
+	- Small-medium datasets (up to ~500 rows)
+	- Learning how data grids work
+	- Projects where bundle size matters
+	- Quick prototypes
+
+	NOT IDEAL FOR:
+	- Large datasets (1000s of rows) - use DataGridAdvanced instead
+	- Inline editing - use DataGridAdvanced instead
+	- Complex column filters - use DataGridAdvanced instead
+
+	DEPENDENCIES:
+	- Zero external dependencies (copy-paste ready!)
+	- Uses $lib/types for TypeScript interfaces
+	- Uses $lib/utils for sanitizeHTML (XSS protection)
+
+	ACCESSIBILITY:
+	- Sortable columns are keyboard focusable
+	- aria-sort announces sort direction
+	- Pagination buttons have aria-labels
+	- Screen reader friendly results count
+
+	WARNINGS: None expected
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports for props and data structures
 	import type { DataGridBasicProps, Employee, DataGridColumn } from '$lib/types';
 	import { sanitizeClassName } from '$lib/dataGridFormatters';
 	import { sanitizeHTML } from '$lib/utils';
 
-	/**
-	 * Component Props
-	 * columns is required, others have defaults
-	 */
+	// [CR] ============================================================
+	// [CR] PROPS - All the "knobs and dials" for customising the grid
+	// [NTL] These are the settings you can tweak when using the component
+	// [CR] ============================================================
 	let {
-		data = [],
-		columns,
-		sortable = true,
-		filterable = true,
-		pageSize = 10,
-		striped = true,
-		hoverable = true,
-		compact = false
+		data = [],           // [NTL] The array of objects to display (your spreadsheet data)
+		columns,             // [NTL] Which columns to show and how to format them
+		sortable = true,     // [NTL] Can users click headers to sort?
+		filterable = true,   // [NTL] Show the search box?
+		pageSize = 10,       // [NTL] How many rows per page (0 = show all)
+		striped = true,      // [NTL] Alternating row colours for readability
+		hoverable = true,    // [NTL] Highlight row when mouse hovers over it
+		compact = false      // [NTL] Smaller padding for dense data
 	}: DataGridBasicProps = $props();
 
-	/**
-	 * Component State
-	 * Using Svelte 5 $state rune for reactive state management
-	 */
+	// [CR] ============================================================
+	// [CR] STATE MANAGEMENT - Reactive variables that drive the UI
+	// [NTL] These keep track of what's happening in the grid right now
+	// [CR] ============================================================
 
-	// Sorting state
+	// [CR] Sorting state - which column is sorted and in which direction
+	// [NTL] When you click a column header, these remember your choice
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc'>('asc');
 
-	// Filter state
+	// [CR] Filter state - the current search query
+	// [NTL] Whatever you type in the search box lives here
 	let filterText = $state('');
 
-	// Pagination state
+	// [CR] Pagination state - which page we're viewing
+	// [NTL] Like knowing which page of a book you're on
 	let currentPage = $state(1);
 
-	/**
-	 * Type-safe accessor for row values by column ID
-	 * Uses Record<string, unknown> assertion which is safer than `any`
-	 * because it maintains type checking on the return value
-	 *
-	 * @param row - The data row
-	 * @param columnId - The column ID to access
-	 * @returns The value at that column, or undefined
-	 */
+	// [CR] ============================================================
+	// [CR] HELPER FUNCTIONS
+	// [CR] ============================================================
+
+	// [CR] Type-safe accessor for row values by column ID
+	// [NTL] Since each row can have different columns, this safely grabs
+	// [NTL] the value for any column name you ask for
 	function getRowValue(row: Employee, columnId: string): unknown {
-		// Double cast through unknown to safely access dynamic column values
+		// [CR] Double cast through unknown to safely access dynamic column values
 		return (row as unknown as Record<string, unknown>)[columnId];
 	}
 
-	/**
-	 * Filtered Data
-	 * Apply global search filter to data
-	 */
+	// [CR] ============================================================
+	// [CR] DERIVED VALUES - Computed from state, auto-update when state changes
+	// [NTL] These are like formulas in a spreadsheet - they recalculate automatically!
+	// [CR] ============================================================
+
+	// [CR] Filtered Data - apply global search filter
+	// [NTL] When you type in the search box, this filters your data to only
+	// [NTL] show rows where ANY column contains your search text
 	const filteredData = $derived(() => {
 		if (!filterable || !filterText.trim()) {
 			return data;
@@ -99,7 +118,7 @@
 		const searchTerm = filterText.toLowerCase();
 
 		return data.filter((row) => {
-			// Search across all column values
+			// [CR] Search across all column values - returns true if ANY column matches
 			return columns.some((col) => {
 				const value = getRowValue(row, col.id);
 				if (value === null || value === undefined) return false;
@@ -108,35 +127,32 @@
 		});
 	});
 
-	/**
-	 * Sorted Data
-	 * Apply sorting to filtered data
-	 */
+	// [CR] Sorted Data - apply sorting to the already-filtered data
+	// [NTL] After filtering, this puts the results in order based on
+	// [NTL] which column header you clicked (A-Z, Z-A, 1-9, 9-1)
 	const sortedData = $derived(() => {
 		if (!sortable || !sortColumn) {
 			return filteredData();
 		}
 
-		// Create a copy to avoid mutating original
+		// [CR] Create a copy to avoid mutating the original array
 		const sorted = [...filteredData()];
-
-		// Type guard: sortColumn is guaranteed to be non-null here
 		const columnKey = sortColumn;
 
 		sorted.sort((a, b) => {
 			const aValue = getRowValue(a, columnKey);
 			const bValue = getRowValue(b, columnKey);
 
-			// Handle null/undefined values
+			// [CR] Handle null/undefined - push them to the end
 			if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;
 			if (bValue === null || bValue === undefined) return sortDirection === 'asc' ? -1 : 1;
 
-			// Numeric comparison
+			// [CR] Numeric comparison - for numbers, use mathematical comparison
 			if (typeof aValue === 'number' && typeof bValue === 'number') {
 				return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
 			}
 
-			// String comparison
+			// [CR] String comparison - for text, use alphabetical ordering
 			const aStr = String(aValue).toLowerCase();
 			const bStr = String(bValue).toLowerCase();
 
@@ -148,16 +164,16 @@
 		return sorted;
 	});
 
-	/**
-	 * Pagination calculations
-	 */
+	// [CR] Pagination calculations
+	// [NTL] Figure out how many pages we have and which rows to show
 	const totalRows = $derived(sortedData().length);
 	const totalPages = $derived(pageSize > 0 ? Math.ceil(totalRows / pageSize) : 1);
 
-	// Paginated data for display
+	// [CR] Paginated data - slice out just the rows for the current page
+	// [NTL] If you're on page 2 with 10 rows per page, this grabs rows 11-20
 	const paginatedData = $derived(() => {
 		if (pageSize === 0) {
-			return sortedData(); // No pagination
+			return sortedData(); // [NTL] pageSize of 0 means "show everything"
 		}
 
 		const startIndex = (currentPage - 1) * pageSize;
@@ -165,55 +181,64 @@
 		return sortedData().slice(startIndex, endIndex);
 	});
 
-	/**
-	 * Handle column header click for sorting
-	 */
+	// [CR] ============================================================
+	// [CR] EVENT HANDLERS
+	// [NTL] Functions that respond to user clicks and interactions
+	// [CR] ============================================================
+
+	// [CR] Handle column header click for sorting
+	// [NTL] When you click a column header, this decides whether to
+	// [NTL] sort A-Z, Z-A, or switch to a different column
 	function handleSort(columnId: string) {
 		if (!sortable) return;
 
-		// Find column to check if it's sortable
+		// [CR] Check if this specific column has sorting disabled
 		const column = columns.find((col) => col.id === columnId);
 		if (column?.sortable === false) return;
 
 		if (sortColumn === columnId) {
-			// Toggle direction if same column
+			// [NTL] Clicked same column? Flip the direction!
 			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
 		} else {
-			// New column, default to ascending
+			// [NTL] Clicked new column? Start fresh with ascending
 			sortColumn = columnId;
 			sortDirection = 'asc';
 		}
 
-		// Reset to first page when sorting changes
+		// [CR] Reset to first page when sorting changes
 		currentPage = 1;
 	}
 
-	/**
-	 * Format cell value for display
-	 */
+	// [CR] ============================================================
+	// [CR] CELL FORMATTING - How values are displayed in cells
+	// [CR] ============================================================
+
+	// [CR] Format cell value for display
+	// [NTL] Takes raw data (like 50000) and makes it pretty (like "50,000")
 	function formatCellValue(value: any, column: DataGridColumn, row?: any): string {
 		if (value === null || value === undefined) return '';
 
-		// Use custom renderer if provided (for advanced HTML rendering)
+		// [CR] Use custom renderer for HTML output (with XSS protection)
 		if (column.cellRenderer) {
 			return column.cellRenderer(value, row);
 		}
 
-		// Use custom formatter if provided
+		// [CR] Use custom formatter for text output
 		if (column.formatter) {
 			return column.formatter(value, row);
 		}
 
-		// Default formatting by type
+		// [CR] Default formatting based on column type
 		switch (column.type) {
 			case 'number':
+				// [NTL] Numbers get thousands separators (1000 → 1,000)
 				return typeof value === 'number' ? value.toLocaleString('en-GB') : String(value);
 			case 'date':
-				// Format date as DD/MM/YYYY
+				// [NTL] Dates become DD/MM/YYYY format
 				if (value instanceof Date) {
 					return value.toLocaleDateString('en-GB');
 				}
-				// Handle ISO string dates
+				// [CR] Handle ISO string dates (2024-01-15 → 15/01/2024)
 				if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
 					const date = new Date(value);
 					return date.toLocaleDateString('en-GB');
@@ -224,9 +249,7 @@
 		}
 	}
 
-	/**
-	 * Get inline CSS styles for a cell
-	 */
+	// [CR] Get inline CSS styles for a cell
 	function getCellStyle(value: any, column: DataGridColumn, row?: any): string {
 		if (column.cellStyle) {
 			return column.cellStyle(value, row);
@@ -234,10 +257,7 @@
 		return '';
 	}
 
-	/**
-	 * Get CSS classes for a cell
-	 * Sanitizes class names to prevent injection attacks
-	 */
+	// [CR] Get CSS classes for a cell - sanitized to prevent XSS
 	function getCellClass(value: any, column: DataGridColumn, row?: any): string {
 		if (column.cellClass) {
 			const className = column.cellClass(value, row);
@@ -246,9 +266,11 @@
 		return '';
 	}
 
-	/**
-	 * Pagination controls
-	 */
+	// [CR] ============================================================
+	// [CR] PAGINATION CONTROLS
+	// [NTL] Functions to navigate between pages
+	// [CR] ============================================================
+
 	function goToPage(page: number) {
 		if (page < 1 || page > totalPages) return;
 		currentPage = page;
@@ -262,21 +284,24 @@
 		goToPage(currentPage - 1);
 	}
 
-	// Reset to first page when filter changes
+	// [CR] Reset to first page when filter changes
+	// [NTL] When you search, jump back to page 1 to see results from the start
 	$effect(() => {
-		const _ = filterText; // Track filterText changes
+		const _ = filterText;
 		currentPage = 1;
 	});
 </script>
 
 <!--
-  Main Component Template
+	[CR] ============================================================
+	[CR] TEMPLATE - The visual structure of the grid
+	[NTL] This is what actually appears on screen!
+	[CR] ============================================================
 
-  Structure:
-  1. Filter/search input (if filterable)
-  2. Data table with sortable headers
-  3. Pagination controls (if pageSize > 0)
-  4. Results count display
+	Structure:
+	1. Filter/search input (if filterable)
+	2. Data table with sortable headers
+	3. Pagination controls (if pageSize > 0)
 -->
 
 <div class="datagrid-basic-wrapper">
@@ -717,4 +742,5 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

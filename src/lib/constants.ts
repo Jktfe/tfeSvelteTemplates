@@ -2019,14 +2019,14 @@ export const FALLBACK_SALES_BY_REGION: GeoRegionData[] = [
  * This is a simplified version suitable for web display
  */
 export const UK_REGIONS_GEOJSON_URL =
-	'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2024_EN_BUC/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson';
+	'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Regions_December_2022_EN_BUC/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson';
 
 /**
  * Alternative fallback: UK Countries GeoJSON URL
  * Simpler geometry for faster loading
  */
 export const UK_COUNTRIES_GEOJSON_URL =
-	'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Countries_December_2024_UK_BUC/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson';
+	'https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/Countries_December_2022_UK_BUC/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=geojson';
 
 /**
  * World countries GeoJSON for globe demos

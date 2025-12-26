@@ -1,37 +1,54 @@
+<!--
+  ============================================================
+  GeoSpikeMap.svelte - Geographic Spike Visualization
+  ============================================================
+
+  [CR] WHAT IT DOES
+  SVG-based spike map using LayerChart for dramatic point data visualization.
+  Renders vertical triangular spikes at coordinates with height proportional to
+  values. Uses gradient fills and shadow ellipses for 3D-like depth effect.
+  Sorts by latitude (north-to-south) so spikes render with correct overlap.
+
+  [NTL] THE SIMPLE VERSION
+  Imagine little mountains popping up from a map - taller mountains mean bigger
+  numbers! This creates a dramatic 3D effect that makes differences really pop.
+  Perfect for showing city populations, earthquake magnitudes, or any data where
+  you want the "wow factor" of seeing values as heights.
+
+  FEATURES
+  • Spike height proportional to data values (linear scaling)
+  • 3D-like appearance with gradient fills and shadows
+  • Optional background geography (country/region outlines)
+  • Interactive hover tooltips with value display
+  • Click handlers for spike selection
+  • Customizable spike width and color
+  • Height legend showing min/max values
+  • Proper north-to-south rendering for overlap
+
+  USAGE
+  <GeoSpikeMap
+    geojson={ukOutline}
+    data={cityPopulations}
+    height={500}
+    minSpikeHeight={5}
+    maxSpikeHeight={80}
+    spikeColor="#ef4444"
+    onSpikeClick={(point) => console.log(point)}
+  />
+
+  DEPENDENCIES
+  • layerchart - SVG charting library with geo support
+  • d3-geo - Geographic projections (Mercator)
+  • d3-scale - Linear height scaling
+
+  ============================================================
+-->
 <script lang="ts">
 	/**
-	 * GeoSpikeMap Component
-	 *
-	 * SVG-based spike map using LayerChart for geographic point data visualization.
-	 * Displays vertical spikes at geographic coordinates with height based on data values.
-	 * Creates a dramatic 3D-like effect ideal for showing density or magnitude.
-	 *
-	 * Features:
-	 * - Spike height proportional to data values
-	 * - Optional background geography (country/region outlines)
-	 * - Interactive hover tooltips
-	 * - Click handlers for spike selection
-	 * - Customizable spike width and color
-	 * - Gradient fills for 3D effect
-	 *
-	 * Dependencies: layerchart, d3-geo, d3-scale
-	 *
-	 * Usage:
-	 * ```svelte
-	 * <GeoSpikeMap
-	 *   geojson={ukOutline}
-	 *   data={cityPopulations}
-	 *   height={500}
-	 *   minSpikeHeight={5}
-	 *   maxSpikeHeight={80}
-	 *   onSpikeClick={(point) => console.log(point)}
-	 * />
-	 * ```
-	 *
-	 * @component
+	 * @component GeoSpikeMap
 	 */
 
-	import { Chart, GeoContext, GeoPath, GeoPoint, Svg } from 'layerchart';
+	import { Chart, GeoContext, GeoPath, Svg } from 'layerchart';
 	import { geoMercator } from 'd3-geo';
 	import { scaleLinear } from 'd3-scale';
 	import type { GeoDataPoint } from '$lib/types';
@@ -179,7 +196,9 @@
 				</linearGradient>
 			</defs>
 
-			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()}>
+			<!-- [CR] Using let:projection to access the projection function directly -->
+			<!-- [NTL] The projection is like GPS in reverse - it converts real-world coordinates into positions on our screen canvas! -->
+			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()} let:projection>
 				<!-- Background geography if provided -->
 				{#if geojson}
 					{#each bgFeatures as feature}
@@ -193,38 +212,38 @@
 					{/each}
 				{/if}
 
-				<!-- Spikes -->
+				<!-- Spikes - using projection directly instead of GeoPoint -->
+				<!-- [CR] Project each point's coordinates using the context's projection function -->
 				{#each sortedData as point (point.id)}
-					<GeoPoint lat={point.lat} long={point.long}>
-						{#snippet children({ x, y }: { x: number; y: number })}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<g
-								class="spike-group"
-								transform="translate({x}, {y})"
-								onpointermove={(e: PointerEvent) => handleMouseMove(e, point)}
-								onpointerleave={handleMouseLeave}
-								onclick={() => handleClick(point)}
-							>
-								<!-- Shadow/base -->
-								<ellipse
-									cx="0"
-									cy="0"
-									rx={spikeWidth + 1}
-									ry={spikeWidth / 3}
-									fill="rgba(0,0,0,0.2)"
-									class="spike-shadow"
-								/>
-								<!-- Spike triangle -->
-								<path
-									d={getSpikePath(getSpikeHeight(point))}
-									fill="url(#{gradientId})"
-									stroke={getColor(point)}
-									stroke-width="0.5"
-									class="spike"
-								/>
-							</g>
-						{/snippet}
-					</GeoPoint>
+					{@const projected = projection?.([point.long, point.lat])}
+					{@const x = projected?.[0] ?? 0}
+					{@const y = projected?.[1] ?? 0}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<g
+						class="spike-group"
+						transform="translate({x}, {y})"
+						onpointermove={(e: PointerEvent) => handleMouseMove(e, point)}
+						onpointerleave={handleMouseLeave}
+						onclick={() => handleClick(point)}
+					>
+						<!-- Shadow/base -->
+						<ellipse
+							cx="0"
+							cy="0"
+							rx={spikeWidth + 1}
+							ry={spikeWidth / 3}
+							fill="rgba(0,0,0,0.2)"
+							class="spike-shadow"
+						/>
+						<!-- Spike triangle -->
+						<path
+							d={getSpikePath(getSpikeHeight(point))}
+							fill="url(#{gradientId})"
+							stroke={getColor(point)}
+							stroke-width="0.5"
+							class="spike"
+						/>
+					</g>
 				{/each}
 			</GeoContext>
 		</Svg>

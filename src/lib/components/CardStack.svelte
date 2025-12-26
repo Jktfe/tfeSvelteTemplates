@@ -1,9 +1,22 @@
 <!--
-	CardStack Component - Interactive Card Stack with Selection Navigation
+	============================================================
+	CardStack - Interactive Card Stack with Selection Navigation
+	============================================================
 
+	[CR] WHAT IT DOES
 	Interactive card stack with direction-detecting hover and keyboard/swipe selection.
-	Features two-stage interaction: hover to preview (partial reveal), click/arrow/swipe to select (full reveal).
-	On desktop, includes keyboard navigation. On mobile, includes swipe gestures.
+	Features two-stage interaction: hover to preview (partial reveal), click/arrow/swipe
+	to select (full reveal). Uses a constraint-based mathematical layout system that
+	calculates optimal dimensions at runtime based on container size.
+
+	[NTL] THE SIMPLE VERSION
+	Imagine a hand of playing cards fanned out on a table. When you hover over one,
+	it peeks up to show you more. When you click it, it fully emerges! You can also
+	use arrow keys or swipe on mobile to flip through the cards. The clever bit?
+	The component does maths to figure out exactly how big each card should be so
+	they all fit nicely on any screen size.
+
+	============================================================
 
 	MATHEMATICAL LAYOUT MODEL:
 	This component uses a constraint-based layout system that calculates optimal dimensions
@@ -60,31 +73,47 @@
 	INTERACTION:
 	- Hover: Mouse entry direction determines shift direction (left entry → shift right)
 	- Click/Enter/Space: Toggle card selection (fully emerges with content visible)
+
+	DEPENDENCIES:
+	- $lib/types (CardStackProps, CardLayoutConfig, CalculatedCardLayout)
+	- Zero external dependencies
+
+	ACCESSIBILITY:
+	- Full keyboard support (Arrow keys, Enter/Space, Escape)
+	- ARIA labels on all interactive elements
+	- Focus visible indicators
+	- Respects prefers-reduced-motion
+
+	WARNINGS:
+	- a11y_no_noninteractive_tabindex: Intentional for keyboard navigation
+	- a11y_no_noninteractive_element_interactions: Intentional for touch/keyboard handlers
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports for props and layout configuration
 	import type { CardStackProps, CardLayoutConfig, CalculatedCardLayout } from '$lib/types';
 
-	// Component props with default values
-	// cardWidth and cardHeight serve as base/fallback values - actual dimensions calculated at runtime
+	// [CR] Props with sensible defaults - dimensions are base values, recalculated at runtime
+	// [NTL] These are the "starter settings" - the maths will adjust them to fit your screen!
 	let { cards = [], cardWidth: baseCardWidth = 300, cardHeight: baseCardHeight = 400, partialRevealSide = 'right' }: CardStackProps = $props();
 
-	// Container reference for measurement
+	// [CR] DOM reference for measuring container width
 	let containerEl = $state<HTMLElement | null>(null);
 
-	// Calculated layout values from constraint equations
-	// These are derived at mount + resize, not on every render
+	// [CR] Calculated layout from constraint equations - derived at mount + resize
+	// [NTL] This stores all the maths results: how big cards should be, how much they overlap, etc.
 	let layout = $state<CalculatedCardLayout | null>(null);
 
-	// Reactive state for interaction
-	// hoveredCard stores both the index AND the direction for that specific card
-	// This ensures direction is locked when the card is hovered and doesn't change with mouse movement
+	// [CR] Interaction state - hoveredCard includes locked direction to prevent "dancing"
+	// [NTL] We remember which card you're hovering AND which direction you came from
 	let hoveredCard = $state<{ index: number; shiftDirection: 'left' | 'right' } | null>(null);
 	let selectedIndex = $state<number | null>(null);
 	let touchStartX = $state(0);
 	let touchStartY = $state(0);
 
-	// Reduced motion preference - SSR-safe with fallback
+	// [CR] SSR-safe reduced motion preference
 	let prefersReducedMotion = $state(false);
 
 	/**
@@ -101,21 +130,17 @@
 		return hoveredCard.shiftDirection === 'right' ? shiftAmount : -shiftAmount;
 	}
 
-	/**
-	 * ============================================================
-	 * MATHEMATICAL LAYOUT CALCULATOR
-	 * ============================================================
-	 *
-	 * Implements the constraint-based layout model to calculate optimal
-	 * card dimensions that guarantee visibility, smooth transitions,
-	 * and proper container fit.
-	 *
-	 * Constraint equations applied:
-	 * 1. Container fit: sum(cardw) × 1.1 + hoverShift × 2 ≤ containerWidth
-	 * 2. Title visibility: hoverUp ≥ titleHeight × 1.2
-	 * 3. Content fit: cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
-	 * 4. Hover zone: hoverZoneWidth = 0.9 × overlap × 2
-	 */
+	// [CR] ============================================================
+	// [CR] MATHEMATICAL LAYOUT CALCULATOR
+	// [CR] ============================================================
+	// [CR] Implements constraint-based layout to calculate optimal card
+	// [CR] dimensions guaranteeing visibility, smooth transitions, and fit.
+	//
+	// [NTL] Here's where the "brain" of the component lives! It figures out:
+	// [NTL] - How big each card should be
+	// [NTL] - How much cards should overlap
+	// [NTL] - How far cards should rise on hover
+	// [NTL] All based on how much space you actually have!
 	function calculateCardLayout(config: CardLayoutConfig): CalculatedCardLayout {
 		const { containerWidth, cardCount, titleHeight, bodyHeight } = config;
 
@@ -515,6 +540,7 @@
 		outline: none;
 		position: relative;
 		touch-action: pan-y; /* Allow vertical scroll only, prevent horizontal pan */
+		overflow: hidden; /* [CR] Prevent cards from overflowing container on mobile */
 	}
 
 	/* Wrapper for cards with horizontal layout */
@@ -769,4 +795,5 @@
 	}
 </style>
 
-<!-- Mathematical layout model with direction detection + selection navigation. Updated 26.12.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

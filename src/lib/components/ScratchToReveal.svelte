@@ -1,112 +1,117 @@
 <!--
-/**
- * ScratchToReveal - Interactive scratch-off component revealing hidden content
- *
- * Features:
- * - Canvas-based scratch mechanics with HTML5 Canvas API
- * - Unified pointer events for mouse, touch, and pen input
- * - Progressive reveal with customizable threshold
- * - Auto-reveal option when threshold is reached
- * - Skip and reset functionality
- * - Keyboard shortcuts for accessibility
- * - Progress tracking with optional visual indicator
- * - Customizable scratch surface (color, image, text overlay)
- * - Customizable brush (size, shape)
- * - Zero external dependencies
- *
- * Perfect for:
- * - Gamification (lottery cards, scratch prizes, mystery reveals)
- * - Marketing (coupon codes, promotional offers, discount reveals)
- * - Interactive Content (hidden messages, easter eggs)
- * - Education (quiz answers, learning reveals)
- * - E-commerce (deal reveals, flash sales)
- *
- * Technical Implementation:
- * - Single canvas with 'destination-out' compositing for erasing
- * - RAF-based drawing for 60fps smooth scratching
- * - Pixel sampling for efficient progress calculation
- * - Device pixel ratio scaling for crisp Retina rendering
- * - Pointer capture for smooth dragging
- * - Touch-action CSS to prevent scroll during scratch
- * - Svelte 5 runes ($state, $derived, $effect) for reactivity
- * - ARIA labels and live regions for screen readers
- * - Respects prefers-reduced-motion preference
- *
- * @component
- * @example
- * ```svelte
- * <ScratchToReveal
- *   scratchText="Scratch Here!"
- *   revealThreshold={70}
- *   showProgress={true}
- * >
- *   <div class="prize">You won £50!</div>
- * </ScratchToReveal>
- * ```
- */
+	============================================================
+	ScratchToReveal - Interactive Scratch Card Component
+	============================================================
+
+	[CR] WHAT IT DOES
+	Canvas-based scratch-off component that reveals hidden content when
+	the user "scratches" the surface. Uses HTML5 Canvas with 'destination-out'
+	compositing to erase pixels, revealing content underneath. Supports mouse,
+	touch, and pen input via unified Pointer Events API.
+
+	[NTL] THE SIMPLE VERSION
+	It's like a real lottery scratch card! Drag your finger (or mouse)
+	across the grey area to reveal what's hidden underneath. Once you've
+	scratched enough away, the full prize/message is revealed. You can
+	also skip the scratching or reset it to scratch again!
+
+	============================================================
+
+	FEATURES:
+	- Canvas-based scratch mechanics (HTML5 Canvas API)
+	- Unified pointer events (mouse, touch, pen)
+	- Auto-reveal when threshold percentage is scratched
+	- Skip button to reveal instantly
+	- Reset to scratch again
+	- Keyboard shortcuts (Space/Enter to skip, R to reset)
+	- Progress bar showing scratch percentage
+	- Customisable scratch surface (colour, image, text overlay)
+	- Customisable brush (size, shape)
+	- Retina-ready (device pixel ratio scaling)
+
+	PERFECT FOR:
+	- Lottery / scratch card games
+	- Marketing reveals (coupon codes, discounts)
+	- Interactive content (hidden messages, easter eggs)
+	- Quiz answer reveals
+	- E-commerce deal reveals
+
+	DEPENDENCIES:
+	- $lib/types (ScratchToRevealProps)
+	- Zero external dependencies - pure Canvas API
+
+	ACCESSIBILITY:
+	- Keyboard: Space/Enter to skip, R to reset
+	- Screen readers: ARIA live regions announce progress
+	- Focus indicators on wrapper and buttons
+	- Respects prefers-reduced-motion
+
+	WARNINGS (Safe to ignore):
+	- state_referenced_locally: width/height initialised from props
+	- a11y_no_noninteractive_tabindex: Intentional for keyboard accessibility
+	- a11y_no_noninteractive_element_interactions: Required for keyboard events
+	- element_invalid_self_closing_tag: Style preference, no runtime impact
+
+	============================================================
 -->
 
 <script lang="ts">
 	import type { ScratchToRevealProps } from '$lib/types';
 
-	/**
-	 * Component props with defaults
-	 */
+	// [CR] Props with sensible defaults for scratch card appearance and behaviour
+	// [NTL] All the settings you can tweak - scratch colour, brush size, when to auto-reveal, etc.
 	let {
-		scratchColor = '#999999',
-		scratchImage,
-		scratchText,
-		scratchTextColor = '#ffffff',
-		scratchTextSize = '24px',
-		revealThreshold = 70,
-		autoReveal = true,
-		brushSize = 40,
-		brushShape = 'circle',
-		width = 'auto',
-		height = 'auto',
-		showProgress = false,
-		progressColor = '#3b82f6',
-		allowReset = true,
-		resetButtonText = 'Reset',
-		skipText = 'Skip',
-		onReveal,
-		onProgress,
-		disabled = false,
-		class: className = '',
-		children
+		scratchColor = '#999999',      // [NTL] The grey "scratch off" coating colour
+		scratchImage,                   // [NTL] Optional: use an image instead of solid colour
+		scratchText,                    // [NTL] Optional: text like "SCRATCH HERE!" on top
+		scratchTextColor = '#ffffff',   // [NTL] Colour of the overlay text
+		scratchTextSize = '24px',       // [NTL] Size of the overlay text
+		revealThreshold = 70,           // [NTL] % that must be scratched before auto-reveal (70%)
+		autoReveal = true,              // [NTL] Whether to auto-reveal when threshold is hit
+		brushSize = 40,                 // [NTL] How big the "scratch" circle is in pixels
+		brushShape = 'circle',          // [NTL] Shape of scratch: 'circle' or 'square'
+		width = 'auto',                 // [NTL] Width - 'auto' measures from content
+		height = 'auto',                // [NTL] Height - 'auto' measures from content
+		showProgress = false,           // [NTL] Show progress bar below?
+		progressColor = '#3b82f6',      // [NTL] Colour of the progress bar
+		allowReset = true,              // [NTL] Can users scratch again?
+		resetButtonText = 'Reset',      // [NTL] Text on reset button
+		skipText = 'Skip',              // [NTL] Text on skip button (or null to hide)
+		onReveal,                       // [NTL] Callback when fully revealed
+		onProgress,                     // [NTL] Callback with progress percentage
+		disabled = false,               // [NTL] Disable scratching
+		class: className = '',          // [NTL] Extra CSS classes
+		children                        // [NTL] The hidden content to reveal
 	}: ScratchToRevealProps = $props();
 
-	/**
-	 * Component state
-	 */
-	let canvasEl = $state<HTMLCanvasElement | undefined>();
-	let containerEl = $state<HTMLDivElement | undefined>();
-	let ctx: CanvasRenderingContext2D | null = null;
-	let isScratching = $state(false);
-	let scratchPercentage = $state(0);
-	let isFullyRevealed = $state(false);
-	let canvasWidth = $state(width === 'auto' ? 0 : width);
-	let canvasHeight = $state(height === 'auto' ? 0 : height);
-	let rafId: number | null = null;
-	let resizeObserver: ResizeObserver | null = null;
+	// [CR] Component state - tracks canvas, scratching progress, and reveal status
+	// [NTL] These are the "behind the scenes" values that make everything work
+	let canvasEl = $state<HTMLCanvasElement | undefined>();       // [CR] Canvas DOM element reference
+	let containerEl = $state<HTMLDivElement | undefined>();       // [CR] Container for measuring content
+	let ctx: CanvasRenderingContext2D | null = null;              // [CR] Canvas 2D drawing context
+	let isScratching = $state(false);                             // [NTL] Is user currently scratching?
+	let scratchPercentage = $state(0);                            // [NTL] How much has been scratched (0-100)
+	let isFullyRevealed = $state(false);                          // [NTL] Is content fully revealed?
+	let canvasWidth = $state(width === 'auto' ? 0 : width);       // [CR] Calculated canvas width
+	let canvasHeight = $state(height === 'auto' ? 0 : height);    // [CR] Calculated canvas height
+	let rafId: number | null = null;                              // [CR] RequestAnimationFrame ID for smooth drawing
+	let resizeObserver: ResizeObserver | null = null;             // [CR] Observer for auto-sizing
 
-	/**
-	 * Auto-measure content dimensions when width/height is 'auto'
-	 * Uses ResizeObserver for reactive updates when content size changes
-	 */
+	// [CR] Auto-measure content dimensions when width/height is 'auto'
+	// [NTL] When you don't specify a size, we figure out how big the hidden content is
 	$effect(() => {
 		if ((width === 'auto' || height === 'auto') && containerEl) {
 			const contentEl = containerEl.querySelector('.revealed-content');
 			if (!contentEl) return;
 
-			// Use ResizeObserver for reactive dimension updates
+			// [CR] ResizeObserver efficiently tracks content size changes
 			resizeObserver = new ResizeObserver((entries) => {
 				for (const entry of entries) {
 					const { width: w, height: h } = entry.contentRect;
 					if (width === 'auto' && w > 0) canvasWidth = w;
 					if (height === 'auto' && h > 0) canvasHeight = h;
 
-					// Re-initialize canvas when dimensions change
+					// [CR] Reinitialize canvas when dimensions change
 					if (canvasWidth > 0 && canvasHeight > 0) {
 						initializeCanvas();
 					}
@@ -115,7 +120,7 @@
 
 			resizeObserver.observe(contentEl);
 
-			// Cleanup on unmount
+			// [CR] Cleanup: disconnect observer when component unmounts
 			return () => {
 				if (resizeObserver) {
 					resizeObserver.disconnect();
@@ -125,12 +130,8 @@
 		}
 	});
 
-	/**
-	 * Initialize canvas with scratch surface
-	 * - Scales canvas for device pixel ratio (Retina displays)
-	 * - Draws scratch surface (color or image)
-	 * - Renders overlay text if provided
-	 */
+	// [CR] Initialize canvas with scratch surface
+	// [NTL] This draws the grey (or image) coating that users will scratch off
 	function initializeCanvas() {
 		if (!canvasEl || canvasWidth <= 0 || canvasHeight <= 0) return;
 
@@ -163,9 +164,8 @@
 		}
 	}
 
-	/**
-	 * Draw overlay text on scratch surface
-	 */
+	// [CR] Draw overlay text on scratch surface (e.g., "SCRATCH HERE!")
+	// [NTL] Adds helpful text like "Scratch Here!" on top of the grey coating
 	function drawOverlayText() {
 		if (scratchText && ctx) {
 			ctx.fillStyle = scratchTextColor;
@@ -176,10 +176,8 @@
 		}
 	}
 
-	/**
-	 * Pointer down event handler
-	 * Starts scratching and captures pointer for smooth dragging
-	 */
+	// [CR] Pointer down handler - starts scratching and captures pointer
+	// [NTL] When you press down on the scratch card, this kicks off the scratching!
 	function handlePointerDown(e: PointerEvent) {
 		if (disabled || isFullyRevealed) return;
 
@@ -188,19 +186,15 @@
 		scratch(e);
 	}
 
-	/**
-	 * Pointer move event handler
-	 * Continues scratching while pointer is down
-	 */
+	// [CR] Pointer move handler - continues scratching while pointer is down
+	// [NTL] As you drag your finger/mouse, this keeps scratching away!
 	function handlePointerMove(e: PointerEvent) {
 		if (!isScratching || disabled) return;
 		scratch(e);
 	}
 
-	/**
-	 * Pointer up event handler
-	 * Stops scratching, releases pointer capture, and calculates progress
-	 */
+	// [CR] Pointer up handler - stops scratching and calculates progress
+	// [NTL] When you lift your finger, we check how much you've scratched!
 	function handlePointerUp(e: PointerEvent) {
 		if (!isScratching) return;
 
@@ -211,11 +205,9 @@
 		updateProgress();
 	}
 
-	/**
-	 * Scratch drawing function
-	 * Uses RAF for 60fps smooth animation
-	 * Erases pixels at pointer location using 'destination-out' compositing
-	 */
+	// [CR] Core scratch drawing function - uses RAF for 60fps smooth animation
+	// [CR] Erases pixels using 'destination-out' compositing (makes pixels transparent)
+	// [NTL] This is the actual "eraser" that removes the grey coating pixel by pixel!
 	function scratch(e: PointerEvent) {
 		if (!ctx || !canvasEl || rafId) return;
 
@@ -239,11 +231,8 @@
 		});
 	}
 
-	/**
-	 * Calculate scratch percentage using pixel sampling
-	 * Samples every 4th pixel for 4x performance gain
-	 * Only runs on pointer up to avoid frequent recalculation
-	 */
+	// [CR] Calculate scratch percentage using pixel sampling (every 4th pixel for perf)
+	// [NTL] Counts transparent vs opaque pixels to figure out the scratch percentage
 	function updateProgress() {
 		if (!ctx || !canvasEl) return;
 
@@ -268,10 +257,8 @@
 		}
 	}
 
-	/**
-	 * Reveal all content immediately
-	 * Clears entire canvas and marks as fully revealed
-	 */
+	// [CR] Reveal all content immediately - clears canvas and triggers callback
+	// [NTL] The "skip" button uses this to instantly reveal everything!
 	function revealAll() {
 		if (!ctx || !canvasEl) return;
 
@@ -281,21 +268,16 @@
 		onReveal?.();
 	}
 
-	/**
-	 * Reset scratch surface to initial state
-	 * Re-initializes canvas with fresh scratch surface
-	 */
+	// [CR] Reset scratch surface - re-initializes canvas with fresh coating
+	// [NTL] The "reset" button uses this so you can scratch again!
 	function reset() {
 		isFullyRevealed = false;
 		scratchPercentage = 0;
 		initializeCanvas();
 	}
 
-	/**
-	 * Keyboard event handler for accessibility
-	 * Space/Enter: Skip to reveal all
-	 * 'r' key: Reset (if allowed)
-	 */
+	// [CR] Keyboard event handler for accessibility (Space/Enter = skip, R = reset)
+	// [NTL] Keyboard users can press Space to skip or R to reset - no mouse needed!
 	function handleKeyDown(e: KeyboardEvent) {
 		if (e.key === ' ' || e.key === 'Enter') {
 			e.preventDefault();
@@ -306,10 +288,8 @@
 		}
 	}
 
-	/**
-	 * Handle explicit dimensions (when not 'auto')
-	 * Initializes canvas immediately when user provides fixed width/height
-	 */
+	// [CR] Handle explicit dimensions - init canvas when user provides fixed width/height
+	// [NTL] When you set a specific size (not 'auto'), we set up the canvas right away
 	$effect(() => {
 		if (width !== 'auto') canvasWidth = width;
 		if (height !== 'auto') canvasHeight = height;
@@ -329,12 +309,13 @@
 >
 	<!-- Interactive scratch area (canvas + content) -->
 	<div bind:this={containerEl} class="scratch-area">
-		<!-- Revealed content (constrained by explicit dimensions) -->
+		<!-- Revealed content - only constrain dimensions when explicit values provided -->
+		<!-- [CR] When width/height are 'auto', let content size naturally so we can measure it -->
 		<div
 			class="revealed-content"
 			class:visible={isFullyRevealed}
-			style:width="{canvasWidth}px"
-			style:height="{canvasHeight}px"
+			style:width={width !== 'auto' ? `${canvasWidth}px` : undefined}
+			style:height={height !== 'auto' ? `${canvasHeight}px` : undefined}
 		>
 			{#if children}
 				{@render children()}
@@ -418,10 +399,12 @@
 	/**
 	 * Scratch area container
 	 * Contains revealed content and canvas only
+	 * [CR] Using inline-flex ensures container shrinks to fit content exactly,
+	 * preventing canvas alignment issues where container was larger than content
 	 */
 	.scratch-area {
 		position: relative;
-		display: block;
+		display: inline-flex;
 	}
 
 	/**
@@ -570,4 +553,5 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 24.12.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

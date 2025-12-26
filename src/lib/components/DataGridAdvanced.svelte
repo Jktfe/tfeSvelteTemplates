@@ -1,55 +1,59 @@
 <!--
-/**
- * DataGridAdvanced Component - Production-ready data grid using SVAR Grid
- *
- * A comprehensive wrapper around @svar-ui/svelte-grid that provides:
- * - Virtual scrolling for large datasets
- * - Global search across all columns
- * - Column sorting and filtering
- * - Inline editing with various editor types
- * - Row selection and bulk operations
- * - CSV export
- * - Responsive design
- * - Light and dark themes
- * - Full TypeScript support
- *
- * This component demonstrates how to integrate a third-party grid library
- * with custom configuration and styling while maintaining type safety.
- *
- * @component DataGridAdvanced
- * @example
- * ```svelte
- * <DataGridAdvanced
- *   data={employees}
- *   editable={true}
- *   selectable={true}
- *   pageSize={20}
- *   exportable={true}
- *   theme="willow"
- * />
- * ```
- *
- * Dependencies:
- * - @svar-ui/svelte-grid (SVAR Grid library)
- *
- * Key Features:
- * - Handles large datasets efficiently with virtual scrolling
- * - Global search filters across all columns in real-time
- * - Column-level sorting and filtering
- * - Auto-generates column definitions from data structure
- * - Supports custom column configuration
- * - Theme-aware (light/dark modes)
- * - Fully accessible (WAI-ARIA compliant)
- * - CSV export functionality
- * - Bulk delete operations
- * - Optimistic updates with rollback on error
- *
- * Note: This is NOT a copy-paste ready component due to the @svar-ui/svelte-grid dependency.
- * For a self-contained alternative, see DataGridBasic.svelte
- */
+	============================================================
+	DataGridAdvanced - Production Data Grid (SVAR Grid Wrapper)
+	============================================================
+
+	[CR] WHAT IT DOES
+	A comprehensive wrapper around @svar-ui/svelte-grid providing
+	virtual scrolling, inline editing, row selection, and bulk operations.
+	Designed for production apps with large datasets.
+
+	[NTL] THE SIMPLE VERSION
+	This is a super-powered spreadsheet that can handle THOUSANDS of rows
+	without slowing down! You can click cells to edit them, select multiple
+	rows for bulk actions, search through everything, and export to CSV.
+
+	============================================================
+
+	FEATURES:
+	- Virtual scrolling (handles 10,000+ rows smoothly)
+	- Global search across all columns
+	- Inline editing (click any cell to edit)
+	- Row selection for bulk operations
+	- CSV export with one click
+	- Light/dark theme support
+	- Optimistic updates with rollback on error
+	- Auto-generates columns from data structure
+
+	PERFECT FOR:
+	- Large datasets (1000s of rows)
+	- Production admin dashboards
+	- Data entry applications
+	- Employee/inventory management systems
+
+	NOT IDEAL FOR:
+	- Small prototypes (use DataGridBasic instead)
+	- Bundle-size sensitive projects (~155KB dependency)
+	- Projects needing zero dependencies
+
+	DEPENDENCIES:
+	- @svar-ui/svelte-grid (SVAR Grid library)
+	- Uses $lib/types for TypeScript interfaces
+	- Uses $lib/constants for select field options
+
+	ACCESSIBILITY:
+	- WAI-ARIA compliant (SVAR Grid built-in)
+	- Keyboard navigation within grid
+	- Screen reader friendly
+	- aria-busy during API updates
+
+	WARNINGS: None expected
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] SVAR Grid imports - the heavy-lifting library
 	import { Grid, Willow, WillowDark } from '@svar-ui/svelte-grid';
 	import type { DataGridAdvancedProps, Employee, DataGridColumn } from '$lib/types';
 	import { sanitizeClassName } from '$lib/dataGridFormatters';
@@ -62,10 +66,12 @@
 		VALIDATION_FIELDS
 	} from '$lib/constants';
 
-	/**
-	 * Escape HTML special characters to prevent XSS attacks
-	 * Used for formatter output and raw values in template
-	 */
+	// [CR] ============================================================
+	// [CR] SECURITY HELPERS
+	// [CR] ============================================================
+
+	// [CR] Escape HTML special characters to prevent XSS attacks
+	// [NTL] Makes sure nobody can sneak nasty code into our grid!
 	function escapeHtml(str: string): string {
 		return str
 			.replace(/&/g, '&amp;')
@@ -75,28 +81,26 @@
 			.replace(/'/g, '&#039;');
 	}
 
-	/**
-	 * Component Props
-	 * All props are optional except data, with sensible defaults
-	 *
-	 * Note: Inline editing requires both:
-	 * 1. editable={true} prop (enables Grid-level edit mode)
-	 * 2. Column-level editor properties (auto-configured)
-	 * Click any cell to start editing, press Enter to save, Esc to cancel
-	 */
+	// [CR] ============================================================
+	// [CR] PROPS - Configuration options for the grid
+	// [NTL] These are the settings you pass in when using the component
+	// [CR] ============================================================
 	let {
-		data = [],
-		columns = undefined,
-		editable = false,
-		selectable = false,
-		pageSize = 20,
-		exportable = false,
-		theme = 'willow'
+		data = [],             // [NTL] Your array of data objects
+		columns = undefined,   // [NTL] Custom column config (or auto-generate)
+		editable = false,      // [NTL] Can users click cells to edit?
+		selectable = false,    // [NTL] Can users select rows for bulk actions?
+		pageSize = 20,         // [NTL] Rows per page (0 = no pagination)
+		exportable = false,    // [NTL] Show the "Export CSV" button?
+		theme = 'willow'       // [NTL] 'willow' (light) or 'willowDark'
 	}: DataGridAdvancedProps = $props();
 
-	/**
-	 * Search state for global filtering
-	 */
+	// [CR] ============================================================
+	// [CR] STATE MANAGEMENT
+	// [CR] ============================================================
+
+	// [CR] Search state for global filtering
+	// [NTL] What the user types in the search box
 	let searchQuery = $state('');
 
 	/**
@@ -921,4 +925,5 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

@@ -1,11 +1,22 @@
 <script lang="ts">
 	/**
-	 * FormField Wrapper Component
+	 * ============================================================
+	 * FormField - Base Wrapper for All Form Fields
+	 * ============================================================
 	 *
-	 * A reusable wrapper component that provides consistent layout for all form fields.
-	 * Handles label, help text, error display, and accessibility attributes.
+	 * [CR] WHAT IT DOES
+	 * Provides consistent structure for form fields: label, help text,
+	 * input slot, and error message. All form field components use this
+	 * as their wrapper to ensure visual and accessibility consistency.
 	 *
-	 * Features:
+	 * [NTL] THE SIMPLE VERSION
+	 * Think of this as the "frame" that goes around every input box.
+	 * It handles all the boring-but-important stuff like labels and
+	 * error messages so each input type doesn't have to repeat that code!
+	 *
+	 * ============================================================
+	 *
+	 * [CR] FEATURES
 	 * - Automatic ID generation for label association
 	 * - Required field indicator (*)
 	 * - Help text with aria-describedby
@@ -13,61 +24,45 @@
 	 * - "Touched" state for UX-friendly error display
 	 * - Fully accessible
 	 *
-	 * Usage:
+	 * [CR] USAGE
 	 * ```svelte
-	 * <FormField
-	 *   name="email"
-	 *   label="Email Address"
-	 *   required={true}
-	 *   error={emailError}
-	 *   touched={emailTouched}
-	 *   helpText="We'll never share your email"
-	 * >
+	 * <FormField name="email" label="Email" required={true} error={err}>
 	 *   <input type="email" ... />
 	 * </FormField>
 	 * ```
 	 *
+	 * ============================================================
 	 * @component
 	 */
 
+	// [CR] IMPORTS
 	import type { Snippet } from 'svelte';
 
+	// [CR] COMPONENT PROPS
+	// [NTL] These settings control how the form field looks and behaves!
 	interface Props {
-		/**
-		 * Field name (used for ID generation)
-		 */
+		/** [CR] Field name - used for ID generation and form submission */
 		name: string;
 
-		/**
-		 * Label text displayed above field
-		 */
+		/** [CR] Label text displayed above field */
 		label: string;
 
-		/**
-		 * Whether the field is required
-		 * Shows * indicator and aria-required attribute
-		 */
+		/** [CR] Whether the field is required - shows * indicator */
 		required?: boolean;
 
-		/**
-		 * Current error message (if any)
-		 */
+		/** [CR] Current error message (if any) */
 		error?: string;
 
 		/**
-		 * Whether the field has been interacted with
-		 * Errors only shown after field is touched
+		 * [CR] Whether the field has been interacted with
+		 * [NTL] We only show errors AFTER you've touched the field - nicer UX!
 		 */
 		touched?: boolean;
 
-		/**
-		 * Optional help text displayed below label
-		 */
+		/** [CR] Optional help text displayed below label */
 		helpText?: string;
 
-		/**
-		 * Child content (the actual input element)
-		 */
+		/** [CR] Child content (the actual input element via Snippet) */
 		children: Snippet;
 	}
 
@@ -81,14 +76,19 @@
 		children
 	}: Props = $props();
 
+	// [CR] DERIVED VALUES
+	// [NTL] These are calculated automatically whenever their dependencies change!
+
 	/**
-	 * Computed visible error - only show if field has been touched
-	 * Improves UX by not showing errors before user has attempted input
+	 * [CR] Computed visible error - only show if field has been touched
+	 * [NTL] This is the "don't yell at me before I've even tried" logic!
 	 */
 	let visibleError = $derived(touched && error);
 
 	/**
-	 * Generate IDs for aria associations
+	 * [CR] Generate IDs for aria associations
+	 * [NTL] These IDs link the label, help text, and error to the input
+	 * so screen readers can announce them together
 	 */
 	let fieldId = $derived(`field-${name}`);
 	let helpId = $derived(`${name}-help`);

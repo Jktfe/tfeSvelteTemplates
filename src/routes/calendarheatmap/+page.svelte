@@ -19,20 +19,34 @@
 	let selectedDate = $state<string | null>(null);
 
 	/**
-	 * Generate 90-day subset of data for custom range example
+	 * Date range presets for the custom range filter
 	 */
-	const last90Days = $derived(() => {
-		const ninetyDaysAgo = new Date();
-		ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
-		return data.calendarData.filter((d) => new Date(d.date) >= ninetyDaysAgo);
+	const dateRangePresets = {
+		'30': { label: '30 Days', days: 30 },
+		'90': { label: '90 Days', days: 90 },
+		'180': { label: '180 Days', days: 180 },
+		'365': { label: '1 Year', days: 365 }
+	};
+
+	let selectedRange = $state<keyof typeof dateRangePresets>('90');
+
+	/**
+	 * Generate filtered data based on selected range
+	 */
+	const filteredData = $derived(() => {
+		const days = dateRangePresets[selectedRange].days;
+		const startDate = new Date();
+		startDate.setDate(startDate.getDate() - days);
+		return data.calendarData.filter((d) => new Date(d.date) >= startDate);
 	});
 
 	/**
-	 * Calculate start date for 90-day range
+	 * Calculate start date for selected range
 	 */
-	const ninetyDaysStart = $derived(() => {
+	const rangeStartDate = $derived(() => {
+		const days = dateRangePresets[selectedRange].days;
 		const date = new Date();
-		date.setDate(date.getDate() - 90);
+		date.setDate(date.getDate() - days);
 		return date;
 	});
 
@@ -232,23 +246,36 @@
 	<section class="example-section">
 		<h2>Custom Date Range</h2>
 		<p class="example-description">
-			Display a specific date range instead of the default 365 days. This example shows the past 90
-			days.
+			Display a specific date range instead of the default 365 days. Use the filter to select
+			different time periods.
 		</p>
 
+		<div class="range-filter">
+			{#each Object.entries(dateRangePresets) as [key, preset]}
+				<button
+					class="range-button"
+					class:active={selectedRange === key}
+					onclick={() => (selectedRange = key as keyof typeof dateRangePresets)}
+				>
+					{preset.label}
+				</button>
+			{/each}
+		</div>
+
 		<div class="example-demo">
-			<CalendarHeatmap data={last90Days()} startDate={ninetyDaysStart()} endDate={new Date()} />
+			<CalendarHeatmap data={filteredData()} startDate={rangeStartDate()} endDate={new Date()} />
 		</div>
 
 		<div class="code-block">
 			<pre><code>{`<script>
-  const ninetyDaysAgo = new Date();
-  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const daysAgo = ${dateRangePresets[selectedRange].days};
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - daysAgo);
 </script>
 
 <CalendarHeatmap
   data={activityData}
-  startDate={ninetyDaysAgo}
+  startDate={startDate}
   endDate={new Date()}
 />`}</code></pre>
 		</div>
@@ -610,6 +637,39 @@
 	}
 
 	/**
+	 * Range Filter (for Custom Date Range section)
+	 */
+	.range-filter {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		flex-wrap: wrap;
+	}
+
+	.range-button {
+		padding: 0.5rem 1rem;
+		border: 1px solid #d1d5db;
+		border-radius: 6px;
+		background: white;
+		color: #374151;
+		font-size: 0.875rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+
+	.range-button:hover {
+		border-color: #9ca3af;
+		background: #f9fafb;
+	}
+
+	.range-button.active {
+		border-color: #10b981;
+		background: #ecfdf5;
+		color: #059669;
+	}
+
+	/**
 	 * Code Blocks
 	 */
 	.code-block {
@@ -780,6 +840,9 @@
 
 		.example-demo {
 			padding: 1rem;
+			/* Allow horizontal scrolling for calendar overflow */
+			overflow-x: auto;
+			-webkit-overflow-scrolling: touch;
 		}
 
 		.code-block {
@@ -793,6 +856,13 @@
 		.props-table th,
 		.props-table td {
 			padding: 0.5rem;
+		}
+
+		/* Smaller buttons on mobile */
+		.scheme-button,
+		.range-button {
+			padding: 0.5rem 0.75rem;
+			font-size: 0.8125rem;
 		}
 	}
 </style>

@@ -1,16 +1,32 @@
 <script lang="ts">
 	/**
-	 * TextField - Reusable text input supporting text/email/url/tel/password/search types
-	 * Features validation, accessibility, and integration with FormField wrapper
+	 * ============================================================
+	 * TextField - Text Input Component
+	 * ============================================================
+	 *
+	 * [CR] WHAT IT DOES
+	 * Reusable text input supporting text/email/url/tel/password/search types.
+	 * Wraps an HTML input with FormField for consistent styling and accessibility.
+	 *
+	 * [NTL] THE SIMPLE VERSION
+	 * This is your standard text box! Type in your name, email, password...
+	 * It handles all the common input types and makes them look nice.
+	 *
+	 * ============================================================
+	 * @component
 	 */
+
+	// [CR] IMPORTS
 	import FormField from './FormField.svelte';
 	import type { TextFieldProps } from '$lib/types';
 
+	// [CR] COMPONENT PROPS
+	// [NTL] All the ways you can customise this text input!
 	let {
 		name,
 		label,
-		type = 'text',
-		value = $bindable(''),
+		type = 'text', // [NTL] Can be: text, email, url, tel, password, search
+		value = $bindable(''), // [CR] Two-way binding with $bindable rune
 		placeholder = '',
 		helpText = '',
 		required = false,
@@ -19,27 +35,26 @@
 		error = '',
 		touched = false,
 		maxlength,
-		pattern,
-		autocomplete,
+		pattern, // [CR] Regex pattern for validation
+		autocomplete, // [NTL] Browser's "remember this" feature
 		onblur,
 		oninput
 	}: TextFieldProps = $props();
 
-	/**
-	 * Generate IDs for aria associations
-	 */
+	// [CR] DERIVED VALUES - Computed IDs for accessibility
 	let fieldId = $derived(`field-${name}`);
 	let helpId = $derived(`${name}-help`);
 	let errorId = $derived(`${name}-error`);
 
-	/**
-	 * Determine if field has error state for styling
-	 */
+	// [CR] Error state for conditional styling
+	// [NTL] Only show error styling after the field has been "touched"
 	let hasError = $derived(touched && !!error);
 
+	// [CR] EVENT HANDLERS
+
 	/**
-	 * Handle input changes
-	 * Updates bound value and triggers optional callback
+	 * [CR] Handle input changes - updates bound value and triggers callback
+	 * [NTL] Every keystroke updates the value and lets the parent know!
 	 */
 	function handleInput(e: Event) {
 		const target = e.target as HTMLInputElement;
@@ -48,8 +63,8 @@
 	}
 
 	/**
-	 * Handle blur event
-	 * Marks field as touched and triggers optional callback
+	 * [CR] Handle blur event - marks field as touched
+	 * [NTL] When you click away from the field, we mark it as "touched"
 	 */
 	function handleBlur() {
 		onblur?.();

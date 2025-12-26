@@ -17,48 +17,46 @@
 
 	import DomeGallery from '$lib/components/DomeGallery.svelte';
 
-	// Sample images - a mix of abstract and artistic photos
+	// Sample images - expanded set for better sphere coverage
+	// Using smaller 300x300 for faster mobile loading
 	const demoImages = [
-		{
-			src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&h=400&fit=crop',
-			alt: 'Abstract gradient art'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=400&h=400&fit=crop',
-			alt: 'Colorful gradient'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=400&h=400&fit=crop',
-			alt: 'Purple abstract'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=400&fit=crop',
-			alt: 'Fluid art'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=400&h=400&fit=crop',
-			alt: 'Neon lights'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=400&h=400&fit=crop',
-			alt: 'Abstract waves'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=400&h=400&fit=crop',
-			alt: 'Digital art'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&h=400&fit=crop',
-			alt: 'Geometric patterns'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1634017839464-5c339bbe3c35?w=400&h=400&fit=crop',
-			alt: 'Abstract sculpture'
-		},
-		{
-			src: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=400&h=400&fit=crop',
-			alt: 'Holographic texture'
-		}
+		// Abstract gradients
+		{ src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=300&h=300&fit=crop', alt: 'Abstract gradient art' },
+		{ src: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=300&h=300&fit=crop', alt: 'Colorful gradient' },
+		{ src: 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=300&h=300&fit=crop', alt: 'Purple abstract' },
+		{ src: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=300&h=300&fit=crop', alt: 'Fluid art' },
+		{ src: 'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=300&h=300&fit=crop', alt: 'Abstract pink gradient' },
+		// Textures and patterns
+		{ src: 'https://images.unsplash.com/photo-1604076913837-52ab5629fba9?w=300&h=300&fit=crop', alt: 'Neon lights' },
+		{ src: 'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=300&h=300&fit=crop', alt: 'Abstract waves' },
+		{ src: 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?w=300&h=300&fit=crop', alt: 'Digital art' },
+		{ src: 'https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=300&h=300&fit=crop', alt: 'Geometric patterns' },
+		{ src: 'https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?w=300&h=300&fit=crop', alt: 'Holographic texture' },
+		// Nature abstracts
+		{ src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop', alt: 'Ocean waves' },
+		{ src: 'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=300&h=300&fit=crop', alt: 'Mountain peaks' },
+		{ src: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=300&h=300&fit=crop', alt: 'Alpine landscape' },
+		{ src: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=300&fit=crop', alt: 'Forest sunlight' },
+		{ src: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=300&h=300&fit=crop', alt: 'Misty forest' },
+		// Space and cosmos
+		{ src: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=300&h=300&fit=crop', alt: 'Galaxy nebula' },
+		{ src: 'https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=300&h=300&fit=crop', alt: 'Starry night' },
+		{ src: 'https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?w=300&h=300&fit=crop', alt: 'Milky way' },
+		// More gradients and art
+		{ src: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=300&h=300&fit=crop', alt: 'Neon pink' },
+		{ src: 'https://images.unsplash.com/photo-1557682224-5b8590cd9ec5?w=300&h=300&fit=crop', alt: 'Gradient blur' },
+		{ src: 'https://images.unsplash.com/photo-1553356084-58ef4a67b2a7?w=300&h=300&fit=crop', alt: 'Paint swirl' },
+		{ src: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=300&h=300&fit=crop', alt: 'Smoke art' },
+		{ src: 'https://images.unsplash.com/photo-1550859492-d5da9d8e45f3?w=300&h=300&fit=crop', alt: 'Light trails' },
+		{ src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&h=300&fit=crop', alt: 'Bokeh lights' },
+		// Architecture and geometry
+		{ src: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=300&h=300&fit=crop', alt: 'Building facade' },
+		{ src: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=300&h=300&fit=crop', alt: 'City skyline' },
+		{ src: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=300&h=300&fit=crop', alt: 'Urban architecture' },
+		{ src: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=300&h=300&fit=crop', alt: 'Night city' },
+		// Water and sky
+		{ src: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=300&h=300&fit=crop', alt: 'Ocean sunset' },
+		{ src: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=300&h=300&fit=crop', alt: 'Cloud formations' }
 	];
 
 	// Configurable demo state

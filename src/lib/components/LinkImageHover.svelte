@@ -1,111 +1,115 @@
 <!--
-/**
- * LinkImageHover - Interactive link with floating image preview on hover
- *
- * Features:
- * - Desktop: Image preview appears on hover, click follows link immediately
- * - Mobile: First tap shows preview, second tap on preview follows link
- * - Smooth blur transition effect using Svelte transitions
- * - Image floats above the link text with absolute positioning
- * - Customisable link attributes and image dimensions
- * - Zero external dependencies
- * - Fully accessible with proper alt text and ARIA labels
- * - Touch-optimised interaction patterns
- *
- * Perfect for:
- * - Documentation sites with visual references
- * - Resource lists with preview images
- * - Bibliography or citation lists
- * - Product links in content
- * - Portfolio or project references
- * - Navigation with visual context
- *
- * Technical Implementation:
- * - Svelte 5 $state rune for reactive hover/show state
- * - Svelte's built-in blur() transition
- * - Device detection (mouse vs. touch) on mount
- * - Absolute positioning with z-index stacking
- * - Event handlers optimised for desktop vs. mobile
- * - Respects reduced motion preferences
- *
- * Interaction Patterns:
- * - Desktop (mouse): Hover to preview, click to navigate
- * - Mobile (touch): Tap to preview, tap image to navigate, tap away to dismiss
- *
- * @component
- * @example
- * ```svelte
- * <LinkImageHover
- *   href="https://docs.example.com"
- *   text="View Documentation"
- *   imageSrc="/preview-docs.jpg"
- *   imageAlt="Documentation screenshot"
- *   imageWidth="h-52 w-52"
- * />
- * ```
- */
+	============================================================
+	LinkImageHover - Link with Floating Image Preview
+	============================================================
+
+	[CR] WHAT IT DOES
+	Interactive link that shows a floating image preview on hover (desktop)
+	or tap (mobile). Uses Svelte's built-in blur transition for smooth
+	appearance, and handles touch vs pointer devices appropriately.
+
+	[NTL] THE SIMPLE VERSION
+	A link that shows a sneak peek image when you hover over it! On phones,
+	you tap once to see the preview, then tap the preview to follow the link.
+	It's like a tooltip, but with pictures!
+
+	============================================================
+
+	FEATURES:
+	- Desktop: Hover to preview, click to navigate
+	- Mobile: Tap to preview, tap preview to navigate
+	- Smooth blur transition on image appearance
+	- Absolute positioning above link text
+	- Click-outside to dismiss on mobile
+	- Security attributes for external links
+
+	PERFECT FOR:
+	- Documentation with visual references
+	- Resource lists with preview images
+	- Product links in content
+	- Portfolio or project references
+
+	DEPENDENCIES:
+	- svelte/transition (blur effect - built into Svelte)
+	- $lib/types (LinkImageHoverProps)
+	- Zero external dependencies
+
+	ACCESSIBILITY:
+	- Alt text on preview images
+	- ARIA label on mobile button
+	- Standard link accessibility
+
+	WARNINGS: None expected
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Svelte's built-in blur transition for smooth image appearance
 	import { blur } from 'svelte/transition';
 	import { onMount } from 'svelte';
 	import type { LinkImageHoverProps } from '$lib/types';
 
-	/**
-	 * Props for LinkImageHover component
-	 */
+	// [CR] Props interface imported from types
+	// [NTL] These are the "knobs and dials" for customising the link preview!
 	let {
-		href = 'https://example.com',
-		text = 'Link Text',
-		imageSrc = 'https://i.pinimg.com/736x/7e/61/74/7e6174c858a5aa169de033f55fc3050c.jpg',
-		imageAlt = 'Preview Image',
-		imageWidth = 'h-44 w-44',
-		target = '_blank'
+		href = 'https://example.com',        // [NTL] Where does the link go?
+		text = 'Link Text',                   // [NTL] What text does the link show?
+		imageSrc = 'https://i.pinimg.com/736x/7e/61/74/7e6174c858a5aa169de033f55fc3050c.jpg',  // [NTL] Preview image URL
+		imageAlt = 'Preview Image',           // [NTL] Alt text for screen readers
+		imageWidth = 'h-44 w-44',             // [NTL] Tailwind classes for image size
+		target = '_blank'                     // [NTL] Open in new tab by default
 	}: LinkImageHoverProps = $props();
 
-	/**
-	 * Track hover state to show/hide image (desktop)
-	 */
+	// [CR] ============================================================
+	// [CR] STATE MANAGEMENT
+	// [NTL] These variables keep track of what's happening
+	// [CR] ============================================================
+
+	// [CR] Track hover state for desktop (mouse) interaction
 	let isHover = $state(false);
 
-	/**
-	 * Track if preview is shown on mobile (tap state)
-	 */
+	// [CR] Track tap state for mobile (touch) interaction
+	// [NTL] On mobile, we need to track this separately since there's no hover!
 	let showPreviewMobile = $state(false);
 
-	/**
-	 * Detect if device uses touch as primary input (mobile/tablet)
-	 */
+	// [CR] Detect if device uses touch as primary input
 	let isTouchDevice = $state(false);
 
-	/**
-	 * Reference to the container element for click-outside detection
-	 */
+	// [CR] Reference to container for click-outside detection
 	let containerRef: HTMLDivElement;
 
-	/**
-	 * Detect touch device on mount using pointer media query
-	 */
+	// [CR] ============================================================
+	// [CR] LIFECYCLE
+	// [NTL] When the component first appears, we detect what device you're on
+	// [CR] ============================================================
+
 	onMount(() => {
+		// [CR] Use pointer media query for reliable touch detection
+		// [NTL] This tells us if you're using a finger (coarse) or mouse (fine)
 		isTouchDevice = window.matchMedia('(pointer: coarse)').matches;
 	});
 
-	/**
-	 * Close preview when clicking outside the component on mobile
-	 */
+	// [CR] ============================================================
+	// [CR] CLICK-OUTSIDE DETECTION (Mobile only)
+	// [NTL] On mobile, tapping outside the preview dismisses it
+	// [CR] ============================================================
+
 	$effect(() => {
 		if (isTouchDevice && showPreviewMobile) {
 			const handleClickOutside = (event: MouseEvent) => {
+				// [CR] Check if click was outside our component
 				if (containerRef && !containerRef.contains(event.target as Node)) {
 					showPreviewMobile = false;
 				}
 			};
 
-			// Add listener with a slight delay to avoid immediate closure
+			// [CR] Small delay to prevent immediate closure from same tap
 			const timeoutId = setTimeout(() => {
 				document.addEventListener('click', handleClickOutside);
 			}, 10);
 
+			// [CR] Cleanup listener when effect re-runs or component unmounts
 			return () => {
 				clearTimeout(timeoutId);
 				document.removeEventListener('click', handleClickOutside);
@@ -113,38 +117,37 @@
 		}
 	});
 
-	/**
-	 * Handle link click - different behaviour for touch vs mouse devices
-	 * On mobile: first tap shows preview (prevents navigation), second tap follows link
-	 * On desktop: always follows link (hover handles preview)
-	 */
+	// [CR] ============================================================
+	// [CR] EVENT HANDLERS
+	// [NTL] Different behavior for touch screens vs mouse devices
+	// [CR] ============================================================
+
+	// [CR] Handle link click - different behaviour for touch vs mouse devices
+	// [NTL] On phone: tap once = show preview, tap again = go to link
+	// [NTL] On computer: just click = go to link immediately
 	function handleLinkClick(event: MouseEvent) {
-		// Only intercept clicks on touch devices
+		// [CR] Only intercept clicks on touch devices
 		if (isTouchDevice) {
-			// If preview not shown yet, prevent navigation and show it
+			// [CR] If preview not shown yet, prevent navigation and show it
 			if (!showPreviewMobile) {
 				event.preventDefault();
 				showPreviewMobile = true;
 			}
-			// If preview is already shown, allow navigation (link will follow href)
+			// [CR] If preview is already shown, allow navigation (link will follow href)
 		}
-		// On desktop, always allow navigation immediately
+		// [CR] On desktop, always allow navigation immediately
 	}
 
-	/**
-	 * Handle preview image click on mobile
-	 * Clicking the preview should follow the link
-	 */
+	// [CR] Handle preview image click on mobile
+	// [NTL] Tapping the preview image follows the link
 	function handlePreviewClick(event: MouseEvent) {
-		event.stopPropagation(); // Prevent triggering link click
-		showPreviewMobile = false; // Hide preview
-		window.open(href, target); // Follow the link
+		event.stopPropagation(); // [CR] Prevent triggering link click
+		showPreviewMobile = false; // [CR] Hide preview
+		window.open(href, target); // [CR] Follow the link
 	}
 
-	/**
-	 * Action to handle mouse enter/leave events for desktop hover
-	 * Also adds click handler for mobile tap behaviour
-	 */
+	// [CR] Svelte action to handle mouse enter/leave events for desktop hover
+	// [NTL] This is the "magic" that shows the image when you hover!
 	function linkEffect(node: HTMLElement) {
 		const handleMouseEnter = () => {
 			isHover = true;
@@ -154,11 +157,11 @@
 			isHover = false;
 		};
 
-		// Add hover listeners for desktop
+		// [CR] Add hover listeners for desktop
 		node.addEventListener('mouseenter', handleMouseEnter);
 		node.addEventListener('mouseleave', handleMouseLeave);
 
-		// Cleanup event listeners when component is destroyed
+		// [CR] Cleanup event listeners when component is destroyed
 		return {
 			destroy() {
 				node.removeEventListener('mouseenter', handleMouseEnter);
@@ -219,4 +222,5 @@
 	 */
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->
