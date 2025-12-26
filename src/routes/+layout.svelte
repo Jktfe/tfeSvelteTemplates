@@ -26,7 +26,7 @@
 	const isActive = (href: string) =>
 		href === '/' ? currentPath === '/' : currentPath.startsWith(href);
 
-	// Categorised navigation menu - all 28+ components organised by type
+	// Categorised navigation menu - components organised by purpose
 	const menuCategories: MenuCategory[] = $derived([
 		{
 			name: 'Home',
@@ -34,40 +34,33 @@
 			items: [{ label: 'Home', href: '/', icon: '🏠', active: isActive('/') }]
 		},
 		{
-			name: 'Cards & Layouts',
-			icon: '🃏',
+			name: 'Navigation',
+			icon: '☰',
 			items: [
-				{ label: 'CardStack', href: '/cardstack', icon: '🃏', active: isActive('/cardstack') },
-				{
-					label: 'ExpandingCard',
-					href: '/expandingcard',
-					icon: '🎴',
-					active: isActive('/expandingcard')
-				},
-				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: isActive('/magiccard') },
-				{ label: 'DomeGallery', href: '/domegallery', icon: '🎪', active: isActive('/domegallery') }
+				{ label: 'Navbar', href: '/navbar', icon: '☰', active: isActive('/navbar') },
+				{ label: 'SpeedDial', href: '/speeddial', icon: '⚡', active: isActive('/speeddial') }
 			]
 		},
 		{
-			name: 'Buttons & Actions',
-			icon: '🎯',
-			items: [
-				{ label: 'SwishButton', href: '/swishbutton', icon: '🎯', active: isActive('/swishbutton') },
-				{ label: 'SpeedDial', href: '/speeddial', icon: '⚡', active: isActive('/speeddial') },
-				{
-					label: 'ScratchToReveal',
-					href: '/scratchtoreveal',
-					icon: '🎰',
-					active: isActive('/scratchtoreveal')
-				}
-			]
-		},
-		{
-			name: 'Text & Borders',
+			name: 'Native UI',
 			icon: '💫',
 			items: [
 				{ label: 'ShineBorder', href: '/shineborder', icon: '💫', active: isActive('/shineborder') },
+				{ label: 'SwishButton', href: '/swishbutton', icon: '🎯', active: isActive('/swishbutton') },
+				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: isActive('/magiccard') }
+			]
+		},
+		{
+			name: 'Helpful UX',
+			icon: '🎭',
+			items: [
 				{ label: 'Marquee', href: '/marquee', icon: '🎭', active: isActive('/marquee') },
+				{
+					label: 'LinkImageHover',
+					href: '/linkimagehover',
+					icon: '🔗',
+					active: isActive('/linkimagehover')
+				},
 				{
 					label: 'AnimatedBeam',
 					href: '/animatedbeam',
@@ -77,11 +70,29 @@
 			]
 		},
 		{
+			name: 'Cards',
+			icon: '🃏',
+			items: [
+				{ label: 'CardStack', href: '/cardstack', icon: '🃏', active: isActive('/cardstack') },
+				{
+					label: 'ExpandingCard',
+					href: '/expandingcard',
+					icon: '🎴',
+					active: isActive('/expandingcard')
+				},
+				{
+					label: 'ScratchToReveal',
+					href: '/scratchtoreveal',
+					icon: '🎰',
+					active: isActive('/scratchtoreveal')
+				}
+			]
+		},
+		{
 			name: 'Data Visualisation',
 			icon: '📊',
 			items: [
 				{ label: 'DataGrid', href: '/datagrid', icon: '📊', active: isActive('/datagrid') },
-				{ label: 'Sankey', href: '/sankey', icon: '🌊', active: isActive('/sankey') },
 				{
 					label: 'CalendarHeatmap',
 					href: '/calendarheatmap',
@@ -104,22 +115,26 @@
 			]
 		},
 		{
-			name: 'Media & Images',
-			icon: '🖼️',
+			name: 'Interactive',
+			icon: '🌊',
 			items: [
+				{ label: 'Sankey', href: '/sankey', icon: '🌊', active: isActive('/sankey') },
+				{ label: 'FolderFiles', href: '/folderfiles', icon: '🗂️', active: isActive('/folderfiles') },
 				{
-					label: 'LinkImageHover',
-					href: '/linkimagehover',
-					icon: '🔗',
-					active: isActive('/linkimagehover')
-				},
-				{ label: 'BeforeAfter', href: '/beforeafter', icon: '↔️', active: isActive('/beforeafter') }
+					label: 'ExplainerCanvas',
+					href: '/explainercanvas',
+					icon: '🎓',
+					active: isActive('/explainercanvas')
+				}
 			]
 		},
 		{
-			name: 'Navigation',
-			icon: '☰',
-			items: [{ label: 'Navbar', href: '/navbar', icon: '☰', active: isActive('/navbar') }]
+			name: 'Media & Images',
+			icon: '🖼️',
+			items: [
+				{ label: 'BeforeAfter', href: '/beforeafter', icon: '↔️', active: isActive('/beforeafter') },
+				{ label: 'DomeGallery', href: '/domegallery', icon: '🎪', active: isActive('/domegallery') }
+			]
 		},
 		{
 			name: 'Forms & CRUD',
@@ -130,30 +145,11 @@
 			]
 		},
 		{
-			name: 'Files & Folders',
-			icon: '🗂️',
-			items: [
-				{ label: 'FolderFiles', href: '/folderfiles', icon: '🗂️', active: isActive('/folderfiles') }
-			]
-		},
-		{
-			name: 'Maps & Geography',
+			name: 'Location Ops',
 			icon: '🗺️',
 			items: [
 				{ label: 'Maps', href: '/maps', icon: '🗺️', active: isActive('/maps') },
 				{ label: 'Geo', href: '/geo', icon: '🌍', active: isActive('/geo') }
-			]
-		},
-		{
-			name: 'Learning & Docs',
-			icon: '📚',
-			items: [
-				{
-					label: 'ExplainerCanvas',
-					href: '/explainercanvas',
-					icon: '🎓',
-					active: isActive('/explainercanvas')
-				}
 			]
 		},
 		{
