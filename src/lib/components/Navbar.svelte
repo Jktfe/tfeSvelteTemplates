@@ -79,70 +79,13 @@
 	});
 
 	function toggleCategory(categoryName: string) {
-		const wasExpanded = expandedCategories.has(categoryName);
-		if (wasExpanded) {
+		if (expandedCategories.has(categoryName)) {
 			expandedCategories.delete(categoryName);
 		} else {
 			expandedCategories.add(categoryName);
 		}
-		// Trigger reactivity by creating a new Set
+		// Trigger Svelte reactivity by creating a new Set
 		expandedCategories = new Set(expandedCategories);
-
-		// WORKAROUND: Force DOM update since ClerkProvider breaks Svelte 5 reactivity
-		if (typeof document !== 'undefined') {
-			const categoryId = categoryName.replace(/\s+/g, '-').toLowerCase();
-			const itemsList = document.getElementById(`category-${categoryId}`);
-			const headerButton = document.querySelector(
-				`button[aria-controls="category-${categoryId}"]`
-			);
-
-			if (wasExpanded) {
-				// Collapsing: hide items, remove expanded class
-				itemsList?.remove();
-				headerButton?.classList.remove('expanded');
-			} else {
-				// Expanding: need to create and show items
-				headerButton?.classList.add('expanded');
-				// Find the category data and create items
-				const category = menuCategories.find((c) => c.name === categoryName);
-				if (category && headerButton) {
-					const ul = document.createElement('ul');
-					ul.id = `category-${categoryId}`;
-					ul.className = 'panel-category-items';
-					category.items.forEach((item, index) => {
-						const li = document.createElement('li');
-						li.className = 'panel-menu-item';
-						li.style.setProperty('--item-index', String(index));
-						const a = document.createElement('a');
-						a.href = item.href;
-						a.className = `panel-menu-link${item.active ? ' active' : ''}`;
-						if (item.active) a.setAttribute('aria-current', 'page');
-						a.onclick = closePanel;
-						if (item.icon) {
-							const iconSpan = document.createElement('span');
-							iconSpan.className = 'panel-menu-icon';
-							iconSpan.setAttribute('aria-hidden', 'true');
-							iconSpan.textContent = item.icon;
-							a.appendChild(iconSpan);
-						}
-						const labelSpan = document.createElement('span');
-						labelSpan.className = 'panel-menu-label';
-						labelSpan.textContent = item.label;
-						a.appendChild(labelSpan);
-						if (item.active) {
-							const indicator = document.createElement('span');
-							indicator.className = 'panel-menu-indicator';
-							indicator.setAttribute('aria-hidden', 'true');
-							a.appendChild(indicator);
-						}
-						li.appendChild(a);
-						ul.appendChild(li);
-					});
-					// Insert after the header button's parent container
-					headerButton.parentElement?.appendChild(ul);
-				}
-			}
-		}
 	}
 
 	function isCategoryExpanded(categoryName: string): boolean {
