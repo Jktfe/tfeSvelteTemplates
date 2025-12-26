@@ -149,7 +149,7 @@
 			icon: '🗺️',
 			items: [
 				{ label: 'Maps', href: '/maps', icon: '🗺️', active: isActive('/maps') },
-				{ label: 'Geo', href: '/geo', icon: '🌍', active: isActive('/geo') }
+				{ label: 'GeoViz', href: '/geo', icon: '🌍', active: isActive('/geo') }
 			]
 		},
 		{

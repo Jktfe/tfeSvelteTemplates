@@ -1,23 +1,32 @@
 <!--
+  ============================================================
   MapMarkers.svelte - Map with Database Markers and Category Filtering
+  ============================================================
 
+  [CR] WHAT IT DOES
   Interactive map displaying markers from database with popups and category filtering.
-  Designed for displaying location data with rich information popups.
+  Extends MapBasic with marker data layer, popup templates, and filter UI.
+  All marker content is XSS-sanitized using escapeHtml() before rendering.
 
-  Features:
-  - Display markers from database/array
-  - Category filter pills for easy filtering
-  - Rich popup content with metadata
-  - Auto-fit bounds to show all markers
-  - Marker count indicator
-  - Accessible filter interface
-  - SSR safe
+  [NTL] THE SIMPLE VERSION
+  This is your "show me stuff on a map" component! Give it a list of places
+  (like restaurants, shops, or landmarks) and it'll put pins on the map for
+  each one. Click a pin to see details. Filter by category with the pill buttons!
 
-  Usage:
+  FEATURES
+  • Display markers from database/array
+  • Category filter pills for easy filtering
+  • Rich popup content with metadata (address, phone, hours, rating)
+  • Auto-fit bounds to show all markers
+  • Marker count indicator ("Showing 5 of 12 locations")
+  • XSS protection - all user content escaped
+  • Accessible filter interface (ARIA labels, keyboard nav)
+  • SSR safe
+
+  USAGE
   ```svelte
   <script>
     import MapMarkers from '$lib/components/MapMarkers.svelte';
-
     let { data } = $props();
   </script>
 
@@ -29,12 +38,12 @@
   />
   ```
 
-  Dependencies:
-  - leaflet (npm install leaflet @types/leaflet)
-  - Leaflet CSS (add to app.html or import globally)
+  DEPENDENCIES
+  • leaflet - Industry-standard map library (too complex to build natively)
+  • Leaflet CSS (add to app.html or import globally)
 
-  @author TFE Svelte Templates
-  @version 1.0.0
+  ============================================================
+  @component
 -->
 <script lang="ts">
 	import type { MapMarkersProps, MapMarker, LatLng } from '$lib/types';

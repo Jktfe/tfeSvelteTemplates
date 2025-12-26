@@ -1,133 +1,214 @@
 <script lang="ts">
 	/**
-	 * FolderFiles Component - 3D Filing Cabinet Design
+	 * ============================================================
+	 * FolderFiles - 3D Filing Cabinet Component
+	 * ============================================================
 	 *
-	 * A 3D filing cabinet drawer system with stacked folders inspired by physical file folders:
-	 * - Folders stacked vertically showing only their colored tabs
-	 * - Hover over a tab to reveal folders beneath (cascade effect)
-	 * - Click to open 95vw × 95vh modal with two-panel organization system
-	 * - Native HTML5 drag-and-drop between panels
-	 * - Zero external libraries (pure Svelte 5 + CSS 3D transforms)
+	 * [CR] WHAT IT DOES
+	 * A 3D filing cabinet system with stacked folders. Each folder has a
+	 * colored tab - hover reveals folders beneath (cascade effect), click
+	 * opens a full-screen modal with two-panel drag-and-drop organization.
 	 *
-	 * Features:
-	 * - 3D perspective with subtle depth and tilt
-	 * - Smooth hover animations (folders drop down)
-	 * - Click opens large modal container
-	 * - Drag content items between left/right panels
-	 * - Fully responsive with mobile support
-	 * - Database integration with graceful fallback
+	 * [NTL] THE SIMPLE VERSION
+	 * Remember those old filing cabinets with colored folder tabs sticking
+	 * out? This is the digital version! Hover over a tab and the folders
+	 * beneath drop down like a reveal. Click to open and drag files between
+	 * "Selected" and "All Items" panels - like sorting papers on your desk.
 	 *
+	 * [CR] TECHNICAL APPROACH
+	 * - CSS 3D transforms with perspective for depth illusion
+	 * - Native HTML5 Drag-and-Drop API (no external libraries)
+	 * - Mobile: Tap-to-select with action bar (no drag on touch)
+	 * - Svelte 5 runes for all state management
+	 * - Focus trap + scroll lock for modal accessibility
+	 *
+	 * [CR] DEPENDENCIES
+	 * - $lib/types (Folder, FileItem interfaces)
+	 * - $lib/scrollLock (coordinated body scroll prevention)
+	 * - Zero external animation/UI libraries
+	 *
+	 * [CR] KNOWN SVELTE WARNINGS (Safe to ignore)
+	 * - a11y_no_noninteractive_element_interactions: Intentional - listbox items need click
+	 * - a11y_click_events_have_key_events: Handled via onkeydown on same element
+	 * - a11y_no_static_element_interactions: Container click clears mobile preview state
+	 *
+	 * ============================================================
 	 * @component
 	 */
 
+	// [CR] IMPORTS
 	import type { Folder, FileItem } from '$lib/types';
 	import { lockScroll } from '$lib/scrollLock';
 
-	/**
-	 * Component props
-	 */
+	// [CR] COMPONENT PROPS
+	// [NTL] Pass in your folders and files - the component handles the rest!
 	let {
-		folders = [],
-		files = []
+		folders = [], // [CR] Array of folder objects with id, label, color
+		files = [] // [CR] Array of file items, each referencing a folderId
 	}: {
 		folders: Folder[];
 		files: FileItem[];
 	} = $props();
 
-	/**
-	 * State Management (Svelte 5 Runes)
-	 */
+	// ============================================================
+	// [CR] STATE MANAGEMENT (Svelte 5 Runes)
+	// [NTL] All the "memory" the component needs to track what's happening
+	// ============================================================
 
-	// Hover state - track which folder tab is hovered
+	// [CR] Hover state - which folder tab is being hovered?
+	// [NTL] When you hover over a folder tab, this remembers which one
 	let hoveredIndex = $state<number | null>(null);
 
-	// Open state - track which folder is opened
+	// [CR] Open state - which folder is currently opened in modal view?
+	// [NTL] null = cabinet view, Folder object = modal is showing that folder
 	let openFolder = $state<Folder | null>(null);
 
-	// Panel organization (for modal)
+	// [CR] Panel organization - tracks which items are in which panel
+	// [NTL] Left panel = "Selected" (initially empty), Right = "All Items"
 	let leftPanelItems = $state<FileItem[]>([]);
 	let rightPanelItems = $state<FileItem[]>([]);
 
-	// Drag-and-drop state (desktop only)
+	// [CR] Desktop drag-and-drop state
+	// [NTL] Tracks what you're dragging and where you're hovering over
 	let draggedItem = $state<FileItem | null>(null);
 	let dragOverPanel = $state<'left' | 'right' | null>(null);
 
-	// Mobile touch device detection
-	// Only true on actual touch devices with coarse pointer (finger) AND mobile width
-	// Desktop users with touchscreens will still get drag-and-drop
+	// [CR] Mobile detection - coarse pointer (finger) + narrow screen
+	// [NTL] Desktop touchscreens still get drag-and-drop (fine pointer)
 	let isTouchDevice = $state(false);
 
-	// Mobile selection state - for tap-to-select on touch devices
+	// [CR] Mobile selection state - Set of selected item IDs for tap-to-select
+	// [NTL] On mobile, you tap items to select them, then use buttons to move
 	let selectedItems = $state<Set<number>>(new Set());
 
-	// Scroll lock cleanup function - coordinated via scrollLock utility
+	// [CR] Mobile preview state - tracks which folder is "previewed" (first tap)
+	// [NTL] On mobile: first tap shows cascade + tooltip, second tap opens folder
+	let mobilePreviewIndex = $state<number | null>(null);
+
+	// [CR] Scroll lock cleanup function - prevents body scroll while modal is open
 	let unlockScroll: (() => void) | null = null;
 
-	/**
-	 * Mobile Detection Effect
-	 * Detects touch devices with coarse pointer (finger) as primary input
-	 * Combined with screen width check to catch actual mobile devices
-	 * Desktop touchscreens will get drag-and-drop (fine pointer + larger width)
-	 */
+	// ============================================================
+	// [CR] MOBILE DETECTION EFFECT
+	// [NTL] Figure out if the user is on a phone (finger-based input)
+	// ============================================================
 	$effect(() => {
 		if (typeof window !== 'undefined') {
+			// [CR] pointer: coarse = finger/stylus (not mouse), <= 768px = mobile width
+			// [NTL] This combo tells us "real mobile phone" vs "laptop with touchscreen"
 			const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
 			const isMobileWidth = window.innerWidth <= 768;
 			isTouchDevice = coarsePointer && isMobileWidth;
 		}
 	});
 
-	/**
-	 * Computed values
-	 */
+	// ============================================================
+	// [CR] COMPUTED VALUES
+	// ============================================================
 
-	// Get file count for each folder (for tooltip)
+	/**
+	 * [CR] Get file count for tooltip display
+	 * [NTL] Shows "Inbox (5 items)" when hovering over folder tab
+	 */
 	function getFileCount(folder: Folder): number {
 		return files.filter((f) => f.folderId === folder.id).length;
 	}
 
-	/**
-	 * Folder Management Functions
-	 */
+	// ============================================================
+	// [CR] FOLDER MANAGEMENT FUNCTIONS
+	// [NTL] Controls for the filing cabinet - hover, click, open, close
+	// ============================================================
 
+	/** [CR] Track which folder is being hovered for cascade effect */
 	function handleFolderHover(index: number) {
 		hoveredIndex = index;
 	}
 
+	/** [CR] Clear hover state when mouse leaves folder */
 	function handleFolderLeave() {
 		hoveredIndex = null;
 	}
 
+	/**
+	 * [CR] Handle folder click - implements two-tap pattern on mobile
+	 * [NTL] On mobile: first tap shows cascade + tooltip, second tap opens!
+	 * Desktop users click once to open (hover already showed the preview).
+	 */
+	function handleFolderClick(folder: Folder, index: number) {
+		if (isTouchDevice) {
+			// [CR] Mobile two-tap pattern
+			if (mobilePreviewIndex === index) {
+				// [NTL] Second tap on same folder → open it!
+				openFolderView(folder);
+				mobilePreviewIndex = null;
+			} else {
+				// [NTL] First tap → show cascade effect and tooltip
+				hoveredIndex = index;
+				mobilePreviewIndex = index;
+			}
+		} else {
+			// [CR] Desktop: single click opens (hover already showed preview)
+			openFolderView(folder);
+		}
+	}
+
+	/**
+	 * [CR] Clear mobile preview when tapping outside folders
+	 * [NTL] Tap elsewhere → reset the preview state
+	 */
+	function clearMobilePreview() {
+		if (isTouchDevice && mobilePreviewIndex !== null) {
+			mobilePreviewIndex = null;
+			hoveredIndex = null;
+		}
+	}
+
+	/**
+	 * [CR] Open folder modal view
+	 * [NTL] Click a folder tab → opens the big modal with two panels!
+	 */
 	function openFolderView(folder: Folder) {
 		openFolder = folder;
 
-		// Get files for this folder
+		// [CR] Filter files belonging to this folder
 		const folderFiles = files.filter((f) => f.folderId === folder.id);
 
-		// Initialize panels (all files in right, left empty)
+		// [CR] Initialize: Left panel empty, right has all files
+		// [NTL] Fresh start - everything in "All Items", nothing "Selected" yet
 		leftPanelItems = [];
 		rightPanelItems = folderFiles;
 
-		// Lock body scroll using coordinated utility (prevents conflicts with other modals)
+		// [CR] Lock body scroll using coordinated utility
+		// [NTL] Stops the page from scrolling behind the modal
 		unlockScroll = lockScroll();
 	}
 
+	/**
+	 * [CR] Close folder modal and reset state
+	 * [NTL] Click X or Escape → back to the cabinet view
+	 */
 	function closeFolderView() {
 		openFolder = null;
 		leftPanelItems = [];
 		rightPanelItems = [];
 
-		// Unlock body scroll
+		// [CR] Restore body scroll
 		if (unlockScroll) {
 			unlockScroll();
 			unlockScroll = null;
 		}
 	}
 
-	/**
-	 * Drag-and-Drop Handlers (Native HTML5 API)
-	 */
+	// ============================================================
+	// [CR] DRAG-AND-DROP HANDLERS (Native HTML5 API)
+	// [NTL] The magic that lets you grab items and move them between panels!
+	// Only used on desktop - mobile gets tap-to-select instead.
+	// ============================================================
 
+	/**
+	 * [CR] Start drag operation - set data transfer and track dragged item
+	 * [NTL] Pick up the file card - now you're holding it!
+	 */
 	function handleDragStart(e: DragEvent, item: FileItem) {
 		draggedItem = item;
 
@@ -137,6 +218,10 @@
 		}
 	}
 
+	/**
+	 * [CR] Handle drag over panel - must prevent default to allow drop
+	 * [NTL] Hover over a panel while dragging → cursor changes to show it's OK to drop
+	 */
 	function handleDragOver(e: DragEvent) {
 		e.preventDefault();
 		if (e.dataTransfer) {
@@ -144,27 +229,38 @@
 		}
 	}
 
+	/**
+	 * [CR] Clear drag-over visual state when leaving panel
+	 * [NTL] Move your cursor away → panel stops glowing
+	 */
 	function handleDragLeave(e: DragEvent) {
+		// [CR] Only clear if leaving the panel itself, not a child element
 		if (e.currentTarget === e.target) {
 			dragOverPanel = null;
 		}
 	}
 
+	/**
+	 * [CR] Handle drop - move item between panels
+	 * [NTL] Let go of the file → it lands in the new panel!
+	 */
 	function handleDrop(e: DragEvent, targetPanel: 'left' | 'right') {
 		e.preventDefault();
 
 		if (!draggedItem) return;
 
-		// Capture reference to satisfy TypeScript narrowing for $state variables
+		// [CR] Capture reference - $state variables need this for TypeScript narrowing
 		const item = draggedItem;
 		const sourcePanel = leftPanelItems.includes(item) ? 'left' : 'right';
 
+		// [CR] Dropping in same panel = no-op
 		if (sourcePanel === targetPanel) {
 			dragOverPanel = null;
 			return;
 		}
 
-		// Move item between panels
+		// [CR] Move item: remove from source, add to target
+		// [NTL] File moves from one panel to the other - like sorting papers!
 		if (targetPanel === 'left') {
 			rightPanelItems = rightPanelItems.filter((f) => f.id !== item.id);
 			leftPanelItems = [...leftPanelItems, item];
@@ -176,19 +272,24 @@
 		dragOverPanel = null;
 	}
 
+	/**
+	 * [CR] Cleanup drag state when drag operation ends
+	 * [NTL] Done dragging → forget what we were holding
+	 */
 	function handleDragEnd() {
 		draggedItem = null;
 		dragOverPanel = null;
 	}
 
-	/**
-	 * Mobile Touch Selection Functions
-	 * These only activate on touch devices (isTouchDevice === true)
-	 * Desktop users continue to use drag-and-drop
-	 */
+	// ============================================================
+	// [CR] MOBILE TOUCH SELECTION FUNCTIONS
+	// [NTL] On phones, you can't drag - so we use "tap to select" instead!
+	// These only activate when isTouchDevice === true
+	// ============================================================
 
 	/**
-	 * Toggle selection of an item (mobile tap-to-select)
+	 * [CR] Toggle selection of an item (tap-to-select for mobile)
+	 * [NTL] Tap a file card → checkmark appears. Tap again → checkmark gone.
 	 */
 	function toggleSelection(item: FileItem) {
 		const newSet = new Set(selectedItems);
@@ -197,18 +298,21 @@
 		} else {
 			newSet.add(item.id);
 		}
-		selectedItems = newSet; // Reassign to trigger reactivity
+		// [CR] Must reassign Set to trigger Svelte reactivity
+		selectedItems = newSet;
 	}
 
 	/**
-	 * Clear all selected items
+	 * [CR] Clear all selections
+	 * [NTL] "Clear" button - uncheck everything
 	 */
 	function clearSelection() {
 		selectedItems = new Set();
 	}
 
 	/**
-	 * Move selected items from right panel to left (Selected) panel
+	 * [CR] Move selected items from right → left panel
+	 * [NTL] "Move to Selected" button moves checked items to the left panel
 	 */
 	function moveSelectedToLeft() {
 		const itemsToMove = rightPanelItems.filter((item) => selectedItems.has(item.id));
@@ -218,7 +322,8 @@
 	}
 
 	/**
-	 * Move selected items from left (Selected) panel to right panel
+	 * [CR] Move selected items from left → right panel
+	 * [NTL] "Move to All" button moves checked items back to the right panel
 	 */
 	function moveSelectedToRight() {
 		const itemsToMove = leftPanelItems.filter((item) => selectedItems.has(item.id));
@@ -228,18 +333,27 @@
 	}
 
 	/**
-	 * Get count of selected items in a specific panel
+	 * [CR] Count selected items in a specific panel (for action bar display)
+	 * [NTL] Shows "3 selected" text in the action bar
 	 */
 	function getSelectedCountInPanel(panel: 'left' | 'right'): number {
 		const items = panel === 'left' ? leftPanelItems : rightPanelItems;
 		return items.filter((item) => selectedItems.has(item.id)).length;
 	}
 
+	// ============================================================
+	// [CR] FOCUS TRAP FOR MODAL ACCESSIBILITY
+	// [NTL] Keep Tab key trapped inside the modal - can't accidentally escape!
+	// This is critical for screen reader and keyboard-only users.
+	// ============================================================
+
 	/**
-	 * Focus trap for modal accessibility
-	 * Keeps focus within modal when Tab/Shift+Tab pressed
+	 * [CR] Svelte action: Setup focus trap on mount, cleanup on destroy
+	 * [NTL] This is like an invisible fence around the modal - Tab key cycles
+	 * through buttons inside, never escaping to the page behind.
 	 */
 	function setupFocusTrap(node: HTMLElement) {
+		// [CR] Selector for all focusable elements (buttons, links, inputs, draggables)
 		const focusableSelector =
 			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"]), [draggable="true"]';
 
@@ -247,6 +361,10 @@
 			return node.querySelectorAll<HTMLElement>(focusableSelector);
 		}
 
+		/**
+		 * [CR] Tab key handler - wraps focus from last→first or first→last
+		 * [NTL] At the end? Tab takes you back to start. At start? Shift+Tab goes to end.
+		 */
 		function handleTabKey(e: KeyboardEvent) {
 			if (e.key !== 'Tab') return;
 
@@ -256,10 +374,13 @@
 			const firstElement = focusableElements[0];
 			const lastElement = focusableElements[focusableElements.length - 1];
 
+			// [CR] Shift+Tab at first element → jump to last
 			if (e.shiftKey && document.activeElement === firstElement) {
 				e.preventDefault();
 				lastElement?.focus();
-			} else if (!e.shiftKey && document.activeElement === lastElement) {
+			}
+			// [CR] Tab at last element → jump to first
+			else if (!e.shiftKey && document.activeElement === lastElement) {
 				e.preventDefault();
 				firstElement?.focus();
 			}
@@ -267,10 +388,11 @@
 
 		node.addEventListener('keydown', handleTabKey);
 
-		// Focus close button on mount for accessibility
+		// [CR] Auto-focus close button on mount - good UX for keyboard users
 		const closeButton = node.querySelector<HTMLElement>('.close-btn');
 		closeButton?.focus();
 
+		// [CR] Return Svelte action cleanup
 		return {
 			destroy() {
 				node.removeEventListener('keydown', handleTabKey);
@@ -281,21 +403,28 @@
 
 <!-- FILING CABINET VIEW (closed state) -->
 {#if !openFolder}
-	<div class="filing-cabinet-container" role="region" aria-label="Filing cabinet with folders">
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class="filing-cabinet-container"
+		role="region"
+		aria-label="Filing cabinet with folders"
+		onclick={clearMobilePreview}
+	>
 		<div class="folder-stack">
 			{#each folders as folder, index (folder.id)}
 				<div
 					class="folder-wrapper"
 					class:is-beneath-hover={hoveredIndex !== null && index > hoveredIndex}
+					class:is-previewed={mobilePreviewIndex === index}
 					style="--folder-index: {index}; --folder-color: {folder.color}; z-index: {index};"
 					role="group"
 				>
 					<button
 						class="folder-container"
-						onclick={() => openFolderView(folder)}
+						onclick={(e) => { e.stopPropagation(); handleFolderClick(folder, index); }}
 						onmouseenter={() => handleFolderHover(index)}
 						onmouseleave={handleFolderLeave}
-						aria-label="Open {folder.label} folder ({getFileCount(folder)} items)"
+						aria-label="{isTouchDevice && mobilePreviewIndex !== index ? 'Preview' : 'Open'} {folder.label} folder ({getFileCount(folder)} items)"
 					>
 						<!-- Folder Tab (protruding top portion) -->
 						<div
@@ -304,10 +433,13 @@
 						>
 							<span class="folder-label">{folder.label}</span>
 
-							<!-- Hover tooltip -->
+							<!-- Hover tooltip (on mobile, shows "Tap to open" hint) -->
 							{#if hoveredIndex === index}
 								<div class="tooltip">
 									{folder.label} ({getFileCount(folder)} items)
+									{#if isTouchDevice && mobilePreviewIndex === index}
+										<div class="tap-hint">Tap to open</div>
+									{/if}
 								</div>
 							{/if}
 						</div>
@@ -624,6 +756,28 @@
 		transform: translateZ(5px);
 	}
 
+	/**
+	 * MOBILE PREVIEW STATE
+	 * [CR] Visual feedback when folder is previewed (first tap on mobile)
+	 * [NTL] Glowing border says "tap again to open me!"
+	 */
+	.folder-wrapper.is-previewed .folder-tab {
+		box-shadow:
+			0 0 0 3px rgba(255, 255, 255, 0.8),
+			0 0 12px rgba(255, 255, 255, 0.4),
+			0 -2px 6px rgba(0, 0, 0, 0.15),
+			inset 0 1px 3px rgba(255, 255, 255, 0.3);
+	}
+
+	.folder-wrapper.is-previewed .folder-body {
+		box-shadow:
+			0 0 0 3px rgba(255, 255, 255, 0.8),
+			0 0 12px rgba(255, 255, 255, 0.4),
+			0 6px 16px rgba(0, 0, 0, 0.25),
+			inset 0 -2px 8px rgba(0, 0, 0, 0.15),
+			inset 0 2px 6px rgba(255, 255, 255, 0.15);
+	}
+
 	.folder-label {
 		white-space: nowrap;
 		overflow: hidden;
@@ -656,6 +810,18 @@
 		transform: translateX(-50%);
 		border: 6px solid transparent;
 		border-bottom-color: rgba(0, 0, 0, 0.9);
+	}
+
+	/* [CR] Mobile tap hint - shows "Tap to open" on second line */
+	.tap-hint {
+		margin-top: 0.375rem;
+		padding-top: 0.375rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.3);
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #4ade80;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 	}
 
 	/**
@@ -852,7 +1018,7 @@
 		}
 
 		.folder-body {
-			height: 100px;
+			height: 300px;
 		}
 
 		.modal-content {

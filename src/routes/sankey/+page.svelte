@@ -1,10 +1,9 @@
 <script lang="ts">
 	import ExpandableSankey from '$lib/components/ExpandableSankey.svelte';
-	import { FALLBACK_SANKEY_DATA } from '$lib/constants';
+	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 
-	// For now, use fallback data directly
-	// Later: integrate with database via +page.server.ts
-	const sankeyData = FALLBACK_SANKEY_DATA;
+	// Load data from +page.server.ts (Neon database with fallback)
+	let { data } = $props();
 </script>
 
 <svelte:head>
@@ -15,6 +14,7 @@
 	<header class="page-header">
 		<h1>Expandable Sankey Diagram</h1>
 		<p class="subtitle">Interactive hierarchical flow visualization with expand/collapse</p>
+		<DatabaseStatus usingDatabase={data.usingDatabase} />
 	</header>
 
 	<section class="demo-section">
@@ -26,7 +26,9 @@
 		</p>
 
 		<div class="demo-container">
-			<ExpandableSankey nodes={sankeyData.nodes} links={sankeyData.links} height={600} />
+			<div class="sankey-scroll-wrapper">
+				<ExpandableSankey nodes={data.sankeyData.nodes} links={data.sankeyData.links} height={600} />
+			</div>
 		</div>
 	</section>
 
@@ -250,6 +252,12 @@
 		padding: 2rem;
 		border-radius: 12px;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	}
+
+	/* Mobile horizontal scroll wrapper for Sankey diagram */
+	.sankey-scroll-wrapper {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.feature-list,

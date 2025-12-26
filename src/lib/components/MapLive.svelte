@@ -1,48 +1,56 @@
 <!--
+  ============================================================
   MapLive.svelte - Map with Real-Time Marker Additions
+  ============================================================
 
-  Interactive map that allows users to click to add markers dynamically.
-  Perfect for letting users pin locations, build routes, or mark points of interest.
+  [CR] WHAT IT DOES
+  Interactive map for dynamic marker creation and editing. Users click to add
+  markers, drag to reposition, and use inline popups to edit details. Uses
+  $bindable() for two-way sync with parent component. Implements cursor change
+  and animated marker drops for clear UX feedback.
 
-  Features:
-  - Click-to-add markers with animation
-  - Add mode toggle for intentional marker placement
-  - Edit marker details (title, description)
-  - Remove markers by clicking delete button
-  - Bindable markers array for external sync
-  - Maximum markers limit
-  - Accessible controls
-  - SSR safe
+  [NTL] THE SIMPLE VERSION
+  This is your "pin your own spots" map! Toggle add mode, click anywhere to
+  drop a pin, drag it to adjust position, and click the pin to name it or
+  delete it. Perfect for building custom location lists, route planning,
+  or letting users mark their favourite places!
 
-  Usage:
+  FEATURES
+  • Click-to-add markers with drop animation
+  • Add mode toggle (crosshair cursor shows when active)
+  • Edit marker details via popup form (title + description)
+  • Drag markers to reposition
+  • Delete button in popup
+  • Bindable markers array for external sync ($bindable)
+  • Maximum markers limit with visual feedback
+  • Clear all markers button
+  • Accessible controls (ARIA, keyboard support)
+  • SSR safe
+
+  USAGE
   ```svelte
   <script>
     import MapLive from '$lib/components/MapLive.svelte';
     import type { MapMarker } from '$lib/types';
 
     let markers = $state<MapMarker[]>([]);
-
-    function handleMarkerAdd(marker) {
-      console.log('Added:', marker);
-    }
   </script>
 
   <MapLive
     bind:markers
     center={{ lat: 51.5074, lng: -0.1278 }}
-    zoom={13}
     height={500}
-    enableAddMode={true}
-    onMarkerAdd={handleMarkerAdd}
+    maxMarkers={10}
+    onMarkerAdd={(m) => console.log('Added:', m)}
   />
   ```
 
-  Dependencies:
-  - leaflet (npm install leaflet @types/leaflet)
-  - Leaflet CSS (add to app.html or import globally)
+  DEPENDENCIES
+  • leaflet - Industry-standard map library (too complex to build natively)
+  • Leaflet CSS (add to app.html or import globally)
 
-  @author TFE Svelte Templates
-  @version 1.0.0
+  ============================================================
+  @component
 -->
 <script lang="ts">
 	import type { MapLiveProps, MapMarker, LatLng } from '$lib/types';
@@ -305,8 +313,9 @@
 			const saveBtn = popup.querySelector('.popup-save-btn');
 			const deleteBtn = popup.querySelector('.popup-delete-btn');
 
-			// Save handler
-			saveBtn?.addEventListener('click', () => {
+			// Save handler - stop propagation to prevent map click adding new marker
+			saveBtn?.addEventListener('click', (e) => {
+				e.stopPropagation();
 				const newTitle = titleInput?.value || 'Untitled';
 				const newDesc = descInput?.value || '';
 				updateMarkerDetails(markerData.id, newTitle, newDesc);
@@ -316,8 +325,9 @@
 				leafletMarker?.closePopup();
 			});
 
-			// Delete handler
-			deleteBtn?.addEventListener('click', () => {
+			// Delete handler - stop propagation to prevent map click adding new marker
+			deleteBtn?.addEventListener('click', (e) => {
+				e.stopPropagation();
 				removeMarker(markerData.id);
 			});
 		}, 50);

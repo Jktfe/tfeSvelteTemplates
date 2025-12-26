@@ -1,48 +1,66 @@
 <script lang="ts">
+	/**
+	 * ============================================================
+	 * SwitchField - iOS-Style Toggle Switch
+	 * ============================================================
+	 *
+	 * [CR] WHAT IT DOES
+	 * A toggle switch styled like iOS, built on a hidden checkbox for
+	 * native form submission and accessibility. Uses role="switch" for
+	 * proper screen reader announcement.
+	 *
+	 * [NTL] THE SIMPLE VERSION
+	 * That satisfying sliding toggle you see on your phone settings!
+	 * Swipe it on, swipe it off. Perfect for yes/no options.
+	 *
+	 * ============================================================
+	 * @component
+	 */
+
+	// [CR] IMPORTS
 	import FormField from './FormField.svelte';
 	import type { SwitchFieldProps } from '$lib/types';
 
+	// [CR] COMPONENT PROPS
+	// [NTL] Control how the switch looks and behaves!
 	let {
 		name,
 		label,
-		checked = $bindable(false),
+		checked = $bindable(false), // [CR] Two-way binding for on/off state
 		helpText = '',
 		required = false,
 		disabled = false,
 		readonly = false,
 		error = '',
 		touched = false,
-		labelPosition = 'right',
+		labelPosition = 'right', // [NTL] Put the label text on left or right!
 		onblur,
 		oninput
 	}: SwitchFieldProps = $props();
 
-	/**
-	 * Generate IDs for aria associations
-	 */
+	// [CR] DERIVED VALUES - Computed IDs for accessibility
 	let fieldId = $derived(`field-${name}`);
 	let helpId = $derived(`${name}-help`);
 	let errorId = $derived(`${name}-error`);
 
-	/**
-	 * Determine if field has error state for styling
-	 */
+	// [CR] Error state for conditional styling
 	let hasError = $derived(touched && !!error);
 
+	// [CR] EVENT HANDLERS
+
 	/**
-	 * Handle switch toggle
-	 * Updates bound checked value and triggers optional callback
+	 * [CR] Handle switch toggle - updates bound checked state
+	 * [NTL] Click the switch and it flips! Magic.
 	 */
 	function handleChange(e: Event) {
-		if (readonly) return;
+		if (readonly) return; // [CR] Readonly prevents state changes
 		const target = e.target as HTMLInputElement;
 		checked = target.checked;
 		oninput?.(checked);
 	}
 
 	/**
-	 * Handle blur event
-	 * Marks field as touched and triggers optional callback
+	 * [CR] Handle blur event - marks field as touched
 	 */
 	function handleBlur() {
 		onblur?.();

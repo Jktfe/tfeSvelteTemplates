@@ -1,66 +1,94 @@
 <!--
-  CardStackMotionFlip - 3D Rolling Card Deck
+	============================================================
+	CardStackMotionFlip - 3D Rolling Card Deck
+	============================================================
 
-  A card stack where dragging/swiping the top card rolls it off-screen
-  in the drag direction (left/right/up/down) with 3D rotation, then reappears
-  at the back of the stack facing forward.
+	[CR] WHAT IT DOES
+	A card stack where dragging/swiping the top card rolls it off-screen
+	in the drag direction (left/right/up/down) with 3D CSS rotation,
+	then reappears at the back of the stack. Uses Pointer Events for
+	unified mouse/touch handling. State machine manages animation phases.
 
-  Key Features:
-  - Left-to-right stacking (top card on LEFT)
-  - 4-directional drag/swipe support (L/R/U/D)
-  - Works on both desktop (mouse) and mobile (touch) via Pointer Events
-  - Real-time drag feedback with rotation preview
-  - Only top card animates with 3D transforms
-  - Other cards slide smoothly to fill gap
-  - Zero external animation library dependencies
-  - Fully accessible with keyboard navigation
+	[NTL] THE SIMPLE VERSION
+	Imagine a deck of cards on a table. Grab the top card and flick it
+	away - it spins off the edge and magically reappears at the bottom
+	of the deck! Works with mouse drags on desktop or finger swipes on
+	mobile. You can even use arrow keys to flip through the cards.
 
-  Interaction Flow:
-  1. User drags top card (mouse or touch) → sees rotation preview
-  2. On release, if threshold met → card rolls off-screen
-  3. Card instantly teleports to back (invisible)
-  4. Card fades in at back, facing forward
-  5. Other cards slide left to fill the gap
+	============================================================
 
-  Desktop: Drag with mouse or use arrow keys
-  Mobile: Swipe with finger
+	FEATURES:
+	- Left-to-right stacking (top card on LEFT)
+	- 4-directional drag/swipe support (L/R/U/D)
+	- Works on both desktop (mouse) and mobile (touch) via Pointer Events
+	- Real-time drag feedback with rotation preview
+	- Only top card animates with 3D transforms
+	- Other cards slide smoothly to fill gap
+	- Zero external animation library dependencies
+	- Fully accessible with keyboard navigation
+
+	INTERACTION FLOW:
+	1. User drags top card (mouse or touch) → sees rotation preview
+	2. On release, if threshold met → card rolls off-screen
+	3. Card instantly teleports to back (invisible)
+	4. Card fades in at back, facing forward
+	5. Other cards slide left to fill the gap
+
+	DEPENDENCIES:
+	- $lib/types (CardStackMotionFlipProps)
+	- $lib/scrollLock (coordinated scroll locking)
+	- Zero animation libraries
+
+	ACCESSIBILITY:
+	- Keyboard navigation (arrow keys)
+	- ARIA labels and roles
+	- Focus visible indicators
+	- Respects prefers-reduced-motion
+
+	WARNINGS:
+	- state_referenced_locally: cardOrder initialised from cards.length
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports and scroll lock utility for mobile interactions
 	import type { CardStackMotionFlipProps } from '$lib/types';
 	import { lockScroll } from '$lib/scrollLock';
 
-	// Props with defaults
+	// [CR] Props with sensible defaults for card deck appearance and behaviour
+	// [NTL] These are all the settings you can tweak - card sizes, animation speeds, etc.
 	let {
 		cards = [],
 		cardWidth = 300,
 		cardHeight = 400,
 		cardGap = 50,
-		swipeThreshold = 80,
-		rollDuration = 400,
-		enterDuration = 200,
-		enable3D = true
+		swipeThreshold = 80,     // [NTL] How far you need to drag before it counts as a swipe
+		rollDuration = 400,       // [NTL] How long the rolling animation takes (ms)
+		enterDuration = 200,      // [NTL] How long the fade-in at the back takes (ms)
+		enable3D = true           // [NTL] Turn off for flat 2D transitions
 	}: CardStackMotionFlipProps = $props();
 
-	// Animation state machine
+	// [CR] Animation state machine - manages the multi-phase roll animation
+	// [NTL] Think of this as traffic lights for the animation - only one phase can happen at a time!
 	type AnimationState = 'idle' | 'dragging' | 'rolling-left' | 'rolling-right' | 'rolling-up' | 'rolling-down' | 'repositioning' | 'entering';
 
 	let currentState: AnimationState = $state('idle');
 	let animatingCardIndex: number | null = $state(null);
 
-	// Card order (indices into cards array)
-	// Tracks display position of each card - mutated by rollCard to reorder without changing cards prop
+	// [CR] Card order array - indices into cards array, reordered when cards roll
+	// [NTL] This is the "deck order" - when a card rolls, it moves from position 0 to the end
 	/* svelte-ignore state_referenced_locally */
 	let cardOrder = $state<number[]>([...Array(cards.length).keys()]);
 
-	// Touch/drag tracking
+	// [CR] Pointer tracking state for drag calculations
 	let touchStartX = $state(0);
 	let touchStartY = $state(0);
 	let touchCurrentX = $state(0);
 	let touchCurrentY = $state(0);
 	let isDragging = $state(false);
 
-	// Scroll lock cleanup function - coordinated via scrollLock utility
+	// [CR] Scroll lock cleanup - coordinated with other components via utility
 	let unlockScroll: (() => void) | null = null;
 
 	// Derived values for drag preview
@@ -517,4 +545,5 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 26.12.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

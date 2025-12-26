@@ -1,84 +1,82 @@
 <!--
-/**
- * ExpandingCard - Interactive card with layout transitions between compact and expanded states
- *
- * Features:
- * - Smooth crossfade transitions using Svelte's built-in animations
- * - Two distinct layouts: compact (vertical) and expanded (horizontal)
- * - Click anywhere to toggle between states
- * - Maintains visual continuity with shared element transitions
- * - Fully responsive design with mobile optimisations
- * - Customisable content (image, heading, descriptions, background colour)
- * - Accessible with keyboard support and ARIA labels
- *
- * Perfect for:
- * - Feature showcases with expandable details
- * - Team member profiles or bios
- * - Product highlights with additional information
- * - Portfolio items with expandable descriptions
- * - FAQ sections with visual emphasis
- * - Content previews with "read more" functionality
- *
- * Technical Implementation:
- * - Svelte's built-in crossfade() for seamless transitions
- * - Svelte 5 $state rune for reactive toggle
- * - CSS transitions for smooth background and size changes
- * - TailwindCSS utility classes for styling
- * - Respects reduced motion preferences
- *
- * Layout States:
- * 1. Compact: Vertical layout with image top, text below
- * 2. Expanded: Horizontal layout with image left, extended text right
- *
- * @component
- * @example
- * ```svelte
- * <ExpandingCard
- *   imageSrc="/team-member.jpg"
- *   imageAlt="Team member photo"
- *   heading="Jane Doe"
- *   compactText="Senior Developer"
- *   expandedText="Jane has 10+ years experience in web development..."
- *   bgColor="bg-blue-100"
- * />
- * ```
- */
+	============================================================
+	ExpandingCard - Interactive Layout Transition Card
+	============================================================
+
+	[CR] WHAT IT DOES
+	Card component with two distinct layouts (compact/expanded) that
+	seamlessly transitions between them using Svelte's built-in crossfade.
+	Clicking anywhere on the card toggles the layout state.
+
+	[NTL] THE SIMPLE VERSION
+	It's like a business card that can unfold! Click it once to see
+	more details, click again to fold it back up. The magic is in how
+	smoothly everything moves to its new position.
+
+	============================================================
+
+	FEATURES:
+	- Smooth crossfade transitions between layouts
+	- Compact: Vertical layout (image top, text below)
+	- Expanded: Horizontal layout (image left, text right)
+	- Click anywhere to toggle
+	- Shared element transitions maintain visual continuity
+	- Responsive design with mobile optimisations
+	- Accessible with keyboard and ARIA labels
+
+	PERFECT FOR:
+	- Team member profiles / bios
+	- Feature showcases with expandable details
+	- Product highlights
+	- Portfolio items
+	- FAQ sections with visual emphasis
+
+	DEPENDENCIES:
+	- svelte/transition (crossfade) - built into Svelte
+	- $lib/types (ExpandingCardProps)
+	- TailwindCSS for styling
+
+	ACCESSIBILITY:
+	- Full button semantics (clickable, focusable)
+	- ARIA labels indicating action (Expand/Collapse)
+	- Keyboard accessible (Enter/Space to toggle)
+
+	WARNINGS:
+	- None expected
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Svelte's built-in crossfade creates shared element transitions between layouts
+	// [NTL] This is what makes elements "fly" from their old position to their new one!
 	import { crossfade } from 'svelte/transition';
 	import type { ExpandingCardProps } from '$lib/types';
 
-	/**
-	 * Props for ExpandingCard component
-	 */
+	// [CR] Props with sensible defaults - each controls a visual aspect of the card
+	// [NTL] These are all the things you can customise when using this card
 	let {
-		imageSrc = 'https://i.pinimg.com/564x/b3/7c/fa/b37cfa52ac8e142ffe42772712f6e33d.jpg',
-		imageAlt = 'Card Image',
-		heading = 'Card Title',
-		compactText = 'Hello Devs, welcome to our Website',
-		expandedText = 'Yoo devs, How you doing?',
-		bgColor = 'bg-lime-100'
+		imageSrc = 'https://i.pinimg.com/564x/b3/7c/fa/b37cfa52ac8e142ffe42772712f6e33d.jpg', // [NTL] The picture shown on the card
+		imageAlt = 'Card Image',                                                             // [NTL] Description for screen readers
+		heading = 'Card Title',                                                              // [NTL] The big bold title
+		compactText = 'Hello Devs, welcome to our Website',                                  // [NTL] Short text when card is small
+		expandedText = 'Yoo devs, How you doing?',                                           // [NTL] Longer text when card opens up
+		bgColor = 'bg-lime-100'                                                              // [NTL] TailwindCSS background colour class
 	}: ExpandingCardProps = $props();
 
-	/**
-	 * Track current layout state
-	 * 'compact' = vertical layout with image on top
-	 * 'expanded' = horizontal layout with image on left
-	 */
+	// [CR] Layout state machine - simple two-state toggle
+	// [NTL] This is the "open/closed" switch - compact = folded up, expanded = opened out
 	let layout: 'compact' | 'expanded' = $state('compact');
 
-	/**
-	 * Crossfade transition configuration
-	 * Creates smooth element transitions between layouts
-	 */
+	// [CR] Crossfade returns two transition functions: send (outgoing) and receive (incoming)
+	// [CR] Elements with matching keys animate smoothly from old to new position
+	// [NTL] Think of it like magic teleportation - the image "flies" from one spot to another!
 	let [send, receive] = crossfade({
-		duration: 400
+		duration: 400 // [NTL] Animation takes 400ms (0.4 seconds) - fast but smooth
 	});
 
-	/**
-	 * Toggle between layouts on click
-	 */
+	// [CR] Toggle function - click handler for the entire card
+	// [NTL] Flip the switch: if it's compact, expand it. If it's expanded, compact it.
 	function toggleLayout() {
 		layout = layout === 'compact' ? 'expanded' : 'compact';
 	}
@@ -153,13 +151,14 @@
 </div>
 
 <style>
-	/**
-	 * Absolute positioning for smooth layout transitions
-	 * The crossfade creates a seamless morph between positions
-	 */
+	/* [CR] Absolute positioning is essential for crossfade to work correctly
+	   The elements need to be able to animate to their new positions without
+	   affecting document flow during the transition */
+	/* [NTL] Without this, the card would "jump" instead of smoothly flying! */
 	.layouta {
 		position: absolute;
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

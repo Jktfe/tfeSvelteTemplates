@@ -313,7 +313,7 @@
       status: "ready",
     },
     {
-      title: "Geo",
+      title: "GeoViz",
       description:
         "Interactive choropleth maps and data visualization for geographic data. Features TopoJSON-based UK maps with bubble overlays, spike maps for point data, and choropleth colouring for regional statistics.",
       href: "/geo",
@@ -413,13 +413,16 @@
     <section class="hero">
       <h1 class="hero-title">Svelte 5 Component Templates</h1>
       <p class="hero-subtitle">
-        Production-ready components with modern interactions, smooth animations,
-        and clean design. Copy, customise, and integrate into your projects.
-        Built natively with Svelte 5 for optimal performance - leaning heavily
-        on better developers that came before like Sikandar.S.Bhide who built
-        the excellent animation-svelte.vercel.app Mostly for my own use in my
-        projects, but feel free to use them too! Developed and modified by me,
-        @Jktfe, and Claude.
+        Modern interactions. Smooth animations. Clean design. A growing collection of
+        production-ready Svelte 5 components, inspired by Magic UI, Aceternity, and
+        Sikandar S. Bhide's animation-svelte.
+        <br /><br />
+        Rebuilt with runes, thoroughly documented, made accessible, with some original
+        creations mixed in. Copy, customise, and use in your projects.
+        <br /><br />
+        Built by me, @Jktfe, with a lot of patient support from Claude for my own work
+        and home projects. You are more than welcome to use and adapt and I'd really
+        like you to let me know if and where you use it too!
       </p>
     </section>
 

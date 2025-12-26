@@ -1,36 +1,52 @@
+<!--
+  ============================================================
+  GeoBubbleMap.svelte - Geographic Bubble Visualization
+  ============================================================
+
+  [CR] WHAT IT DOES
+  SVG-based bubble map using LayerChart for geographic point data visualization.
+  Uses square root scaling for perceptually accurate bubble areas - larger values
+  appear proportionally larger, not exponentially. Renders largest bubbles first
+  so smaller ones stay visible on top.
+
+  [NTL] THE SIMPLE VERSION
+  Think of this as putting circles on a map where bigger circles mean bigger
+  numbers! Great for showing city populations, store locations with sales data,
+  or anything where you want to compare values at different places. Hover over
+  a bubble to see the exact value.
+
+  FEATURES
+  • Bubble size proportional to data values (square root area scaling)
+  • Optional background geography (country/region outlines)
+  • Interactive hover tooltips with value display
+  • Click handlers for point selection
+  • Optional labels on large bubbles
+  • Category-based coloring
+  • Size legend showing min/max values
+
+  USAGE
+  <GeoBubbleMap
+    geojson={ukOutline}
+    data={cityPopulations}
+    height={500}
+    minRadius={4}
+    maxRadius={40}
+    onBubbleClick={(point) => console.log(point)}
+  />
+
+  DEPENDENCIES
+  • layerchart - SVG charting library with geo support
+  • d3-geo - Geographic projections (Mercator)
+  • d3-scale - Square root scaling for bubble sizes
+
+  ============================================================
+-->
 <script lang="ts">
 	/**
-	 * GeoBubbleMap Component
-	 *
-	 * SVG-based bubble map using LayerChart for geographic point data visualization.
-	 * Displays sized circles at geographic coordinates based on data values.
-	 *
-	 * Features:
-	 * - Bubble size proportional to data values (area scaling)
-	 * - Optional background geography (country/region outlines)
-	 * - Interactive hover tooltips
-	 * - Click handlers for point selection
-	 * - Optional labels on bubbles
-	 * - Category-based coloring
-	 *
-	 * Dependencies: layerchart, d3-geo, d3-scale
-	 *
-	 * Usage:
-	 * ```svelte
-	 * <GeoBubbleMap
-	 *   geojson={ukOutline}
-	 *   data={cityPopulations}
-	 *   height={500}
-	 *   minRadius={4}
-	 *   maxRadius={40}
-	 *   onBubbleClick={(point) => console.log(point)}
-	 * />
-	 * ```
-	 *
-	 * @component
+	 * @component GeoBubbleMap
 	 */
 
-	import { Chart, GeoContext, GeoPath, GeoPoint, Svg, Circle, Text } from 'layerchart';
+	import { Chart, GeoContext, GeoPath, Svg, Circle } from 'layerchart';
 	import { geoMercator } from 'd3-geo';
 	import { scaleSqrt } from 'd3-scale';
 	import type { GeoDataPoint } from '$lib/types';
@@ -160,7 +176,9 @@
 <div class="geo-bubble-map {className}" style="height: {height}px;">
 	<Chart data={sortedData}>
 		<Svg>
-			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()}>
+			<!-- [CR] Using let:projection to access the projection function directly -->
+			<!-- [NTL] Think of the projection like a translator that converts real-world coordinates (lat/long) into pixel positions on our screen! -->
+			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()} let:projection>
 				<!-- Background geography if provided -->
 				{#if geojson}
 					{#each bgFeatures as feature}
@@ -174,43 +192,44 @@
 					{/each}
 				{/if}
 
-				<!-- Bubbles -->
+				<!-- Bubbles - using projection directly instead of GeoPoint -->
+				<!-- [CR] Project each point's coordinates using the context's projection function -->
 				{#each sortedData as point (point.id)}
-					<GeoPoint lat={point.lat} long={point.long}>
-						{#snippet children({ x, y }: { x: number; y: number })}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<g
-								class="bubble-group"
-								onpointermove={(e: PointerEvent) => handleMouseMove(e, point)}
-								onpointerleave={handleMouseLeave}
-								onclick={() => handleClick(point)}
+					{@const projected = projection?.([point.long, point.lat])}
+					{@const x = projected?.[0] ?? 0}
+					{@const y = projected?.[1] ?? 0}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<g
+						class="bubble-group"
+						onpointermove={(e: PointerEvent) => handleMouseMove(e, point)}
+						onpointerleave={handleMouseLeave}
+						onclick={() => handleClick(point)}
+					>
+						<Circle
+							cx={x}
+							cy={y}
+							r={getRadius(point)}
+							fill={getColor(point)}
+							stroke={bubbleStroke}
+							strokeWidth={1.5}
+							class="bubble"
+						/>
+						{#if showLabels && getRadius(point) > 15}
+							<!-- [CR] Using native SVG text instead of LayerChart Text for reliable rendering -->
+							<text
+								x={x}
+								y={y}
+								text-anchor="middle"
+								dominant-baseline="central"
+								fill="white"
+								font-size="10"
+								font-weight="600"
+								class="bubble-label"
 							>
-								<Circle
-									cx={x}
-									cy={y}
-									r={getRadius(point)}
-									fill={getColor(point)}
-									stroke={bubbleStroke}
-									strokeWidth={1.5}
-									class="bubble"
-								/>
-								{#if showLabels && getRadius(point) > 15}
-									<Text
-										x={x}
-										y={y}
-										textAnchor="middle"
-										dy="0.35em"
-										fill="white"
-										fontSize={10}
-										fontWeight={600}
-										class="bubble-label"
-									>
-										{point.name}
-									</Text>
-								{/if}
-							</g>
-						{/snippet}
-					</GeoPoint>
+								{point.name}
+							</text>
+						{/if}
+					</g>
 				{/each}
 			</GeoContext>
 		</Svg>

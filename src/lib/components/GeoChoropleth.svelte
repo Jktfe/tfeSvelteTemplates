@@ -1,31 +1,49 @@
+<!--
+  ============================================================
+  GeoChoropleth.svelte - Geographic Region Color Map
+  ============================================================
+
+  [CR] WHAT IT DOES
+  SVG-based choropleth map using LayerChart for geographic data visualization.
+  Colors regions based on data values using sequential or diverging color scales.
+  Supports both built-in D3 color interpolators (blues, orangeRed) and custom
+  multi-step color arrays. Auto-fits projection to container bounds.
+
+  [NTL] THE SIMPLE VERSION
+  This is like those election maps where each region is colored differently!
+  Darker colors mean higher values. Perfect for showing regional statistics,
+  population density, or any data that varies by geographic area. Hover over
+  any region to see its exact value.
+
+  FEATURES
+  • Automatic color scaling based on data values
+  • Interactive hover tooltips showing region details
+  • Click handlers for region selection
+  • Configurable color scales (sequential, diverging, custom)
+  • Automatic projection fitting to container
+  • Gradient legend with value labels
+  • Works with any GeoJSON FeatureCollection
+
+  USAGE
+  <GeoChoropleth
+    geojson={ukRegionsGeoJSON}
+    data={regionData}
+    height={500}
+    colorScale={{ type: 'sequential', colors: GEO_COLOR_SCALES.blues }}
+    onRegionClick={(region) => console.log(region)}
+  />
+
+  DEPENDENCIES
+  • layerchart - SVG charting library with geo support
+  • d3-geo - Geographic projections (Mercator)
+  • d3-scale - Sequential and linear color scales
+  • d3-scale-chromatic - Built-in color interpolators
+
+  ============================================================
+-->
 <script lang="ts">
 	/**
-	 * GeoChoropleth Component
-	 *
-	 * SVG-based choropleth map using LayerChart for geographic data visualization.
-	 * Displays regions colored by data values with interactive tooltips.
-	 *
-	 * Features:
-	 * - Automatic color scaling based on data values
-	 * - Interactive hover tooltips showing region details
-	 * - Click handlers for region selection
-	 * - Configurable color scales (sequential, diverging)
-	 * - Automatic projection fitting to container
-	 * - Legend display with value labels
-	 *
-	 * Dependencies: layerchart, d3-geo, d3-scale
-	 *
-	 * Usage:
-	 * ```svelte
-	 * <GeoChoropleth
-	 *   geojson={ukRegionsGeoJSON}
-	 *   data={regionData}
-	 *   height={500}
-	 *   onRegionClick={(region) => console.log(region)}
-	 * />
-	 * ```
-	 *
-	 * @component
+	 * @component GeoChoropleth
 	 */
 
 	import { Chart, GeoContext, GeoPath, Svg } from 'layerchart';
@@ -119,10 +137,12 @@
 
 	/**
 	 * Get fill color for a feature based on its data value
+	 * [CR] Supports multiple ONS property naming conventions (2022, 2023, 2024)
 	 */
 	function getFeatureColor(feature: GeoJSON.Feature): string {
 		const props = feature.properties as Record<string, unknown>;
-		const regionId = (props?.RGN24CD || props?.id || feature.id) as string;
+		// [NTL] ONS uses year-based property names like RGN22CD, RGN23CD, RGN24CD
+		const regionId = (props?.RGN24CD || props?.RGN23CD || props?.RGN22CD || props?.CTRY22CD || props?.id || feature.id) as string;
 		const regionData = dataLookup().get(regionId);
 		if (regionData) {
 			return getColor()(regionData.value) as string;
@@ -132,16 +152,19 @@
 
 	/**
 	 * Get region properties for tooltip/click handlers
+	 * [CR] Supports multiple ONS property naming conventions (2022, 2023, 2024)
 	 */
 	function getRegionProps(feature: GeoJSON.Feature): GeoRegionProperties {
 		const props = feature.properties as Record<string, unknown>;
-		const regionId = (props?.RGN24CD || props?.id || feature.id) as string;
+		// [NTL] ONS uses year-based property names - we check multiple years for flexibility
+		const regionId = (props?.RGN24CD || props?.RGN23CD || props?.RGN22CD || props?.CTRY22CD || props?.id || feature.id) as string;
+		const regionName = (props?.RGN24NM || props?.RGN23NM || props?.RGN22NM || props?.CTRY22NM || props?.name || 'Unknown') as string;
 		const regionData = dataLookup().get(regionId);
 		return {
 			id: regionId,
-			name: (props?.RGN24NM || props?.name || 'Unknown') as string,
+			name: regionName,
 			value: regionData?.value,
-			label: regionData?.label || (props?.RGN24NM || props?.name) as string
+			label: regionData?.label || regionName
 		};
 	}
 

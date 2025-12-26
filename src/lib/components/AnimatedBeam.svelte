@@ -1,89 +1,93 @@
 <!--
-/**
- * AnimatedBeam - Animated beams connecting circular nodes
- *
- * Features:
- * - SVG-based graphics for crisp rendering at any scale
- * - Pure CSS animations using stroke-dasharray/stroke-dashoffset
- * - Three animation patterns: uni-directional, bi-directional, multi-input
- * - Customisable node positions, colours, beam speed
- * - Optional gradient effect for flowing particle appearance
- * - Responsive container with fixed viewBox
- * - Accessible with reduced motion support
- * - Zero external dependencies
- *
- * Perfect for:
- * - System architecture diagrams (services, APIs, data flow)
- * - Data pipeline visualizations (ETL processes, transformations)
- * - Network topology displays (connections, traffic patterns)
- * - Process flows (workflows, decision trees)
- *
- * Technical Implementation:
- * - SVG <line> elements for beam connections
- * - CSS keyframe animations for flowing effect
- * - Svelte 5 $derived rune for computed beam paths
- * - TailwindCSS for minimal layout utilities
- * - Respects prefers-reduced-motion preference
- *
- * Animation Patterns:
- * 1. Uni-Directional: Beams flow in one direction (source → target)
- * 2. Bi-Directional: Beams travel both ways simultaneously
- * 3. Gradient: Flowing particle effect using SVG linearGradient
- *
- * @component
- * @example
- * ```svelte
- * <AnimatedBeam
- *   nodes={[
- *     { id: 'a', x: 100, y: 200, label: 'Source' },
- *     { id: 'b', x: 500, y: 200, label: 'Target' }
- *   ]}
- *   connections={[{ from: 'a', to: 'b' }]}
- *   beamColor="#3b82f6"
- *   beamSpeed={2}
- * />
- * ```
- */
+	============================================================
+	AnimatedBeam - Animated SVG Beams Connecting Nodes
+	============================================================
+
+	[CR] WHAT IT DOES
+	Draws animated lines ("beams") connecting circular nodes in an SVG diagram.
+	Uses CSS stroke-dasharray animation for a flowing effect. Pure SVG + CSS,
+	no JavaScript animation loop required.
+
+	[NTL] THE SIMPLE VERSION
+	Picture a network diagram where you can see data packets travelling
+	along the wires! The dashed lines animate to show things flowing from
+	one point to another - like watching electricity flow through a circuit.
+
+	============================================================
+
+	FEATURES:
+	- SVG-based graphics (crisp at any scale)
+	- CSS animations (stroke-dasharray/dashoffset trick)
+	- Uni-directional or bi-directional flow
+	- Optional gradient for "particle" effect
+	- Responsive container with fixed viewBox
+	- Node labels and hover effects
+
+	PERFECT FOR:
+	- System architecture diagrams
+	- Data pipeline visualizations
+	- Network topology displays
+	- Process flows and workflows
+
+	DEPENDENCIES:
+	- $lib/types (AnimatedBeamProps, BeamNode, BeamConnection)
+	- $lib/constants (default nodes and connections)
+	- Zero external dependencies
+
+	ACCESSIBILITY:
+	- Respects prefers-reduced-motion (shows static lines)
+	- Dark mode support for labels
+	- aria-hidden on decorative beams
+
+	WARNINGS: None expected
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports for type-safe props
 	import type { AnimatedBeamProps, BeamNode, BeamConnection } from '$lib/types';
+	// [CR] Default data for demo purposes
 	import {
 		DEFAULT_BEAM_NODES_UNI,
 		DEFAULT_BEAM_CONNECTIONS_UNI
 	} from '$lib/constants';
 
-	/**
-	 * Component props with defaults
-	 */
+	// [CR] Props interface with sensible defaults
+	// [NTL] These are all the "knobs and dials" you can tweak!
 	let {
-		width = 600,
-		height = 400,
-		nodes = DEFAULT_BEAM_NODES_UNI,
-		beamColor = '#3b82f6',
-		beamWidth = 2,
-		beamSpeed = 2,
-		bidirectional = false,
-		gradient = false,
-		nodeSize = 12,
-		nodeColor = '#3b82f6',
-		connections = DEFAULT_BEAM_CONNECTIONS_UNI
+		width = 600,                    // [NTL] SVG viewBox width
+		height = 400,                   // [NTL] SVG viewBox height
+		nodes = DEFAULT_BEAM_NODES_UNI, // [NTL] Array of nodes to display
+		beamColor = '#3b82f6',          // [NTL] Colour of the animated beams
+		beamWidth = 2,                  // [NTL] Thickness of the beams
+		beamSpeed = 2,                  // [NTL] Animation duration in seconds (lower = faster)
+		bidirectional = false,          // [NTL] Should beams flow both directions?
+		gradient = false,               // [NTL] Use gradient for "particle" effect?
+		nodeSize = 12,                  // [NTL] Radius of the node circles
+		nodeColor = '#3b82f6',          // [NTL] Fill colour of nodes
+		connections = DEFAULT_BEAM_CONNECTIONS_UNI  // [NTL] Which nodes connect to which
 	}: AnimatedBeamProps = $props();
 
-	/**
-	 * Computed beam path data from nodes and connections
-	 * Creates array of line coordinates for rendering
-	 */
+	// [CR] ============================================================
+	// [CR] COMPUTED BEAM PATHS
+	// [NTL] Svelte automatically recalculates this when nodes/connections change
+	// [CR] ============================================================
+
+	// [CR] Transform connection definitions into renderable line coordinates
+	// [NTL] For each connection, we find the source and target nodes and get their x,y positions
 	let beamPaths = $derived(
 		connections.map((conn) => {
 			const sourceNode = nodes.find((n) => n.id === conn.from);
 			const targetNode = nodes.find((n) => n.id === conn.to);
 
+			// [CR] Warn if connection references non-existent node
 			if (!sourceNode || !targetNode) {
 				console.warn(`Invalid connection: ${conn.from} → ${conn.to}`);
 				return null;
 			}
 
+			// [CR] Return line coordinates for SVG rendering
 			return {
 				x1: sourceNode.x,
 				y1: sourceNode.y,
@@ -161,116 +165,100 @@
 </div>
 
 <style>
-	/**
-	 * Container positioning with responsive sizing
-	 * Uses CSS aspect-ratio for proper scaling on all viewports
-	 */
+	/* [CR] ============================================================ */
+	/* [CR] CONTAINER STYLES */
+	/* [NTL] The outer wrapper that makes the SVG scale responsively */
+	/* [CR] ============================================================ */
+
 	.animated-beam-container {
 		position: relative;
 		display: block;
 		width: 100%;
-		aspect-ratio: var(--aspect-ratio);
+		aspect-ratio: var(--aspect-ratio);  /* [CR] Maintains proportions on resize */
 	}
 
-	/**
-	 * Beam animation: Uni-directional flow
-	 * Uses stroke-dasharray to create dashed line, then animates
-	 * stroke-dashoffset to create flowing effect from source to target
-	 */
+	/* [CR] ============================================================ */
+	/* [CR] BEAM ANIMATION */
+	/* [NTL] This is the magic! Dashed lines that appear to flow */
+	/* [CR] ============================================================ */
+
+	/* [CR] stroke-dasharray creates the dashed pattern */
+	/* [CR] Animating stroke-dashoffset makes dashes appear to move */
 	.beam {
-		stroke-dasharray: 8 8;
-		stroke-linecap: round;
+		stroke-dasharray: 8 8;        /* [NTL] 8px dash, 8px gap */
+		stroke-linecap: round;        /* [NTL] Rounded dash ends look nicer */
 		animation: beam-flow var(--beam-duration, 2s) linear infinite;
 	}
 
-	/**
-	 * Beam animation: Bi-directional flow
-	 * Reverses the animation direction for opposite flow
-	 */
+	/* [CR] Bi-directional beams flow in reverse */
 	.beam.bidirectional {
 		animation: beam-flow-reverse var(--beam-duration, 2s) linear infinite;
 	}
 
-	/**
-	 * Keyframe: Forward beam flow (source → target)
-	 * Animates from 100 to 0 to create forward motion
-	 */
+	/* [CR] Forward flow animation (source → target) */
+	/* [NTL] offset goes from 100 to 0, making dashes appear to move forward */
 	@keyframes beam-flow {
-		from {
-			stroke-dashoffset: 100;
-		}
-		to {
-			stroke-dashoffset: 0;
-		}
+		from { stroke-dashoffset: 100; }
+		to { stroke-dashoffset: 0; }
 	}
 
-	/**
-	 * Keyframe: Reverse beam flow (target → source)
-	 * Animates from 0 to 100 for backward motion
-	 */
+	/* [CR] Reverse flow animation (target → source) */
 	@keyframes beam-flow-reverse {
-		from {
-			stroke-dashoffset: 0;
-		}
-		to {
-			stroke-dashoffset: 100;
-		}
+		from { stroke-dashoffset: 0; }
+		to { stroke-dashoffset: 100; }
 	}
 
-	/**
-	 * Node styling
-	 * Drop shadow for depth, smooth scale transition on hover
-	 */
+	/* [CR] ============================================================ */
+	/* [CR] NODE STYLES */
+	/* [NTL] The circles at each endpoint */
+	/* [CR] ============================================================ */
+
 	.node {
-		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));  /* [NTL] Subtle depth */
 		transition: transform 0.2s ease;
 		cursor: default;
 	}
 
 	.node:hover {
-		transform: scale(1.2);
+		transform: scale(1.2);  /* [NTL] Grow slightly on hover */
 	}
 
-	/**
-	 * Node label styling
-	 * Positioned above node with readable contrast
-	 */
+	/* [CR] Node label styling - positioned above each node */
 	.node-label {
 		font-size: 14px;
 		font-weight: 500;
 		fill: #374151;
-		user-select: none;
-		pointer-events: none;
+		user-select: none;      /* [CR] Prevent accidental text selection */
+		pointer-events: none;   /* [CR] Labels don't intercept clicks */
 	}
 
-	/**
-	 * Accessibility: Respect reduced motion preference
-	 * Disable animations for users who prefer reduced motion
-	 */
+	/* [CR] ============================================================ */
+	/* [CR] ACCESSIBILITY & RESPONSIVE */
+	/* [CR] ============================================================ */
+
+	/* [CR] Respect prefers-reduced-motion */
+	/* [NTL] If someone has motion sensitivity, show static lines instead */
 	@media (prefers-reduced-motion: reduce) {
 		.beam {
 			animation: none;
-			stroke-dasharray: none;
+			stroke-dasharray: none;  /* [CR] Solid line, no animation */
 		}
 	}
 
-	/**
-	 * Dark mode support (optional)
-	 * Adjust label colour for better contrast
-	 */
+	/* [CR] Dark mode support */
 	@media (prefers-color-scheme: dark) {
 		.node-label {
-			fill: #f3f4f6;
+			fill: #f3f4f6;  /* [CR] Light text on dark backgrounds */
 		}
 	}
 
-	/**
-	 * Mobile responsive adjustments
-	 * Smaller labels for better fit on narrow viewports
-	 */
+	/* [CR] Mobile responsive - smaller labels */
 	@media (max-width: 640px) {
 		.node-label {
 			font-size: 10px;
 		}
 	}
 </style>
+
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

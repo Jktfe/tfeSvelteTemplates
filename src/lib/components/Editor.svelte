@@ -1,45 +1,67 @@
 <script lang="ts">
 	/**
-	 * Editor Component - CRUD Modal for ExpandingCard Data
+	 * ============================================================
+	 * Editor - CRUD Modal for ExpandingCard Data
+	 * ============================================================
 	 *
-	 * A comprehensive, self-contained editor component demonstrating best practices
-	 * for form handling, validation, and database integration in Svelte 5.
+	 * [CR] WHAT IT DOES
+	 * A comprehensive modal component for Create, Read, Update, Delete operations.
+	 * Demonstrates best practices for form handling, validation, and database
+	 * integration in Svelte 5. Uses focus trap for accessibility and keyboard nav.
 	 *
-	 * Features:
+	 * [NTL] THE SIMPLE VERSION
+	 * This is the popup form that lets you create new cards or edit existing ones!
+	 * It checks your input is valid, shows helpful error messages, and saves
+	 * everything to the database (or warns you if there's no database).
+	 *
+	 * ============================================================
+	 *
+	 * [CR] FEATURES
 	 * - Modal presentation with backdrop blur and focus trap
-	 * - Full form validation with real-time feedback
+	 * - Real-time form validation with "touched" state UX
 	 * - Create and edit modes
 	 * - Database-aware (shows warnings when not connected)
-	 * - Keyboard navigation (Tab, Enter, Escape)
+	 * - Keyboard: Tab cycling, Escape to close
 	 * - Loading states for async operations
-	 * - Accessible (ARIA labels, focus management)
+	 * - Accessible: ARIA roles, focus management
 	 *
-	 * Technical Details:
+	 * [CR] TECHNICAL DETAILS
 	 * - Uses Svelte 5 runes: $state, $derived, $effect
 	 * - Zero external dependencies (pure CSS animations)
 	 * - Respects prefers-reduced-motion
 	 * - TypeScript typed throughout
 	 *
+	 * [CR] KNOWN WARNINGS (Safe to ignore)
+	 * CSS Unused Selector warnings: Selectors like .field-input, .field-error
+	 * are used by child form components (TextField, TextareaField, SelectField)
+	 * that render inside this modal. Svelte's static analysis can't detect them.
+	 *
+	 * ============================================================
 	 * @component
 	 */
 
+	// [CR] IMPORTS
 	import type { EditorProps, EditorData } from '$lib/types';
 	import TextField from './forms/TextField.svelte';
 	import TextareaField from './forms/TextareaField.svelte';
 	import SelectField from './forms/SelectField.svelte';
 
-	// Props with defaults
+	// [CR] COMPONENT PROPS
+	// [NTL] Settings passed in from the parent component
 	let {
-		mode = 'create',
-		initialData = {},
-		usingDatabase = false,
-		onSave = () => {},
-		onCancel = () => {}
+		mode = 'create', // [NTL] 'create' for new cards, 'edit' for existing ones
+		initialData = {}, // [CR] Pre-fill form with existing data when editing
+		usingDatabase = false, // [NTL] Shows warning if no database connected
+		onSave = () => {}, // [CR] Callback when form is successfully submitted
+		onCancel = () => {} // [CR] Callback when user cancels/closes
 	}: EditorProps = $props();
 
+	// [CR] FORM STATE MANAGEMENT
+	// [NTL] This is the component's "memory" - all the form field values!
+
 	/**
-	 * Form state management using Svelte 5 $state rune
-	 * Each field tracks its value separately for granular updates
+	 * [CR] Form data object - tracks all field values
+	 * [NTL] Every field in the form stores its value here
 	 */
 	/* svelte-ignore state_referenced_locally */
 	let formData = $state<EditorData>({
@@ -54,25 +76,25 @@
 	});
 
 	/**
-	 * Validation errors state
-	 * Key-value pairs where key is field name and value is error message
+	 * [CR] Validation errors state - key is field name, value is error message
+	 * [NTL] If something's wrong with your input, the error message goes here
 	 */
 	let errors = $state<Record<string, string>>({});
 
 	/**
-	 * Field "touched" state for UX-friendly validation
-	 * Only show errors after user has interacted with the field
+	 * [CR] Field "touched" state - only show errors after user interaction
+	 * [NTL] We don't show errors until you've actually tried typing!
 	 */
 	let touched = $state<Record<string, boolean>>({});
 
 	/**
-	 * Saving state for async operations
+	 * [CR] Saving state for async operations - disables form during submit
 	 */
 	let saving = $state(false);
 
 	/**
-	 * Computed validation status using $derived
-	 * Form is valid when there are no errors
+	 * [CR] Computed validation status using $derived
+	 * [NTL] The form is valid when there are no errors - simple as that!
 	 */
 	let isValid = $derived(Object.keys(errors).length === 0);
 

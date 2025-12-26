@@ -1,69 +1,80 @@
 <!--
-/**
- * SpeedDial - Floating action button with expandable action menu
- *
- * Features:
- * - Multiple layout types: linear, circle, semi-circle, quarter-circle
- * - Four directional support: up, down, left, right
- * - Staggered entrance/exit animations with configurable delay
- * - Optional modal mask/backdrop
- * - Tooltips with auto-positioning based on direction
- * - Full keyboard navigation (Tab, Enter, Escape)
- * - ARIA compliance for accessibility
- * - XSS-safe SVG icon rendering via DOMPurify
- * - Respects reduced motion preferences
- * - Bindable isOpen state for programmatic control
- *
- * Perfect for:
- * - Mobile-first floating action buttons (FAB)
- * - Quick action menus in dashboards
- * - Context-specific tool palettes
- * - Social sharing buttons
- * - Creative/design tool interfaces
- *
- * Technical Implementation:
- * - Pure CSS animations with GPU-accelerated transforms
- * - Trigonometric positioning for circular layouts
- * - CSS custom properties for dynamic positioning
- * - Focus trap within action items when open (Tab cycles through items)
- * - Click-outside detection for auto-close
- * - SVG icons sanitized with DOMPurify to prevent XSS attacks
- *
- * Layout Types:
- * - linear: Items in a straight line (default)
- * - circle: Items in full 360° around button
- * - semi-circle: Items in 180° arc
- * - quarter-circle: Items in 90° arc (perfect for corners)
- *
- * @component
- * @example
- * ```svelte
- * <script>
- *   const actions = [
- *     { id: 'edit', label: 'Edit', icon: '✏️', onclick: () => console.log('Edit') },
- *     { id: 'delete', label: 'Delete', icon: '🗑️', onclick: () => console.log('Delete') },
- *     { id: 'share', label: 'Share', icon: '🔗', onclick: () => console.log('Share') }
- *   ];
- * </script>
- *
- * <SpeedDial {actions} direction="up" type="linear" />
- * ```
- */
+	============================================================
+	SpeedDial - Floating Action Button with Expandable Menu
+	============================================================
+
+	[CR] WHAT IT DOES
+	A Material Design-style floating action button (FAB) that expands to reveal
+	multiple action items. Supports four layout types (linear, circle, semi-circle,
+	quarter-circle), four directions, keyboard navigation, and XSS-safe icons.
+
+	[NTL] THE SIMPLE VERSION
+	Imagine a big button that, when clicked, blossoms open like a flower to reveal
+	smaller buttons around it! Each petal (action button) can do something different.
+	Perfect for mobile apps where you want quick access to multiple actions without
+	cluttering the screen.
+
+	============================================================
+
+	FEATURES:
+	- Multiple layout types: linear, circle, semi-circle, quarter-circle
+	- Four directional support: up, down, left, right
+	- Staggered entrance/exit animations with configurable delay
+	- Optional modal mask/backdrop
+	- Tooltips with auto-positioning based on direction
+	- Full keyboard navigation (Tab, Enter, Escape)
+	- ARIA compliance for accessibility
+	- XSS-safe SVG icon rendering via DOMPurify
+	- Respects reduced motion preferences
+	- Bindable isOpen state for programmatic control
+
+	DEPENDENCIES:
+	- $lib/types (SpeedDialProps, SpeedDialAction interfaces)
+	- $lib/utils (sanitizeSVG function using DOMPurify)
+	- DOMPurify (external - for XSS protection)
+
+	ACCESSIBILITY:
+	- Full keyboard support (Tab cycles through, Escape closes)
+	- Focus trap when open (Tab wraps around action items)
+	- ARIA expanded/haspopup on trigger button
+	- ARIA labels on all action buttons
+	- Focus returns to trigger when closed
+
+	USAGE:
+	<SpeedDial
+		actions={[
+			{ id: 'edit', label: 'Edit', icon: '✏️', onclick: handleEdit },
+			{ id: 'delete', label: 'Delete', icon: '🗑️', onclick: handleDelete }
+		]}
+		direction="up"
+		type="linear"
+	/>
+
+	LAYOUT TYPES:
+	- linear: Items in a straight line (60px spacing)
+	- circle: Items in full 360° around button
+	- semi-circle: Items in 180° arc
+	- quarter-circle: Items in 90° arc (perfect for corners)
+
+	WARNINGS:
+	None expected - component handles edge cases internally
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports for props, action items, and layout configuration
 	import type {
 		SpeedDialProps,
 		SpeedDialAction,
 		SpeedDialDirection,
 		SpeedDialType
 	} from '$lib/types';
+	// [CR] DOMPurify wrapper for XSS-safe SVG rendering
 	import { sanitizeSVG } from '$lib/utils';
 
-	/**
-	 * Props for SpeedDial component
-	 * All props have sensible defaults for immediate use
-	 */
+	// [CR] Props destructuring with sensible defaults
+	// [NTL] These are all the "dials" you can turn to customise your SpeedDial!
 	let {
 		actions = [],
 		direction = 'up',
@@ -80,74 +91,57 @@
 		isOpen = $bindable(false)
 	}: SpeedDialProps = $props();
 
-	/**
-	 * Reference to the container for click-outside detection
-	 */
+	// [CR] Element references for DOM manipulation and focus management
+	// [NTL] These let us "remember" which buttons exist so we can focus them later
 	let containerRef: HTMLDivElement | undefined = $state();
-
-	/**
-	 * Reference to the main trigger button for focus management
-	 */
 	let triggerButtonRef: HTMLButtonElement | undefined = $state();
-
-	/**
-	 * References to action buttons for focus trapping
-	 * Note: Array may contain null/undefined refs if actions change dynamically
-	 */
 	let actionButtonRefs: (HTMLButtonElement | null)[] = $state([]);
 
-	/**
-	 * Derived list of valid, enabled action buttons for focus trapping
-	 * Filters out stale refs and disabled buttons automatically
-	 */
+	// [CR] Derived list of focusable action buttons - automatically filters disabled/null refs
+	// [NTL] This is our "live list" of which buttons can receive focus right now
 	let enabledActionButtons = $derived(
 		actionButtonRefs.filter((btn): btn is HTMLButtonElement => btn !== null && !btn?.disabled)
 	);
 
-	/**
-	 * Toggle the SpeedDial open/closed state
-	 */
+	// [CR] Core state management functions
+	// [NTL] These are the "controls" - open, close, and handle clicks!
+
 	function toggle(): void {
+		// [NTL] Simple flip: if closed, open it. If open, close it.
 		if (!disabled) {
 			isOpen = !isOpen;
 		}
 	}
 
-	/**
-	 * Close the SpeedDial and return focus to trigger button
-	 */
 	function close(): void {
 		isOpen = false;
-		// Return focus to the trigger button
-		triggerButtonRef?.focus();
+		// [CR] Critical UX: return focus to trigger for keyboard users
+		// [CR] preventScroll stops the browser from scrolling to the button
+		triggerButtonRef?.focus({ preventScroll: true });
 	}
 
-	/**
-	 * Handle action item click
-	 * Executes the action's onclick callback and closes the menu
-	 */
 	function handleActionClick(action: SpeedDialAction): void {
+		// [CR] Execute callback only if action is enabled and has a handler
 		if (!action.disabled && action.onclick) {
 			action.onclick();
 		}
+		// [NTL] Always close the menu after clicking an action
 		close();
 	}
 
-	/**
-	 * Handle keyboard navigation with focus trapping
-	 * - Escape: Close menu
-	 * - Tab/Shift+Tab: Cycle through action items (trapped when open)
-	 */
+	// [CR] Keyboard navigation with focus trapping - essential for accessibility
+	// [NTL] This makes sure keyboard users can navigate the menu just as easily as mouse users!
 	function handleKeydown(event: KeyboardEvent): void {
 		if (!isOpen) return;
 
+		// [NTL] Escape is the universal "get me out of here" key
 		if (event.key === 'Escape') {
 			close();
 			event.preventDefault();
 			return;
 		}
 
-		// Focus trapping within action items (uses derived enabledActionButtons)
+		// [CR] Focus trapping: Tab cycles through actions instead of leaving the menu
 		if (event.key === 'Tab' && enabledActionButtons.length > 0) {
 			const currentIndex = enabledActionButtons.findIndex((btn) => btn === document.activeElement);
 
@@ -209,16 +203,16 @@
 		return icon.startsWith('<');
 	}
 
-	/**
-	 * Calculate position for each action item based on layout type and direction
-	 * Returns CSS custom properties for positioning
-	 */
+	// [CR] The heart of the component: trigonometric position calculation
+	// [NTL] Here's where the magic happens! We calculate where each action button
+	// should appear when the menu opens. For circles, we use maths (angles!) to
+	// position items in an arc. For linear, it's just simple spacing.
 	function getItemPosition(index: number, total: number): string {
 		const itemRadius = radius;
 
 		if (type === 'linear') {
-			// Linear layout: items in a straight line
-			const offset = (index + 1) * 60; // 60px spacing between items
+			// [NTL] Linear is easy: stack items 60px apart in a line
+			const offset = (index + 1) * 60;
 			switch (direction) {
 				case 'up':
 					return `--item-x: 0px; --item-y: -${offset}px;`;
@@ -231,32 +225,33 @@
 			}
 		}
 
-		// Circular layouts use trigonometry
+		// [CR] Circular layouts require trigonometry to position items on an arc
+		// [NTL] Picture a clock face - we need to figure out where each number goes!
 		let startAngle: number;
 		let angleSpan: number;
 
 		if (type === 'circle') {
-			// Full circle: 360°
 			startAngle = getStartAngle(direction);
-			angleSpan = 360;
+			angleSpan = 360; // [NTL] Full clock face
 		} else if (type === 'semi-circle') {
-			// Half circle: 180°
 			startAngle = getSemiCircleStart(direction);
-			angleSpan = 180;
+			angleSpan = 180; // [NTL] Half clock face
 		} else {
-			// Quarter circle: 90°
 			startAngle = getQuarterCircleStart(direction);
-			angleSpan = 90;
+			angleSpan = 90; // [NTL] Quarter clock face - perfect for corners!
 		}
 
-		// Calculate angle for this item
+		// [CR] Distribute items evenly across the arc
 		const angleStep = total > 1 ? angleSpan / (total - 1) : 0;
 		const angle = startAngle + index * angleStep;
+		// [CR] Convert degrees to radians for Math.cos/sin
 		const radians = (angle * Math.PI) / 180;
 
+		// [NTL] cos gives us the horizontal position, sin gives us the vertical
 		const x = Math.cos(radians) * itemRadius;
 		const y = Math.sin(radians) * itemRadius;
 
+		// [CR] Return CSS custom properties that the action buttons will use
 		return `--item-x: ${x.toFixed(2)}px; --item-y: ${-y.toFixed(2)}px;`;
 	}
 
@@ -773,3 +768,6 @@
 		}
 	}
 </style>
+
+<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
+<!-- Signed off: 26.12.25 -->

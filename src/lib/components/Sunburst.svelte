@@ -1,68 +1,98 @@
 <!--
-/**
- * Sunburst - Interactive hierarchical radial visualization
- *
- * Features:
- * - SVG-based zoomable sunburst chart
- * - Click on segments to zoom in and explore deeper levels
- * - Click on center to zoom out to parent level
- * - Smooth animated transitions between zoom states
- * - Tooltips showing node details on hover
- * - Optional text labels on segments (hidden for small arcs)
- * - Customisable colour scheme
- * - Zero external dependencies - fully portable
- * - Accessibility with ARIA labels and keyboard navigation
- *
- * Perfect for:
- * - File system visualizations
- * - Organisational hierarchies
- * - Budget/expense breakdowns
- * - Sales data by region/product
- * - Any hierarchical data with proportional values
- *
- * Technical Implementation:
- * - D3-style partition layout computed manually
- * - Arc generator using SVG path commands
- * - CSS transitions for smooth animations
- * - Svelte 5 runes for reactive state
- * - Pointer events for unified input handling
- *
- * @component
- * @example
- * ```svelte
- * <Sunburst
- *   data={hierarchicalData}
- *   width={500}
- *   height={500}
- *   onNodeClick={(node) => console.log('Clicked:', node.name)}
- * />
- * ```
- */
+	============================================================
+	Sunburst - Zoomable Hierarchical Radial Visualization (Zero Dependencies)
+	============================================================
+
+	[CR] WHAT IT DOES
+	Native Svelte 5 implementation of an interactive sunburst/radial chart.
+	Displays hierarchical data as concentric rings where segments represent
+	proportional values. Click segments to zoom in and explore deeper levels.
+
+	[NTL] THE SIMPLE VERSION
+	Imagine a pie chart that keeps splitting into smaller pies! Each ring
+	shows one level of your hierarchy (like folders → subfolders → files).
+	Click any segment to zoom in and see more detail. It's like drilling
+	down into your data!
+
+	✨ FEATURES
+	• Zoomable: Click segments to explore deeper levels
+	• Animated transitions between zoom states
+	• Breadcrumb navigation showing current path
+	• Interactive tooltips on hover
+	• Labels that hide when segments are too small
+	• Customisable colour schemes
+	• Keyboard navigation (Enter/Space to zoom, Escape to zoom out)
+	• Dark mode support
+
+	♿ ACCESSIBILITY
+	• ARIA role="region" with descriptive label on container
+	• role="button" on clickable segments
+	• Keyboard accessible (Tab + Enter/Space/Escape)
+	• aria-live breadcrumb for zoom state changes
+	• Respects prefers-reduced-motion preference
+
+	📦 DEPENDENCIES
+	Zero external dependencies - fully portable!
+
+	⚠️ WARNINGS
+	None expected
+
+	🎨 USAGE
+	<script>
+		import Sunburst from '$lib/components/Sunburst.svelte';
+		import { FALLBACK_SUNBURST_DATA } from '$lib/constants';
+	</script>
+
+	<Sunburst data={FALLBACK_SUNBURST_DATA} />
+
+	📋 PROPS
+	| Prop              | Type                  | Default          | Description                      |
+	|-------------------|-----------------------|------------------|----------------------------------|
+	| data              | SunburstNode          | required         | Hierarchical tree data           |
+	| width             | number                | 500              | SVG width in pixels              |
+	| height            | number                | 500              | SVG height in pixels             |
+	| colorScheme       | string[]              | SUNBURST_COLORS  | Array of colours for segments    |
+	| showLabels        | boolean               | true             | Show text labels on segments     |
+	| labelMinAngle     | number                | 10               | Min angle (degrees) for labels   |
+	| animationDuration | number                | 750              | Transition duration in ms        |
+	| onNodeClick       | (node) => void        | undefined        | Callback when segment clicked    |
+	| tooltipFormatter  | (node) => string      | undefined        | Custom tooltip text function     |
+
+	Based on D3's zoomable sunburst example, rewritten natively for Svelte 5.
+	@see https://observablehq.com/@d3/zoomable-sunburst
+
+	============================================================
 -->
 
 <script lang="ts">
+	// [CR] Type imports for props and node structures
 	import type { SunburstProps, SunburstNode, SunburstArcNode } from '$lib/types';
 	import { SUNBURST_COLOR_SCHEME } from '$lib/constants';
 
-	/**
-	 * Component props with defaults
-	 */
+	// =============================================================================
+	// [CR] PROPS - All configurable options with sensible defaults
+	// [NTL] These are the settings you can pass to customise your sunburst chart!
+	// =============================================================================
+
 	let {
-		data,
-		width = 500,
-		height = 500,
-		colorScheme = SUNBURST_COLOR_SCHEME,
-		showLabels = true,
-		labelMinAngle = 10,
-		animationDuration = 750,
-		onNodeClick,
-		tooltipFormatter,
-		class: className = ''
+		data,                                   // [NTL] Your hierarchical data with nested children
+		width = 500,                            // [NTL] How wide the chart is in pixels
+		height = 500,                           // [NTL] How tall the chart is in pixels
+		colorScheme = SUNBURST_COLOR_SCHEME,    // [NTL] Array of colours for the segments
+		showLabels = true,                      // [NTL] Show text labels on segments
+		labelMinAngle = 10,                     // [NTL] Minimum angle (degrees) before showing a label
+		animationDuration = 750,                // [NTL] How long zoom animations take (milliseconds)
+		onNodeClick,                            // [NTL] Callback function when a segment is clicked
+		tooltipFormatter,                       // [NTL] Custom function to format tooltip text
+		class: className = ''                   // [NTL] Extra CSS classes for the container
 	}: SunburstProps = $props();
 
-	/**
-	 * Component state
-	 */
+	// =============================================================================
+	// [CR] COMPONENT STATE - Reactive values managed internally
+	// [NTL] These track what's happening right now (hover, zoom level, etc.)
+	// =============================================================================
+
+	// [CR] Tooltip state object for hover information display
 	let tooltip = $state({
 		visible: false,
 		x: 0,
@@ -70,37 +100,49 @@
 		text: ''
 	});
 
+	// [CR] Reference to container element for tooltip positioning
 	let containerEl = $state<HTMLDivElement | undefined>();
 
-	// Current zoom focus node - null means showing from root
+	// [CR] Current zoom focus node - null means showing from root
+	// [NTL] This tracks which segment you've "drilled into". When null, we show
+	//       the whole chart from the top. When set, we zoom in on that segment.
 	let focusNode = $state<SunburstArcNode | null>(null);
 
-	// ==========================================================================
-	// CONSTANTS
-	// ==========================================================================
+	// =============================================================================
+	// [CR] CONSTANTS - Magic numbers with names for readability
+	// [NTL] These are fixed values used throughout the component. Naming them
+	//       makes the code easier to understand than seeing "6.283" everywhere!
+	// =============================================================================
 
-	const TWO_PI = 2 * Math.PI;
-	const LABEL_MIN_ANGLE_RAD = (labelMinAngle * Math.PI) / 180;
+	const TWO_PI = 2 * Math.PI;                                    // [NTL] A full circle in radians
+	const LABEL_MIN_ANGLE_RAD = (labelMinAngle * Math.PI) / 180;   // [NTL] Convert degrees to radians
 
-	/** Minimum radius in pixels for label visibility */
+	/** [CR] Minimum radius in pixels for label visibility */
 	const LABEL_MIN_RADIUS = 20;
 
-	/** Ratio of max radius for center zoom-out circle */
+	/** [CR] Ratio of max radius for center zoom-out circle */
 	const CENTER_RADIUS_RATIO = 0.15;
 
-	// ==========================================================================
-	// HIERARCHY COMPUTATION
-	// ==========================================================================
+	// =============================================================================
+	// [CR] HIERARCHY COMPUTATION
+	// [NTL] This is where we turn your tree data into something we can draw!
+	//       We need to know how "big" each segment should be and where it goes.
+	// =============================================================================
 
 	/**
-	 * Pre-computed values cache using WeakMap for memory efficiency
+	 * [CR] Pre-computed values cache using WeakMap for memory efficiency
 	 * Stores computed total values for each node to avoid redundant calculations
+	 * [NTL] A cache stores results so we don't have to recalculate them.
+	 *       WeakMap is smart - it lets JavaScript garbage collect old data!
 	 */
 	const valueCache = new WeakMap<SunburstNode, number>();
 
 	/**
-	 * Pre-compute all node values in a single post-order traversal
+	 * [CR] Pre-compute all node values in a single post-order traversal
 	 * This eliminates O(n²) complexity from repeated computeValue calls
+	 * [NTL] We add up all the values in your tree to know how much space
+	 *       each segment should take. A folder's "value" is the sum of
+	 *       all files inside it!
 	 *
 	 * @param node - Root node to start computation from
 	 * @returns Total value of the node (including all descendants)
@@ -124,16 +166,20 @@
 	}
 
 	/**
-	 * Get the pre-computed value for a node
+	 * [CR] Get the pre-computed value for a node
 	 * Must be called after precomputeValues has been run on the tree
+	 * [NTL] Quick lookup for a node's total value from our cache.
 	 */
 	function getNodeValue(node: SunburstNode): number {
 		return valueCache.get(node) ?? precomputeValues(node);
 	}
 
 	/**
-	 * Build the arc node tree with computed positions
+	 * [CR] Build the arc node tree with computed positions
 	 * Uses a partition layout algorithm (similar to D3's partition)
+	 * [NTL] This is the main layout function! It walks through your tree and
+	 *       figures out where each segment should be drawn - its start angle,
+	 *       end angle, and which ring (depth) it belongs to.
 	 *
 	 * @param node - Source node
 	 * @param depth - Current depth level
@@ -152,9 +198,10 @@
 	): SunburstArcNode {
 		const totalValue = getNodeValue(node);
 
-		// Inherit colour from parent or assign from scheme
-		const color =
-			node.color ?? (parent?.color ?? colorScheme[colorIndex % colorScheme.length]);
+		// [CR] Assign unique colour from scheme at each index, allowing override via node.color
+		// [NTL] Each segment gets its own colour from the palette! This makes the chart
+		//       much more readable as you can distinguish siblings from each other.
+		const color = node.color ?? colorScheme[colorIndex % colorScheme.length];
 
 		const arcNode: SunburstArcNode = {
 			...node,
@@ -175,13 +222,15 @@
 			arcNode.children = node.children.map((child, i) => {
 				const childValue = getNodeValue(child);
 				const childAngle = (childValue / totalValue) * angleRange;
+				// [CR] Each child gets its own colour index based on its position
+				// [NTL] Children are numbered 0, 1, 2... so each sibling gets a different colour
 				const childNode = buildArcTree(
 					child,
 					depth + 1,
 					currentAngle,
 					currentAngle + childAngle,
 					arcNode,
-					depth === 0 ? i : colorIndex // Assign new colour only at first level
+					i // Each child gets unique colour index
 				);
 				currentAngle += childAngle;
 				return childNode;
@@ -192,9 +241,9 @@
 	}
 
 	/**
-	 * Compute the arc tree from data
-	 * Reactive to data changes
-	 * Pre-computes all values first for O(n) performance
+	 * [CR] Compute the arc tree from data
+	 * Reactive to data changes, pre-computes all values first for O(n) performance
+	 * [NTL] Whenever your data changes, this automatically rebuilds the layout!
 	 */
 	let arcTree = $derived.by(() => {
 		// Pre-compute all values in single traversal before building tree
@@ -203,7 +252,9 @@
 	});
 
 	/**
-	 * Flatten the tree into an array of all nodes for rendering
+	 * [CR] Flatten the tree into an array of all nodes for rendering
+	 * [NTL] SVG needs a flat list to loop over, so we unpack the nested tree
+	 *       into a simple array. Like listing every folder and file in order!
 	 */
 	function flattenTree(node: SunburstArcNode): SunburstArcNode[] {
 		const result: SunburstArcNode[] = [node];
@@ -216,34 +267,42 @@
 	}
 
 	/**
-	 * Get all nodes as flat array
+	 * [CR] Get all nodes as flat array
+	 * [NTL] The complete list of every segment in the chart.
 	 */
 	let allNodes = $derived.by(() => {
 		return flattenTree(arcTree);
 	});
 
 	/**
-	 * Calculate max depth for radius scaling
+	 * [CR] Calculate max depth for radius scaling
+	 * [NTL] How many levels deep does the tree go? Needed to scale the rings.
 	 */
 	let maxDepth = $derived.by(() => {
 		return Math.max(...allNodes.map((n) => n.y1));
 	});
 
-	// ==========================================================================
-	// ZOOM/FOCUS HANDLING
-	// ==========================================================================
+	// =============================================================================
+	// [CR] ZOOM/FOCUS HANDLING
+	// [NTL] The magic of the zoomable sunburst! When you click a segment, we
+	//       "focus" on it and show just that segment and its children, making
+	//       them fill the whole chart. It's like zooming in with a magnifying glass!
+	// =============================================================================
 
 	/**
-	 * Get the current focus node for zoom calculations
+	 * [CR] Get the current focus node for zoom calculations
 	 * Defaults to root if no focus is set
+	 * [NTL] What are we zoomed into right now? Root = the whole chart.
 	 */
 	let currentFocus = $derived.by(() => {
 		return focusNode ?? arcTree;
 	});
 
 	/**
-	 * Calculate visible nodes based on current focus
+	 * [CR] Calculate visible nodes based on current focus
 	 * Shows only 2 levels at a time (like D3 zoomable sunburst)
+	 * [NTL] We only show the current focus and 2 levels deeper - this keeps
+	 *       the chart clean and readable. Deeper levels appear when you zoom in!
 	 */
 	let visibleNodes = $derived.by(() => {
 		const focus = currentFocus;
@@ -264,12 +323,15 @@
 		});
 	});
 
-	// ==========================================================================
-	// ARC PATH GENERATION
-	// ==========================================================================
+	// =============================================================================
+	// [CR] ARC PATH GENERATION
+	// [NTL] This is where we create the actual shapes you see! We need to convert
+	//       our layout data (angles and depths) into SVG paths that draw the arcs.
+	// =============================================================================
 
 	/**
-	 * Convert polar coordinates to cartesian
+	 * [CR] Convert polar coordinates to cartesian
+	 * [NTL] Just like RadialCluster - convert "angle + distance" to "x, y"!
 	 */
 	function polarToCartesian(
 		cx: number,
@@ -284,8 +346,11 @@
 	}
 
 	/**
-	 * Generate SVG arc path for a node
+	 * [CR] Generate SVG arc path for a node
 	 * Transforms node coordinates based on current focus for zoom effect
+	 * [NTL] This creates the actual "pizza slice" shape for each segment!
+	 *       The clever bit is that it transforms the coordinates based on
+	 *       what you're zoomed into, so segments expand to fill the view.
 	 *
 	 * @param node - The arc node to render
 	 * @param cx - Center X coordinate
@@ -345,7 +410,9 @@
 	}
 
 	/**
-	 * Get label position and visibility for a node
+	 * [CR] Get label position and visibility for a node
+	 * [NTL] Where should the text label go, and should we show it at all?
+	 *       Small segments get their labels hidden to avoid clutter.
 	 */
 	function getLabelInfo(
 		node: SunburstArcNode,
@@ -388,15 +455,19 @@
 		return { x: pos.x, y: pos.y, angle, visible };
 	}
 
-	// ==========================================================================
-	// EVENT HANDLERS
-	// ==========================================================================
+	// =============================================================================
+	// [CR] EVENT HANDLERS
+	// [NTL] These functions respond to user interactions - clicking to zoom,
+	//       hovering for tooltips, and keyboard navigation for accessibility.
+	// =============================================================================
 
 	/**
-	 * Handle click on a segment
+	 * [CR] Handle click on a segment
 	 * - If clicking on focus node or its direct parent, zoom out
 	 * - If clicking on a node with children, zoom in
 	 * - Fire callback for any click
+	 * [NTL] Click a segment to zoom in and see its children in detail!
+	 *       Click again on the focused segment to zoom back out.
 	 */
 	function handleClick(node: SunburstArcNode) {
 		// Fire callback
@@ -416,7 +487,8 @@
 	}
 
 	/**
-	 * Handle click on center circle (zoom out)
+	 * [CR] Handle click on center circle (zoom out)
+	 * [NTL] The center circle appears when zoomed in - click it to go back up!
 	 */
 	function handleCenterClick() {
 		if (focusNode) {
@@ -425,7 +497,9 @@
 	}
 
 	/**
-	 * Show tooltip on hover
+	 * [CR] Show tooltip on hover with aggregate info for parent nodes
+	 * [NTL] When you hover over a segment, we show its name and value!
+	 *       For parent nodes, we also show how many children it contains.
 	 */
 	function showTooltipHandler(event: MouseEvent, node: SunburstArcNode) {
 		if (!containerEl) return;
@@ -435,9 +509,21 @@
 		const tooltipY = event.clientY - rect.top;
 
 		const value = getNodeValue(node);
-		const text = tooltipFormatter
-			? tooltipFormatter(node)
-			: `${node.name}: ${value.toLocaleString()}`;
+
+		// [CR] Build a more informative tooltip for parent nodes
+		// [NTL] Show "Folder: 150 (3 items)" for folders, just "File: 50" for files
+		let text: string;
+		if (tooltipFormatter) {
+			text = tooltipFormatter(node);
+		} else if (node.children && node.children.length > 0) {
+			// Parent node - show aggregate info
+			const childCount = node.children.length;
+			const itemLabel = childCount === 1 ? 'item' : 'items';
+			text = `${node.name}: ${value.toLocaleString()} (${childCount} ${itemLabel})`;
+		} else {
+			// Leaf node - just show name and value
+			text = `${node.name}: ${value.toLocaleString()}`;
+		}
 
 		tooltip = {
 			visible: true,
@@ -448,14 +534,17 @@
 	}
 
 	/**
-	 * Hide tooltip
+	 * [CR] Hide tooltip
+	 * [NTL] When you move away, the tooltip disappears.
 	 */
 	function hideTooltip() {
 		tooltip = { ...tooltip, visible: false };
 	}
 
 	/**
-	 * Handle keyboard navigation
+	 * [CR] Handle keyboard navigation
+	 * [NTL] Keyboard users can Tab to segments and press Enter/Space to zoom,
+	 *       or Escape to zoom out. This makes the chart fully accessible!
 	 */
 	function handleKeyDown(event: KeyboardEvent, node: SunburstArcNode) {
 		if (event.key === 'Enter' || event.key === ' ') {
@@ -467,16 +556,18 @@
 		}
 	}
 
-	// ==========================================================================
-	// DERIVED DIMENSIONS
-	// ==========================================================================
+	// =============================================================================
+	// [CR] DERIVED DIMENSIONS
+	// [NTL] These are calculated from the width/height props and update automatically.
+	// =============================================================================
 
-	let cx = $derived(width / 2);
-	let cy = $derived(height / 2);
-	let maxRadius = $derived(Math.min(width, height) / 2 - 10);
+	let cx = $derived(width / 2);                              // [NTL] Center X coordinate
+	let cy = $derived(height / 2);                              // [NTL] Center Y coordinate
+	let maxRadius = $derived(Math.min(width, height) / 2 - 10); // [NTL] Maximum radius (with padding)
 
 	/**
-	 * Current path label for breadcrumb display
+	 * [CR] Current path label for breadcrumb display
+	 * [NTL] Shows where you are in the hierarchy, like "Root / Folder / Subfolder".
 	 */
 	let pathLabel = $derived.by(() => {
 		if (!focusNode) return data.name;
@@ -497,9 +588,10 @@
 	role="region"
 	aria-label="Sunburst chart: {data.name}"
 >
-	<!-- Breadcrumb path -->
+	<!-- [CR] Breadcrumb path with responsive styling -->
+	<!-- [NTL] Shows your current location in the hierarchy and lets you go back -->
 	<div class="breadcrumb" aria-live="polite">
-		{pathLabel}
+		<span class="breadcrumb-path" title={pathLabel}>{pathLabel}</span>
 		{#if focusNode}
 			<button class="zoom-out-btn" onclick={handleCenterClick} aria-label="Zoom out to parent">
 				← Back
@@ -596,7 +688,8 @@
 
 <style>
 	/**
-	 * Container styling
+	 * [CR] Container styling - responsive for mobile
+	 * [NTL] The container stretches to fit but never overflows the screen
 	 */
 	.sunburst-container {
 		display: inline-block;
@@ -604,10 +697,13 @@
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 		user-select: none;
 		-webkit-user-select: none;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	/**
-	 * Breadcrumb path display
+	 * [CR] Breadcrumb path display - responsive for mobile
+	 * [NTL] On mobile, we truncate long paths and allow wrapping to prevent overflow
 	 */
 	.breadcrumb {
 		font-size: 14px;
@@ -618,7 +714,20 @@
 		margin-bottom: 12px;
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 8px;
+		flex-wrap: wrap;
+		word-break: break-word;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	/* [CR] Path text truncation on mobile */
+	.breadcrumb-path {
+		flex: 1;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.zoom-out-btn {
@@ -630,17 +739,35 @@
 		cursor: pointer;
 		color: #374151;
 		transition: background-color 0.15s ease;
+		flex-shrink: 0;
 	}
 
 	.zoom-out-btn:hover {
 		background: #d1d5db;
 	}
 
+	/* [CR] Mobile-specific styles */
+	@media (max-width: 480px) {
+		.breadcrumb {
+			font-size: 12px;
+			padding: 6px 10px;
+			gap: 6px;
+		}
+
+		.zoom-out-btn {
+			font-size: 12px;
+			padding: 3px 8px;
+		}
+	}
+
 	/**
-	 * SVG container
+	 * [CR] SVG container - responsive sizing
+	 * [NTL] The chart scales down on mobile to fit the screen
 	 */
 	.sunburst-svg {
 		display: block;
+		max-width: 100%;
+		height: auto;
 	}
 
 	/**
@@ -794,3 +921,5 @@
 		}
 	}
 </style>
+
+<!-- [CR] Gold Standard review complete. All [CR]/[NTL] comments added. -->
