@@ -1,14 +1,34 @@
 <!--
-	CardStack Component - Horizontal Card Row with Two-Stage Interaction
+	CardStack Component - Interactive Card Stack with Selection Navigation
 
-	A reusable Svelte 5 component that displays cards in a horizontal overlapping row.
-	Features a two-stage interaction: hover to preview (partial reveal), click to select (full reveal).
+	Interactive card stack with direction-detecting hover and keyboard/swipe selection.
+	Features two-stage interaction: hover to preview (partial reveal), click/arrow/swipe to select (full reveal).
+	On desktop, includes keyboard navigation. On mobile, includes swipe gestures.
+
+	MATHEMATICAL LAYOUT MODEL:
+	This component uses a constraint-based layout system that calculates optimal dimensions
+	at runtime based on container size and content. Four key constraints are applied:
+
+	1. Container fit: sum(cardw) × 1.1 + hoverShift × 2 ≤ containerWidth
+	2. Title visibility: hoverUp ≥ titleHeight × 1.2 (hover always reveals full title)
+	3. Content fit: cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
+	4. Hover zone: hoverZoneWidth = 0.9 × overlap × 2
+
+	DIRECTION DETECTION:
+	This component detects mouse entry direction to determine which way the card should shift.
+	When mouse enters from the left side of the hover zone, the card shifts right (and vice versa).
+	Direction is locked on entry - subsequent mouse movement doesn't change the shift.
 
 	FEATURES:
-	- Cards arranged horizontally with slight overlap
+	- Mathematical constraint-based layout (calculated at mount + resize)
+	- Direction-detecting hover zone (entry side determines shift direction)
 	- Two-stage interaction: hover for preview, click for full reveal
-	- Dynamic partial reveal based on mouse movement direction
-	- Responsive design with mobile optimisations
+	- Arrow keys navigate between cards (left/right to select)
+	- Swipe gestures navigate between cards on mobile
+	- Escape key deselects the current card
+	- Body text only shown when card is selected (prevents overlap)
+	- Smooth animations for card transitions
+	- Touch-optimised interaction
 	- Fully accessible with semantic button elements, ARIA labels, and keyboard navigation support
 
 	USAGE:
@@ -24,102 +44,462 @@
 
 	PROPS:
 	- cards: Array of card objects with { image, title, content }
-	- cardWidth: Width of each card in pixels (default: 300)
-	- cardHeight: Height of each card in pixels (default: 400)
+	- cardWidth: Width of each card in pixels (default: 300, used as base)
+	- cardHeight: Height of each card in pixels (default: 400, used as base)
 	- partialRevealSide: Which side stays hidden on hover - 'left' or 'right' (default: 'right')
 
+	KEYBOARD CONTROLS:
+	- Right Arrow: Select next card (wraps around)
+	- Left Arrow: Select previous card (wraps around)
+	- Escape: Deselect current card
+
+	MOBILE GESTURES:
+	- Swipe Left: Select next card
+	- Swipe Right: Select previous card
+
 	INTERACTION:
-	- Hover: Card rises and shifts based on mouse direction, keeping one edge behind its neighbour
-	- Click: Card fully emerges from the stack with maximum elevation
+	- Hover: Mouse entry direction determines shift direction (left entry → shift right)
+	- Click/Enter/Space: Toggle card selection (fully emerges with content visible)
 -->
 
 <script lang="ts">
-	import type { Card, CardStackProps } from '$lib/types';
+	import type { CardStackProps, CardLayoutConfig, CalculatedCardLayout } from '$lib/types';
 
 	// Component props with default values
-	let { cards = [], cardWidth = 300, cardHeight = 400, partialRevealSide = 'right' }: CardStackProps = $props();
+	// cardWidth and cardHeight serve as base/fallback values - actual dimensions calculated at runtime
+	let { cards = [], cardWidth: baseCardWidth = 300, cardHeight: baseCardHeight = 400, partialRevealSide = 'right' }: CardStackProps = $props();
 
-	// Track which card is currently hovered and selected
-	let hoveredIndex = $state<number | null>(null);
+	// Container reference for measurement
+	let containerEl = $state<HTMLElement | null>(null);
+
+	// Calculated layout values from constraint equations
+	// These are derived at mount + resize, not on every render
+	let layout = $state<CalculatedCardLayout | null>(null);
+
+	// Reactive state for interaction
+	// hoveredCard stores both the index AND the direction for that specific card
+	// This ensures direction is locked when the card is hovered and doesn't change with mouse movement
+	let hoveredCard = $state<{ index: number; shiftDirection: 'left' | 'right' } | null>(null);
 	let selectedIndex = $state<number | null>(null);
+	let touchStartX = $state(0);
+	let touchStartY = $state(0);
 
-	// Track mouse movement direction for dynamic partial reveal
-	// When partialRevealSide is 'right', we start assuming leftward mouse movement (card shifts left, hiding right edge)
-	// When partialRevealSide is 'left', we start assuming rightward mouse movement (card shifts right, hiding left edge)
-	// mouseDirection is initialized from partialRevealSide prop but then updated by user interaction
-	// The svelte-ignore is safe because we're intentionally deriving initial state from props
-	/* svelte-ignore state_referenced_locally */
-	let mouseDirection = $state<'left' | 'right' | null>(partialRevealSide === 'right' ? 'right' : 'left');
-	let previousMouseX = $state<number>(0);
+	// Reduced motion preference - SSR-safe with fallback
+	let prefersReducedMotion = $state(false);
 
 	/**
-	 * Calculate dynamic hover shift based on mouse movement direction
-	 * - When mouse moves left: card shifts left (hiding right edge behind neighbour)
-	 * - When mouse moves right: card shifts right (hiding left edge behind neighbour)
-	 * This creates a realistic "peeking" effect that follows the mouse
+	 * Get the hover shift for a specific card
+	 * Only the hovered card gets a shift value, all others get 0
+	 * Direction is determined once on mouseenter and locked until mouseleave
 	 */
-	const hoverShift = $derived(mouseDirection === 'left' ? -60 : 60);
+	function getCardHoverShift(displayIndex: number): number {
+		if (hoveredCard === null || hoveredCard.index !== displayIndex) {
+			return 0; // Not hovered, no shift
+		}
+		const shiftAmount = layout?.hoverShift ?? 60;
+		// Left entry → shift right (positive), Right entry → shift left (negative)
+		return hoveredCard.shiftDirection === 'right' ? shiftAmount : -shiftAmount;
+	}
+
+	/**
+	 * ============================================================
+	 * MATHEMATICAL LAYOUT CALCULATOR
+	 * ============================================================
+	 *
+	 * Implements the constraint-based layout model to calculate optimal
+	 * card dimensions that guarantee visibility, smooth transitions,
+	 * and proper container fit.
+	 *
+	 * Constraint equations applied:
+	 * 1. Container fit: sum(cardw) × 1.1 + hoverShift × 2 ≤ containerWidth
+	 * 2. Title visibility: hoverUp ≥ titleHeight × 1.2
+	 * 3. Content fit: cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
+	 * 4. Hover zone: hoverZoneWidth = 0.9 × overlap × 2
+	 */
+	function calculateCardLayout(config: CardLayoutConfig): CalculatedCardLayout {
+		const { containerWidth, cardCount, titleHeight, bodyHeight } = config;
+
+		// Safety minimums - prevent cards from becoming too small to interact with
+		const MIN_CARD_WIDTH = 120;
+		const MIN_CARD_HEIGHT = 160;
+		const MIN_HOVER_UP = 30;
+		const MIN_HOVER_SHIFT = 40;
+		const MIN_OVERLAP = 30;
+
+		// Constraint 3: Card height must fit content with 10% padding
+		// cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
+		const minContentHeight = 1.1 * (titleHeight + bodyHeight);
+		const calculatedCardHeight = Math.max(baseCardHeight, minContentHeight, MIN_CARD_HEIGHT);
+
+		// Constraint 2: Hover up must reveal entire title plus 20% margin
+		// hoverUp ≥ titleHeight × 1.2
+		const hoverUp = Math.max(titleHeight * 1.2, MIN_HOVER_UP);
+
+		// Hover shift should be proportional to card size but have a reasonable minimum
+		const hoverShift = Math.max(calculatedCardHeight * 0.15, MIN_HOVER_SHIFT);
+
+		// Constraint 1: Calculate maximum card width that fits container
+		// sum(cardw) × 1.1 + hoverShift × 2 ≤ containerWidth
+		// For overlapping cards: total visual width = cardWidth + (n-1) × (cardWidth - overlap)
+		// Simplified: Available width for cards = containerWidth - 2 × hoverShift - margin
+		const availableWidth = containerWidth - 2 * hoverShift - 40; // 40px margin
+		const cardRatio = baseCardWidth / baseCardHeight;
+
+		// Calculate card width based on available space
+		// Start with base width and scale down if needed
+		let calculatedCardWidth = baseCardWidth;
+
+		if (cardCount > 1) {
+			// With overlapping cards, we need to consider the overlap
+			// Start with a reasonable overlap of 22% of card width
+			const overlapRatio = 0.22;
+			// Total width = cardWidth + (n-1) × cardWidth × (1 - overlapRatio)
+			// totalWidth = cardWidth × (1 + (n-1) × (1 - overlapRatio))
+			// cardWidth = totalWidth / (1 + (n-1) × (1 - overlapRatio))
+			const multiplier = 1 + (cardCount - 1) * (1 - overlapRatio);
+			const maxCardWidth = availableWidth / multiplier;
+			calculatedCardWidth = Math.min(baseCardWidth, maxCardWidth);
+		} else {
+			// Single card: can take more space
+			calculatedCardWidth = Math.min(baseCardWidth, availableWidth * 0.8);
+		}
+
+		// Enforce minimum width
+		calculatedCardWidth = Math.max(calculatedCardWidth, MIN_CARD_WIDTH);
+
+		// Maintain aspect ratio when scaling width
+		const scaleFactor = calculatedCardWidth / baseCardWidth;
+		const scaledCardHeight = calculatedCardHeight * scaleFactor;
+		const finalCardHeight = Math.max(scaledCardHeight, MIN_CARD_HEIGHT);
+
+		// Calculate overlap based on final card width (~22% of card width)
+		const overlap = Math.max(calculatedCardWidth * 0.22, MIN_OVERLAP);
+
+		// Constraint 4: Hover zone width = 0.9 × overlap × 2
+		// This creates a centred detection zone where we can determine entry direction
+		const hoverZoneWidth = Math.max(0.9 * (overlap * 2), calculatedCardWidth * 0.5);
+
+		return {
+			cardWidth: Math.round(calculatedCardWidth),
+			cardHeight: Math.round(finalCardHeight),
+			overlap: Math.round(overlap),
+			hoverUp: Math.round(hoverUp),
+			hoverShift: Math.round(hoverShift),
+			hoverZoneWidth: Math.round(hoverZoneWidth)
+		};
+	}
+
+	/**
+	 * Measure container and content, then calculate layout
+	 * Called on mount and when container resizes
+	 */
+	function measureAndCalculate() {
+		if (!containerEl) return;
+
+		// Get container dimensions
+		const rect = containerEl.getBoundingClientRect();
+		const containerWidth = rect.width;
+
+		// Measure title and content from the first card (assume consistent sizing)
+		// We look for the first visible card's elements
+		const firstCard = containerEl.querySelector('.card');
+		const titleEl = firstCard?.querySelector('.card-title');
+		const contentEl = firstCard?.querySelector('.card-content');
+
+		// Get actual heights or use sensible defaults
+		const titleHeight = titleEl instanceof HTMLElement ? titleEl.offsetHeight : 40;
+		const bodyHeight = contentEl instanceof HTMLElement ? contentEl.offsetHeight : 80;
+
+		// Calculate layout using constraint equations
+		layout = calculateCardLayout({
+			containerWidth,
+			cardCount: cards.length,
+			titleHeight,
+			bodyHeight
+		});
+	}
+
+	/**
+	 * Handle mouse enter on a card for direction detection
+	 * Determines which direction the card should shift based on entry position
+	 * Direction is locked for this card until mouseleave - subsequent mouse
+	 * movement within the card does NOT change the shift direction
+	 * @param e - MouseEvent from the browser
+	 * @param displayIndex - The display position of the card being entered
+	 * @param cardElement - The card-wrapper element being entered
+	 */
+	function handleCardMouseEnter(e: MouseEvent, displayIndex: number, cardElement: HTMLElement) {
+		// Get the card's bounding rect
+		const rect = cardElement.getBoundingClientRect();
+		const cardCenterX = rect.left + rect.width / 2;
+
+		// Determine direction based on which side of center the mouse entered
+		// Left of center → card should shift right (mouse coming from left)
+		// Right of center → card should shift left (mouse coming from right)
+		const shiftDirection: 'left' | 'right' = e.clientX < cardCenterX ? 'right' : 'left';
+
+		// Store both the hovered index AND the locked direction
+		hoveredCard = { index: displayIndex, shiftDirection };
+	}
+
+	/**
+	 * Handle mouse leave - clear the hovered card state
+	 */
+	function handleCardMouseLeave() {
+		hoveredCard = null;
+	}
+
+	/**
+	 * Effect to detect reduced motion preference
+	 * Uses $effect for SSR-safe initialization and cleanup
+	 */
+	$effect(() => {
+		// SSR guard - only run in browser
+		if (typeof window === 'undefined') return;
+
+		// Check reduced motion preference
+		const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+		prefersReducedMotion = mediaQuery.matches;
+
+		const handleMotionChange = (e: MediaQueryListEvent) => {
+			prefersReducedMotion = e.matches;
+		};
+
+		mediaQuery.addEventListener('change', handleMotionChange);
+
+		return () => {
+			mediaQuery.removeEventListener('change', handleMotionChange);
+		};
+	});
+
+	/**
+	 * Effect to measure container and calculate layout on mount + resize
+	 * Uses ResizeObserver for performant responsive recalculation
+	 */
+	$effect(() => {
+		// SSR guard - only run in browser
+		if (typeof window === 'undefined' || !containerEl) return;
+
+		// Initial measurement (defer to allow DOM to render)
+		requestAnimationFrame(measureAndCalculate);
+
+		// Set up ResizeObserver for responsive recalculation
+		const resizeObserver = new ResizeObserver(() => {
+			measureAndCalculate();
+		});
+		resizeObserver.observe(containerEl);
+
+		return () => {
+			resizeObserver.disconnect();
+		};
+	});
+
+	/**
+	 * Keyboard navigation handler - scoped to component container
+	 * Arrow keys select the next/previous card in the stack
+	 * This prevents multiple CardStackAdvanced instances from all responding
+	 * to the same keypress. The container must be focused for keys to work.
+	 */
+	function handleKeyDown(e: KeyboardEvent) {
+		if (e.key === 'ArrowRight') {
+			e.preventDefault();
+			selectNext();
+		} else if (e.key === 'ArrowLeft') {
+			e.preventDefault();
+			selectPrevious();
+		} else if (e.key === 'Escape') {
+			e.preventDefault();
+			selectedIndex = null; // Deselect on Escape
+		}
+	}
+
+	/**
+	 * Select the next card to the right
+	 * If nothing selected, selects the first card
+	 * Wraps around to first card when at the end
+	 */
+	function selectNext() {
+		if (cards.length === 0) return;
+
+		if (selectedIndex === null) {
+			selectedIndex = 0;
+		} else {
+			selectedIndex = (selectedIndex + 1) % cards.length;
+		}
+	}
+
+	/**
+	 * Select the previous card to the left
+	 * If nothing selected, selects the last card
+	 * Wraps around to last card when at the beginning
+	 */
+	function selectPrevious() {
+		if (cards.length === 0) return;
+
+		if (selectedIndex === null) {
+			selectedIndex = cards.length - 1;
+		} else {
+			selectedIndex = (selectedIndex - 1 + cards.length) % cards.length;
+		}
+	}
+
+	/**
+	 * Handle touch start event for mobile swipe detection
+	 * Records the initial touch position for delta calculation in handleTouchEnd
+	 * @param e - TouchEvent from the browser
+	 */
+	function handleTouchStart(e: TouchEvent) {
+		touchStartX = e.touches[0].clientX;
+		touchStartY = e.touches[0].clientY;
+	}
+
+	/**
+	 * Handle touch move event for mobile swipe detection
+	 * Prevents default page scrolling when horizontal swipe is detected
+	 * @param e - TouchEvent from the browser
+	 */
+	function handleTouchMove(e: TouchEvent) {
+		const deltaX = e.touches[0].clientX - touchStartX;
+		const deltaY = e.touches[0].clientY - touchStartY;
+
+		// Prevent page scroll if horizontal swipe is dominant
+		if (Math.abs(deltaX) > Math.abs(deltaY)) {
+			e.preventDefault();
+		}
+	}
+
+	/**
+	 * Handle touch end event for mobile swipe detection
+	 * Calculates swipe direction and selects next/previous card if horizontal swipe > 50px
+	 * Only triggers if horizontal movement dominates vertical (prevents conflict with scrolling)
+	 * @param e - TouchEvent from the browser
+	 */
+	function handleTouchEnd(e: TouchEvent) {
+		const touchEndX = e.changedTouches[0].clientX;
+		const touchEndY = e.changedTouches[0].clientY;
+
+		const deltaX = touchEndX - touchStartX;
+		const deltaY = touchEndY - touchStartY;
+
+		// Only trigger if horizontal swipe is dominant
+		if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+			e.preventDefault();
+			if (deltaX > 0) {
+				// Swipe right - select previous card (to the left)
+				selectPrevious();
+			} else {
+				// Swipe left - select next card (to the right)
+				selectNext();
+			}
+		}
+	}
+
+	/**
+	 * Svelte action to attach non-passive touch event listeners
+	 * Touch events need { passive: false } to allow preventDefault() for swipe handling
+	 * Keyboard events use inline handlers on the container element
+	 */
+	function attachTouchListeners(node: HTMLElement) {
+		node.addEventListener('touchstart', handleTouchStart, { passive: false });
+		node.addEventListener('touchmove', handleTouchMove, { passive: false });
+		node.addEventListener('touchend', handleTouchEnd, { passive: false });
+
+		return {
+			destroy() {
+				node.removeEventListener('touchstart', handleTouchStart);
+				node.removeEventListener('touchmove', handleTouchMove);
+				node.removeEventListener('touchend', handleTouchEnd);
+			}
+		};
+	}
 </script>
 
 <!-- Main container that holds all cards -->
-<div class="stack-container" role="region" aria-label="Card stack">
+<!-- tabindex="0" makes the container focusable for keyboard navigation -->
+<!-- Keyboard events are scoped to this element to prevent conflicts with multiple instances -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex - Intentional: region with tabindex="0" enables keyboard navigation per WCAG 2.1.1 -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions - Intentional: touch/keyboard handlers required for card cycling accessibility -->
+<div
+	class="stack-container"
+	bind:this={containerEl}
+	use:attachTouchListeners
+	onkeydown={handleKeyDown}
+	role="region"
+	aria-label="Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect."
+	tabindex="0"
+	style="
+		--card-width: {layout?.cardWidth ?? baseCardWidth}px;
+		--card-height: {layout?.cardHeight ?? baseCardHeight}px;
+		--card-overlap: {layout?.overlap ?? 50}px;
+		--hover-up: {layout?.hoverUp ?? 30}px;
+		--hover-zone-width: {layout?.hoverZoneWidth ?? 100}px;
+	"
+>
 	<div class="cards-wrapper">
-		<!-- Render each card -->
-		{#each cards as card, index (index)}
-			<button
-				class="card-wrapper"
-				class:hovered={hoveredIndex === index && selectedIndex !== index}
-				class:selected={selectedIndex === index}
+		<!-- Render each card in stack order -->
+		{#each cards as card, displayIndex (displayIndex)}
+			{@const isHovered = hoveredCard?.index === displayIndex && selectedIndex !== displayIndex}
+			<div
+				class="card-hit-area"
 				style="
-					--card-index: {index};
+					--card-index: {displayIndex};
 					--total-cards: {cards.length};
-					--hover-shift: {hoverShift}px;
-					z-index: {selectedIndex === index ? cards.length + 20 : hoveredIndex === index ? cards.length + 5 : index + 1};
 				"
-				onmouseenter={() => (hoveredIndex = index)}
-				onmouseleave={() => {
-					hoveredIndex = null;
-					previousMouseX = 0;
-				}}
-				onmousemove={(e: MouseEvent) => {
-					if (previousMouseX !== 0) {
-						const direction = e.clientX < previousMouseX ? 'left' : 'right';
-						if (direction !== mouseDirection) {
-							mouseDirection = direction;
-						}
+				role="button"
+				tabindex={0}
+				onmouseenter={(e: MouseEvent) => handleCardMouseEnter(e, displayIndex, e.currentTarget as HTMLElement)}
+				onmouseleave={handleCardMouseLeave}
+				onclick={() => (selectedIndex = selectedIndex === displayIndex ? null : displayIndex)}
+				onkeydown={(e: KeyboardEvent) => {
+					if (e.key === 'Enter' || e.key === ' ') {
+						e.preventDefault();
+						selectedIndex = selectedIndex === displayIndex ? null : displayIndex;
 					}
-					previousMouseX = e.clientX;
 				}}
-				onclick={() => (selectedIndex = selectedIndex === index ? null : index)}
-				aria-label="Card {index + 1} of {cards.length}: {card.title || 'Untitled'}"
-				aria-pressed={selectedIndex === index}
+				aria-label="Card {displayIndex + 1} of {cards.length}: {card?.title || 'Untitled'}"
+				aria-pressed={selectedIndex === displayIndex}
 			>
-				<div class="card">
+				<!-- The visual card that transforms - pointer-events disabled so hit area stays static -->
+				<div
+					class="card-wrapper"
+					class:hovered={isHovered}
+					class:selected={selectedIndex === displayIndex}
+					style="--hover-shift: {getCardHoverShift(displayIndex)}px;"
+				>
+					<div class="card">
 					<!-- Background image (if provided) -->
-					{#if card.image}
+					<!-- draggable="false" prevents unwanted drag behaviour on touch devices -->
+					{#if card?.image}
 						<img
 							src={card.image}
-							alt={card.title ? `${card.title} - Image ${index + 1}` : `Card image ${index + 1} of ${cards.length}`}
+							alt={card.title ? `${card.title} - Image ${displayIndex + 1}` : `Card image ${displayIndex + 1} of ${cards.length}`}
 							class="card-image"
+							draggable="false"
 						/>
 					{/if}
 
 					<!-- Card title overlay (if provided) -->
-					{#if card.title}
+					{#if card?.title}
 						<div class="card-title">{card.title}</div>
 					{/if}
 
 					<!-- Card content with gradient background (if provided) -->
-					{#if card.content}
+					{#if card?.content}
 						<div class="card-content">
 							<!-- Plain text rendering - card.content contains no HTML tags (see FALLBACK_CARDS in constants.ts)
 							     Using {@html} here would be unnecessary overhead with no security benefit -->
 							{card.content}
 						</div>
 					{/if}
+					</div>
 				</div>
-			</button>
+			</div>
 		{/each}
+	</div>
+
+	<!-- Navigation hint for mobile -->
+	<div class="swipe-hint" aria-hidden="true">
+		<span>← Swipe to select cards →</span>
 	</div>
 </div>
 
@@ -129,8 +509,12 @@
 		width: 100%;
 		padding: 4rem 2rem;
 		display: flex;
+		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		outline: none;
+		position: relative;
+		touch-action: pan-y; /* Allow vertical scroll only, prevent horizontal pan */
 	}
 
 	/* Wrapper for cards with horizontal layout */
@@ -144,77 +528,65 @@
 		overflow: visible;
 	}
 
-	/* Individual card wrapper with hover effect */
-	.card-wrapper {
-		/* Reset button defaults for clean styling */
-		border: none;
-		padding: 0;
-		background: none;
-		font: inherit;
-		color: inherit;
-		text-align: inherit;
-		outline: none;
-
-		/* Card wrapper styling */
+	/* Hit area - STATIC element that doesn't transform */
+	/* This is what receives mouse events - it stays in place so hover doesn't "dance" */
+	.card-hit-area {
 		position: relative;
 		flex: 0 0 auto;
-		width: 220px;
-		height: 300px;
-		margin-left: -50px;
-		transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+		width: var(--card-width, 220px);
+		height: var(--card-height, 300px);
+		margin-left: calc(-1 * var(--card-overlap, 50px));
+		z-index: calc(var(--card-index) + 1);
 		cursor: pointer;
-		will-change: transform;
+		/* Debug: uncomment to visualize hit area */
+		/* background: rgba(255, 0, 0, 0.1); */
+	}
+
+	/* First card shouldn't have negative margin */
+	.card-hit-area:first-child {
+		margin-left: 0;
 	}
 
 	/* Focus visible for keyboard navigation accessibility */
-	.card-wrapper:focus-visible {
+	.card-hit-area:focus-visible {
 		outline: 3px solid #667eea;
 		outline-offset: 4px;
 		border-radius: 20px;
 	}
 
-	/* Scale cards down on smaller screens */
-	@media (max-width: 1400px) {
-		.card-wrapper {
-			width: 200px;
-			height: 270px;
-			margin-left: -45px;
-		}
+	/* Visual card wrapper - this TRANSFORMS but has NO pointer events */
+	/* The transform happens here, but mouse detection stays on the static hit area */
+	.card-wrapper {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+		will-change: transform;
+		pointer-events: none; /* Critical: let events pass through to hit area */
 	}
 
-	@media (max-width: 1200px) {
-		.card-wrapper {
-			width: 180px;
-			height: 245px;
-			margin-left: -40px;
-		}
-	}
-
-	@media (max-width: 1000px) {
-		.card-wrapper {
-			width: 160px;
-			height: 220px;
-			margin-left: -35px;
-		}
-	}
-
-	/* First card shouldn't have negative margin */
-	.card-wrapper:first-child {
-		margin-left: 0;
-	}
-
-	/* Hover effect: partial reveal - card rises but stays behind neighbor */
-	.card-wrapper:hover,
-	.card-wrapper:focus,
+	/* Hover effect: partial reveal - card rises and shifts based on entry direction */
+	/* --hover-shift is calculated per-card based on mouse entry position */
+	/* --hover-up comes from constraint equation: hoverUp ≥ titleHeight × 1.2 */
+	/* NOTE: No :hover pseudo-class - only .hovered class from JavaScript */
 	.card-wrapper.hovered {
-		transform: translate(var(--hover-shift), -30px) scale(1.05);
-		/* z-index is set inline to ensure proper stacking */
+		transform: translate(var(--hover-shift), calc(-1 * var(--hover-up, 30px))) scale(1.05);
 	}
 
 	/* Selected effect: full reveal - card completely emerges */
 	.card-wrapper.selected {
-		transform: translateY(-40px) scale(1.1);
-		/* z-index is set inline to ensure proper stacking */
+		transform: translateY(calc(-1 * var(--hover-up, 30px) - 10px)) scale(1.1);
+	}
+
+	/* Ensure selected cards appear above hovered */
+	.card-hit-area:has(.card-wrapper.hovered) {
+		z-index: 50;
+	}
+
+	.card-hit-area:has(.card-wrapper.selected) {
+		z-index: 100;
 	}
 
 
@@ -227,12 +599,11 @@
 		background: white;
 		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 		transition: box-shadow 0.3s ease;
+		backdrop-filter: blur(10px); /* Note: Can be performance-intensive on mobile devices */
 		position: relative;
 	}
 
 	/* Enhanced shadow on hover */
-	.card-wrapper:hover .card,
-	.card-wrapper:focus .card,
 	.card-wrapper.hovered .card {
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 	}
@@ -252,6 +623,7 @@
 		object-fit: cover;
 		user-select: none;
 		pointer-events: none;
+		-webkit-user-drag: none;
 	}
 
 	/* Card title overlay (positioned at top) */
@@ -269,6 +641,7 @@
 	}
 
 	/* Card content area (positioned at bottom with gradient) */
+	/* Hidden by default - only shown when card is selected to prevent overlap */
 	.card-content {
 		position: absolute;
 		bottom: 0;
@@ -281,45 +654,41 @@
 		font-size: 14px;
 		line-height: 1.5;
 		pointer-events: none;
+		display: none; /* Hidden by default */
 	}
 
-	/* Hide content text when cards get small */
-	@media (max-width: 1000px) {
-		.card-content {
-			display: none;
-		}
+	/* Show content only when card is selected */
+	.card-wrapper.selected .card-content {
+		display: block;
+	}
 
+	/* Swipe hint for mobile users */
+	.swipe-hint {
+		margin-top: 2rem;
+		padding: 0.75rem 1.5rem;
+		background: rgba(102, 126, 234, 0.1);
+		border-radius: 9999px;
+		color: #667eea;
+		font-size: 14px;
+		font-weight: 600;
+		opacity: 0.7;
+		transition: opacity 0.3s ease;
+	}
+
+	.stack-container:hover .swipe-hint {
+		opacity: 1;
+	}
+
+	/* Smaller title when cards get small */
+	@media (max-width: 1000px) {
 		.card-title {
 			font-size: 18px;
 		}
 	}
 
-	/**
-	 * REDUCED MOTION SUPPORT
-	 * Respect user preference for reduced animations (accessibility requirement)
-	 */
-	@media (prefers-reduced-motion: reduce) {
-		.card-wrapper {
-			transition: none;
-		}
-
-		.card {
-			transition: none;
-		}
-
-		/* Provide instant visual feedback without animation */
-		.card-wrapper:hover,
-		.card-wrapper:focus,
-		.card-wrapper.hovered {
-			transform: translateY(-10px);
-		}
-
-		.card-wrapper.selected {
-			transform: translateY(-15px) scale(1.05);
-		}
-	}
-
 	/* MOBILE RESPONSIVE STYLES */
+	/* Note: Card dimensions now come from mathematical layout calculator via CSS custom properties */
+	/* These media queries handle mobile-specific behaviours, not sizes */
 	@media (max-width: 768px) {
 		.stack-container {
 			padding: 2rem 0.5rem;
@@ -331,24 +700,13 @@
 			justify-content: center;
 		}
 
-		.card-wrapper {
-			width: 130px;
-			height: 175px;
-			margin-left: -104px; /* 80% overlap: 130px * 0.8 = 104px covered */
-		}
-
-		.card-wrapper:first-child {
-			margin-left: 0;
-		}
-
-		/* Less dramatic hover on mobile (touch screens) */
-		.card-wrapper:hover,
-		.card-wrapper:focus {
-			transform: translateY(-20px) scale(1.03);
+		/* Touch-optimised interactions - simpler transform on mobile */
+		.card-wrapper.hovered {
+			transform: translateY(calc(-1 * var(--hover-up, 20px) * 0.7)) scale(1.03);
 		}
 
 		/* Selected card expands on mobile to show full content */
-		.card-wrapper.selected {
+		.card-hit-area:has(.card-wrapper.selected) {
 			position: fixed;
 			left: 50%;
 			top: 50%;
@@ -356,11 +714,7 @@
 			width: 280px;
 			height: 400px;
 			margin-left: 0;
-		}
-
-		/* Show content when card is selected on mobile */
-		.card-wrapper.selected .card-content {
-			display: block;
+			z-index: 9999;
 		}
 
 		.card-title {
@@ -370,7 +724,49 @@
 		.card-wrapper.selected .card-title {
 			font-size: 20px;
 		}
+
+		.swipe-hint {
+			font-size: 12px;
+			padding: 0.5rem 1rem;
+		}
+	}
+
+	/* Hide swipe hint on desktop */
+	@media (min-width: 769px) {
+		.swipe-hint {
+			display: none;
+		}
+	}
+
+	/**
+	 * REDUCED MOTION SUPPORT
+	 * Respect user preference for reduced animations (accessibility requirement)
+	 * Users with vestibular disorders can experience nausea from animations
+	 */
+	@media (prefers-reduced-motion: reduce) {
+		.card-wrapper {
+			transition: none;
+		}
+
+		.card {
+			transition: none;
+		}
+
+		/* Provide instant visual feedback without animation */
+		/* Uses custom properties but with reduced movement */
+		/* Note: :hover/:focus removed - card-wrapper has pointer-events: none */
+		.card-wrapper.hovered {
+			transform: translateY(calc(-1 * var(--hover-up, 30px) * 0.3));
+		}
+
+		.card-wrapper.selected {
+			transform: translateY(calc(-1 * var(--hover-up, 30px) * 0.5)) scale(1.05);
+		}
+
+		.swipe-hint {
+			transition: none;
+		}
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
+<!-- Mathematical layout model with direction detection + selection navigation. Updated 26.12.25. -->

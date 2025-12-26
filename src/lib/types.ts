@@ -39,7 +39,8 @@ export interface CardRow {
 }
 
 /**
- * Props for CardStack and CardStackAdvanced components
+ * Props for CardStack component
+ * Interactive card stack with direction-detecting hover and selection navigation
  *
  * @property cards - Array of card objects to display
  * @property cardWidth - Width of each card in pixels (default: 300)
@@ -51,6 +52,48 @@ export interface CardStackProps {
 	cardWidth?: number;
 	cardHeight?: number;
 	partialRevealSide?: 'left' | 'right';
+}
+
+/**
+ * Configuration input for the CardStack layout calculator
+ * These are the measured values used to compute the layout
+ *
+ * @property containerWidth - Width of the container element in pixels
+ * @property cardCount - Number of cards in the stack
+ * @property titleHeight - Measured height of card title element in pixels
+ * @property bodyHeight - Measured height of card content/body element in pixels
+ */
+export interface CardLayoutConfig {
+	containerWidth: number;
+	cardCount: number;
+	titleHeight: number;
+	bodyHeight: number;
+}
+
+/**
+ * Calculated layout values for CardStack components
+ * These values are derived from the constraint-based mathematical model
+ *
+ * Constraint equations applied:
+ * 1. Container fit: sum(cardw) * 1.1 + hoverShift * 2 ≤ containerWidth
+ * 2. Title visibility: hoverUp ≥ titleHeight * 1.2
+ * 3. Content fit: cardHeight ≥ 1.1 * (titleHeight + bodyHeight)
+ * 4. Hover zone: hoverZoneWidth = 0.9 * overlap * 2
+ *
+ * @property cardWidth - Calculated card width in pixels
+ * @property cardHeight - Calculated card height in pixels
+ * @property overlap - Calculated overlap between adjacent cards in pixels
+ * @property hoverUp - Distance card rises on hover (guarantees title visibility)
+ * @property hoverShift - Horizontal shift on hover in pixels
+ * @property hoverZoneWidth - Width of the mouse hover detection zone in pixels
+ */
+export interface CalculatedCardLayout {
+	cardWidth: number;
+	cardHeight: number;
+	overlap: number;
+	hoverUp: number;
+	hoverShift: number;
+	hoverZoneWidth: number;
 }
 
 /**
@@ -90,6 +133,24 @@ export interface MenuItem {
 	href: string;
 	icon?: string;
 	active?: boolean;
+}
+
+/**
+ * A category of menu items for grouped navigation
+ *
+ * Categories help organise lots of components into logical groups.
+ * Each category can be expanded/collapsed in the navigation panel.
+ *
+ * @property name - Display name for the category (e.g., "Cards & Layouts")
+ * @property icon - Optional emoji icon for the category
+ * @property items - Array of menu items in this category
+ * @property isExpanded - Whether this category is currently expanded (for controlled state)
+ */
+export interface MenuCategory {
+	name: string;
+	icon?: string;
+	items: MenuItem[];
+	isExpanded?: boolean;
 }
 
 /**
@@ -230,7 +291,10 @@ export interface LinkImageHoverProps {
  * @property logoHref - Logo link destination (default: '/')
  */
 export interface NavbarProps {
-	menuItems: MenuItem[];
+	/** Flat list of menu items (legacy - use menuCategories for grouped navigation) */
+	menuItems?: MenuItem[];
+	/** Categorised menu items for grouped navigation (preferred) */
+	menuCategories?: MenuCategory[];
 	currentPageTitle?: string;
 	logoIcon?: string;
 	logoText?: string;
@@ -1387,7 +1451,6 @@ export interface BeforeAfterProps {
 }
 
 // =============================================================================
-<<<<<<< HEAD
 // BUBBLE PACKING TYPES
 // =============================================================================
 

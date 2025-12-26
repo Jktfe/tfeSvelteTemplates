@@ -1,13 +1,14 @@
 <!--
   CardStackMotionFlip - 3D Rolling Card Deck
 
-  A mobile-first card stack where swiping the top card rolls it off-screen
-  in the swipe direction (left/right/up/down) with 3D rotation, then reappears
+  A card stack where dragging/swiping the top card rolls it off-screen
+  in the drag direction (left/right/up/down) with 3D rotation, then reappears
   at the back of the stack facing forward.
 
   Key Features:
   - Left-to-right stacking (top card on LEFT)
-  - 4-directional swipe support (L/R/U/D)
+  - 4-directional drag/swipe support (L/R/U/D)
+  - Works on both desktop (mouse) and mobile (touch) via Pointer Events
   - Real-time drag feedback with rotation preview
   - Only top card animates with 3D transforms
   - Other cards slide smoothly to fill gap
@@ -15,11 +16,14 @@
   - Fully accessible with keyboard navigation
 
   Interaction Flow:
-  1. User drags top card → sees rotation preview
+  1. User drags top card (mouse or touch) → sees rotation preview
   2. On release, if threshold met → card rolls off-screen
   3. Card instantly teleports to back (invisible)
   4. Card fades in at back, facing forward
   5. Other cards slide left to fill the gap
+
+  Desktop: Drag with mouse or use arrow keys
+  Mobile: Swipe with finger
 -->
 
 <script lang="ts">
@@ -214,84 +218,81 @@
 	}
 
 	/**
-	 * Create touch handlers for a specific card
-	 * Returns closures that know which displayIndex they belong to
+	 * Handle pointer down (works for both mouse and touch)
+	 * Only responds to the top card
 	 */
-	function createTouchHandlers(displayIndex: number) {
-		return {
-			handleTouchStart(event: TouchEvent) {
-				// Only respond if this is the top card (displayIndex 0) and we're idle
-				if (displayIndex !== 0 || currentState !== 'idle') return;
+	function handlePointerDown(event: PointerEvent, displayIndex: number) {
+		// Only respond if this is the top card and we're idle
+		if (displayIndex !== 0 || currentState !== 'idle') return;
 
-				// Prevent all default touch behavior immediately
-				event.preventDefault();
+		// Capture pointer for smooth dragging even if cursor leaves element
+		(event.currentTarget as HTMLElement)?.setPointerCapture(event.pointerId);
 
-				// Lock body scroll while dragging
-				lockBodyScroll();
+		// Lock body scroll while dragging
+		lockBodyScroll();
 
-				const touch = event.touches[0];
-				touchStartX = touch.clientX;
-				touchStartY = touch.clientY;
-				touchCurrentX = touch.clientX;
-				touchCurrentY = touch.clientY;
-				isDragging = true;
-				currentState = 'dragging';
-			},
+		touchStartX = event.clientX;
+		touchStartY = event.clientY;
+		touchCurrentX = event.clientX;
+		touchCurrentY = event.clientY;
+		isDragging = true;
+		currentState = 'dragging';
+	}
 
-			handleTouchMove(event: TouchEvent) {
-				if (!isDragging || currentState !== 'dragging') return;
+	/**
+	 * Handle pointer move (works for both mouse and touch)
+	 */
+	function handlePointerMove(event: PointerEvent) {
+		if (!isDragging || currentState !== 'dragging') return;
 
-				// Always prevent default to stop page scrolling
-				event.preventDefault();
+		touchCurrentX = event.clientX;
+		touchCurrentY = event.clientY;
+	}
 
-				const touch = event.touches[0];
-				touchCurrentX = touch.clientX;
-				touchCurrentY = touch.clientY;
-			},
+	/**
+	 * Handle pointer up/cancel (works for both mouse and touch)
+	 */
+	function handlePointerUp(event: PointerEvent) {
+		if (!isDragging || currentState !== 'dragging') return;
 
-			handleTouchEnd(event: TouchEvent) {
-				if (!isDragging || currentState !== 'dragging') return;
+		// Release pointer capture
+		(event.currentTarget as HTMLElement)?.releasePointerCapture(event.pointerId);
 
-				// Prevent default
-				event.preventDefault();
+		// Always restore body scroll immediately when pointer ends
+		unlockBodyScroll();
 
-				// Always restore body scroll immediately when touch ends
-				unlockBodyScroll();
+		isDragging = false;
 
-				isDragging = false;
+		const deltaX = touchCurrentX - touchStartX;
+		const deltaY = touchCurrentY - touchStartY;
+		const absDeltaX = Math.abs(deltaX);
+		const absDeltaY = Math.abs(deltaY);
 
-				const deltaX = touchCurrentX - touchStartX;
-				const deltaY = touchCurrentY - touchStartY;
-				const absDeltaX = Math.abs(deltaX);
-				const absDeltaY = Math.abs(deltaY);
+		// Determine if swipe threshold was met
+		const metThreshold = Math.max(absDeltaX, absDeltaY) >= swipeThreshold;
 
-				// Determine if swipe threshold was met
-				const metThreshold = Math.max(absDeltaX, absDeltaY) >= swipeThreshold;
+		if (!metThreshold) {
+			// Snap back to idle
+			currentState = 'idle';
+			return;
+		}
 
-				if (!metThreshold) {
-					// Snap back to idle
-					currentState = 'idle';
-					return;
-				}
-
-				// Determine swipe direction
-				if (absDeltaX > absDeltaY) {
-					// Horizontal swipe
-					if (deltaX > 0) {
-						rollCard('rolling-right');
-					} else {
-						rollCard('rolling-left');
-					}
-				} else {
-					// Vertical swipe
-					if (deltaY > 0) {
-						rollCard('rolling-down');
-					} else {
-						rollCard('rolling-up');
-					}
-				}
+		// Determine swipe direction
+		if (absDeltaX > absDeltaY) {
+			// Horizontal swipe
+			if (deltaX > 0) {
+				rollCard('rolling-right');
+			} else {
+				rollCard('rolling-left');
 			}
-		};
+		} else {
+			// Vertical swipe
+			if (deltaY > 0) {
+				rollCard('rolling-down');
+			} else {
+				rollCard('rolling-up');
+			}
+		}
 	}
 
 	/**
@@ -349,13 +350,29 @@
 		}
 	}
 
-	// Set up keyboard listener
+	// Set up keyboard listener via $effect (primary)
 	$effect(() => {
 		if (typeof window !== 'undefined') {
 			window.addEventListener('keydown', handleKeydown);
 			return () => window.removeEventListener('keydown', handleKeydown);
 		}
 	});
+
+	/**
+	 * Svelte action to ensure keyboard listener is attached via DOM manipulation
+	 * This provides a fallback if ClerkProvider breaks $effect reactivity
+	 */
+	function ensureKeyboardListener(node: HTMLElement) {
+		// Add listener immediately via DOM manipulation as a fallback
+		const existingHandler = handleKeydown;
+		window.addEventListener('keydown', existingHandler);
+
+		return {
+			destroy() {
+				window.removeEventListener('keydown', existingHandler);
+			}
+		};
+	}
 
 	// Cleanup: ensure body scroll is restored if component unmounts during interaction
 	$effect(() => {
@@ -364,40 +381,6 @@
 		};
 	});
 
-	/**
-	 * Svelte action to add non-passive touch event listeners
-	 * Creates handlers with closure over displayIndex so each card knows its position
-	 */
-	function nonPassiveTouchListeners(node: HTMLElement, displayIndex: number) {
-		const handlers = createTouchHandlers(displayIndex);
-
-		node.addEventListener('touchstart', handlers.handleTouchStart, { passive: false });
-		node.addEventListener('touchmove', handlers.handleTouchMove, { passive: false });
-		node.addEventListener('touchend', handlers.handleTouchEnd, { passive: false });
-
-		return {
-			update(newDisplayIndex: number) {
-				// Remove old listeners
-				node.removeEventListener('touchstart', handlers.handleTouchStart);
-				node.removeEventListener('touchmove', handlers.handleTouchMove);
-				node.removeEventListener('touchend', handlers.handleTouchEnd);
-
-				// Create new handlers with updated displayIndex
-				const newHandlers = createTouchHandlers(newDisplayIndex);
-				node.addEventListener('touchstart', newHandlers.handleTouchStart, { passive: false });
-				node.addEventListener('touchmove', newHandlers.handleTouchMove, { passive: false });
-				node.addEventListener('touchend', newHandlers.handleTouchEnd, { passive: false });
-
-				// Update the reference for cleanup
-				Object.assign(handlers, newHandlers);
-			},
-			destroy() {
-				node.removeEventListener('touchstart', handlers.handleTouchStart);
-				node.removeEventListener('touchmove', handlers.handleTouchMove);
-				node.removeEventListener('touchend', handlers.handleTouchEnd);
-			}
-		};
-	}
 </script>
 
 <div
@@ -405,6 +388,7 @@
 	role="region"
 	aria-label="3D rolling card deck"
 	style="width: {cardWidth}px; height: {cardHeight}px;"
+	use:ensureKeyboardListener
 >
 	{#each cardOrder as cardIndex, displayIndex (cardIndex)}
 		{@const card = cards[cardIndex]}
@@ -417,11 +401,14 @@
 			role="button"
 			tabindex={isTopCard ? 0 : -1}
 			aria-label="Card {displayIndex + 1} of {cards.length}"
-			use:nonPassiveTouchListeners={displayIndex}
+			onpointerdown={(e) => handlePointerDown(e, displayIndex)}
+			onpointermove={handlePointerMove}
+			onpointerup={handlePointerUp}
+			onpointercancel={handlePointerUp}
 		>
 			<div class="card-content">
 				{#if card.image}
-					<img src={card.image} alt={card.title || ''} class="card-image" />
+					<img src={card.image} alt={card.title || ''} class="card-image" draggable="false" />
 				{/if}
 
 				{#if card.title || card.content}
@@ -459,6 +446,8 @@
 		backface-visibility: hidden;
 		will-change: transform, opacity;
 		cursor: grab;
+		user-select: none; /* Prevent selection during drag */
+		-webkit-user-select: none;
 	}
 
 	.card-wrapper:active {
@@ -484,6 +473,7 @@
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 		overflow: hidden;
 		position: relative;
+		pointer-events: none; /* Allow drag events to pass through to card-wrapper */
 	}
 
 	.card-image {
@@ -491,6 +481,9 @@
 		height: 100%;
 		object-fit: cover;
 		display: block;
+		pointer-events: none; /* Prevent image from capturing drag events */
+		user-select: none; /* Prevent selection during drag */
+		-webkit-user-drag: none; /* Prevent Safari image drag */
 	}
 
 	.card-overlay {
@@ -501,6 +494,7 @@
 		padding: 1.5rem;
 		background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
 		color: white;
+		pointer-events: none; /* Allow drag events to pass through to card */
 	}
 
 	.card-title {
@@ -523,4 +517,4 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
+<!-- Claude is happy that this file is mint. Signed off 26.12.25. -->

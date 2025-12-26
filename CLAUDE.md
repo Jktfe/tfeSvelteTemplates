@@ -149,9 +149,8 @@ All shared types are defined once in `src/lib/types.ts`:
 
 #### 4. Component Variants
 Components have multiple implementations demonstrating different approaches:
-- **CardStack.svelte** - Basic version (CSS transforms only)
-- **CardStackAdvanced.svelte** - Adds swipe gestures and keyboard nav
-- **CardStackMotionFlip.svelte** - Uses FLIP animation technique with 3D roll effects
+- **CardStack.svelte** - Interactive selection with direction-detecting hover, keyboard nav, swipe gestures
+- **CardStackMotionFlip.svelte** - Uses FLIP animation technique with 3D roll effects and 4-directional swipe
 - **Marquee.svelte** - Static infinite scroll with pause-on-hover
 - **MarqueeDraggable.svelte** - Interactive with drag-to-scroll
 
@@ -180,7 +179,7 @@ Every component should include:
 
 - Component files: PascalCase (`CardStack.svelte`, `MagicCard.svelte`)
 - Route folders: lowercase (`cardstack/`, `marquee/`)
-- Variants: Suffix describes variant (`CardStackAdvanced`, `CardStackMotionSpring`)
+- Variants: Suffix describes variant (`CardStackMotionFlip`, `MarqueeDraggable`)
 
 ## Database Setup (Optional)
 
@@ -1592,6 +1591,297 @@ Use Clerk context in client components (do NOT destructure to maintain reactivit
 - [ ] `/profile` shows UserProfile when authenticated
 - [ ] All existing component pages remain accessible without auth
 - [ ] SSR works correctly (page refresh maintains auth state)
+
+## Gold Standard Guidelines
+
+This section defines the quality standards for all components in this library.
+
+### Component Documentation Template
+
+Every component file header should include this comprehensive documentation:
+
+```svelte
+<!--
+  ============================================================
+  [COMPONENT NAME]
+  ============================================================
+
+  🎯 WHAT IT DOES
+  [One sentence, plain English]
+
+  ✨ FEATURES
+  • Feature 1
+  • Feature 2
+
+  ♿ ACCESSIBILITY
+  • Keyboard: [Tab, Enter, Escape, Arrow keys]
+  • Screen readers: [ARIA labels, roles]
+  • Motion: [Respects prefers-reduced-motion]
+
+  📦 DEPENDENCIES
+  [Zero external dependencies]
+  OR
+  [External: @library/name - REASON: Too complex to build natively]
+
+  ⚡ PERFORMANCE
+  • Suitable for: [dataset size limits, animation notes]
+  • Considerations: [any overhead]
+
+  🎨 USAGE
+  <ComponentName prop={value} />
+
+  📋 PROPS
+  | Prop | Type | Default | Description |
+  |------|------|---------|-------------|
+
+  ============================================================
+-->
+```
+
+### Native vs External Library Criteria
+
+**✅ Use External Library When:**
+1. **Complexity threshold**: Would take >40 hours to build natively (maps, auth, complex charts)
+2. **Maintenance burden**: Active security updates required (auth, sanitization)
+3. **Industry standard**: Well-established, actively maintained, <200KB
+4. **No native equivalent**: Unique capability not feasible in vanilla Svelte
+
+**🏠 Build Native When:**
+1. **Educational value**: Learning opportunity for developers
+2. **Bundle size**: Native is significantly smaller
+3. **Customisation**: Need deep control over behaviour
+4. **Portability**: Must be copy-paste ready with zero deps
+
+**Current External Dependencies (Justified):**
+
+| Library | Component | Reason |
+|---------|-----------|--------|
+| Leaflet | Maps | Industry standard, would take 100+ hours to replicate |
+| Clerk | Auth | Security-critical, actively maintained |
+| Unovis | Sankey, Sunburst | Complex D3-based viz, well-optimised |
+| SVAR Grid | DataGridAdvanced | Virtual scrolling, inline editing |
+| DOMPurify | Sanitization | Security-critical |
+
+### Comment Style Guide ("Clear & Warm")
+
+Comments should be professional but approachable. The goal is to help coding novices understand what's happening.
+
+**Do:**
+```typescript
+// Here's where the magic happens! We calculate how far each card
+// should slide based on its position in the stack. The top card
+// stays put (x=0), and each card behind it peeks out a little more.
+```
+
+**Don't:**
+```typescript
+// Calculate card X offset based on display index
+```
+
+**Principles:**
+- Explain the "why", not just the "what"
+- Use friendly language ("Here's where...", "Notice how...")
+- Celebrate discoveries ("The clever bit here is...")
+- No jargon without explanation
+- Add context for non-obvious decisions
+
+### Component Quality Checklist
+
+Before a component is considered "gold standard":
+
+- [ ] **Error-free**: `bun run build` passes
+- [ ] **Warning-free**: `bun run check` clean (or warnings documented)
+- [ ] **Typed**: All props have TypeScript interfaces
+- [ ] **Documented**: Full header template completed
+- [ ] **Accessible**: Keyboard nav, ARIA labels, motion preferences
+- [ ] **Tested**: Unit tests exist and pass
+- [ ] **Demo page**: Route exists with examples
+- [ ] **Home page**: Listed in component showcase
+- [ ] **Navbar**: Appears in correct category
+
+### Acceptable Warnings Documentation
+
+When warnings cannot be avoided, document them in the component header:
+
+```svelte
+<!--
+  ⚠️ KNOWN WARNINGS (Safe to ignore)
+
+  CSS Unused Selectors (svelte-check):
+  - .form-input, .form-error: Applied to dynamically rendered form elements
+  - Reason: Svelte's static analysis can't detect runtime-created elements
+  - Impact: None - CSS is actively used
+-->
+```
+
+## Testing Guide
+
+### Setup
+
+The project uses Vitest + @testing-library/svelte for testing:
+
+```bash
+# Run all tests once
+bun run test
+
+# Watch mode (re-runs on changes)
+bun run test:watch
+
+# Visual interface (great for debugging!)
+bun run test:ui
+
+# Coverage report
+bun run test:coverage
+```
+
+### Test File Template
+
+```typescript
+/**
+ * ============================================================
+ * [ComponentName] Tests
+ * ============================================================
+ *
+ * These tests verify that [ComponentName] works as expected.
+ * We're checking:
+ *   ✓ It renders correctly with default props
+ *   ✓ It responds to user interactions
+ *   ✓ Accessibility features work properly
+ *
+ * 💡 TIP: Run `bun run test:ui` for a visual test interface!
+ * ============================================================
+ */
+
+import { render, screen } from '@testing-library/svelte';
+import userEvent from '@testing-library/user-event';
+import { describe, it, expect } from 'vitest';
+import ComponentName from './ComponentName.svelte';
+
+describe('ComponentName', () => {
+  // Start with the basics - does it render at all?
+  it('renders without crashing', () => {
+    render(ComponentName);
+    // If we get here without errors, we're golden!
+  });
+
+  // Test the happy path - what should users see?
+  it('displays the expected content', () => {
+    render(ComponentName, { props: { title: 'Hello!' } });
+    expect(screen.getByText('Hello!')).toBeInTheDocument();
+  });
+
+  // Accessibility matters! Let's make sure keyboard users can interact
+  it('is keyboard accessible', async () => {
+    const user = userEvent.setup();
+    render(ComponentName);
+
+    const button = screen.getByRole('button');
+    await user.tab();
+    expect(button).toHaveFocus();
+  });
+});
+```
+
+### Test File Location
+
+Tests are co-located with their components:
+
+```
+src/lib/components/
+├── ShineBorder.svelte
+├── ShineBorder.test.ts     # Tests live next to components
+├── Editor.svelte
+└── Editor.test.ts
+```
+
+### Test Priority Order
+
+**Tier 1 - Simple (learn the patterns):**
+- ShineBorder, SwishButton, AuthStatus, DatabaseStatus
+
+**Tier 2 - Forms:**
+- TextField, NumberField, DateField
+
+**Tier 3 - Utilities:**
+- utils.ts (cn, sanitizeHTML)
+
+**Tier 4 - Complex:**
+- Editor (CRUD, validation), DataGridBasic, CardStack variants
+
+**Tier 5 - External deps (mock the libraries):**
+- Maps components, Sankey/visualization components
+
+## Storyboard Guide
+
+### Overview
+
+Each component has an interactive ExplainerCanvas storyboard accessible at `/storyboard/[component]`. Storyboards provide visual, interactive documentation beyond the demo pages.
+
+### Storyboard Structure (Standard for all components)
+
+```
+[Component] Storyboard
+├── 🎯 Overview (position: 0, 0)
+│   ├── What it does
+│   ├── When to use it
+│   └── Key features
+│
+├── 👁️ Visual Guide (position: 350, 0)
+│   └── Screenshot/diagram of component
+│
+├── ⚙️ Props & Config (position: 0, 200)
+│   └── Children: Basic Props, Advanced Props, TypeScript Types
+│
+├── 📝 Code Examples (position: 350, 200)
+│   └── Children: Basic Usage, With Options, Real-world Example
+│
+├── ♿ Accessibility (position: 175, 400)
+│   ├── Keyboard shortcuts
+│   ├── Screen reader support
+│   └── Motion preferences
+│
+└── 💡 Tips & Best Practices (position: 175, 550)
+```
+
+### Storyboard Data Structure
+
+```typescript
+// src/lib/data/storyboards/shineborder.ts
+import type { ExplainerNode, ExplainerArrow } from '$lib/types';
+
+export const shineBorderNodes: ExplainerNode[] = [
+  {
+    id: 'overview',
+    title: '🎯 Overview',
+    content: `
+## ShineBorder
+
+An animated border wrapper that adds a sweeping shine effect to any content.
+
+**When to use:**
+- Call-to-action buttons
+- Featured content cards
+- Important announcements
+    `,
+    position: { x: 0, y: 0 },
+    width: 320,
+    children: []
+  },
+  // ... more nodes
+];
+
+export const shineBorderArrows: ExplainerArrow[] = [
+  { from: 'overview', to: 'visual-guide' },
+  // ... more connections
+];
+```
+
+### Adding a New Storyboard
+
+1. Create storyboard data in `src/lib/data/storyboards/[component].ts`
+2. Export from `src/lib/data/storyboards/index.ts`
+3. The dynamic route `/storyboard/[component]` will automatically load it
+4. Add storyboard icon to component's demo page
 
 ## Important Notes
 
