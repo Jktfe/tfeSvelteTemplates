@@ -16,5 +16,12 @@ config();
 
 export default defineConfig({
 	// SvelteKit plugin - handles all SvelteKit-specific Vite configuration
-	plugins: [sveltekit()]
+	plugins: [sveltekit()],
+
+	// SSR configuration for packages that don't work well with Vite's SSR
+	ssr: {
+		// @panzoom/panzoom needs to be bundled for SSR to work correctly
+		// It exports as default but Vite SSR has trouble with the module resolution
+		noExternal: ['@panzoom/panzoom']
+	}
 });

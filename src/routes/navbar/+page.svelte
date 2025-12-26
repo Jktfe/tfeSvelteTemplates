@@ -1,14 +1,27 @@
 <script lang="ts">
-	import Navbar from '$lib/components/Navbar.svelte';
-	import type { MenuItem } from '$lib/types';
+	import type { MenuCategory, MenuItem } from '$lib/types';
 
-	// Example menu items for the demo
-	const demoMenuItems: MenuItem[] = [
-		{ label: 'Dashboard', href: '#dashboard', icon: '📊', active: false },
-		{ label: 'Profile', href: '#profile', icon: '👤', active: false },
-		{ label: 'Settings', href: '#settings', icon: '⚙️', active: true },
-		{ label: 'Messages', href: '#messages', icon: '💬', active: false },
-		{ label: 'Notifications', href: '#notifications', icon: '🔔', active: false }
+	// Example categorised menu for the demo (mirrors the actual app structure)
+	const demoCategories: MenuCategory[] = [
+		{
+			name: 'Home',
+			icon: '🏠',
+			items: [{ label: 'Home', href: '/', icon: '🏠', active: false }]
+		},
+		{
+			name: 'Cards & Layouts',
+			icon: '🃏',
+			items: [
+				{ label: 'CardStack', href: '/cardstack', icon: '🃏', active: false },
+				{ label: 'ExpandingCard', href: '/expandingcard', icon: '🎴', active: false },
+				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: false }
+			]
+		},
+		{
+			name: 'Navigation',
+			icon: '☰',
+			items: [{ label: 'Navbar', href: '/navbar', icon: '☰', active: true }]
+		}
 	];
 </script>
 
@@ -20,7 +33,8 @@
 		</h1>
 		<p class="page-description">
 			A responsive navigation bar with hamburger menu following Framework7's panel pattern. Features
-			a left-sliding panel menu with smooth animations and backdrop overlay.
+			a left-sliding panel with <strong>collapsible category sections</strong>, smooth animations,
+			and backdrop overlay.
 		</p>
 	</div>
 
@@ -28,48 +42,53 @@
 		<h2 class="section-title">Features</h2>
 		<ul class="features-list">
 			<li>Hamburger button that opens a left-sliding panel</li>
-			<li>Scrollable panel menu for any number of navigation items</li>
-			<li>Active state highlighting with blue accent</li>
+			<li><strong>Collapsible category sections</strong> for organising many navigation items</li>
+			<li>Single-item categories render as direct links (e.g., Home)</li>
+			<li>Multi-item categories expand/collapse with chevron indicators</li>
+			<li>Active page highlighting with blue accent and indicator dot</li>
+			<li>Auto-expands the category containing the active page</li>
 			<li>Smooth staggered animations for menu items</li>
 			<li>Backdrop overlay when panel is open</li>
-			<li>Keyboard accessible (Escape to close)</li>
+			<li>Keyboard accessible (Tab navigation, Escape to close, focus trap)</li>
 			<li>Sticky positioning with backdrop blur</li>
-			<li>Zero external dependencies</li>
+			<li>Optional Clerk authentication UI integration</li>
 		</ul>
 	</section>
 
 	<section class="section">
 		<h2 class="section-title">Interactive Demo</h2>
 		<p class="section-description">
-			Click the hamburger menu (☰) in the top-left corner of the page to see the navbar in action.
-			The current navbar you're using is the component itself!
+			Click the hamburger menu (☰) in the top-left corner to see the navbar in action. The current
+			navbar you're using <em>is</em> the component! Try expanding different categories and
+			navigating between pages.
 		</p>
 	</section>
 
 	<section class="section">
-		<h2 class="section-title">Usage</h2>
+		<h2 class="section-title">Usage (Categorised Navigation)</h2>
 		<div class="code-block">
 			<pre><code>{`${'<'}script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
-  import type { MenuItem } from '$lib/types';
+  import type { MenuCategory } from '$lib/types';
 
-  const menuItems: MenuItem[] = [
+  const menuCategories: MenuCategory[] = [
     {
-      label: 'Home',
-      href: '/',
+      name: 'Home',
       icon: '🏠',
-      active: true
+      items: [{ label: 'Home', href: '/', icon: '🏠', active: true }]
     },
     {
-      label: 'About',
-      href: '/about',
-      icon: 'ℹ️',
-      active: false
+      name: 'Components',
+      icon: '🧩',
+      items: [
+        { label: 'CardStack', href: '/cardstack', icon: '🃏', active: false },
+        { label: 'MagicCard', href: '/magiccard', icon: '✨', active: false }
+      ]
     }
   ];
 ${'<'}/script>
 
-<Navbar {menuItems} />`}</code></pre>
+<Navbar {menuCategories} currentPageTitle="Home" />`}</code></pre>
 		</div>
 	</section>
 
@@ -87,16 +106,22 @@ ${'<'}/script>
 				</thead>
 				<tbody>
 					<tr>
+						<td><code>menuCategories</code></td>
+						<td><code>MenuCategory[]</code></td>
+						<td><code>[]</code></td>
+						<td>Categorised navigation items (recommended)</td>
+					</tr>
+					<tr>
 						<td><code>menuItems</code></td>
 						<td><code>MenuItem[]</code></td>
-						<td><em>required</em></td>
-						<td>Array of navigation menu items</td>
+						<td><code>[]</code></td>
+						<td>Legacy flat menu items (for backwards compatibility)</td>
 					</tr>
 					<tr>
 						<td><code>currentPageTitle</code></td>
 						<td><code>string</code></td>
 						<td><code>'Home'</code></td>
-						<td>Title of the current page (not displayed, for accessibility)</td>
+						<td>Title of the current page (for accessibility)</td>
 					</tr>
 					<tr>
 						<td><code>logoIcon</code></td>
@@ -116,21 +141,55 @@ ${'<'}/script>
 						<td><code>'/'</code></td>
 						<td>URL the logo links to</td>
 					</tr>
+					<tr>
+						<td><code>isClerkConfigured</code></td>
+						<td><code>boolean</code></td>
+						<td><code>false</code></td>
+						<td>Show Clerk auth UI (SignIn/UserButton) or demo badge</td>
+					</tr>
 				</tbody>
 			</table>
 		</div>
 	</section>
 
 	<section class="section">
-		<h2 class="section-title">MenuItem Interface</h2>
+		<h2 class="section-title">Type Definitions</h2>
 		<div class="code-block">
-			<pre><code>{`interface MenuItem {
-  label: string;    // Display text
-  href: string;     // Link URL
-  icon?: string;    // Optional icon/emoji
-  active?: boolean; // Whether this is the active page
+			<pre><code>{`// Categorised navigation (recommended)
+interface MenuCategory {
+  name: string;       // Category display name
+  icon?: string;      // Optional category icon/emoji
+  items: MenuItem[];  // Items in this category
+}
+
+// Individual menu item
+interface MenuItem {
+  label: string;      // Display text
+  href: string;       // Link URL
+  icon?: string;      // Optional icon/emoji
+  active?: boolean;   // Whether this is the active page
 }`}</code></pre>
 		</div>
+	</section>
+
+	<section class="section">
+		<h2 class="section-title">Category Behaviour</h2>
+		<ul class="features-list">
+			<li>
+				<strong>Single-item categories:</strong> Render as direct links without expand/collapse (e.g.,
+				Home)
+			</li>
+			<li>
+				<strong>Multi-item categories:</strong> Show a collapsible header with chevron; click to expand/collapse
+			</li>
+			<li>
+				<strong>Auto-expand:</strong> The category containing the active page automatically expands on
+				load
+			</li>
+			<li>
+				<strong>Active highlighting:</strong> Active items show blue text and a small indicator dot
+			</li>
+		</ul>
 	</section>
 
 	<section class="section">
@@ -141,20 +200,36 @@ ${'<'}/script>
 				viewport height
 			</li>
 			<li>
-				<strong>Body Scroll Lock:</strong> When panel is open, body scrolling is prevented to improve UX
+				<strong>Body Scroll Lock:</strong> When panel is open, body scrolling is prevented (coordinated
+				with other components via scrollLock utility)
 			</li>
 			<li>
 				<strong>Close Triggers:</strong> Panel closes when clicking a menu item, clicking overlay, or
 				pressing Escape
 			</li>
 			<li>
-				<strong>Responsive:</strong> Panel width adapts based on screen size (280px mobile, 320px
-				tablet+)
+				<strong>Focus Trap:</strong> Tab navigation stays within the panel when open (WCAG 2.4.3)
 			</li>
 			<li>
-				<strong>Accessibility:</strong> Includes proper ARIA labels, focus management, and reduced
-				motion support
+				<strong>Responsive:</strong> Panel width adapts based on screen size (280px mobile, 320px tablet+)
 			</li>
+			<li>
+				<strong>Accessibility:</strong> ARIA labels, expanded states, focus management, and reduced motion
+				support
+			</li>
+		</ul>
+	</section>
+
+	<section class="section">
+		<h2 class="section-title">Clerk Integration</h2>
+		<p class="section-description">
+			When <code>isClerkConfigured</code> is <code>true</code>, the navbar displays Clerk's
+			authentication UI in the right section:
+		</p>
+		<ul class="features-list">
+			<li><strong>Signed out:</strong> Shows a "Sign in" button</li>
+			<li><strong>Signed in:</strong> Shows the UserButton avatar with dropdown menu</li>
+			<li><strong>Not configured:</strong> Shows a "Demo Mode" badge</li>
 		</ul>
 	</section>
 
@@ -165,7 +240,9 @@ ${'<'}/script>
 		</p>
 		<ul class="features-list">
 			<li><code>src/lib/components/Navbar.svelte</code> - The component file</li>
-			<li><code>src/lib/types.ts</code> - MenuItem and NavbarProps interfaces</li>
+			<li><code>src/lib/types.ts</code> - MenuCategory, MenuItem, and NavbarProps interfaces</li>
+			<li><code>src/lib/scrollLock.ts</code> - Scroll lock utility (optional, for coordination)</li>
+			<li><code>svelte-clerk</code> - Only if using Clerk auth integration</li>
 		</ul>
 	</section>
 </div>

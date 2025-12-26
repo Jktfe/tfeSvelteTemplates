@@ -1,7 +1,7 @@
 <script lang="ts">
 	import '../app.css';
 	import Navbar from '$lib/components/Navbar.svelte';
-	import type { MenuItem } from '$lib/types';
+	import type { MenuCategory } from '$lib/types';
 	import { page } from '$app/stores';
 	import { browser, dev } from '$app/environment';
 	import { inject } from '@vercel/analytics';
@@ -22,128 +22,158 @@
 	// Get current path for active menu highlighting
 	let currentPath = $derived($page.url.pathname);
 
-	// All navigation menu items for the panel
-	const menuItems: MenuItem[] = $derived([
+	// Helper to check if a path is active
+	const isActive = (href: string) =>
+		href === '/' ? currentPath === '/' : currentPath.startsWith(href);
+
+	// Categorised navigation menu - all 28+ components organised by type
+	const menuCategories: MenuCategory[] = $derived([
 		{
-			label: 'Home',
-			href: '/',
+			name: 'Home',
 			icon: '🏠',
-			active: currentPath === '/'
+			items: [{ label: 'Home', href: '/', icon: '🏠', active: isActive('/') }]
 		},
 		{
-			label: 'Navbar',
-			href: '/navbar',
-			icon: '☰',
-			active: currentPath.startsWith('/navbar')
-		},
-		{
-			label: 'CardStack',
-			href: '/cardstack',
+			name: 'Cards & Layouts',
 			icon: '🃏',
-			active: currentPath.startsWith('/cardstack')
+			items: [
+				{ label: 'CardStack', href: '/cardstack', icon: '🃏', active: isActive('/cardstack') },
+				{
+					label: 'ExpandingCard',
+					href: '/expandingcard',
+					icon: '🎴',
+					active: isActive('/expandingcard')
+				},
+				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: isActive('/magiccard') },
+				{ label: 'DomeGallery', href: '/domegallery', icon: '🎪', active: isActive('/domegallery') }
+			]
 		},
 		{
-			label: 'Marquee',
-			href: '/marquee',
-			icon: '🎭',
-			active: currentPath.startsWith('/marquee')
-		},
-		{
-			label: 'MagicCard',
-			href: '/magiccard',
-			icon: '✨',
-			active: currentPath.startsWith('/magiccard')
-		},
-		{
-			label: 'ShineBorder',
-			href: '/shineborder',
-			icon: '💫',
-			active: currentPath.startsWith('/shineborder')
-		},
-		{
-			label: 'SwishButton',
-			href: '/swishbutton',
+			name: 'Buttons & Actions',
 			icon: '🎯',
-			active: currentPath.startsWith('/swishbutton')
+			items: [
+				{ label: 'SwishButton', href: '/swishbutton', icon: '🎯', active: isActive('/swishbutton') },
+				{ label: 'SpeedDial', href: '/speeddial', icon: '⚡', active: isActive('/speeddial') },
+				{
+					label: 'ScratchToReveal',
+					href: '/scratchtoreveal',
+					icon: '🎰',
+					active: isActive('/scratchtoreveal')
+				}
+			]
 		},
 		{
-			label: 'ExpandingCard',
-			href: '/expandingcard',
-			icon: '🎴',
-			active: currentPath.startsWith('/expandingcard')
+			name: 'Text & Borders',
+			icon: '💫',
+			items: [
+				{ label: 'ShineBorder', href: '/shineborder', icon: '💫', active: isActive('/shineborder') },
+				{ label: 'Marquee', href: '/marquee', icon: '🎭', active: isActive('/marquee') },
+				{
+					label: 'AnimatedBeam',
+					href: '/animatedbeam',
+					icon: '✨',
+					active: isActive('/animatedbeam')
+				}
+			]
 		},
 		{
-			label: 'LinkImageHover',
-			href: '/linkimagehover',
-			icon: '🔗',
-			active: currentPath.startsWith('/linkimagehover')
+			name: 'Data Visualisation',
+			icon: '📊',
+			items: [
+				{ label: 'DataGrid', href: '/datagrid', icon: '📊', active: isActive('/datagrid') },
+				{ label: 'Sankey', href: '/sankey', icon: '🌊', active: isActive('/sankey') },
+				{
+					label: 'CalendarHeatmap',
+					href: '/calendarheatmap',
+					icon: '📅',
+					active: isActive('/calendarheatmap')
+				},
+				{
+					label: 'BubblePacking',
+					href: '/bubblepacking',
+					icon: '🫧',
+					active: isActive('/bubblepacking')
+				},
+				{
+					label: 'RadialCluster',
+					href: '/radialcluster',
+					icon: '🎯',
+					active: isActive('/radialcluster')
+				},
+				{ label: 'Sunburst', href: '/sunburst', icon: '☀️', active: isActive('/sunburst') }
+			]
 		},
 		{
-			label: 'Editor (CRUD)',
-			href: '/editor',
-			icon: '✏️',
-			active: currentPath.startsWith('/editor')
+			name: 'Media & Images',
+			icon: '🖼️',
+			items: [
+				{
+					label: 'LinkImageHover',
+					href: '/linkimagehover',
+					icon: '🔗',
+					active: isActive('/linkimagehover')
+				},
+				{ label: 'BeforeAfter', href: '/beforeafter', icon: '↔️', active: isActive('/beforeafter') }
+			]
 		},
 		{
-			label: 'Forms',
-			href: '/forms',
+			name: 'Navigation',
+			icon: '☰',
+			items: [{ label: 'Navbar', href: '/navbar', icon: '☰', active: isActive('/navbar') }]
+		},
+		{
+			name: 'Forms & CRUD',
 			icon: '📝',
-			active: currentPath.startsWith('/forms')
+			items: [
+				{ label: 'Forms', href: '/forms', icon: '📝', active: isActive('/forms') },
+				{ label: 'Editor', href: '/editor', icon: '✏️', active: isActive('/editor') }
+			]
 		},
 		{
-			label: 'DataGrid',
-			href: '/datagrid',
-			icon: '📊',
-			active: currentPath.startsWith('/datagrid')
-		},
-		{
-			label: 'Sankey',
-			href: '/sankey',
-			icon: '🌊',
-			active: currentPath.startsWith('/sankey')
-		},
-		{
-			label: 'FolderFiles',
-			href: '/folderfiles',
+			name: 'Files & Folders',
 			icon: '🗂️',
-			active: currentPath.startsWith('/folderfiles')
+			items: [
+				{ label: 'FolderFiles', href: '/folderfiles', icon: '🗂️', active: isActive('/folderfiles') }
+			]
 		},
 		{
-			label: 'Maps',
-			href: '/maps',
+			name: 'Maps & Geography',
 			icon: '🗺️',
-			active: currentPath.startsWith('/maps')
+			items: [
+				{ label: 'Maps', href: '/maps', icon: '🗺️', active: isActive('/maps') },
+				{ label: 'Geo', href: '/geo', icon: '🌍', active: isActive('/geo') }
+			]
 		},
 		{
-			label: 'Geo',
-			href: '/geo',
-			icon: '🌍',
-			active: currentPath.startsWith('/geo')
+			name: 'Learning & Docs',
+			icon: '📚',
+			items: [
+				{
+					label: 'ExplainerCanvas',
+					href: '/explainercanvas',
+					icon: '🎓',
+					active: isActive('/explainercanvas')
+				}
+			]
 		},
 		{
-			label: 'Auth Demo',
-			href: '/auth',
+			name: 'Authentication',
 			icon: '🔐',
-			active: currentPath.startsWith('/auth')
-		},
-		{
-			label: 'Dashboard',
-			href: '/dashboard',
-			icon: '📊',
-			active: currentPath.startsWith('/dashboard')
-		},
-		{
-			label: 'Profile',
-			href: '/profile',
-			icon: '👤',
-			active: currentPath.startsWith('/profile')
+			items: [
+				{ label: 'Auth Demo', href: '/auth', icon: '🔐', active: isActive('/auth') },
+				{ label: 'Dashboard', href: '/dashboard', icon: '📊', active: isActive('/dashboard') },
+				{ label: 'Profile', href: '/profile', icon: '👤', active: isActive('/profile') }
+			]
 		}
 	]);
 
 	// Determine current page title based on path
 	let currentPageTitle = $derived.by(() => {
-		const activeItem = menuItems.find((item) => item.active);
-		return activeItem ? activeItem.label : 'Svelte Templates';
+		for (const category of menuCategories) {
+			const activeItem = category.items.find((item) => item.active);
+			if (activeItem) return activeItem.label;
+		}
+		return 'Svelte Templates';
 	});
 </script>
 
@@ -151,7 +181,7 @@
 	<!-- Full Clerk authentication when configured -->
 	<ClerkProvider>
 		<div class="app">
-			<Navbar {menuItems} {currentPageTitle} {isClerkConfigured} />
+			<Navbar {menuCategories} {currentPageTitle} {isClerkConfigured} />
 
 			<main class="main">
 				{@render children()}
@@ -171,7 +201,7 @@
 {:else}
 	<!-- Demo mode when Clerk is not configured -->
 	<div class="app">
-		<Navbar {menuItems} {currentPageTitle} {isClerkConfigured} />
+		<Navbar {menuCategories} {currentPageTitle} {isClerkConfigured} />
 
 		<main class="main">
 			{@render children()}

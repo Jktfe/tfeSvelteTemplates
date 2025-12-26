@@ -1,39 +1,56 @@
 <!--
-  Navbar Component
+  ============================================================
+  NAVBAR COMPONENT
+  ============================================================
 
-  A responsive navigation bar following Framework7's panel pattern.
-  Features a hamburger menu that opens a left-side sliding panel.
+  🎯 WHAT IT DOES
+  A responsive navigation bar with a hamburger menu that opens a left-side
+  sliding panel. Now with collapsible category sections for 28+ components!
 
-  Features:
-  - Hamburger button on the left (next to logo)
-  - Left-sliding panel menu with all navigation items
-  - Panel is scrollable if content exceeds viewport height
-  - Logo and page title in navbar
-  - Backdrop overlay when panel is open
-  - Sticky positioning with backdrop blur
-  - Collapsible menu with smooth animations
-  - Conditional auth UI (Clerk when configured, demo mode otherwise)
-  - Zero external dependencies
+  ✨ FEATURES
+  • Hamburger button that transforms into an X when open
+  • Left-sliding panel with categorised, collapsible sections
+  • Categories expand/collapse with smooth animations
+  • Active page highlighting within categories
+  • Backdrop overlay when panel is open
+  • Sticky positioning with backdrop blur effect
+  • Conditional auth UI (Clerk when configured, demo badge otherwise)
 
-  Usage:
-    <Navbar {menuItems} currentPageTitle="Home" isClerkConfigured={true} />
+  ♿ ACCESSIBILITY
+  • Keyboard: Tab navigation, Enter to toggle, Escape to close
+  • Screen readers: ARIA labels, expanded states, current page
+  • Focus trap: Tab stays within panel when open
+  • Motion: Respects prefers-reduced-motion
 
-  Props:
-  - menuItems: Array of MenuItem objects for navigation
-  - currentPageTitle: Title of the current page displayed in navbar
-  - logoIcon: Logo icon/emoji (default: '⚡')
-  - logoText: Logo text (default: 'Svelte Templates')
-  - logoHref: Logo link destination (default: '/')
-  - isClerkConfigured: Whether Clerk authentication is configured (default: false)
+  📦 DEPENDENCIES
+  Zero external dependencies (except optional Clerk for auth)
+
+  🎨 USAGE
+  <Navbar {menuCategories} currentPageTitle="Home" isClerkConfigured={true} />
+
+  📋 PROPS
+  | Prop             | Type            | Default           | Description                    |
+  |------------------|-----------------|-------------------|--------------------------------|
+  | menuCategories   | MenuCategory[]  | []                | Categorised navigation items   |
+  | menuItems        | MenuItem[]      | []                | Legacy flat list (deprecated)  |
+  | currentPageTitle | string          | 'Home'            | Current page title             |
+  | logoIcon         | string          | '⚡'              | Logo emoji/icon                |
+  | logoText         | string          | 'Svelte Templates'| Logo text                      |
+  | logoHref         | string          | '/'               | Logo link destination          |
+  | isClerkConfigured| boolean         | false             | Show Clerk auth UI             |
+
+  ============================================================
 -->
 
 <script lang="ts">
-	import type { NavbarProps } from '$lib/types';
+	import { untrack } from 'svelte';
+	import type { NavbarProps, MenuCategory } from '$lib/types';
 	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
 	import { lockScroll } from '$lib/scrollLock';
 
 	let {
-		menuItems,
+		menuCategories = [],
+		menuItems = [],
 		currentPageTitle = 'Home',
 		logoIcon = '⚡',
 		logoText = 'Svelte Templates',
@@ -41,7 +58,103 @@
 		isClerkConfigured = false
 	}: NavbarProps = $props();
 
+	// Track which categories are expanded (by category name)
+	// Start with all categories collapsed - they'll expand when clicked
+	let expandedCategories = $state<Set<string>>(new Set());
+
+	// Auto-expand the category containing the active page on initial render
+	// Uses untrack to prevent infinite loop (write without creating dependency)
+	$effect(() => {
+		// Only depend on menuCategories, not expandedCategories
+		const activeCategory = menuCategories.find((category) =>
+			category.items.some((item) => item.active)
+		);
+		if (activeCategory) {
+			// Write without creating a dependency on expandedCategories
+			untrack(() => {
+				expandedCategories.add(activeCategory.name);
+				expandedCategories = new Set(expandedCategories);
+			});
+		}
+	});
+
+	function toggleCategory(categoryName: string) {
+		const wasExpanded = expandedCategories.has(categoryName);
+		if (wasExpanded) {
+			expandedCategories.delete(categoryName);
+		} else {
+			expandedCategories.add(categoryName);
+		}
+		// Trigger reactivity by creating a new Set
+		expandedCategories = new Set(expandedCategories);
+
+		// WORKAROUND: Force DOM update since ClerkProvider breaks Svelte 5 reactivity
+		if (typeof document !== 'undefined') {
+			const categoryId = categoryName.replace(/\s+/g, '-').toLowerCase();
+			const itemsList = document.getElementById(`category-${categoryId}`);
+			const headerButton = document.querySelector(
+				`button[aria-controls="category-${categoryId}"]`
+			);
+
+			if (wasExpanded) {
+				// Collapsing: hide items, remove expanded class
+				itemsList?.remove();
+				headerButton?.classList.remove('expanded');
+			} else {
+				// Expanding: need to create and show items
+				headerButton?.classList.add('expanded');
+				// Find the category data and create items
+				const category = menuCategories.find((c) => c.name === categoryName);
+				if (category && headerButton) {
+					const ul = document.createElement('ul');
+					ul.id = `category-${categoryId}`;
+					ul.className = 'panel-category-items';
+					category.items.forEach((item, index) => {
+						const li = document.createElement('li');
+						li.className = 'panel-menu-item';
+						li.style.setProperty('--item-index', String(index));
+						const a = document.createElement('a');
+						a.href = item.href;
+						a.className = `panel-menu-link${item.active ? ' active' : ''}`;
+						if (item.active) a.setAttribute('aria-current', 'page');
+						a.onclick = closePanel;
+						if (item.icon) {
+							const iconSpan = document.createElement('span');
+							iconSpan.className = 'panel-menu-icon';
+							iconSpan.setAttribute('aria-hidden', 'true');
+							iconSpan.textContent = item.icon;
+							a.appendChild(iconSpan);
+						}
+						const labelSpan = document.createElement('span');
+						labelSpan.className = 'panel-menu-label';
+						labelSpan.textContent = item.label;
+						a.appendChild(labelSpan);
+						if (item.active) {
+							const indicator = document.createElement('span');
+							indicator.className = 'panel-menu-indicator';
+							indicator.setAttribute('aria-hidden', 'true');
+							a.appendChild(indicator);
+						}
+						li.appendChild(a);
+						ul.appendChild(li);
+					});
+					// Insert after the header button's parent container
+					headerButton.parentElement?.appendChild(ul);
+				}
+			}
+		}
+	}
+
+	function isCategoryExpanded(categoryName: string): boolean {
+		return expandedCategories.has(categoryName);
+	}
+
 	let isPanelOpen = $state(false);
+
+	// Workaround for Svelte 5 reactivity issue with ClerkProvider
+	// Force DOM updates by using derived class strings
+	let panelClass = $derived(isPanelOpen ? 'panel open' : 'panel');
+	let hamburgerClass = $derived(isPanelOpen ? 'hamburger-button open' : 'hamburger-button');
 
 	// Scroll lock cleanup function - coordinated via scrollLock utility
 	// This prevents conflicts with other components (Editor, FolderFiles) that also lock scroll
@@ -49,10 +162,34 @@
 
 	function togglePanel() {
 		isPanelOpen = !isPanelOpen;
+
+		// WORKAROUND: Force DOM update since ClerkProvider breaks Svelte 5 reactivity
+		// This is a temporary fix until svelte-clerk is updated for Svelte 5 compatibility
+		if (typeof document !== 'undefined') {
+			const panel = document.getElementById('panel-menu');
+			const button = document.querySelector('.hamburger-button, [class*="hamburger-button"]');
+
+			if (isPanelOpen) {
+				panel?.classList.add('open');
+				button?.classList.add('open');
+			} else {
+				panel?.classList.remove('open');
+				button?.classList.remove('open');
+			}
+		}
 	}
 
 	function closePanel() {
 		isPanelOpen = false;
+
+		// WORKAROUND: Force DOM update
+		if (typeof document !== 'undefined') {
+			const panel = document.getElementById('panel-menu');
+			const button = document.querySelector('.hamburger-button, [class*="hamburger-button"]');
+
+			panel?.classList.remove('open');
+			button?.classList.remove('open');
+		}
 	}
 
 	// Reference to the panel element for focus management
@@ -132,8 +269,7 @@
 		<!-- Left Section: Hamburger + Logo -->
 		<div class="navbar-left">
 			<button
-				class="hamburger-button"
-				class:open={isPanelOpen}
+				class={hamburgerClass}
 				onclick={togglePanel}
 				aria-label={isPanelOpen ? 'Close menu' : 'Open menu'}
 				aria-expanded={isPanelOpen}
@@ -184,35 +320,120 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions - Intentional: nav needs keyboard handling for escape key and focus trap (WCAG 2.1.1, 2.4.3) -->
 <nav
 	id="panel-menu"
-	class="panel"
-	class:open={isPanelOpen}
+	class={panelClass}
 	aria-label="Main navigation"
 	tabindex="-1"
 	onkeydown={handlePanelKeydown}
 	use:setupFocusTrap
 >
 	<div class="panel-content">
-		<ul class="panel-menu">
-			{#each menuItems as item, index}
-				<li class="panel-menu-item" style="--item-index: {index}">
-					<a
-						href={item.href}
-						class="panel-menu-link"
-						class:active={item.active}
-						aria-current={item.active ? 'page' : undefined}
-						onclick={closePanel}
-					>
-						{#if item.icon}
-							<span class="panel-menu-icon" aria-hidden="true">{item.icon}</span>
+		{#if menuCategories.length > 0}
+			<!-- Categorised navigation (preferred) -->
+			<div class="panel-categories">
+				{#each menuCategories as category, categoryIndex}
+					{@const isExpanded = isCategoryExpanded(category.name)}
+					{@const hasActiveItem = category.items.some((item) => item.active)}
+					{@const isSingleItem = category.items.length === 1}
+
+					<div class="panel-category" style="--category-index: {categoryIndex}">
+						{#if isSingleItem}
+							<!-- Single-item categories render as direct links (like Home) -->
+							<a
+								href={category.items[0].href}
+								class="panel-category-link"
+								class:active={category.items[0].active}
+								aria-current={category.items[0].active ? 'page' : undefined}
+								onclick={closePanel}
+							>
+								{#if category.icon}
+									<span class="panel-category-icon" aria-hidden="true">{category.icon}</span>
+								{/if}
+								<span class="panel-category-name">{category.items[0].label}</span>
+								{#if category.items[0].active}
+									<span class="panel-menu-indicator" aria-hidden="true"></span>
+								{/if}
+							</a>
+						{:else}
+							<!-- Multi-item categories are collapsible -->
+							<button
+								class="panel-category-header"
+								class:expanded={isExpanded}
+								class:has-active={hasActiveItem}
+								onclick={() => toggleCategory(category.name)}
+								aria-expanded={isExpanded}
+								aria-controls="category-{category.name.replace(/\s+/g, '-').toLowerCase()}"
+							>
+								{#if category.icon}
+									<span class="panel-category-icon" aria-hidden="true">{category.icon}</span>
+								{/if}
+								<span class="panel-category-name">{category.name}</span>
+								<span class="panel-category-chevron" aria-hidden="true">
+									<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+										<path
+											d="M3 4.5L6 7.5L9 4.5"
+											stroke="currentColor"
+											stroke-width="1.5"
+											stroke-linecap="round"
+											stroke-linejoin="round"
+										/>
+									</svg>
+								</span>
+							</button>
+
+							{#if isExpanded}
+								<ul
+									id="category-{category.name.replace(/\s+/g, '-').toLowerCase()}"
+									class="panel-category-items"
+								>
+									{#each category.items as item, itemIndex}
+										<li class="panel-menu-item" style="--item-index: {itemIndex}">
+											<a
+												href={item.href}
+												class="panel-menu-link"
+												class:active={item.active}
+												aria-current={item.active ? 'page' : undefined}
+												onclick={closePanel}
+											>
+												{#if item.icon}
+													<span class="panel-menu-icon" aria-hidden="true">{item.icon}</span>
+												{/if}
+												<span class="panel-menu-label">{item.label}</span>
+												{#if item.active}
+													<span class="panel-menu-indicator" aria-hidden="true"></span>
+												{/if}
+											</a>
+										</li>
+									{/each}
+								</ul>
+							{/if}
 						{/if}
-						<span class="panel-menu-label">{item.label}</span>
-						{#if item.active}
-							<span class="panel-menu-indicator" aria-hidden="true"></span>
-						{/if}
-					</a>
-				</li>
-			{/each}
-		</ul>
+					</div>
+				{/each}
+			</div>
+		{:else if menuItems && menuItems.length > 0}
+			<!-- Legacy flat menu (for backwards compatibility) -->
+			<ul class="panel-menu">
+				{#each menuItems as item, index}
+					<li class="panel-menu-item" style="--item-index: {index}">
+						<a
+							href={item.href}
+							class="panel-menu-link"
+							class:active={item.active}
+							aria-current={item.active ? 'page' : undefined}
+							onclick={closePanel}
+						>
+							{#if item.icon}
+								<span class="panel-menu-icon" aria-hidden="true">{item.icon}</span>
+							{/if}
+							<span class="panel-menu-label">{item.label}</span>
+							{#if item.active}
+								<span class="panel-menu-indicator" aria-hidden="true"></span>
+							{/if}
+						</a>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 	</div>
 </nav>
 
@@ -520,6 +741,168 @@
 	}
 
 	.panel-menu-indicator {
+		width: 0.375rem;
+		height: 0.375rem;
+		background-color: #007aff;
+		border-radius: 50%;
+		margin-left: auto;
+		flex-shrink: 0;
+	}
+
+	/* ============================================
+	   Category-based Navigation
+	   ============================================ */
+
+	.panel-categories {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.panel-category {
+		border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+	}
+
+	.panel-category:last-child {
+		border-bottom: none;
+	}
+
+	/* Category header button (for collapsible sections) */
+	.panel-category-header {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		width: 100%;
+		padding: 0.875rem 1.25rem;
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-align: left;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #374151;
+		transition: all 0.2s ease;
+	}
+
+	.panel-category-header:hover {
+		background-color: rgba(0, 0, 0, 0.03);
+	}
+
+	.panel-category-header:focus {
+		outline: 2px solid #007aff;
+		outline-offset: -2px;
+	}
+
+	.panel-category-header.has-active {
+		color: #007aff;
+	}
+
+	/* Single-item category link (like Home) */
+	.panel-category-link {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.875rem 1.25rem;
+		text-decoration: none;
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: #374151;
+		transition: all 0.2s ease;
+	}
+
+	.panel-category-link:hover {
+		background-color: rgba(0, 122, 255, 0.05);
+		color: #007aff;
+	}
+
+	.panel-category-link:focus {
+		outline: 2px solid #007aff;
+		outline-offset: -2px;
+	}
+
+	.panel-category-link.active {
+		color: #007aff;
+		background-color: rgba(0, 122, 255, 0.08);
+	}
+
+	.panel-category-icon {
+		font-size: 1.125rem;
+		line-height: 1;
+		width: 1.25rem;
+		text-align: center;
+		flex-shrink: 0;
+	}
+
+	.panel-category-name {
+		flex: 1;
+	}
+
+	.panel-category-chevron {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		color: #9ca3af;
+		transition: transform 0.2s ease;
+	}
+
+	.panel-category-header.expanded .panel-category-chevron {
+		transform: rotate(180deg);
+	}
+
+	/* Category items list (when expanded) */
+	/* Using :global() because these elements may be created dynamically via DOM manipulation
+	   (workaround for ClerkProvider breaking Svelte 5 reactivity) and need unscoped CSS */
+	:global(.panel-category-items) {
+		list-style: none;
+		margin: 0;
+		padding: 0 0 0.5rem 0;
+		background-color: rgba(0, 0, 0, 0.02);
+	}
+
+	:global(.panel-category-items .panel-menu-item) {
+		opacity: 1;
+		transform: none;
+	}
+
+	:global(.panel-category-items .panel-menu-link) {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		padding: 0.625rem 1.25rem 0.625rem 3rem;
+		text-decoration: none;
+		color: #000000;
+		font-size: 0.875rem;
+		font-weight: 500;
+		border-left: none;
+		transition: all 0.2s ease;
+	}
+
+	:global(.panel-category-items .panel-menu-link:hover) {
+		background-color: rgba(0, 122, 255, 0.05);
+		color: #007aff;
+	}
+
+	:global(.panel-category-items .panel-menu-link.active) {
+		color: #007aff;
+		font-weight: 600;
+		background-color: rgba(0, 122, 255, 0.08);
+	}
+
+	:global(.panel-category-items .panel-menu-icon) {
+		font-size: 1rem;
+		width: 1.25rem;
+		line-height: 1;
+		text-align: center;
+		flex-shrink: 0;
+	}
+
+	:global(.panel-category-items .panel-menu-label) {
+		flex: 1;
+		line-height: 1.4;
+	}
+
+	:global(.panel-category-items .panel-menu-indicator) {
 		width: 0.375rem;
 		height: 0.375rem;
 		background-color: #007aff;
