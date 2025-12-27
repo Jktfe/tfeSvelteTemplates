@@ -57,6 +57,22 @@
 	function hasChildren(card: ExplainerCard): boolean {
 		return (card.children?.length ?? 0) > 0;
 	}
+
+	/**
+	 * Get the links of the currently expanded card
+	 */
+	let expandedCardLinks = $derived.by(() => {
+		if (!expandedCardId) return [];
+		const expandedCard = cards.find(c => c.id === expandedCardId);
+		return expandedCard?.links ?? [];
+	});
+
+	/**
+	 * Check if a card is linked from the expanded card
+	 */
+	function isLinkedFromExpanded(cardId: string): boolean {
+		return expandedCardLinks.includes(cardId);
+	}
 </script>
 
 <div class="mobile-view">
@@ -98,7 +114,11 @@
 	<!-- Card list -->
 	<div class="card-list">
 		{#each cards as card (card.id)}
-			<article class="mobile-card" class:expanded={expandedCardId === card.id}>
+			<article
+				class="mobile-card"
+				class:expanded={expandedCardId === card.id}
+				class:linked={isLinkedFromExpanded(card.id)}
+			>
 				<!-- Card header (always visible) -->
 				<button
 					type="button"
@@ -185,7 +205,9 @@
 		display: flex;
 		flex-direction: column;
 		height: 100%;
+		min-height: 0; /* Critical for flex scroll */
 		background: var(--ec-bg, #f9fafb);
+		overflow: hidden;
 	}
 
 	/* Header */
@@ -247,8 +269,11 @@
 	/* Card list */
 	.card-list {
 		flex: 1;
+		min-height: 0; /* Critical for flex scroll */
 		overflow-y: auto;
+		-webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
 		padding: 1rem;
+		padding-bottom: 1rem; /* Extra space at bottom */
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
@@ -257,20 +282,25 @@
 	/* Card */
 	.mobile-card {
 		background: var(--ec-bg-card, #ffffff);
-		border: 1px solid var(--ec-border, #e0e0e0);
+		border: 2px solid var(--ec-border, #e0e0e0);
 		border-radius: 12px;
 		overflow: hidden;
-		transition: box-shadow 0.2s ease;
+		transition: box-shadow 0.2s ease, border-color 0.2s ease;
 	}
 
 	.mobile-card.expanded {
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 	}
 
+	/* Highlight linked cards with glowing border */
+	.mobile-card.linked {
+		border-color: var(--ec-primary, #3b82f6);
+		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+	}
+
 	.card-header {
 		display: flex;
 		align-items: flex-start;
-		justify-content: space-between;
 		gap: 0.75rem;
 		width: 100%;
 		padding: 1rem;
@@ -288,6 +318,7 @@
 	.card-header-content {
 		flex: 1;
 		min-width: 0;
+		overflow: hidden;
 	}
 
 	.card-title {
@@ -296,13 +327,20 @@
 		font-weight: 600;
 		color: var(--ec-text, #1a1a1a);
 		line-height: 1.3;
+		word-wrap: break-word;
 	}
 
 	.card-summary {
-		margin: 0.375rem 0 0;
-		font-size: 0.875rem;
+		margin: 0.5rem 0 0;
+		font-size: 0.8125rem;
 		color: var(--ec-text-muted, #666);
-		line-height: 1.5;
+		line-height: 1.4;
+		word-wrap: break-word;
+	}
+
+	/* Hide empty summaries */
+	.card-summary:empty {
+		display: none;
 	}
 
 	.card-indicators {
@@ -310,6 +348,9 @@
 		align-items: center;
 		gap: 0.5rem;
 		color: var(--ec-text-muted, #999);
+		flex-shrink: 0;
+		margin-left: auto;
+		padding-left: 0.5rem;
 	}
 
 	.children-badge {
@@ -328,8 +369,12 @@
 
 	/* Card body (expanded) */
 	.card-body {
-		padding: 0 1rem 1rem;
+		padding: 1rem;
+		padding-bottom: 16rem; /* Extra space at bottom for scroll */
 		border-top: 1px solid var(--ec-border, #f0f0f0);
+		max-height: 50vh; /* Limit height to half viewport */
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.card-links {

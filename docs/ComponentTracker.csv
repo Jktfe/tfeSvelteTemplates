@@ -21,7 +21,7 @@ Nav Level,Designation Given,Name of component,TFE Approved Description,Claude de
 5,Data Visualisation,Sunburst,Yes,Yes,Yes,None expected,Yes,Yes,Yes,28 tests - render/svg/arcs/zoom/breadcrumb/labels/keyboard/aria,Yes,Yes,
 6,Interactive,Sankey,Yes,Yes,Yes,state_referenced_locally documented,Yes,Yes,Yes,26 tests - render/nodes/links/expand/collapse/visibility/colours,Yes,Yes,
 6,Interactive,FolderFiles,Yes,Yes,Yes,a11y_no_noninteractive_element_interactions + a11y_click_events_have_key_events + a11y_no_static_element_interactions documented,Yes,Yes,Yes,45 tests - render/cabinet/hover/modal/panels/items/accessibility/empty/ordering,Yes,Yes,
-6,Interactive,ExplainerCanvas,,,,,,,,,,,
+6,Interactive,ExplainerCanvas,Yes,Yes,Yes,a11y_mouse_events_have_key_events documented (tooltip triggers; keyboard accessible via focus),Yes,Yes,Yes,65 tests - geometry/search/loader/markdown/validation/integration,Yes,Yes,
 7,Media & Images,BeforeAfter,Yes,Yes,Yes,state_referenced_locally + a11y_no_noninteractive_tabindex + a11y_no_noninteractive_element_interactions documented,Yes,Yes,Yes,48 tests - render/images/labels/divider/styling/accessibility/keyboard/disabled/onChange/structure,Yes,Yes,
 7,Media & Images,DomeGallery,Yes,Yes,Yes,a11y_no_noninteractive_element_interactions + :global() CSS documented,Yes,Yes,Yes,48 tests - render/tiles/accessibility/overlays/viewer/props/structure/empty/pointer/keyboard,Yes,Yes,
 8,Forms & CRUD,Forms,Yes,Yes,Yes,None expected,Yes,Yes,Yes,69 tests - render/props/validation/accessibility/states for 13 form components,Yes,Yes,

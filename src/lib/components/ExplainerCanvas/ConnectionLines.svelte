@@ -104,26 +104,26 @@
 
 <svg class="connection-lines" aria-hidden="true">
 	<defs>
-		<!-- Arrow marker for line ends -->
+		<!-- Arrow marker for line ends - refX=5 puts arrow tip exactly at line endpoint -->
 		<marker
 			id="arrow"
 			viewBox="0 0 10 10"
-			refX="9"
+			refX="5"
 			refY="5"
-			markerWidth="6"
-			markerHeight="6"
-			orient="auto-start-reverse"
+			markerWidth="8"
+			markerHeight="8"
+			orient="auto"
 		>
 			<path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ec-line-color, #999)" />
 		</marker>
 		<marker
 			id="arrow-active"
 			viewBox="0 0 10 10"
-			refX="9"
+			refX="5"
 			refY="5"
-			markerWidth="6"
-			markerHeight="6"
-			orient="auto-start-reverse"
+			markerWidth="8"
+			markerHeight="8"
+			orient="auto"
 		>
 			<path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ec-primary, #3b82f6)" />
 		</marker>
