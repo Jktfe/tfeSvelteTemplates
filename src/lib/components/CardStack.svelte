@@ -97,7 +97,7 @@
 
 	// [CR] Props with sensible defaults - dimensions are base values, recalculated at runtime
 	// [NTL] These are the "starter settings" - the maths will adjust them to fit your screen!
-	let { cards = [], cardWidth: baseCardWidth = 300, cardHeight: baseCardHeight = 400, partialRevealSide = 'right' }: CardStackProps = $props();
+	let { cards = [], cardWidth: baseCardWidth = 300, cardHeight: baseCardHeight = 400, partialRevealSide = 'right', stackDirection = 'ltr' }: CardStackProps & { stackDirection?: 'ltr' | 'rtl' } = $props();
 
 	// [CR] DOM reference for measuring container width
 	let containerEl = $state<HTMLElement | null>(null);
@@ -137,24 +137,22 @@
 	// [CR] dimensions guaranteeing visibility, smooth transitions, and fit.
 	//
 	// [NTL] Here's where the "brain" of the component lives! It figures out:
-	// [NTL] - How big each card should be
-	// [NTL] - How much cards should overlap
+	// [NTL] - How big each card should be (now FIXED for consistency)
+	// [NTL] - How much cards should overlap (adjusted based on available width)
 	// [NTL] - How far cards should rise on hover
-	// [NTL] All based on how much space you actually have!
+	// [NTL] Cards stay the same size regardless of how many are in the stack!
 	function calculateCardLayout(config: CardLayoutConfig): CalculatedCardLayout {
 		const { containerWidth, cardCount, titleHeight, bodyHeight } = config;
 
-		// Safety minimums - prevent cards from becoming too small to interact with
-		const MIN_CARD_WIDTH = 120;
-		const MIN_CARD_HEIGHT = 160;
+		// Safety minimums
 		const MIN_HOVER_UP = 30;
 		const MIN_HOVER_SHIFT = 40;
 		const MIN_OVERLAP = 30;
 
-		// Constraint 3: Card height must fit content with 10% padding
-		// cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
-		const minContentHeight = 1.1 * (titleHeight + bodyHeight);
-		const calculatedCardHeight = Math.max(baseCardHeight, minContentHeight, MIN_CARD_HEIGHT);
+		// [CR] FIXED DIMENSIONS: Cards stay at base size for consistency across all stacks
+		// This ensures Navigation (2 cards) and Data Viz (5 cards) have identical card sizes
+		const calculatedCardWidth = baseCardWidth;
+		const calculatedCardHeight = baseCardHeight;
 
 		// Constraint 2: Hover up must reveal entire title plus 20% margin
 		// hoverUp ≥ titleHeight × 1.2
@@ -163,42 +161,23 @@
 		// Hover shift should be proportional to card size but have a reasonable minimum
 		const hoverShift = Math.max(calculatedCardHeight * 0.15, MIN_HOVER_SHIFT);
 
-		// Constraint 1: Calculate maximum card width that fits container
-		// sum(cardw) × 1.1 + hoverShift × 2 ≤ containerWidth
-		// For overlapping cards: total visual width = cardWidth + (n-1) × (cardWidth - overlap)
-		// Simplified: Available width for cards = containerWidth - 2 × hoverShift - margin
+		// Calculate available width for cards
 		const availableWidth = containerWidth - 2 * hoverShift - 40; // 40px margin
-		const cardRatio = baseCardWidth / baseCardHeight;
 
-		// Calculate card width based on available space
-		// Start with base width and scale down if needed
-		let calculatedCardWidth = baseCardWidth;
-
+		// [CR] DYNAMIC OVERLAP: Adjust overlap based on card count to fit container
+		// More cards = more overlap to fit the available width
+		let overlap: number;
 		if (cardCount > 1) {
-			// With overlapping cards, we need to consider the overlap
-			// Start with a reasonable overlap of 22% of card width
-			const overlapRatio = 0.22;
-			// Total width = cardWidth + (n-1) × cardWidth × (1 - overlapRatio)
-			// totalWidth = cardWidth × (1 + (n-1) × (1 - overlapRatio))
-			// cardWidth = totalWidth / (1 + (n-1) × (1 - overlapRatio))
-			const multiplier = 1 + (cardCount - 1) * (1 - overlapRatio);
-			const maxCardWidth = availableWidth / multiplier;
-			calculatedCardWidth = Math.min(baseCardWidth, maxCardWidth);
+			// Calculate required overlap to fit all cards
+			// Total width = cardWidth + (n-1) × (cardWidth - overlap)
+			// availableWidth = cardWidth + (n-1) × (cardWidth - overlap)
+			// overlap = cardWidth - (availableWidth - cardWidth) / (n-1)
+			const requiredOverlap = calculatedCardWidth - (availableWidth - calculatedCardWidth) / (cardCount - 1);
+			// Clamp overlap between minimum and 80% of card width
+			overlap = Math.max(MIN_OVERLAP, Math.min(requiredOverlap, calculatedCardWidth * 0.8));
 		} else {
-			// Single card: can take more space
-			calculatedCardWidth = Math.min(baseCardWidth, availableWidth * 0.8);
+			overlap = MIN_OVERLAP;
 		}
-
-		// Enforce minimum width
-		calculatedCardWidth = Math.max(calculatedCardWidth, MIN_CARD_WIDTH);
-
-		// Maintain aspect ratio when scaling width
-		const scaleFactor = calculatedCardWidth / baseCardWidth;
-		const scaledCardHeight = calculatedCardHeight * scaleFactor;
-		const finalCardHeight = Math.max(scaledCardHeight, MIN_CARD_HEIGHT);
-
-		// Calculate overlap based on final card width (~22% of card width)
-		const overlap = Math.max(calculatedCardWidth * 0.22, MIN_OVERLAP);
 
 		// Constraint 4: Hover zone width = 0.9 × overlap × 2
 		// This creates a centred detection zone where we can determine entry direction
@@ -206,7 +185,7 @@
 
 		return {
 			cardWidth: Math.round(calculatedCardWidth),
-			cardHeight: Math.round(finalCardHeight),
+			cardHeight: Math.round(calculatedCardHeight),
 			overlap: Math.round(overlap),
 			hoverUp: Math.round(hoverUp),
 			hoverShift: Math.round(hoverShift),
@@ -460,7 +439,7 @@
 		--hover-zone-width: {layout?.hoverZoneWidth ?? 100}px;
 	"
 >
-	<div class="cards-wrapper">
+	<div class="cards-wrapper" class:stack-rtl={stackDirection === 'rtl'}>
 		<!-- Render each card in stack order -->
 		{#each cards as card, displayIndex (displayIndex)}
 			{@const isHovered = hoveredCard?.index === displayIndex && selectedIndex !== displayIndex}
@@ -501,6 +480,8 @@
 							class="card-image"
 							draggable="false"
 						/>
+						<!-- Top gradient overlay for title readability -->
+						<div class="card-title-overlay"></div>
 					{/if}
 
 					<!-- Card title overlay (if provided) -->
@@ -511,9 +492,8 @@
 					<!-- Card content with gradient background (if provided) -->
 					{#if card?.content}
 						<div class="card-content">
-							<!-- Plain text rendering - card.content contains no HTML tags (see FALLBACK_CARDS in constants.ts)
-							     Using {@html} here would be unnecessary overhead with no security benefit -->
-							{card.content}
+							<!-- Render HTML content - allows rich formatting like icons and links -->
+							{@html card.content}
 						</div>
 					{/if}
 					</div>
@@ -571,6 +551,11 @@
 	/* First card shouldn't have negative margin */
 	.card-hit-area:first-child {
 		margin-left: 0;
+	}
+
+	/* RTL stacking: reverse z-index so leftmost card is on top */
+	.stack-rtl .card-hit-area {
+		z-index: calc(var(--total-cards) - var(--card-index));
 	}
 
 	/* Focus visible for keyboard navigation accessibility */
@@ -652,40 +637,96 @@
 		-webkit-user-drag: none;
 	}
 
-	/* Card title overlay (positioned at top) */
-	.card-title {
+	/* Top gradient overlay for title readability */
+	.card-title-overlay {
 		position: absolute;
-		top: 20px;
-		left: 24px;
-		font-size: 24px;
-		font-weight: 700;
-		z-index: 10;
-		color: white;
-		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-		letter-spacing: 0.5px;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 100px;
+		background: linear-gradient(
+			180deg,
+			rgba(255, 255, 255, 0.95) 0%,
+			rgba(255, 255, 255, 0.85) 40%,
+			rgba(255, 255, 255, 0) 100%
+		);
+		z-index: 5;
 		pointer-events: none;
 	}
 
+	/* Card title overlay (positioned at top) */
+	.card-title {
+		position: absolute;
+		top: 16px;
+		left: 16px;
+		right: 16px;
+		font-size: 22px;
+		font-weight: 700;
+		z-index: 10;
+		color: #1d4ed8;
+		letter-spacing: 0.3px;
+		pointer-events: none;
+		line-height: 1.2;
+	}
+
+	/* Title styling when card has no image - same blue text */
+	.card:not(:has(.card-image)) .card-title {
+		color: #1d4ed8;
+	}
+
 	/* Card content area (positioned at bottom with gradient) */
-	/* Hidden by default - only shown when card is selected to prevent overlap */
+	/* Hidden by default for image cards - only shown when card is selected to prevent overlap */
 	.card-content {
 		position: absolute;
 		bottom: 0;
 		left: 0;
 		right: 0;
-		padding: 24px;
-		background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.6) 60%, rgba(0, 0, 0, 0.8) 100%);
+		padding: 20px 20px 24px;
+		background: linear-gradient(
+			180deg,
+			transparent 0%,
+			rgba(0, 0, 0, 0.4) 20%,
+			rgba(0, 0, 0, 0.7) 50%,
+			rgba(0, 0, 0, 0.85) 100%
+		);
 		color: white;
 		z-index: 10;
 		font-size: 14px;
 		line-height: 1.5;
 		pointer-events: none;
 		display: none; /* Hidden by default */
+		min-height: 45%;
 	}
 
-	/* Show content only when card is selected */
+	/* Ensure all text in card content is white and readable */
+	.card-content :global(p) {
+		color: white !important;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+	}
+
+	/* Show content only when card is selected (for image cards) */
 	.card-wrapper.selected .card-content {
 		display: block;
+		pointer-events: auto;
+	}
+
+	/* Content styling for no-image cards - always visible with different positioning */
+	.card:not(:has(.card-image)) .card-content {
+		display: block;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: transparent;
+		color: #4a5568;
+		padding: 16px 20px;
+		overflow: hidden;
+	}
+
+	/* No-image cards need pointer events for links */
+	.card:not(:has(.card-image)) .card-content {
+		pointer-events: auto;
 	}
 
 	/* Swipe hint for mobile users */
@@ -709,6 +750,13 @@
 	@media (max-width: 1000px) {
 		.card-title {
 			font-size: 18px;
+			top: 12px;
+			left: 12px;
+			right: 12px;
+		}
+
+		.card-title-overlay {
+			height: 80px;
 		}
 	}
 
@@ -745,10 +793,17 @@
 
 		.card-title {
 			font-size: 16px;
+			top: 10px;
+			left: 10px;
+			right: 10px;
+		}
+
+		.card-title-overlay {
+			height: 70px;
 		}
 
 		.card-wrapper.selected .card-title {
-			font-size: 20px;
+			font-size: 18px;
 		}
 
 		.swipe-hint {
