@@ -1475,8 +1475,8 @@
 	 * If implemented, CSS-only partial fix:
 	 * @media (prefers-reduced-motion: reduce) {
 	 *   .item, .item__image { transition: none; }
-	 *   .viewer .scrim { transition-duration: 0.01s; }
-	 *   .viewer :global(.enlarge) { transition-duration: 0.01s; }
+	 *   .viewer .scrim { transition: none; }
+	 *   .viewer :global(.enlarge) { transition: none; }
 	 * }
 	 */
 </style>
