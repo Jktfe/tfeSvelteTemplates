@@ -345,8 +345,7 @@
 					transition: all 0.2s ease;
 					position: relative;
 					z-index: 10;
-				   "
-				   onclick="event.stopPropagation(); event.stopImmediatePropagation();">
+				   ">
 					View Demo <span style="margin-left: 0.25rem;">→</span>
 				</a>
 			`
