@@ -490,8 +490,9 @@
 					{/if}
 
 					<!-- Card content with gradient background (if provided) -->
+					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 					{#if card?.content}
-						<div class="card-content">
+						<div class="card-content" onclick={(e) => e.stopPropagation()}>
 							<!-- Render HTML content - allows rich formatting like icons and links -->
 							{@html card.content}
 						</div>
