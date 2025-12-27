@@ -453,7 +453,13 @@
 				tabindex={0}
 				onmouseenter={(e: MouseEvent) => handleCardMouseEnter(e, displayIndex, e.currentTarget as HTMLElement)}
 				onmouseleave={handleCardMouseLeave}
-				onclick={() => (selectedIndex = selectedIndex === displayIndex ? null : displayIndex)}
+				onclick={(e: MouseEvent) => {
+					// Don't toggle selection when clicking links inside cards
+					// This allows SvelteKit to handle link navigation properly
+					const target = e.target as HTMLElement;
+					if (target.closest('a')) return;
+					selectedIndex = selectedIndex === displayIndex ? null : displayIndex;
+				}}
 				onkeydown={(e: KeyboardEvent) => {
 					if (e.key === 'Enter' || e.key === ' ') {
 						e.preventDefault();
@@ -492,7 +498,14 @@
 					<!-- Card content with gradient background (if provided) -->
 					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 					{#if card?.content}
-						<div class="card-content" onclick={(e) => e.stopPropagation()}>
+						<div class="card-content" onclick={(e) => {
+							// Only stop propagation for non-link clicks to prevent card toggle
+							// Allow links to bubble so SvelteKit can handle navigation
+							const target = e.target as HTMLElement;
+							if (!target.closest('a')) {
+								e.stopPropagation();
+							}
+						}}>
 							<!-- Render HTML content - allows rich formatting like icons and links -->
 							{@html card.content}
 						</div>
