@@ -365,3 +365,5 @@
 		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 	}
 </style>
+
+<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
