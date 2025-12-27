@@ -39,7 +39,7 @@ const sampleData = [
 		department: 'Engineering',
 		position: 'Developer',
 		salary: 75000,
-		hireDate: '2020-01-15',
+		hireDate: new Date('2020-01-15'),
 		status: 'active',
 		location: 'London',
 		phone: '+44 123 456 7890'
@@ -52,7 +52,7 @@ const sampleData = [
 		department: 'Marketing',
 		position: 'Manager',
 		salary: 85000,
-		hireDate: '2019-06-20',
+		hireDate: new Date('2019-06-20'),
 		status: 'active',
 		location: 'Manchester',
 		phone: '+44 987 654 3210'
