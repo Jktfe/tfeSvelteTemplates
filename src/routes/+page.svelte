@@ -330,6 +330,7 @@
 				<p style="margin: 0 0 1rem 0; color: #4a5568; font-size: 0.9rem;">${c.description}</p>
 				<a href="${c.href}"
 				   class="view-demo-btn"
+				   data-sveltekit-preload-data="tap"
 				   style="
 					display: inline-flex;
 					align-items: center;
@@ -342,8 +343,10 @@
 					text-decoration: none;
 					border-radius: 6px;
 					transition: all 0.2s ease;
+					position: relative;
+					z-index: 10;
 				   "
-				   onclick="event.stopPropagation()">
+				   onclick="event.stopPropagation(); event.stopImmediatePropagation();">
 					View Demo <span style="margin-left: 0.25rem;">→</span>
 				</a>
 			`
