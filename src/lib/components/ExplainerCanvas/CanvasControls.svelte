@@ -26,6 +26,7 @@
 		onZoomReset?: () => void;
 		onSearchOpen?: () => void;
 		onBreadcrumbNavigate?: (id: string | null) => void;
+		onHome?: () => void;
 	}
 
 	let {
@@ -39,7 +40,8 @@
 		onZoomOut,
 		onZoomReset,
 		onSearchOpen,
-		onBreadcrumbNavigate
+		onBreadcrumbNavigate,
+		onHome
 	}: Props = $props();
 
 	// Format zoom percentage for display
@@ -62,6 +64,20 @@
 
 	<!-- Right: Zoom and Search controls -->
 	<div class="controls-right">
+		<!-- Home button -->
+		<button
+			type="button"
+			class="control-btn home-btn"
+			onclick={() => onHome?.()}
+			aria-label="Reset to home view"
+			title="Reset to home view"
+		>
+			<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+				<polyline points="9 22 9 12 15 12 15 22" />
+			</svg>
+		</button>
+
 		<!-- Search button -->
 		{#if searchEnabled}
 			<button
@@ -175,6 +191,10 @@
 	.control-btn:disabled {
 		opacity: 0.4;
 		cursor: not-allowed;
+	}
+
+	.home-btn {
+		margin-right: 0.25rem;
 	}
 
 	.search-btn {

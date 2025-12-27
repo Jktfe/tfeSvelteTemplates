@@ -17,6 +17,7 @@
 		isExpanded?: boolean;
 		isActive?: boolean;
 		hasChildren?: boolean;
+		childrenNames?: string[];
 		zoom?: number;
 		onExpand?: () => void;
 		onCollapse?: () => void;
@@ -24,6 +25,7 @@
 		onLinkClick?: (linkId: string) => void;
 		onHover?: () => void;
 		onHoverEnd?: () => void;
+		onPositionChange?: (newPosition: ExplainerPosition) => void;
 	}
 
 	let {
@@ -31,14 +33,21 @@
 		isExpanded = false,
 		isActive = false,
 		hasChildren = false,
+		childrenNames = [],
 		zoom = 1,
 		onExpand,
 		onCollapse,
 		onDiveIn,
 		onLinkClick,
 		onHover,
-		onHoverEnd
+		onHoverEnd,
+		onPositionChange
 	}: Props = $props();
+
+	// Drag state
+	let isDragging = $state(false);
+	let dragStartPos = $state({ x: 0, y: 0 });
+	let cardStartPos = $state({ x: 0, y: 0 });
 
 	// Card dimensions - use shared constants from geometry.ts
 	const CARD_WIDTH = DEFAULT_CARD_WIDTH;
@@ -95,6 +104,57 @@
 		e.stopPropagation();
 		onDiveIn?.();
 	}
+
+	/**
+	 * Build tooltip text showing children names
+	 */
+	let childrenTooltip = $derived(() => {
+		if (!hasChildren || childrenNames.length === 0) return 'Has nested content';
+		if (childrenNames.length <= 3) {
+			return `Contains: ${childrenNames.join(', ')}`;
+		}
+		return `Contains: ${childrenNames.slice(0, 3).join(', ')} +${childrenNames.length - 3} more`;
+	});
+
+	/**
+	 * Handle drag start on the drag handle
+	 */
+	function handleDragStart(e: MouseEvent) {
+		e.stopPropagation();
+		e.preventDefault();
+		isDragging = true;
+		dragStartPos = { x: e.clientX, y: e.clientY };
+		cardStartPos = { x: card.position.x, y: card.position.y };
+
+		window.addEventListener('mousemove', handleDragMove);
+		window.addEventListener('mouseup', handleDragEnd);
+	}
+
+	/**
+	 * Handle drag move
+	 */
+	function handleDragMove(e: MouseEvent) {
+		if (!isDragging) return;
+
+		const dx = (e.clientX - dragStartPos.x) / zoom;
+		const dy = (e.clientY - dragStartPos.y) / zoom;
+
+		const newPosition = {
+			x: cardStartPos.x + dx,
+			y: cardStartPos.y + dy
+		};
+
+		onPositionChange?.(newPosition);
+	}
+
+	/**
+	 * Handle drag end
+	 */
+	function handleDragEnd() {
+		isDragging = false;
+		window.removeEventListener('mousemove', handleDragMove);
+		window.removeEventListener('mouseup', handleDragEnd);
+	}
 </script>
 
 {#if showAsDot}
@@ -112,6 +172,7 @@
 		class="explainer-card"
 		class:expanded={isExpanded}
 		class:active={isActive}
+		class:dragging={isDragging}
 		style:left="{card.position.x}px"
 		style:top="{card.position.y}px"
 		style:width="{isExpanded ? CARD_WIDTH + 100 : CARD_WIDTH}px"
@@ -123,11 +184,28 @@
 		onmouseleave={onHoverEnd}
 		aria-expanded={isExpanded}
 	>
-		<!-- Card header -->
+		<!-- Card header - sticky when expanded -->
 		<header class="card-header">
+			<!-- Drag handle -->
+			<button
+				type="button"
+				class="drag-handle"
+				onmousedown={handleDragStart}
+				aria-label="Drag to reposition card"
+				data-tooltip="Drag to move"
+			>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+					<circle cx="9" cy="6" r="2" />
+					<circle cx="15" cy="6" r="2" />
+					<circle cx="9" cy="12" r="2" />
+					<circle cx="15" cy="12" r="2" />
+					<circle cx="9" cy="18" r="2" />
+					<circle cx="15" cy="18" r="2" />
+				</svg>
+			</button>
 			<h3 class="card-title">{card.title}</h3>
 			{#if hasChildren}
-				<span class="children-indicator" title="Has nested content">
+				<span class="children-indicator" data-tooltip={childrenTooltip()}>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<rect x="3" y="3" width="7" height="7" rx="1" />
 						<rect x="14" y="3" width="7" height="7" rx="1" />
@@ -138,7 +216,7 @@
 			{/if}
 		</header>
 
-		<!-- Card body -->
+		<!-- Card body - scrollable when expanded -->
 		<div class="card-body">
 			{#if isExpanded}
 				<!-- Expanded view -->
@@ -257,14 +335,79 @@
 		overflow-y: auto;
 	}
 
-	/* Card header */
+	/* Card header - sticky when expanded */
 	.card-header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: 0.5rem;
 		padding: 0.875rem 1rem 0.5rem;
 		border-bottom: 1px solid var(--ec-border, #e8e8e8);
 		background: var(--ec-bg, #fafafa);
+		position: sticky;
+		top: 0;
+		z-index: 1;
+	}
+
+	/* Drag handle for repositioning cards */
+	.drag-handle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.25rem;
+		border: none;
+		background: transparent;
+		color: var(--ec-text-muted, #999);
+		cursor: grab;
+		border-radius: 4px;
+		transition: all 0.15s ease;
+		flex-shrink: 0;
+		position: relative;
+	}
+
+	/* Fast CSS tooltip for drag handle */
+	.drag-handle[data-tooltip]::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%) translateY(-4px);
+		margin-top: 6px;
+		padding: 0.375rem 0.5rem;
+		font-size: 0.6875rem;
+		font-weight: 500;
+		color: white;
+		background: var(--ec-text, #1a1a1a);
+		border-radius: 4px;
+		white-space: nowrap;
+		opacity: 0;
+		visibility: hidden;
+		transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+		z-index: 100;
+		pointer-events: none;
+	}
+
+	.drag-handle[data-tooltip]:hover::after {
+		opacity: 1;
+		visibility: visible;
+		transform: translateX(-50%) translateY(0);
+	}
+
+	.drag-handle:hover {
+		background: var(--ec-border, #e8e8e8);
+		color: var(--ec-text, #1a1a1a);
+	}
+
+	.drag-handle:active,
+	.explainer-card.dragging .drag-handle {
+		cursor: grabbing;
+		background: var(--ec-primary, #3b82f6);
+		color: white;
+	}
+
+	.explainer-card.dragging {
+		cursor: grabbing;
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+		z-index: 100;
 	}
 
 	.card-title {
@@ -273,6 +416,8 @@
 		font-weight: 600;
 		color: var(--ec-text, #1a1a1a);
 		line-height: 1.3;
+		flex: 1;
+		min-width: 0;
 	}
 
 	.children-indicator {
@@ -280,6 +425,38 @@
 		align-items: center;
 		color: var(--ec-text-muted, #666);
 		opacity: 0.7;
+		position: relative;
+		cursor: help;
+	}
+
+	/* Fast CSS tooltip - no delay */
+	.children-indicator[data-tooltip]::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		top: 100%;
+		right: 0;
+		margin-top: 6px;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.75rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: white;
+		background: var(--ec-text, #1a1a1a);
+		border-radius: 6px;
+		white-space: nowrap;
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(-4px);
+		transition: opacity 0.15s ease, transform 0.15s ease, visibility 0.15s;
+		z-index: 100;
+		pointer-events: none;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	}
+
+	.children-indicator[data-tooltip]:hover::after {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0);
 	}
 
 	/* Card body */

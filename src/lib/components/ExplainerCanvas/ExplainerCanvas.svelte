@@ -1,3 +1,90 @@
+<!--
+	============================================================
+	ExplainerCanvas
+	============================================================
+
+	🎯 WHAT IT DOES
+	An interactive knowledge visualization canvas with zoomable, pannable cards
+	that can contain nested hierarchies, linked content, and fuzzy search.
+
+	✨ FEATURES
+	• Pan and zoom: Mouse drag, scroll wheel, and touch gestures
+	• Expandable cards: Click to reveal detailed markdown content
+	• Nested hierarchies: Dive into cards containing sub-canvases
+	• Connection lines: Visual links between related cards (bezier/straight/orthogonal)
+	• Fuzzy search: Find cards by title, summary, or content (Fuse.js)
+	• Breadcrumb navigation: Track and navigate through nested levels
+	• Tooltips: Hover definitions for technical terms
+	• Mobile responsive: Simplified accordion view on small screens
+	• Data loading: Direct data, JSON URL, or async loader function
+
+	♿ ACCESSIBILITY
+	• Keyboard: Tab to navigate cards, Enter to expand, Escape to close
+	• Keyboard: Ctrl/Cmd+F for search, +/- for zoom
+	• Screen readers: ARIA labels on all interactive elements
+	• Motion: Respects prefers-reduced-motion for animations
+
+	📦 DEPENDENCIES
+	External libraries (justified):
+	• @panzoom/panzoom - Complex touch/mouse canvas navigation
+	• marked + highlight.js - Markdown rendering with code highlighting
+	• fuse.js - Fast fuzzy search across nested content
+	• isomorphic-dompurify - Security-critical XSS sanitization
+
+	⚡ PERFORMANCE
+	• Suitable for: Canvases with up to 100+ cards across hierarchy
+	• Virtual scrolling for large search results
+	• Lazy loading of nested content
+
+	🎨 USAGE
+	<ExplainerCanvas data={canvasData} />
+	<ExplainerCanvas src="/data/canvas.json" />
+	<ExplainerCanvas loader={async () => fetchData()} />
+
+	📋 PROPS
+	| Prop          | Type                        | Default    | Description                    |
+	|---------------|------------------------------|------------|--------------------------------|
+	| data          | ExplainerCanvasData          | -          | Direct data object             |
+	| src           | string                       | -          | URL to JSON file               |
+	| loader        | () => Promise<CanvasData>    | -          | Async loader function          |
+	| initialCardId | string                       | -          | Override defaultCardId         |
+	| lineStyle     | 'bezier'|'straight'|'ortho'  | 'bezier'   | Connection line style          |
+	| class         | string                       | ''         | Additional CSS classes         |
+	| onNavigate    | (id, path) => void           | -          | Card navigation callback       |
+	| onExpand      | (id) => void                 | -          | Card expand callback           |
+	| onCollapse    | (id) => void                 | -          | Card collapse callback         |
+	| onSearch      | (query, results) => void     | -          | Search callback                |
+
+	⚠️ KNOWN WARNINGS (Safe to ignore)
+	• a11y_mouse_events_have_key_events: Canvas mouseover requires keyboard fallback
+	  - Reason: Tooltip triggers use mouseover; keyboard accessible via focus events
+	  - Impact: None - focus events provide same functionality for keyboard users
+
+	============================================================
+
+	CR Tag: This component orchestrates a complex interactive canvas system.
+	The architecture separates concerns across 10 sub-components and 4 utility
+	modules. Data flows down from props, state is managed via Svelte 5 runes,
+	and callbacks bubble events back to parent components.
+
+	Key patterns:
+	• Factory pattern in utils/loader.ts for flexible data loading
+	• Recursive structures for nested card hierarchies
+	• Event delegation for tooltip handling (single listener, multiple triggers)
+	• Path-based navigation for breadcrumbs and search results
+
+	============================================================
+
+	NTL Tag: Picture a digital corkboard where you've pinned index cards about
+	different topics. Each card can be clicked to show more details, and some
+	cards have links to other cards. The clever bit? Some cards are like folders
+	- click "dive in" and you zoom into a whole new corkboard hidden inside!
+
+	The search is fuzzy (like Google) so typing "react" finds "reactivity".
+	On phones it becomes a simple list because tiny fingers + tiny cards = chaos.
+
+	============================================================
+-->
 <script lang="ts">
 	/**
 	 * ExplainerCanvas Component
@@ -379,6 +466,51 @@
 	function handleTooltipHide() {
 		tooltipVisible = false;
 	}
+
+	/**
+	 * Handle home button - reset to clean initial state
+	 */
+	function handleHome() {
+		// Collapse any expanded card
+		expandedCardId = null;
+		hoveredCardId = null;
+
+		// Navigate to root level
+		currentPath = [];
+
+		// Reset viewport to fit all cards
+		if (viewportRef && canvasData) {
+			setTimeout(() => {
+				const cards = canvasData!.cards;
+				if (cards.length > 0) {
+					const bounds = getBoundingBox(cards.map((c: ExplainerCard) => c.position));
+					const zoom = calculateFitZoom(bounds, containerRef?.clientWidth ?? 800, containerRef?.clientHeight ?? 600);
+					const translation = calculateCenterTranslation(bounds, containerRef?.clientWidth ?? 800, containerRef?.clientHeight ?? 600, zoom);
+					viewportRef?.zoomTo(Math.min(1, zoom), true);
+					viewportRef?.panTo(translation.x, translation.y, true);
+				}
+			}, 50);
+		}
+	}
+
+	/**
+	 * Handle card position change (from dragging)
+	 */
+	function handleCardPositionChange(cardId: string, newPosition: { x: number; y: number }) {
+		// Update the card's position in current cards
+		const card = currentCards.find((c: ExplainerCard) => c.id === cardId);
+		if (card) {
+			card.position.x = newPosition.x;
+			card.position.y = newPosition.y;
+		}
+	}
+
+	/**
+	 * Get names of child cards for tooltip
+	 */
+	function getChildrenNames(card: ExplainerCard): string[] {
+		return card.children?.map((c: ExplainerCard) => c.title) ?? [];
+	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -438,6 +570,7 @@
 				onZoomReset={handleZoomReset}
 				onSearchOpen={handleSearchOpen}
 				onBreadcrumbNavigate={handleBreadcrumbNavigate}
+				onHome={handleHome}
 			/>
 
 			{#if searchOpen}
@@ -475,6 +608,7 @@
 							isExpanded={expandedCardId === card.id}
 							isActive={expandedCardId === card.id || hoveredCardId === card.id}
 							hasChildren={(card.children?.length ?? 0) > 0}
+							childrenNames={getChildrenNames(card)}
 							zoom={viewport.zoom}
 							onExpand={() => handleCardExpand(card.id)}
 							onCollapse={handleCardCollapse}
@@ -482,6 +616,7 @@
 							onLinkClick={handleLinkClick}
 							onHover={() => (hoveredCardId = card.id)}
 							onHoverEnd={() => (hoveredCardId = null)}
+							onPositionChange={(newPos) => handleCardPositionChange(card.id, newPos)}
 						/>
 					{/each}
 				</CanvasViewport>
