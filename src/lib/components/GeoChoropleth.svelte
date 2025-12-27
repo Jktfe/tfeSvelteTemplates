@@ -336,4 +336,20 @@
 		font-size: 0.75rem;
 		color: #6b7280;
 	}
+
+	/*
+	 * [RFO] prefers-reduced-motion support - OPTIONAL/USEFUL
+	 * WHY NOT DONE BEFORE: Very subtle hover transition (0.15s opacity change).
+	 * Only triggered on user hover interaction, not continuous animation.
+	 * WCAG 2.3.3 is AAA level (not required for A/AA compliance).
+	 *
+	 * Simple CSS fix (low priority but good practice):
+	 * @media (prefers-reduced-motion: reduce) {
+	 *   .geo-choropleth :global(.region) { transition: none; }
+	 * }
+	 */
 </style>
+
+<!-- [CR] Component uses LayerChart + d3 (justified dependencies for choropleth viz). -->
+<!-- [CR] RFO Review 27.12.25: Subtle hover effects only. OPTIONAL/USEFUL for completeness. -->
+<!-- RFO Review: 27.12.25 -->
