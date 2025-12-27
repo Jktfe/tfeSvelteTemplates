@@ -748,7 +748,8 @@ export interface DataGridColumn {
  * @property theme - Theme name: 'willow' (light) or 'willowDark' (default: 'willow')
  */
 export interface DataGridAdvancedProps {
-	data: Employee[];
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	data: any[];
 	columns?: DataGridColumn[];
 	editable?: boolean;
 	selectable?: boolean;
@@ -760,7 +761,7 @@ export interface DataGridAdvancedProps {
 /**
  * Props for DataGridBasic component (self-contained)
  *
- * @property data - Array of employee records to display
+ * @property data - Array of records to display (any object shape works)
  * @property columns - Column definitions for the grid
  * @property sortable - Enable column sorting (default: true)
  * @property filterable - Enable global search/filter (default: true)
@@ -770,7 +771,8 @@ export interface DataGridAdvancedProps {
  * @property compact - Compact row spacing (default: false)
  */
 export interface DataGridBasicProps {
-	data: Employee[];
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	data: any[];
 	columns: DataGridColumn[];
 	sortable?: boolean;
 	filterable?: boolean;

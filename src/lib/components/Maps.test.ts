@@ -56,24 +56,22 @@ describe('Maps - Type Definitions', () => {
 		const marker: import('$lib/types').MapMarker = {
 			id: 1,
 			title: 'Test Location',
-			lat: 51.5,
-			lng: -0.1,
+			position: { lat: 51.5, lng: -0.1 },
 			category: 'restaurant',
 			description: 'A nice place'
 		};
 		expect(marker.id).toBe(1);
 		expect(marker.title).toBe('Test Location');
+		expect(marker.position.lat).toBe(51.5);
 	});
 
 	it('GeoSearchResult type is valid', async () => {
 		const result: import('$lib/types').GeoSearchResult = {
-			place_id: 123456,
-			display_name: 'London, UK',
-			lat: '51.5074',
-			lon: '-0.1278'
+			displayName: 'London, UK',
+			position: { lat: 51.5074, lng: -0.1278 }
 		};
-		expect(result.display_name).toBe('London, UK');
-		expect(result.lat).toBe('51.5074');
+		expect(result.displayName).toBe('London, UK');
+		expect(result.position.lat).toBe(51.5074);
 	});
 });
 
@@ -131,24 +129,21 @@ describe('Maps - Marker Data', () => {
 		{
 			id: 1,
 			title: 'Restaurant A',
-			lat: 51.5,
-			lng: -0.1,
+			position: { lat: 51.5, lng: -0.1 },
 			category: 'restaurant',
 			description: 'Italian cuisine'
 		},
 		{
 			id: 2,
 			title: 'Cafe B',
-			lat: 51.6,
-			lng: -0.2,
+			position: { lat: 51.6, lng: -0.2 },
 			category: 'cafe',
 			description: 'Coffee shop'
 		},
 		{
 			id: 3,
 			title: 'Restaurant C',
-			lat: 51.4,
-			lng: 0.0,
+			position: { lat: 51.4, lng: 0.0 },
 			category: 'restaurant',
 			description: 'French cuisine'
 		}
@@ -168,8 +163,8 @@ describe('Maps - Marker Data', () => {
 	});
 
 	it('calculates bounds from markers', () => {
-		const lats = sampleMarkers.map((m) => m.lat);
-		const lngs = sampleMarkers.map((m) => m.lng);
+		const lats = sampleMarkers.map((m) => m.position.lat);
+		const lngs = sampleMarkers.map((m) => m.position.lng);
 
 		const bounds = {
 			south: Math.min(...lats),
