@@ -177,7 +177,7 @@
 	<!-- Full Clerk authentication when configured -->
 	<ClerkProvider>
 		<div class="app">
-			<Navbar {menuCategories} {currentPageTitle} {isClerkConfigured} />
+			<Navbar {menuCategories} {currentPageTitle} {isClerkConfigured} githubUrl="https://github.com/Jktfe/tfeSvelteTemplates" />
 
 			<main class="main">
 				{@render children()}
@@ -197,7 +197,7 @@
 {:else}
 	<!-- Demo mode when Clerk is not configured -->
 	<div class="app">
-		<Navbar {menuCategories} {currentPageTitle} {isClerkConfigured} />
+		<Navbar {menuCategories} {currentPageTitle} {isClerkConfigured} githubUrl="https://github.com/Jktfe/tfeSvelteTemplates" />
 
 		<main class="main">
 			{@render children()}

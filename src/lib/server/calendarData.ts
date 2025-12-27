@@ -50,16 +50,28 @@ export async function loadCalendarDataFromDatabase(
 			WHERE
 				user_id = ${userId}
 				AND category = ${category}
-				AND activity_date >= CURRENT_DATE - INTERVAL '${days} days'
+				AND activity_date >= CURRENT_DATE - (${days} || ' days')::INTERVAL
 				AND is_active = TRUE
 			ORDER BY activity_date ASC
 		`;
 
 		// Transform database rows to CalendarDataPoint format
-		const data: CalendarDataPoint[] = rows.map((row) => ({
-			date: row.activity_date, // PostgreSQL DATE type returns string in YYYY-MM-DD format
-			value: Number(row.activity_count)
-		}));
+		// Neon may return Date objects or ISO strings - handle both cases
+		const data: CalendarDataPoint[] = rows.map((row) => {
+			const dateVal = row.activity_date;
+			let dateStr: string;
+			if (dateVal instanceof Date) {
+				// Format Date object to YYYY-MM-DD
+				dateStr = dateVal.toISOString().split('T')[0];
+			} else {
+				// Handle string format (ISO or other)
+				dateStr = String(dateVal).split('T')[0];
+			}
+			return {
+				date: dateStr,
+				value: Number(row.activity_count)
+			};
+		});
 
 		console.log(
 			`[CalendarData] Loaded ${data.length} activity records for category "${category}"`

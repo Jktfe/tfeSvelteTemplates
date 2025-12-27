@@ -301,6 +301,8 @@ export interface NavbarProps {
 	logoHref?: string;
 	/** Whether Clerk authentication is configured (shows demo badge if false) */
 	isClerkConfigured?: boolean;
+	/** GitHub repository URL - shows GitHub icon button when provided */
+	githubUrl?: string;
 }
 
 // ==================================================
