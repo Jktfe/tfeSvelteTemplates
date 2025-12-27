@@ -267,13 +267,13 @@
 		</div>
 
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   const daysAgo = ${dateRangePresets[selectedRange].days};
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - daysAgo);
-</script>
+${'<'}/script>
 
-<CalendarHeatmap
+${'<'}CalendarHeatmap
   data={activityData}
   startDate={startDate}
   endDate={new Date()}
