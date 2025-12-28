@@ -24,7 +24,8 @@ import type {
 	RadialClusterNode,
 	GeoDataPoint,
 	GeoRegionData,
-	ExplainerCanvasData
+	ExplainerCanvasData,
+	TimelineEvent
 } from './types';
 
 /**
@@ -2348,3 +2349,155 @@ Svelte 5 simplifies event handling by using standard JavaScript callback props i
 		}
 	]
 };
+
+// =============================================================================
+// TIMELINE COMPONENT FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback timeline data for when database is unavailable
+ * Demonstrates a product launch timeline with various event types
+ *
+ * Used by Timeline component demos when DATABASE_URL is not configured
+ */
+export const FALLBACK_TIMELINE_EVENTS: TimelineEvent[] = [
+	{
+		id: 1,
+		date: '2024-01-15',
+		title: 'Project Kickoff',
+		description:
+			'Initial planning meeting with stakeholders. Defined project scope, timeline, and key milestones.',
+		icon: '🚀',
+		color: '#3b82f6',
+		completed: true
+	},
+	{
+		id: 2,
+		date: '2024-02-01',
+		title: 'Design Phase Complete',
+		description:
+			'Finished wireframes, user flows, and high-fidelity mockups. Design system established.',
+		icon: '🎨',
+		color: '#8b5cf6',
+		completed: true
+	},
+	{
+		id: 3,
+		date: '2024-03-15',
+		title: 'Alpha Release',
+		description:
+			'Internal testing version deployed. Core features functional, gathering initial feedback.',
+		icon: '🧪',
+		color: '#10b981',
+		completed: true
+	},
+	{
+		id: 4,
+		date: '2024-04-30',
+		title: 'Beta Launch',
+		description:
+			'Public beta opened to early adopters. Implemented feedback from alpha testing phase.',
+		icon: '📦',
+		color: '#f59e0b',
+		completed: true
+	},
+	{
+		id: 5,
+		date: '2024-06-01',
+		title: 'Version 1.0 Release',
+		description:
+			'Official public launch. All planned features complete, documentation finalised.',
+		icon: '🎉',
+		color: '#ef4444',
+		completed: false
+	},
+	{
+		id: 6,
+		date: '2024-07-15',
+		title: 'Feature Update 1.1',
+		description:
+			'First major update with user-requested features and performance improvements.',
+		icon: '✨',
+		color: '#06b6d4',
+		completed: false
+	}
+];
+
+/**
+ * Alternative timeline: Company history milestones
+ * Suitable for "About Us" or company story pages
+ */
+export const FALLBACK_COMPANY_TIMELINE: TimelineEvent[] = [
+	{
+		id: 'founding',
+		date: '2018-03-01',
+		title: 'Company Founded',
+		description: 'Started in a small garage with a big vision. Two co-founders, one laptop.',
+		icon: '🏠',
+		color: '#3b82f6',
+		completed: true
+	},
+	{
+		id: 'seed',
+		date: '2019-06-15',
+		title: 'Seed Funding',
+		description: 'Raised £500K seed round from angel investors. Moved to our first office.',
+		icon: '💰',
+		color: '#10b981',
+		completed: true
+	},
+	{
+		id: 'team-10',
+		date: '2020-02-01',
+		title: 'Team Grows to 10',
+		description: 'Hired our first engineers and designers. Culture and values established.',
+		icon: '👥',
+		color: '#8b5cf6',
+		completed: true
+	},
+	{
+		id: 'product-launch',
+		date: '2020-09-01',
+		title: 'Product Launch',
+		description: 'Launched our flagship product to market. First paying customers onboarded.',
+		icon: '🚀',
+		color: '#f59e0b',
+		completed: true
+	},
+	{
+		id: 'series-a',
+		date: '2021-04-01',
+		title: 'Series A',
+		description: 'Raised £5M Series A to accelerate growth. Expanded to new markets.',
+		icon: '📈',
+		color: '#ef4444',
+		completed: true
+	},
+	{
+		id: 'team-50',
+		date: '2022-01-01',
+		title: '50 Team Members',
+		description: 'Growing team across engineering, sales, and customer success.',
+		icon: '🎯',
+		color: '#06b6d4',
+		completed: true
+	},
+	{
+		id: 'international',
+		date: '2023-06-01',
+		title: 'International Expansion',
+		description: 'Opened offices in New York and Berlin. Now serving customers globally.',
+		icon: '🌍',
+		color: '#ec4899',
+		completed: true
+	},
+	{
+		id: 'future',
+		date: '2025-01-01',
+		title: 'The Future',
+		description: 'Continuing to innovate and grow. Exciting things on the horizon.',
+		icon: '🔮',
+		color: '#6366f1',
+		completed: false
+	}
+];
