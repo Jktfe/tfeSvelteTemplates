@@ -124,37 +124,39 @@
 	}
 
 	/**
-	 * [CR] Get relative time string (e.g., "2 days ago", "in 3 months")
+	 * [CR] Get relative time string using Intl.RelativeTimeFormat
 	 * [NTL] Makes dates feel more natural - "yesterday" is friendlier than "27 Dec 2024"
+	 * Uses the browser's built-in internationalisation API for proper localisation
 	 */
 	function getRelativeTime(date: Date): string {
 		const now = new Date();
 		const diffMs = date.getTime() - now.getTime();
-		const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+		const diffSeconds = Math.round(diffMs / 1000);
+		const diffMinutes = Math.round(diffSeconds / 60);
+		const diffHours = Math.round(diffMinutes / 60);
+		const diffDays = Math.round(diffHours / 24);
+		const diffWeeks = Math.round(diffDays / 7);
+		const diffMonths = Math.round(diffDays / 30);
+		const diffYears = Math.round(diffDays / 365);
 
-		if (diffDays === 0) return 'Today';
-		if (diffDays === 1) return 'Tomorrow';
-		if (diffDays === -1) return 'Yesterday';
+		// [CR] Use Intl.RelativeTimeFormat for proper localisation and pluralisation
+		// [NTL] This built-in browser API handles "1 day" vs "2 days" automatically
+		const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
-		const absDays = Math.abs(diffDays);
-		const suffix = diffDays > 0 ? 'from now' : 'ago';
-
-		if (absDays < 7) {
-			return `${absDays} day${absDays > 1 ? 's' : ''} ${suffix}`;
+		// [CR] Choose the most appropriate unit based on the time difference
+		if (Math.abs(diffDays) === 0) {
+			return rtf.format(0, 'day'); // Returns "today"
 		}
-
-		const weeks = Math.round(absDays / 7);
-		if (absDays < 30) {
-			return `${weeks} week${weeks > 1 ? 's' : ''} ${suffix}`;
+		if (Math.abs(diffDays) < 7) {
+			return rtf.format(diffDays, 'day');
 		}
-
-		const months = Math.round(absDays / 30);
-		if (absDays < 365) {
-			return `${months} month${months > 1 ? 's' : ''} ${suffix}`;
+		if (Math.abs(diffWeeks) < 4) {
+			return rtf.format(diffWeeks, 'week');
 		}
-
-		const years = Math.round(absDays / 365);
-		return `${years} year${years > 1 ? 's' : ''} ${suffix}`;
+		if (Math.abs(diffMonths) < 12) {
+			return rtf.format(diffMonths, 'month');
+		}
+		return rtf.format(diffYears, 'year');
 	}
 
 	/**
@@ -210,6 +212,10 @@
 		const items = timelineRef?.querySelectorAll('.timeline-item');
 		if (!items || items.length === 0) return;
 
+		// [CR] Check if we're on mobile - CSS forces left alignment below 768px
+		// [NTL] On small screens, everything is left-aligned so we animate from the left
+		const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
 		// [CR] Define animation properties based on selected animation type
 		// [NTL] anime.js v4 uses 'animate' function with slightly different API
 		if (animation === 'fade') {
@@ -222,7 +228,8 @@
 		} else if (animation === 'slide') {
 			// For slide, we animate each item individually based on alignment
 			items.forEach((el, i) => {
-				const alignClass = el.classList.contains('align-right') ? 1 : -1;
+				// [CR] On mobile, always animate from left since CSS overrides alignment
+				const alignClass = isMobile ? -1 : el.classList.contains('align-right') ? 1 : -1;
 				animate(el, {
 					opacity: [0, 1],
 					translateX: [alignClass * 50, 0],

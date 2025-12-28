@@ -146,6 +146,23 @@
 	 */
 	function calculateTimeRemaining(): void {
 		const target = parseTargetDate(targetDate);
+
+		// [CR] Validate the parsed date - handle invalid input gracefully
+		// [NTL] If someone passes garbage like "not-a-date", we show zeros instead of NaN
+		if (isNaN(target.getTime())) {
+			segments = units.map((unit) => ({
+				value: 0,
+				label: getUnitLabel(unit, 0),
+				unit
+			}));
+			// [CR] Stop the interval if running - no point ticking with invalid date
+			if (intervalId) {
+				clearInterval(intervalId);
+				intervalId = null;
+			}
+			return;
+		}
+
 		const now = new Date();
 		const difference = target.getTime() - now.getTime();
 
