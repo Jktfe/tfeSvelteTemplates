@@ -2123,3 +2123,175 @@ export interface ExplainerSearchResult {
 	score: number;
 }
 
+// ============================================================
+// COUNTDOWN COMPONENT TYPES
+// ============================================================
+
+/**
+ * Time units that can be displayed in the countdown
+ * Allows flexible configuration of what units to show
+ */
+export type CountdownUnit = 'days' | 'hours' | 'minutes' | 'seconds';
+
+/**
+ * Countdown display format options
+ *
+ * @property compact - Single line with colons (00:00:00:00)
+ * @property cards - Separate cards for each unit
+ * @property labels - Numbers with labels underneath
+ */
+export type CountdownFormat = 'compact' | 'cards' | 'labels';
+
+/**
+ * Individual time segment with value and label
+ * Used internally to represent each countdown unit
+ *
+ * @property value - Numeric value for the unit
+ * @property label - Display label (e.g., "Days", "Hours")
+ * @property unit - The unit type for styling purposes
+ */
+export interface CountdownSegment {
+	value: number;
+	label: string;
+	unit: CountdownUnit;
+}
+
+/**
+ * Props for Countdown component
+ * Displays a countdown timer to a target date/time
+ *
+ * @property targetDate - Date/time to count down to (Date object, timestamp, or ISO string)
+ * @property units - Which time units to display (default: ['days', 'hours', 'minutes', 'seconds'])
+ * @property format - Display format style (default: 'cards')
+ * @property showLabels - Whether to show unit labels (default: true)
+ * @property separator - Separator between units for compact format (default: ':')
+ * @property padZeros - Whether to pad single digits with zeros (default: true)
+ * @property completedMessage - Message to show when countdown finishes (default: "Time's up!")
+ * @property onComplete - Callback when countdown reaches zero
+ * @property hideOnComplete - Whether to hide the countdown when complete (default: false)
+ */
+export interface CountdownProps {
+	targetDate: Date | number | string;
+	units?: CountdownUnit[];
+	format?: CountdownFormat;
+	showLabels?: boolean;
+	separator?: string;
+	padZeros?: boolean;
+	completedMessage?: string;
+	onComplete?: () => void;
+	hideOnComplete?: boolean;
+}
+
+// ============================================================
+// TIMELINE COMPONENT TYPES
+// ============================================================
+
+/**
+ * Timeline orientation options
+ *
+ * @property vertical - Events stacked vertically (default)
+ * @property horizontal - Events arranged horizontally
+ */
+export type TimelineOrientation = 'vertical' | 'horizontal';
+
+/**
+ * Timeline item alignment options (for vertical orientation)
+ *
+ * @property left - All items aligned to left
+ * @property right - All items aligned to right
+ * @property alternate - Items alternate left and right
+ */
+export type TimelineAlignment = 'left' | 'right' | 'alternate';
+
+/**
+ * Animation preset options for timeline items
+ * Uses anime.js for smooth animations
+ */
+export type TimelineAnimation = 'fade' | 'slide' | 'scale' | 'none';
+
+/**
+ * Single timeline event/milestone
+ *
+ * @property id - Unique identifier for the event
+ * @property date - Date/time of the event (display format controlled by component)
+ * @property title - Event title/heading
+ * @property description - Optional longer description
+ * @property icon - Optional emoji or icon string
+ * @property color - Optional custom colour for this event's marker
+ * @property completed - Whether this event/milestone is completed (for progress timelines)
+ * @property href - Optional link URL for the event
+ */
+export interface TimelineEvent {
+	id: string | number;
+	date: Date | string;
+	title: string;
+	description?: string;
+	icon?: string;
+	color?: string;
+	completed?: boolean;
+	href?: string;
+}
+
+/**
+ * Database row structure for timeline events
+ * Maps to PostgreSQL schema (snake_case)
+ *
+ * @property id - Unique identifier
+ * @property event_date - Timestamp of the event
+ * @property title - Event title
+ * @property description - Event description
+ * @property icon - Icon/emoji
+ * @property color - Marker colour
+ * @property is_completed - Completion status
+ * @property href - Link URL
+ * @property display_order - Sort order
+ * @property category - For filtering events
+ * @property is_active - Soft delete flag
+ * @property created_at - Creation timestamp
+ * @property updated_at - Last update timestamp
+ */
+export interface TimelineEventRow {
+	id: number;
+	event_date: Date;
+	title: string;
+	description: string | null;
+	icon: string | null;
+	color: string | null;
+	is_completed: boolean;
+	href: string | null;
+	display_order: number;
+	category: string;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * Props for Timeline component
+ * Displays events/milestones in a chronological timeline
+ *
+ * @property events - Array of timeline events to display
+ * @property orientation - Vertical or horizontal layout (default: 'vertical')
+ * @property alignment - Item alignment for vertical layout (default: 'alternate')
+ * @property animation - Animation style for item entrance (default: 'slide')
+ * @property animationDuration - Duration of entrance animation in ms (default: 600)
+ * @property animationDelay - Delay between each item's animation in ms (default: 100)
+ * @property lineColor - Colour of the connecting line (default: '#e2e8f0')
+ * @property markerColor - Default colour for event markers (default: '#146ef5')
+ * @property showProgress - Show progress indicator for completed events (default: false)
+ * @property dateFormat - Function to format dates, or 'relative' for relative dates
+ * @property onEventClick - Callback when an event is clicked
+ */
+export interface TimelineProps {
+	events: TimelineEvent[];
+	orientation?: TimelineOrientation;
+	alignment?: TimelineAlignment;
+	animation?: TimelineAnimation;
+	animationDuration?: number;
+	animationDelay?: number;
+	lineColor?: string;
+	markerColor?: string;
+	showProgress?: boolean;
+	dateFormat?: ((date: Date | string) => string) | 'relative';
+	onEventClick?: (event: TimelineEvent) => void;
+}
