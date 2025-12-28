@@ -70,6 +70,14 @@
 			]
 		},
 		{
+			name: 'Time',
+			icon: '⏱️',
+			items: [
+				{ label: 'Countdown', href: '/countdown', icon: '⏱️', active: isActive('/countdown') },
+				{ label: 'Timeline', href: '/timeline', icon: '📅', active: isActive('/timeline') }
+			]
+		},
+		{
 			name: 'Cards',
 			icon: '🃏',
 			items: [
