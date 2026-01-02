@@ -365,8 +365,9 @@
 
 	/**
 	 * Clear location marker and circle
+	 * Exported so parent components can programmatically reset the location
 	 */
-	function clearLocation(): void {
+	export function clearLocation(): void {
 		if (locationMarker) {
 			locationMarker.remove();
 			locationMarker = undefined;
@@ -379,6 +380,12 @@
 		currentLocation = null;
 		stopWatching();
 	}
+
+	/**
+	 * Programmatically trigger location finding
+	 * Exported so parent components can trigger geolocation
+	 */
+	export { locateMe, stopWatching };
 </script>
 
 <!--

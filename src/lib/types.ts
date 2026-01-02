@@ -1418,7 +1418,6 @@ export interface DeliveryData {
  * @property animateMovement - Smoothly animate marker position changes (default: true)
  * @property animationDuration - Duration of movement animation in ms (default: 1000)
  * @property autoFitBounds - Auto-adjust map to show all deliveries (default: true)
- * @property refreshInterval - Position update check interval in ms (default: 5000)
  * @property onDeliveryClick - Callback when a delivery marker is clicked
  * @property onStatusChange - Callback when a delivery status changes
  * @property onDeliveryComplete - Callback when a delivery is marked as delivered
@@ -1434,7 +1433,6 @@ export interface MapDeliveryProps {
 	animateMovement?: boolean;
 	animationDuration?: number;
 	autoFitBounds?: boolean;
-	refreshInterval?: number;
 	onDeliveryClick?: (delivery: DeliveryData) => void;
 	onStatusChange?: (delivery: DeliveryData, oldStatus: DeliveryStatus) => void;
 	onDeliveryComplete?: (delivery: DeliveryData) => void;
@@ -1500,43 +1498,39 @@ export type RoutingProfile = 'driving' | 'cycling' | 'walking';
  *
  * @property origin - Starting point coordinates (bindable)
  * @property destination - End point coordinates (bindable)
- * @property waypoints - Optional intermediate stops
  * @property center - Initial map center (auto-calculated from route if not provided)
  * @property zoom - Initial zoom level (default: 13)
  * @property height - Map container height in pixels (default: 500)
  * @property profile - Routing mode: 'driving' | 'cycling' | 'walking' (default: 'driving')
+ * @property osrmApiUrl - Custom OSRM API URL (default: public demo server)
  * @property showInstructions - Show turn-by-turn instructions panel (default: true)
  * @property showDistance - Show total distance badge (default: true)
  * @property showDuration - Show total duration badge (default: true)
  * @property routeColor - Colour of the route line (default: '#146ef5')
  * @property routeWeight - Width of the route line in pixels (default: 5)
- * @property alternativeRoutes - Show alternative routes if available (default: false)
  * @property draggableWaypoints - Allow dragging waypoints to modify route (default: true)
  * @property enableClickToSet - Allow clicking map to set origin/destination (default: true)
  * @property onRouteCalculated - Callback when route is successfully calculated
  * @property onRouteError - Callback when routing fails
- * @property onWaypointDrag - Callback when a waypoint is dragged
  * @property class - Additional CSS classes for container
  */
 export interface MapRoutingProps {
 	origin?: LatLng;
 	destination?: LatLng;
-	waypoints?: RouteWaypoint[];
 	center?: LatLng;
 	zoom?: number;
 	height?: number;
 	profile?: RoutingProfile;
+	osrmApiUrl?: string;
 	showInstructions?: boolean;
 	showDistance?: boolean;
 	showDuration?: boolean;
 	routeColor?: string;
 	routeWeight?: number;
-	alternativeRoutes?: boolean;
 	draggableWaypoints?: boolean;
 	enableClickToSet?: boolean;
 	onRouteCalculated?: (route: RouteResult) => void;
 	onRouteError?: (error: string) => void;
-	onWaypointDrag?: (waypoint: RouteWaypoint, index: number) => void;
 	class?: string;
 }
 
