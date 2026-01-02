@@ -116,6 +116,9 @@
 	/** Animation frame handles for cleanup */
 	let animationFrames = new Map<string, number>();
 
+	/** Track previous statuses to detect changes */
+	let previousStatuses = new Map<string, DeliveryStatus>();
+
 	// ==================================================
 	// DERIVED STATE
 	// ==================================================
@@ -213,6 +216,20 @@
 	});
 
 	// ==================================================
+	// FUNCTIONS - Utilities
+	// ==================================================
+
+	/**
+	 * Escape HTML special characters to prevent XSS
+	 * This is critical for user-provided content like labels and names
+	 */
+	function escapeHtml(text: string): string {
+		const div = document.createElement('div');
+		div.textContent = text;
+		return div.innerHTML;
+	}
+
+	// ==================================================
 	// FUNCTIONS - Marker management
 	// ==================================================
 
@@ -299,19 +316,25 @@
 
 	/**
 	 * Create popup content
+	 * All user-provided strings are escaped to prevent XSS attacks
 	 */
 	function createPopupContent(delivery: DeliveryData): string {
 		const statusColor = getStatusColor(delivery.status);
 		const statusLabel = getStatusLabel(delivery.status);
 
+		// Escape all user-provided content
+		const safeLabel = escapeHtml(delivery.label || `Delivery ${delivery.id}`);
+		const safeDriverName = delivery.metadata?.driverName ? escapeHtml(delivery.metadata.driverName) : '';
+		const safeOrderNumber = delivery.metadata?.orderNumber ? escapeHtml(delivery.metadata.orderNumber) : '';
+
 		return `
 			<div class="delivery-popup">
 				<div class="popup-header">
-					<strong>${delivery.label || `Delivery ${delivery.id}`}</strong>
+					<strong>${safeLabel}</strong>
 					<span class="status-badge" style="background: ${statusColor}">${statusLabel}</span>
 				</div>
-				${delivery.metadata?.driverName ? `<div class="popup-row"><span>Driver:</span> ${delivery.metadata.driverName}</div>` : ''}
-				${delivery.metadata?.orderNumber ? `<div class="popup-row"><span>Order:</span> ${delivery.metadata.orderNumber}</div>` : ''}
+				${safeDriverName ? `<div class="popup-row"><span>Driver:</span> ${safeDriverName}</div>` : ''}
+				${safeOrderNumber ? `<div class="popup-row"><span>Order:</span> ${safeOrderNumber}</div>` : ''}
 				${delivery.eta ? `<div class="popup-row"><span>ETA:</span> ${delivery.eta} minutes</div>` : ''}
 				${delivery.speed ? `<div class="popup-row"><span>Speed:</span> ${Math.round(delivery.speed)} km/h</div>` : ''}
 				<div class="popup-coords">${delivery.position.lat.toFixed(5)}, ${delivery.position.lng.toFixed(5)}</div>
@@ -361,6 +384,7 @@
 
 	/**
 	 * Update all delivery markers
+	 * Also handles status change detection and callback invocation
 	 */
 	async function updateDeliveryMarkers(): Promise<void> {
 		if (!map) return;
@@ -373,6 +397,20 @@
 
 		for (const delivery of deliveries) {
 			processedIds.add(delivery.id);
+
+			// Check for status changes and invoke callbacks
+			const prevStatus = previousStatuses.get(delivery.id);
+			if (prevStatus && prevStatus !== delivery.status) {
+				// Status has changed - invoke callback
+				onStatusChange?.(delivery, prevStatus);
+
+				// Check for delivery completion
+				if (delivery.status === 'delivered') {
+					onDeliveryComplete?.(delivery);
+				}
+			}
+			// Update tracked status
+			previousStatuses.set(delivery.id, delivery.status);
 
 			const existingMarker = markerMap.get(delivery.id);
 

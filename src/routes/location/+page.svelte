@@ -94,6 +94,16 @@
 	// Demo simulation interval
 	let simulationInterval: ReturnType<typeof setInterval> | undefined;
 
+	// Clean up interval on component unmount to prevent memory leaks
+	$effect(() => {
+		return () => {
+			if (simulationInterval) {
+				clearInterval(simulationInterval);
+				simulationInterval = undefined;
+			}
+		};
+	});
+
 	/**
 	 * Handle location found from MapLocateMe
 	 */
@@ -496,6 +506,7 @@ ${'<'}/script>
       status: 'in_transit',
       label: 'Order #123',
       eta: 15,
+      lastUpdate: Date.now(),
       destination: { lat: 51.52, lng: -0.11 },
       metadata: {
         driverName: 'John Doe',

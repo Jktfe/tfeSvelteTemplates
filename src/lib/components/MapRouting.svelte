@@ -82,6 +82,8 @@
 		height = 500,
 		/** Routing mode (default: 'driving') */
 		profile = 'driving' as RoutingProfile,
+		/** Custom OSRM API URL (default: public demo server) */
+		osrmApiUrl = 'https://router.project-osrm.org',
 		/** Show turn-by-turn instructions panel (default: true) */
 		showInstructions = true,
 		/** Show total distance badge (default: true) */
@@ -137,6 +139,9 @@
 
 	/** Instructions panel expanded state */
 	let instructionsExpanded = $state(false);
+
+	/** AbortController for cancelling pending route requests */
+	let abortController: AbortController | null = null;
 
 	// ==================================================
 	// DERIVED STATE
@@ -353,21 +358,28 @@
 
 	/**
 	 * Calculate route using OSRM
+	 * Uses AbortController to cancel pending requests on rapid updates
 	 */
 	async function calculateRoute(): Promise<void> {
 		if (!origin || !destination || !map) return;
 
 		const L = await import('leaflet');
 
+		// Cancel any pending request to prevent race conditions
+		if (abortController) {
+			abortController.abort();
+		}
+		abortController = new AbortController();
+
 		isCalculating = true;
 		routeError = null;
 
 		try {
-			// OSRM public demo server - for production use your own server
+			// Use custom OSRM server or default public demo server
 			const osrmProfile = profile === 'walking' ? 'foot' : profile === 'cycling' ? 'bike' : 'car';
-			const url = `https://router.project-osrm.org/route/v1/${osrmProfile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true`;
+			const url = `${osrmApiUrl}/route/v1/${osrmProfile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true`;
 
-			const response = await fetch(url);
+			const response = await fetch(url, { signal: abortController.signal });
 
 			if (!response.ok) {
 				throw new Error('Failed to calculate route');
@@ -432,6 +444,10 @@
 
 			onRouteCalculated?.(result);
 		} catch (error) {
+			// Ignore abort errors - they're expected when cancelling pending requests
+			if (error instanceof Error && error.name === 'AbortError') {
+				return;
+			}
 			const message = error instanceof Error ? error.message : 'Failed to calculate route';
 			routeError = message;
 			onRouteError?.(message);
