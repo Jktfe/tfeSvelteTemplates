@@ -1288,6 +1288,259 @@ export interface MapLiveProps {
 }
 
 // ==================================================
+// LOCATION SERVICES COMPONENT TYPES
+// ==================================================
+
+/**
+ * Geolocation result from browser API
+ * Extended with accuracy and timestamp information
+ *
+ * @property position - Geographic coordinates (lat/lng)
+ * @property accuracy - Accuracy radius in metres
+ * @property altitude - Altitude in metres (if available)
+ * @property altitudeAccuracy - Altitude accuracy in metres (if available)
+ * @property heading - Direction of travel in degrees (if available)
+ * @property speed - Speed in metres per second (if available)
+ * @property timestamp - When the position was determined
+ */
+export interface GeolocationResult {
+	position: LatLng;
+	accuracy: number;
+	altitude?: number;
+	altitudeAccuracy?: number;
+	heading?: number;
+	speed?: number;
+	timestamp: number;
+}
+
+/**
+ * Geolocation error types
+ * Maps to browser GeolocationPositionError codes
+ */
+export type GeolocationErrorType =
+	| 'PERMISSION_DENIED'
+	| 'POSITION_UNAVAILABLE'
+	| 'TIMEOUT'
+	| 'NOT_SUPPORTED';
+
+/**
+ * Props for MapLocateMe component
+ * Map with "Find My Location" geolocation functionality
+ *
+ * @property center - Initial map center (default: Central London)
+ * @property zoom - Initial zoom level (default: 13)
+ * @property height - Map container height in pixels (default: 400)
+ * @property locateZoom - Zoom level when location is found (default: 16)
+ * @property showAccuracyCircle - Show blue circle indicating accuracy radius (default: true)
+ * @property enableHighAccuracy - Use GPS for higher accuracy (default: true)
+ * @property timeout - Geolocation timeout in milliseconds (default: 10000)
+ * @property maximumAge - Maximum age of cached position in ms (default: 0)
+ * @property watchPosition - Continuously track position changes (default: false)
+ * @property buttonPosition - Position of locate button: 'topleft' | 'topright' | 'bottomleft' | 'bottomright' (default: 'topright')
+ * @property onLocate - Callback when location is successfully found
+ * @property onError - Callback when geolocation fails
+ * @property class - Additional CSS classes for container
+ */
+export interface MapLocateMeProps {
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	locateZoom?: number;
+	showAccuracyCircle?: boolean;
+	enableHighAccuracy?: boolean;
+	timeout?: number;
+	maximumAge?: number;
+	watchPosition?: boolean;
+	buttonPosition?: 'topleft' | 'topright' | 'bottomleft' | 'bottomright';
+	onLocate?: (result: GeolocationResult) => void;
+	onError?: (error: GeolocationErrorType, message: string) => void;
+	class?: string;
+}
+
+/**
+ * Delivery vehicle/agent status
+ * Represents the current state of a delivery in transit
+ */
+export type DeliveryStatus =
+	| 'pending'
+	| 'picked_up'
+	| 'in_transit'
+	| 'nearby'
+	| 'delivered'
+	| 'failed';
+
+/**
+ * Delivery tracking data structure
+ * Represents a tracked delivery with real-time position updates
+ *
+ * @property id - Unique delivery identifier
+ * @property position - Current geographic position
+ * @property status - Current delivery status
+ * @property label - Display label (e.g., driver name, vehicle ID)
+ * @property eta - Estimated time of arrival in minutes
+ * @property heading - Direction of travel in degrees (0-360)
+ * @property speed - Current speed in km/h
+ * @property lastUpdate - Timestamp of last position update
+ * @property destination - Delivery destination coordinates
+ * @property origin - Pickup/origin coordinates
+ * @property metadata - Additional delivery information
+ */
+export interface DeliveryData {
+	id: string;
+	position: LatLng;
+	status: DeliveryStatus;
+	label?: string;
+	eta?: number;
+	heading?: number;
+	speed?: number;
+	lastUpdate: number;
+	destination?: LatLng;
+	origin?: LatLng;
+	metadata?: {
+		driverName?: string;
+		vehicleType?: 'car' | 'bike' | 'van' | 'truck' | 'walking';
+		orderNumber?: string;
+		customerName?: string;
+		phone?: string;
+	};
+}
+
+/**
+ * Props for MapDelivery component
+ * Real-time delivery tracking map with animated markers
+ *
+ * @property deliveries - Array of delivery data to track (bindable)
+ * @property center - Initial map center (auto-calculated from deliveries if not provided)
+ * @property zoom - Initial zoom level (default: 13)
+ * @property height - Map container height in pixels (default: 500)
+ * @property showRoute - Show route line from origin to destination (default: true)
+ * @property showETA - Show ETA badge on markers (default: true)
+ * @property animateMovement - Smoothly animate marker position changes (default: true)
+ * @property animationDuration - Duration of movement animation in ms (default: 1000)
+ * @property autoFitBounds - Auto-adjust map to show all deliveries (default: true)
+ * @property refreshInterval - Position update check interval in ms (default: 5000)
+ * @property onDeliveryClick - Callback when a delivery marker is clicked
+ * @property onStatusChange - Callback when a delivery status changes
+ * @property onDeliveryComplete - Callback when a delivery is marked as delivered
+ * @property class - Additional CSS classes for container
+ */
+export interface MapDeliveryProps {
+	deliveries?: DeliveryData[];
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	showRoute?: boolean;
+	showETA?: boolean;
+	animateMovement?: boolean;
+	animationDuration?: number;
+	autoFitBounds?: boolean;
+	refreshInterval?: number;
+	onDeliveryClick?: (delivery: DeliveryData) => void;
+	onStatusChange?: (delivery: DeliveryData, oldStatus: DeliveryStatus) => void;
+	onDeliveryComplete?: (delivery: DeliveryData) => void;
+	class?: string;
+}
+
+/**
+ * Route waypoint for multi-stop routing
+ *
+ * @property position - Geographic coordinates
+ * @property label - Optional display label
+ * @property stopDuration - Optional stop duration in minutes
+ */
+export interface RouteWaypoint {
+	position: LatLng;
+	label?: string;
+	stopDuration?: number;
+}
+
+/**
+ * Route step/instruction from routing API
+ *
+ * @property instruction - Human-readable instruction text
+ * @property distance - Distance for this step in metres
+ * @property duration - Duration for this step in seconds
+ * @property maneuver - Turn type (e.g., 'turn-left', 'turn-right', 'straight')
+ * @property coordinates - Start coordinates of this step
+ */
+export interface RouteStep {
+	instruction: string;
+	distance: number;
+	duration: number;
+	maneuver?: string;
+	coordinates: LatLng;
+}
+
+/**
+ * Complete route result from routing service
+ *
+ * @property coordinates - Array of coordinates forming the route polyline
+ * @property distance - Total distance in metres
+ * @property duration - Total duration in seconds
+ * @property steps - Array of turn-by-turn instructions
+ * @property summary - Route summary text
+ */
+export interface RouteResult {
+	coordinates: LatLng[];
+	distance: number;
+	duration: number;
+	steps?: RouteStep[];
+	summary?: string;
+}
+
+/**
+ * Routing profile/mode options
+ * Determines the type of route calculated
+ */
+export type RoutingProfile = 'driving' | 'cycling' | 'walking';
+
+/**
+ * Props for MapRouting component
+ * A→B routing with turn-by-turn directions using OSRM
+ *
+ * @property origin - Starting point coordinates (bindable)
+ * @property destination - End point coordinates (bindable)
+ * @property waypoints - Optional intermediate stops
+ * @property center - Initial map center (auto-calculated from route if not provided)
+ * @property zoom - Initial zoom level (default: 13)
+ * @property height - Map container height in pixels (default: 500)
+ * @property profile - Routing mode: 'driving' | 'cycling' | 'walking' (default: 'driving')
+ * @property showInstructions - Show turn-by-turn instructions panel (default: true)
+ * @property showDistance - Show total distance badge (default: true)
+ * @property showDuration - Show total duration badge (default: true)
+ * @property routeColor - Colour of the route line (default: '#146ef5')
+ * @property routeWeight - Width of the route line in pixels (default: 5)
+ * @property alternativeRoutes - Show alternative routes if available (default: false)
+ * @property draggableWaypoints - Allow dragging waypoints to modify route (default: true)
+ * @property enableClickToSet - Allow clicking map to set origin/destination (default: true)
+ * @property onRouteCalculated - Callback when route is successfully calculated
+ * @property onRouteError - Callback when routing fails
+ * @property onWaypointDrag - Callback when a waypoint is dragged
+ * @property class - Additional CSS classes for container
+ */
+export interface MapRoutingProps {
+	origin?: LatLng;
+	destination?: LatLng;
+	waypoints?: RouteWaypoint[];
+	center?: LatLng;
+	zoom?: number;
+	height?: number;
+	profile?: RoutingProfile;
+	showInstructions?: boolean;
+	showDistance?: boolean;
+	showDuration?: boolean;
+	routeColor?: string;
+	routeWeight?: number;
+	alternativeRoutes?: boolean;
+	draggableWaypoints?: boolean;
+	enableClickToSet?: boolean;
+	onRouteCalculated?: (route: RouteResult) => void;
+	onRouteError?: (error: string) => void;
+	onWaypointDrag?: (waypoint: RouteWaypoint, index: number) => void;
+	class?: string;
+}
+
+// ==================================================
 // ANIMATED BEAM COMPONENT TYPES
 // ==================================================
 
