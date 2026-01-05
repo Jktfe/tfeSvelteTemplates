@@ -25,7 +25,7 @@ export const shineBorderStoryboard: ExplainerCanvasData = {
 	description: 'An animated border wrapper that adds a sweeping shine effect to any content',
 	defaultCardId: 'overview',
 	config: {
-		lineStyle: 'curved',
+		lineStyle: 'bezier',
 		background: { type: 'dots', color: '#e2e8f0', size: 1, gap: 20 },
 		enableSearch: true
 	},

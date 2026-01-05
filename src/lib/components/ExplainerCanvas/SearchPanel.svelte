@@ -116,6 +116,7 @@
 				value={query}
 				oninput={handleInput}
 				onkeydown={handleKeydown}
+				role="combobox"
 				aria-label="Search cards"
 				aria-autocomplete="list"
 				aria-controls="search-results"

@@ -176,7 +176,7 @@
 		</div>
 
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import BubblePacking from '$lib/components/BubblePacking.svelte';
 
   const bubbleData = [
@@ -185,7 +185,7 @@
     { id: 'facebook', label: 'Facebook', value: 115, group: 'Social' },
     // ... more data
   ];
-</script>
+${'<'}/script>
 
 <BubblePacking
   data={bubbleData}

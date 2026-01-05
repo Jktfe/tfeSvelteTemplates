@@ -9,7 +9,7 @@
 
 import { marked, type Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
-import DOMPurify from 'isomorphic-dompurify';
+import DOMPurify, { type Config } from 'dompurify';
 
 /**
  * Custom renderer for code blocks with syntax highlighting
@@ -50,7 +50,7 @@ marked.use({
  * DOMPurify configuration for safe HTML rendering
  * Allows common markdown elements while blocking dangerous content
  */
-const DOMPURIFY_CONFIG: DOMPurify.Config = {
+const DOMPURIFY_CONFIG: Config = {
 	ALLOWED_TAGS: [
 		'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
 		'p', 'br', 'hr',
@@ -81,7 +81,7 @@ const DOMPURIFY_CONFIG: DOMPurify.Config = {
  * @returns Sanitised HTML string
  */
 function sanitiseHtml(html: string): string {
-	return DOMPurify.sanitize(html, DOMPURIFY_CONFIG);
+	return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string;
 }
 
 /**

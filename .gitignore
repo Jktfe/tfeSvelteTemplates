@@ -59,3 +59,6 @@ coverage/
 # Test output
 playwright-report/
 test-results/
+
+# Generated documentation
+HLV/

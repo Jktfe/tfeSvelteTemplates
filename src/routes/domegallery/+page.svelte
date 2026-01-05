@@ -203,7 +203,7 @@
 			objects with <code>src</code> and <code>alt</code> properties.
 		</p>
 		<div class="code-example">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import DomeGallery from '$lib/components/DomeGallery.svelte';
 
   const images = [
@@ -211,7 +211,7 @@
     { src: 'https://example.com/image2.jpg', alt: 'Description 2' },
     'https://example.com/image3.jpg', // Simple string URL also works
   ];
-</script>
+${'<'}/script>
 
 <div style="height: 100vh;">
   <DomeGallery {images} />

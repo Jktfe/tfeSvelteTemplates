@@ -116,10 +116,10 @@
 
 		<h3>Direct Data</h3>
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import ExplainerCanvas from '$lib/components/ExplainerCanvas/ExplainerCanvas.svelte';
   import { myCanvasData } from './data';
-</script>
+${'<'}/script>
 
 <ExplainerCanvas data={myCanvasData} />`}</code></pre>
 		</div>

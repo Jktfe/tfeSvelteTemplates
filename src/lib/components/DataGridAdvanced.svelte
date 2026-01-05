@@ -417,8 +417,8 @@
 		if (property in VALIDATION_FIELDS) {
 			const allowedValues = VALIDATION_FIELDS[property as keyof typeof VALIDATION_FIELDS];
 			if (!allowedValues.includes(String(value))) {
-				alert(`Invalid value for ${property}: ${value}. Must be one of: ${allowedValues.join(', ')}`);
-				console.error(`[DataGridAdvanced] Invalid value for ${property}:`, value);
+				alert(`Invalid value for ${String(property)}: ${String(value)}. Must be one of: ${allowedValues.join(', ')}`);
+				console.error(`[DataGridAdvanced] Invalid value for ${String(property)}:`, value);
 				return;
 			}
 		}

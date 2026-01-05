@@ -366,7 +366,7 @@ describe('Editor', () => {
 	// ============================================================
 	describe('Loading State', () => {
 		it('shows saving text during submission', async () => {
-			const onSave = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 100)));
+			const onSave = vi.fn((): Promise<void> => new Promise((resolve) => setTimeout(resolve, 100)));
 			const { container } = render(Editor, {
 				props: {
 					onSave,

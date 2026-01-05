@@ -528,6 +528,8 @@
 	 */
 	.bubble-group {
 		/* [CR] No transition here - the circle handles hover effects */
+		/* [NTL] Intentionally empty - styles live on child elements */
+		cursor: default;
 	}
 
 	/**

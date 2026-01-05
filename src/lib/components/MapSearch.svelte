@@ -370,6 +370,7 @@
 				{placeholder}
 				onkeydown={handleKeydown}
 				onfocusout={handleFocusOut}
+				role="combobox"
 				aria-label="Search for a location"
 				aria-expanded={isDropdownOpen}
 				aria-haspopup="listbox"

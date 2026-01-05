@@ -38,10 +38,11 @@
 	);
 
 	// Get choropleth color scale based on dataset
+	// Spread readonly arrays to mutable arrays for component prop compatibility
 	const choroplethColorScale = $derived(
 		choroplethDataset === 'population'
-			? { type: 'sequential' as const, colors: GEO_COLOR_SCALES.blues }
-			: { type: 'sequential' as const, colors: GEO_COLOR_SCALES.orangeRed }
+			? { type: 'sequential' as const, colors: [...GEO_COLOR_SCALES.blues] }
+			: { type: 'sequential' as const, colors: [...GEO_COLOR_SCALES.orangeRed] }
 	);
 
 	// Filter cities for bubble/spike maps (population category only for cleaner demo)
@@ -164,7 +165,7 @@
 		</div>
 
 		<div class="example-container">
-			{#if activeExample === 'choropleth'}
+			{#if activeExample === 'choropleth' && data.geojson}
 				<GeoChoropleth
 					geojson={data.geojson}
 					data={choroplethData}
@@ -174,7 +175,7 @@
 					showTooltip={true}
 					onRegionClick={handleRegionClick}
 				/>
-			{:else if activeExample === 'bubble'}
+			{:else if activeExample === 'bubble' && data.countriesGeojson}
 				<GeoBubbleMap
 					geojson={data.countriesGeojson}
 					data={cityData}
@@ -185,7 +186,7 @@
 					showLabels={true}
 					onBubbleClick={handlePointClick}
 				/>
-			{:else}
+			{:else if activeExample === 'spike' && data.countriesGeojson}
 				<GeoSpikeMap
 					geojson={data.countriesGeojson}
 					data={cityData}
@@ -196,6 +197,8 @@
 					spikeColor="#ef4444"
 					onSpikeClick={handlePointClick}
 				/>
+			{:else}
+				<div class="loading-message">Loading map data...</div>
 			{/if}
 		</div>
 
@@ -243,7 +246,7 @@
 
 		<div class="code-block">
 			{#if activeExample === 'choropleth'}
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import GeoChoropleth from '$lib/components/GeoChoropleth.svelte';
   import { FALLBACK_UK_REGION_DATA, GEO_COLOR_SCALES } from '$lib/constants';
 
@@ -253,7 +256,7 @@
   function handleClick(region) {
     console.log('Selected:', region.name, region.value);
   }
-</script>
+${'<'}/script>
 
 <GeoChoropleth
   geojson={data.geojson}
@@ -265,7 +268,7 @@
   onRegionClick={handleClick}
 />`}</code></pre>
 			{:else if activeExample === 'bubble'}
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import GeoBubbleMap from '$lib/components/GeoBubbleMap.svelte';
   import { FALLBACK_GEO_DATA_POINTS } from '$lib/constants';
 
@@ -275,7 +278,7 @@
   const cityData = FALLBACK_GEO_DATA_POINTS.filter(
     p => p.category === 'population'
   );
-</script>
+${'<'}/script>
 
 <GeoBubbleMap
   geojson={data.geojson}
@@ -288,7 +291,7 @@
   onBubbleClick={(point) => console.log(point)}
 />`}</code></pre>
 			{:else}
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import GeoSpikeMap from '$lib/components/GeoSpikeMap.svelte';
   import { FALLBACK_GEO_DATA_POINTS } from '$lib/constants';
 
@@ -297,7 +300,7 @@
   const cityData = FALLBACK_GEO_DATA_POINTS.filter(
     p => p.category === 'population'
   );
-</script>
+${'<'}/script>
 
 <GeoSpikeMap
   geojson={data.geojson}
