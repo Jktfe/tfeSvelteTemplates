@@ -156,7 +156,7 @@
 		</div>
 
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import Sunburst from '$lib/components/Sunburst.svelte';
 
   const data = {
@@ -175,7 +175,7 @@
       // ... more nodes
     ]
   };
-</script>
+${'<'}/script>
 
 <Sunburst
   {data}

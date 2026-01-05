@@ -23,6 +23,10 @@
 
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
+import type { Snippet } from 'svelte';
+
+// Helper to create a mock snippet for testing
+const mockSnippet = (() => {}) as unknown as Snippet;
 
 // Import all form components
 import FormField from './FormField.svelte';
@@ -48,7 +52,7 @@ describe('FormField', () => {
 			props: {
 				name: 'test',
 				label: 'Test Label',
-				children: () => {}
+				children: mockSnippet
 			}
 		});
 		expect(screen.getByText('Test Label')).toBeInTheDocument();
@@ -60,7 +64,7 @@ describe('FormField', () => {
 				name: 'test',
 				label: 'Test Label',
 				required: true,
-				children: () => {}
+				children: mockSnippet
 			}
 		});
 		expect(screen.getByText('*')).toBeInTheDocument();
@@ -72,7 +76,7 @@ describe('FormField', () => {
 				name: 'test',
 				label: 'Test Label',
 				helpText: 'This is help text',
-				children: () => {}
+				children: mockSnippet
 			}
 		});
 		expect(screen.getByText('This is help text')).toBeInTheDocument();
@@ -85,7 +89,7 @@ describe('FormField', () => {
 				label: 'Test Label',
 				error: 'This field is required',
 				touched: true,
-				children: () => {}
+				children: mockSnippet
 			}
 		});
 		expect(screen.getByRole('alert')).toHaveTextContent('This field is required');
@@ -98,7 +102,7 @@ describe('FormField', () => {
 				label: 'Test Label',
 				error: 'This field is required',
 				touched: false,
-				children: () => {}
+				children: mockSnippet
 			}
 		});
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -562,7 +566,9 @@ describe('RangeField', () => {
 		render(RangeField, {
 			props: {
 				name: 'volume',
-				label: 'Volume'
+				label: 'Volume',
+				min: 0,
+				max: 100
 			}
 		});
 		expect(screen.getByText('Volume')).toBeInTheDocument();
@@ -572,7 +578,9 @@ describe('RangeField', () => {
 		render(RangeField, {
 			props: {
 				name: 'volume',
-				label: 'Volume'
+				label: 'Volume',
+				min: 0,
+				max: 100
 			}
 		});
 		expect(screen.getByRole('slider')).toBeInTheDocument();
@@ -597,6 +605,8 @@ describe('RangeField', () => {
 			props: {
 				name: 'volume',
 				label: 'Volume',
+				min: 0,
+				max: 100,
 				step: 5
 			}
 		});
@@ -608,6 +618,8 @@ describe('RangeField', () => {
 			props: {
 				name: 'volume',
 				label: 'Volume',
+				min: 0,
+				max: 100,
 				disabled: true
 			}
 		});

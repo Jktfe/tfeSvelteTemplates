@@ -210,32 +210,34 @@
 	/**
 	 * Load canvas data on mount
 	 */
-	onMount(async () => {
+	onMount(() => {
 		// Check for mobile
 		checkMobile();
 		window.addEventListener('resize', checkMobile);
 
-		// Load data
-		try {
-			canvasData = await resolveCanvasData({ data, src, loader });
+		// Load data asynchronously
+		(async () => {
+			try {
+				canvasData = await resolveCanvasData({ data, src, loader });
 
-			// Build search index
-			searchIndex = createSearchIndex(canvasData.cards);
+				// Build search index
+				searchIndex = createSearchIndex(canvasData.cards);
 
-			// Navigate to initial card
-			const startCardId = initialCardId ?? canvasData.defaultCardId;
-			if (startCardId) {
-				navigateToCard(startCardId, false);
+				// Navigate to initial card
+				const startCardId = initialCardId ?? canvasData.defaultCardId;
+				if (startCardId) {
+					navigateToCard(startCardId, false);
+				}
+
+				loading = false;
+			} catch (err) {
+				loading = false;
+				error = err instanceof DataLoadError
+					? err.message
+					: 'Failed to load canvas data';
+				console.error('[ExplainerCanvas]', err);
 			}
-
-			loading = false;
-		} catch (err) {
-			loading = false;
-			error = err instanceof DataLoadError
-				? err.message
-				: 'Failed to load canvas data';
-			console.error('[ExplainerCanvas]', err);
-		}
+		})();
 
 		return () => {
 			window.removeEventListener('resize', checkMobile);

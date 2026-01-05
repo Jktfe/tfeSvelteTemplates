@@ -1084,10 +1084,12 @@
 								loading="eager"
 								decoding="async"
 								onerror={(e) => {
-									const img = e.currentTarget;
+									const img = e.currentTarget as HTMLImageElement;
 									// [NTL] If the image fails to load, show a nice gradient instead
 									img.style.display = 'none';
-									img.parentElement.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+									if (img.parentElement) {
+										img.parentElement.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+									}
 								}}
 							/>
 						</div>

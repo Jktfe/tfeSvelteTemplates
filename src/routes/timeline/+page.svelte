@@ -63,7 +63,7 @@
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import Timeline from '$lib/components/Timeline.svelte';
 
   const events = [
@@ -78,7 +78,7 @@
     },
     // ... more events
   ];
-</script>
+${'<'}/script>
 
 <Timeline
   events={events}
@@ -209,12 +209,12 @@
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   function handleEventClick(event) {
     console.log('Clicked:', event.title);
     // Navigate, open modal, etc.
   }
-</script>
+${'<'}/script>
 
 <Timeline
   events={events}
@@ -365,14 +365,14 @@ const events = [
 <Timeline events={events} dateFormat="relative" />
 
 <!-- Custom formatter -->
-<script>
+${'<'}script>
   function formatDateShort(date) {
     return date.toLocaleDateString('en-GB', {
       month: 'short',
       year: 'numeric'
     });
   }
-</script>
+${'<'}/script>
 
 <Timeline events={events} dateFormat={formatDateShort} />`}</code></pre>
 			</details>

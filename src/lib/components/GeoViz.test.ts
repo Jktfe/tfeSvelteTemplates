@@ -38,7 +38,6 @@ describe('GeoViz - Module Imports', () => {
 // Test type definitions exist
 describe('GeoViz - Type Definitions', () => {
 	it('GeoDataPoint type is valid', async () => {
-		const { GeoDataPoint } = await import('$lib/types');
 		// TypeScript will fail compilation if types are wrong
 		const point: import('$lib/types').GeoDataPoint = {
 			id: '1',
@@ -220,27 +219,31 @@ describe('GeoViz - Value Domain', () => {
 });
 
 // Test region ID extraction patterns (used in choropleth)
+// These properties come from ONS GeoJSON data and vary by year (RGN24, RGN23, RGN22, etc.)
 describe('GeoViz - Region ID Extraction', () => {
+	// Type for GeoJSON properties with various year codes
+	type GeoProps = Record<string, string | undefined>;
+
 	it('extracts from RGN24CD', () => {
-		const props = { RGN24CD: 'E12000001', RGN24NM: 'North East' };
+		const props: GeoProps = { RGN24CD: 'E12000001', RGN24NM: 'North East' };
 		const regionId = props.RGN24CD;
 		expect(regionId).toBe('E12000001');
 	});
 
 	it('falls back to RGN23CD', () => {
-		const props = { RGN23CD: 'E12000002', RGN23NM: 'North West' };
+		const props: GeoProps = { RGN23CD: 'E12000002', RGN23NM: 'North West' };
 		const regionId = props.RGN24CD || props.RGN23CD;
 		expect(regionId).toBe('E12000002');
 	});
 
 	it('falls back to RGN22CD', () => {
-		const props = { RGN22CD: 'E12000003', RGN22NM: 'Yorkshire' };
+		const props: GeoProps = { RGN22CD: 'E12000003', RGN22NM: 'Yorkshire' };
 		const regionId = props.RGN24CD || props.RGN23CD || props.RGN22CD;
 		expect(regionId).toBe('E12000003');
 	});
 
 	it('handles country codes', () => {
-		const props = { CTRY22CD: 'E92000001', CTRY22NM: 'England' };
+		const props: GeoProps = { CTRY22CD: 'E92000001', CTRY22NM: 'England' };
 		const regionId = props.RGN24CD || props.RGN23CD || props.RGN22CD || props.CTRY22CD;
 		expect(regionId).toBe('E92000001');
 	});

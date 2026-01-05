@@ -252,14 +252,22 @@
 		if (showProgress) {
 			const progressLine = timelineRef?.querySelector('.timeline-progress');
 			if (progressLine) {
-				const scaleProps =
-					orientation === 'vertical' ? { scaleY: [0, 1] } : { scaleX: [0, 1] };
-				animate(progressLine, {
-					...scaleProps,
-					duration: animationDuration * 2,
-					delay: animationDelay * events.length,
-					ease: 'outQuad'
-				});
+				// Use conditional to avoid undefined properties in animation params
+				if (orientation === 'vertical') {
+					animate(progressLine, {
+						scaleY: [0, 1],
+						duration: animationDuration * 2,
+						delay: animationDelay * events.length,
+						ease: 'outQuad'
+					});
+				} else {
+					animate(progressLine, {
+						scaleX: [0, 1],
+						duration: animationDuration * 2,
+						delay: animationDelay * events.length,
+						ease: 'outQuad'
+					});
+				}
 			}
 		}
 

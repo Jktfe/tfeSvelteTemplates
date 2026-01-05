@@ -50,7 +50,7 @@ describe('SpeedDial', () => {
 
 	// Custom button label should be used
 	it('uses custom button label', () => {
-		render(SpeedDial, { props: { buttonLabel: 'Show actions' } });
+		render(SpeedDial, { props: { actions: testActions, buttonLabel: 'Show actions' } });
 		const button = screen.getByRole('button', { name: 'Show actions' });
 		expect(button).toBeInTheDocument();
 	});
@@ -121,7 +121,7 @@ describe('SpeedDial', () => {
 
 	// Disabled state should prevent toggle
 	it('does not open when disabled', async () => {
-		render(SpeedDial, { props: { disabled: true } });
+		render(SpeedDial, { props: { actions: testActions, disabled: true } });
 		const trigger = screen.getByRole('button', { name: 'Open menu' });
 
 		await fireEvent.click(trigger);
@@ -131,7 +131,7 @@ describe('SpeedDial', () => {
 
 	// Trigger button should be disabled when component is disabled
 	it('trigger button is disabled when component is disabled', () => {
-		render(SpeedDial, { props: { disabled: true } });
+		render(SpeedDial, { props: { actions: testActions, disabled: true } });
 		const trigger = screen.getByRole('button', { name: 'Open menu' });
 		expect(trigger).toBeDisabled();
 	});
@@ -160,7 +160,7 @@ describe('SpeedDial', () => {
 
 	// Custom class should be applied
 	it('applies custom class to container', () => {
-		const { container } = render(SpeedDial, { props: { class: 'my-custom-class' } });
+		const { container } = render(SpeedDial, { props: { actions: testActions, class: 'my-custom-class' } });
 		const speedDial = container.querySelector('.speed-dial');
 		expect(speedDial).toHaveClass('my-custom-class');
 	});
@@ -174,7 +174,7 @@ describe('SpeedDial', () => {
 
 	// Custom emoji icon should render
 	it('renders custom emoji icon', () => {
-		render(SpeedDial, { props: { buttonIcon: '⚡' } });
+		render(SpeedDial, { props: { actions: testActions, buttonIcon: '⚡' } });
 		// The emoji should be visible
 		expect(screen.getByText('⚡')).toBeInTheDocument();
 	});

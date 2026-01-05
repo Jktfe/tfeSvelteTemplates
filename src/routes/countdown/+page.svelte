@@ -69,11 +69,11 @@
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   import Countdown from '$lib/components/Countdown.svelte';
 
   const newYear = new Date('2025-01-01T00:00:00');
-</script>
+${'<'}/script>
 
 <Countdown targetDate={newYear} format="cards" />`}</code></pre>
 			</details>
@@ -196,11 +196,11 @@
 
 			<details class="code-block">
 				<summary>View Code Example</summary>
-				<pre><code>{`<script>
+				<pre><code>{`${'<'}script>
   function handleComplete() {
     alert('Countdown finished!');
   }
-</script>
+${'<'}/script>
 
 <Countdown
   targetDate={pastDate}

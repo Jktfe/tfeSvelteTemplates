@@ -107,6 +107,26 @@
 			]
 		},
 		{
+			name: 'Time',
+			icon: '⏱️',
+			components: [
+				{
+					name: 'Countdown',
+					href: '/countdown',
+					icon: '⏱️',
+					description: 'Animated countdown timer with multiple formats',
+					screenshot: screenshotPath('CountdownShot.png')
+				},
+				{
+					name: 'Timeline',
+					href: '/timeline',
+					icon: '📅',
+					description: 'Animated event timeline with anime.js',
+					screenshot: screenshotPath('TimelineShot.png')
+				}
+			]
+		},
+		{
 			name: 'Cards',
 			icon: '🃏',
 			components: [
@@ -253,6 +273,13 @@
 					screenshot: screenshotPath('MapsShot.png')
 				},
 				{
+					name: 'Location',
+					href: '/location',
+					icon: '📍',
+					description: 'Locate me, delivery & routing demos',
+					screenshot: screenshotPath('LocationShot.png')
+				},
+				{
 					name: 'GeoViz',
 					href: '/geo',
 					icon: '🌍',
@@ -299,6 +326,7 @@
 		'✨': { bg: '#fef3c7', text: '#d97706' },
 		'🎭': { bg: '#f3e8ff', text: '#9333ea' },
 		'🔗': { bg: '#dbeafe', text: '#2563eb' },
+		'⏱️': { bg: '#fef3c7', text: '#d97706' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
 		'🎴': { bg: '#fef3c7', text: '#ea580c' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
@@ -314,6 +342,7 @@
 		'📝': { bg: '#dcfce7', text: '#22c55e' },
 		'✏️': { bg: '#fef3c7', text: '#f59e0b' },
 		'🗺️': { bg: '#dbeafe', text: '#3b82f6' },
+		'📍': { bg: '#fee2e2', text: '#ef4444' },
 		'🌍': { bg: '#d1fae5', text: '#10b981' },
 		'🔐': { bg: '#fce7f3', text: '#be185d' },
 		'👤': { bg: '#e0e7ff', text: '#6366f1' }

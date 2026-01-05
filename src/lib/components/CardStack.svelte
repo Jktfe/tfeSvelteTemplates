@@ -496,9 +496,9 @@
 					{/if}
 
 					<!-- Card content with gradient background (if provided) -->
-					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions a11y_interactive_supports_focus -->
 					{#if card?.content}
-						<div class="card-content" onclick={(e) => {
+						<div class="card-content" role="presentation" onclick={(e) => {
 							// Only stop propagation for non-link clicks to prevent card toggle
 							// Allow links to bubble so SvelteKit can handle navigation
 							const target = e.target as HTMLElement;

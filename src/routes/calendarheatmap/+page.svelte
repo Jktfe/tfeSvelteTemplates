@@ -157,7 +157,7 @@
 		</div>
 
 		<div class="code-block">
-			<pre><code>{`<script>
+			<pre><code>{`${'<'}script>
   import CalendarHeatmap from '$lib/components/CalendarHeatmap.svelte';
 
   let activityData = [
@@ -165,7 +165,7 @@
     { date: '2024-01-16', value: 8 },
     // ... more data
   ];
-</script>
+${'<'}/script>
 
 <CalendarHeatmap
   data={activityData}
