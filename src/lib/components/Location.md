@@ -113,6 +113,22 @@ Leaflet markers with custom icons
 Callbacks triggered on status changes
 ```
 
+### Reactivity & Dependency Tracking
+
+Svelte 5's `$effect` only re-runs when it detects reactive values being read inside it. Since `updateDeliveryMarkers()` is a function call, we must explicitly read `deliveries` to create the dependency:
+
+```typescript
+$effect(() => {
+  if (map && deliveries) {
+    // Reading deliveries.length creates the reactive dependency
+    const _ = deliveries.length;
+    updateDeliveryMarkers();
+  }
+});
+```
+
+Without this, markers would only render on mount and never update when delivery data changes.
+
 ### Status Change Detection
 
 The component tracks previous status to detect changes:
