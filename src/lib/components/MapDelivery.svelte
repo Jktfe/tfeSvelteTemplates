@@ -208,9 +208,13 @@
 
 	/**
 	 * Update markers when deliveries change
+	 * Note: We explicitly read deliveries.length to create a dependency,
+	 * otherwise Svelte won't know to re-run this effect when deliveries change
 	 */
 	$effect(() => {
-		if (map) {
+		if (map && deliveries) {
+			// Track deliveries array - reading length creates the reactive dependency
+			const _ = deliveries.length;
 			updateDeliveryMarkers();
 		}
 	});
