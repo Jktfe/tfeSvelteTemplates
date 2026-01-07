@@ -73,6 +73,7 @@
 	let map: LeafletMap | undefined = $state();
 
 	/** Current map view state (reactive) */
+	// svelte-ignore state_referenced_locally
 	let currentView: { center: LatLng; zoom: number } = $state({
 		center: center,
 		zoom: zoom

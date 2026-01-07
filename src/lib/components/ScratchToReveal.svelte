@@ -92,7 +92,9 @@
 	let isScratching = $state(false);                             // [NTL] Is user currently scratching?
 	let scratchPercentage = $state(0);                            // [NTL] How much has been scratched (0-100)
 	let isFullyRevealed = $state(false);                          // [NTL] Is content fully revealed?
+	// svelte-ignore state_referenced_locally
 	let canvasWidth = $state(width === 'auto' ? 0 : width);       // [CR] Calculated canvas width
+	// svelte-ignore state_referenced_locally
 	let canvasHeight = $state(height === 'auto' ? 0 : height);    // [CR] Calculated canvas height
 	let rafId: number | null = null;                              // [CR] RequestAnimationFrame ID for smooth drawing
 	let resizeObserver: ResizeObserver | null = null;             // [CR] Observer for auto-sizing
@@ -300,6 +302,7 @@
 	});
 </script>
 
+<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
 <div
 	class="scratch-to-reveal-wrapper {className}"
 	role="application"

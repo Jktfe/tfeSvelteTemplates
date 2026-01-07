@@ -134,6 +134,7 @@
 
 	// [CR] Current divider position as percentage (0-100)
 	// [NTL] This single number controls everything - images clip, handle moves!
+	// svelte-ignore state_referenced_locally
 	let dividerPosition = $state(initialPosition);
 
 	// =========================================================================
@@ -265,7 +266,6 @@
 		}
 	}
 </script>
-
 <!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
 <div
 	bind:this={containerEl}

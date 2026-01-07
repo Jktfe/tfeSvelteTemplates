@@ -1,108 +1,33 @@
 <!--
   Location Services Demo Page
 
-  Demonstrates three location-focused mapping components:
+  Demonstrates location-focused mapping components:
   - MapLocateMe: Find my location with geolocation
-  - MapDelivery: Real-time delivery tracking
   - MapRouting: A→B routing with directions
 
   @author TFE Svelte Templates
 -->
 <script lang="ts">
 	import MapLocateMe from '$lib/components/MapLocateMe.svelte';
-	import MapDelivery from '$lib/components/MapDelivery.svelte';
 	import MapRouting from '$lib/components/MapRouting.svelte';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
 	import type {
 		GeolocationResult,
 		GeolocationErrorType,
-		DeliveryData,
-		DeliveryStatus,
 		RouteResult,
 		LatLng
 	} from '$lib/types';
 
 	// Tab state for switching between examples
-	let activeExample = $state<'locate' | 'delivery' | 'routing'>('locate');
+	let activeExample = $state<'locate' | 'routing'>('locate');
 
 	// Locate Me state
 	let lastLocation = $state<GeolocationResult | null>(null);
-
-	// Delivery demo state - simulated deliveries
-	let deliveries = $state<DeliveryData[]>([
-		{
-			id: 'del-001',
-			position: { lat: 51.515, lng: -0.142 },
-			status: 'in_transit',
-			label: 'Order #1234',
-			eta: 12,
-			heading: 45,
-			speed: 28,
-			lastUpdate: Date.now(),
-			origin: { lat: 51.505, lng: -0.155 },
-			destination: { lat: 51.522, lng: -0.125 },
-			metadata: {
-				driverName: 'James Wilson',
-				vehicleType: 'bike',
-				orderNumber: '#1234',
-				customerName: 'Sarah M.'
-			}
-		},
-		{
-			id: 'del-002',
-			position: { lat: 51.508, lng: -0.118 },
-			status: 'nearby',
-			label: 'Order #1235',
-			eta: 3,
-			heading: 120,
-			speed: 15,
-			lastUpdate: Date.now(),
-			origin: { lat: 51.502, lng: -0.130 },
-			destination: { lat: 51.510, lng: -0.112 },
-			metadata: {
-				driverName: 'Emma Brown',
-				vehicleType: 'car',
-				orderNumber: '#1235',
-				customerName: 'John D.'
-			}
-		},
-		{
-			id: 'del-003',
-			position: { lat: 51.498, lng: -0.135 },
-			status: 'pending',
-			label: 'Order #1236',
-			eta: 25,
-			heading: 0,
-			speed: 0,
-			lastUpdate: Date.now(),
-			origin: { lat: 51.495, lng: -0.145 },
-			destination: { lat: 51.520, lng: -0.108 },
-			metadata: {
-				driverName: 'Mike Chen',
-				vehicleType: 'van',
-				orderNumber: '#1236',
-				customerName: 'Lisa K.'
-			}
-		}
-	]);
 
 	// Routing state
 	let routeOrigin = $state<LatLng | undefined>({ lat: 51.5074, lng: -0.1278 });
 	let routeDestination = $state<LatLng | undefined>({ lat: 51.5155, lng: -0.0922 });
 	let lastRoute = $state<RouteResult | null>(null);
-
-	// Demo simulation interval
-	let simulationInterval: ReturnType<typeof setInterval> | undefined;
-
-	// Clean up interval on component unmount to prevent memory leaks
-	$effect(() => {
-		return () => {
-			if (simulationInterval) {
-				clearInterval(simulationInterval);
-				simulationInterval = undefined;
-			}
-		};
-	});
 
 	/**
 	 * Handle location found from MapLocateMe
@@ -120,126 +45,11 @@
 	}
 
 	/**
-	 * Handle delivery click from MapDelivery
-	 */
-	function handleDeliveryClick(delivery: DeliveryData): void {
-		console.log('[Location Demo] Delivery clicked:', delivery.label);
-	}
-
-	/**
 	 * Handle route calculated from MapRouting
 	 */
 	function handleRouteCalculated(route: RouteResult): void {
 		lastRoute = route;
 		console.log('[Location Demo] Route calculated:', route.distance, 'metres');
-	}
-
-	/**
-	 * Simulate delivery movement for demo
-	 */
-	function startDeliverySimulation(): void {
-		if (simulationInterval) return;
-
-		simulationInterval = setInterval(() => {
-			deliveries = deliveries.map((d) => {
-				if (d.status === 'delivered' || d.status === 'failed' || d.status === 'pending') {
-					return d;
-				}
-
-				// Simulate movement towards destination
-				const dx = (d.destination?.lng ?? d.position.lng) - d.position.lng;
-				const dy = (d.destination?.lat ?? d.position.lat) - d.position.lat;
-				const distance = Math.sqrt(dx * dx + dy * dy);
-
-				if (distance < 0.001) {
-					// Arrived
-					return { ...d, status: 'delivered' as DeliveryStatus, eta: 0, speed: 0 };
-				}
-
-				// Move 10% closer
-				const step = 0.1;
-				return {
-					...d,
-					position: {
-						lat: d.position.lat + dy * step,
-						lng: d.position.lng + dx * step
-					},
-					eta: Math.max(0, (d.eta ?? 0) - 1),
-					heading: (Math.atan2(dx, dy) * 180) / Math.PI,
-					lastUpdate: Date.now()
-				};
-			});
-		}, 2000);
-	}
-
-	/**
-	 * Stop delivery simulation
-	 */
-	function stopDeliverySimulation(): void {
-		if (simulationInterval) {
-			clearInterval(simulationInterval);
-			simulationInterval = undefined;
-		}
-	}
-
-	/**
-	 * Reset deliveries to initial state
-	 */
-	function resetDeliveries(): void {
-		stopDeliverySimulation();
-		deliveries = [
-			{
-				id: 'del-001',
-				position: { lat: 51.515, lng: -0.142 },
-				status: 'in_transit',
-				label: 'Order #1234',
-				eta: 12,
-				heading: 45,
-				speed: 28,
-				lastUpdate: Date.now(),
-				origin: { lat: 51.505, lng: -0.155 },
-				destination: { lat: 51.522, lng: -0.125 },
-				metadata: {
-					driverName: 'James Wilson',
-					vehicleType: 'bike',
-					orderNumber: '#1234'
-				}
-			},
-			{
-				id: 'del-002',
-				position: { lat: 51.508, lng: -0.118 },
-				status: 'nearby',
-				label: 'Order #1235',
-				eta: 3,
-				heading: 120,
-				speed: 15,
-				lastUpdate: Date.now(),
-				origin: { lat: 51.502, lng: -0.130 },
-				destination: { lat: 51.510, lng: -0.112 },
-				metadata: {
-					driverName: 'Emma Brown',
-					vehicleType: 'car',
-					orderNumber: '#1235'
-				}
-			},
-			{
-				id: 'del-003',
-				position: { lat: 51.498, lng: -0.135 },
-				status: 'pending',
-				label: 'Order #1236',
-				eta: 25,
-				heading: 0,
-				speed: 0,
-				lastUpdate: Date.now(),
-				origin: { lat: 51.495, lng: -0.145 },
-				destination: { lat: 51.520, lng: -0.108 },
-				metadata: {
-					driverName: 'Mike Chen',
-					vehicleType: 'van',
-					orderNumber: '#1236'
-				}
-			}
-		];
 	}
 
 	// Format distance helper
@@ -265,7 +75,7 @@
 	<title>Location Services | TFE Svelte Templates</title>
 	<meta
 		name="description"
-		content="Location-focused mapping components: geolocation, delivery tracking, and routing. Built with Leaflet.js and browser APIs."
+		content="Location-focused mapping components: geolocation and routing. Built with Leaflet.js and browser APIs."
 	/>
 </svelte:head>
 
@@ -274,7 +84,7 @@
 	<header class="page-header">
 		<h1>Location Services</h1>
 		<p class="subtitle">
-			Location-focused mapping components for geolocation, delivery tracking, and route planning.
+			Location-focused mapping components for geolocation and route planning.
 			Built with Leaflet.js, browser Geolocation API, and OSRM routing.
 		</p>
 	</header>
@@ -288,15 +98,6 @@
 				<p>Find your current location using browser geolocation with accuracy display</p>
 				<button class="feature-btn" onclick={() => (activeExample = 'locate')}>
 					{activeExample === 'locate' ? 'Viewing' : 'View Demo'}
-				</button>
-			</div>
-
-			<div class="feature-card" class:active={activeExample === 'delivery'}>
-				<div class="feature-icon">🚚</div>
-				<h3>MapDelivery</h3>
-				<p>Real-time delivery tracking with animated markers and ETA display</p>
-				<button class="feature-btn" onclick={() => (activeExample = 'delivery')}>
-					{activeExample === 'delivery' ? 'Viewing' : 'View Demo'}
 				</button>
 			</div>
 
@@ -317,8 +118,6 @@
 			<h2>
 				{#if activeExample === 'locate'}
 					MapLocateMe - Find My Location
-				{:else if activeExample === 'delivery'}
-					MapDelivery - Delivery Tracking
 				{:else}
 					MapRouting - Route Planning
 				{/if}
@@ -326,39 +125,11 @@
 			<p class="example-description">
 				{#if activeExample === 'locate'}
 					Click the locate button to find your current position. Requires location permission. Shows accuracy radius.
-				{:else if activeExample === 'delivery'}
-					Tracking {deliveries.length} deliveries. Click "Start Simulation" to see animated movement towards destinations.
 				{:else}
 					Click the map to set origin (A) and destination (B), or drag markers to adjust. Uses OSRM for routing.
 				{/if}
 			</p>
 		</div>
-
-		<!-- Delivery Controls -->
-		{#if activeExample === 'delivery'}
-			<div class="delivery-controls">
-				<button class="control-btn primary" onclick={startDeliverySimulation}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<polygon points="5 3 19 12 5 21 5 3" />
-					</svg>
-					Start Simulation
-				</button>
-				<button class="control-btn" onclick={stopDeliverySimulation}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<rect x="6" y="4" width="4" height="16" />
-						<rect x="14" y="4" width="4" height="16" />
-					</svg>
-					Pause
-				</button>
-				<button class="control-btn" onclick={resetDeliveries}>
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M1 4v6h6M23 20v-6h-6" />
-						<path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
-					</svg>
-					Reset
-				</button>
-			</div>
-		{/if}
 
 		<div class="example-container">
 			{#if activeExample === 'locate'}
@@ -393,18 +164,6 @@
 						{/if}
 					</div>
 				{/if}
-			{:else if activeExample === 'delivery'}
-				<MapDelivery
-					bind:deliveries
-					zoom={13}
-					height={500}
-					showRoute={true}
-					showETA={true}
-					animateMovement={true}
-					animationDuration={1000}
-					autoFitBounds={true}
-					onDeliveryClick={handleDeliveryClick}
-				/>
 			{:else}
 				<MapRouting
 					bind:origin={routeOrigin}
@@ -459,13 +218,6 @@
 			</button>
 			<button
 				class="code-tab"
-				class:active={activeExample === 'delivery'}
-				onclick={() => (activeExample = 'delivery')}
-			>
-				MapDelivery
-			</button>
-			<button
-				class="code-tab"
 				class:active={activeExample === 'routing'}
 				onclick={() => (activeExample = 'routing')}
 			>
@@ -493,36 +245,6 @@ ${'<'}/script>
   showAccuracyCircle={true}
   enableHighAccuracy={true}
   onLocate={handleLocate}
-/>`}</code></pre>
-			{:else if activeExample === 'delivery'}
-				<pre><code>{`${'<'}script>
-  import MapDelivery from '$lib/components/MapDelivery.svelte';
-  import type { DeliveryData } from '$lib/types';
-
-  let deliveries: DeliveryData[] = [
-    {
-      id: 'order-123',
-      position: { lat: 51.51, lng: -0.12 },
-      status: 'in_transit',
-      label: 'Order #123',
-      eta: 15,
-      lastUpdate: Date.now(),
-      destination: { lat: 51.52, lng: -0.11 },
-      metadata: {
-        driverName: 'John Doe',
-        vehicleType: 'bike'
-      }
-    }
-  ];
-${'<'}/script>
-
-<MapDelivery
-  bind:deliveries
-  height={500}
-  showRoute={true}
-  showETA={true}
-  animateMovement={true}
-  onDeliveryClick={(d) => console.log(d)}
 />`}</code></pre>
 			{:else}
 				<pre><code>{`${'<'}script>
@@ -564,7 +286,6 @@ ${'<'}/script>
 					<tr>
 						<th>Feature</th>
 						<th>MapLocateMe</th>
-						<th>MapDelivery</th>
 						<th>MapRouting</th>
 					</tr>
 				</thead>
@@ -573,60 +294,50 @@ ${'<'}/script>
 						<td>Pan & Zoom</td>
 						<td>✅</td>
 						<td>✅</td>
-						<td>✅</td>
 					</tr>
 					<tr>
 						<td>Find User Location</td>
 						<td>✅ Geolocation API</td>
-						<td>-</td>
 						<td>-</td>
 					</tr>
 					<tr>
 						<td>Accuracy Circle</td>
 						<td>✅</td>
 						<td>-</td>
-						<td>-</td>
 					</tr>
 					<tr>
 						<td>Real-time Tracking</td>
 						<td>Optional</td>
-						<td>✅ Animated</td>
 						<td>-</td>
 					</tr>
 					<tr>
 						<td>Multiple Markers</td>
 						<td>Single</td>
-						<td>✅ Multiple</td>
 						<td>2 (A/B)</td>
 					</tr>
 					<tr>
 						<td>Route Display</td>
 						<td>-</td>
-						<td>Origin → Destination</td>
 						<td>✅ Full path</td>
 					</tr>
 					<tr>
 						<td>Turn-by-Turn</td>
 						<td>-</td>
-						<td>-</td>
 						<td>✅ OSRM</td>
 					</tr>
 					<tr>
-						<td>ETA Display</td>
+						<td>ETA/Duration Display</td>
 						<td>-</td>
-						<td>✅ Badges</td>
 						<td>✅ Duration</td>
 					</tr>
 					<tr>
 						<td>External API</td>
 						<td>None (browser)</td>
-						<td>None</td>
 						<td>OSRM (free)</td>
 					</tr>
 					<tr>
 						<td>Best For</td>
 						<td>User location</td>
-						<td>Delivery apps</td>
 						<td>Navigation</td>
 					</tr>
 				</tbody>
@@ -639,11 +350,6 @@ ${'<'}/script>
 		<h2>Use Cases</h2>
 		<div class="use-cases-grid">
 			<div class="use-case-card">
-				<div class="use-case-icon">🍕</div>
-				<h3>Food Delivery</h3>
-				<p>Track multiple drivers with MapDelivery, show customer their order's real-time position and ETA.</p>
-			</div>
-			<div class="use-case-card">
 				<div class="use-case-icon">🏃</div>
 				<h3>Fitness Apps</h3>
 				<p>Use MapLocateMe with watchPosition for real-time tracking during runs or bike rides.</p>
@@ -654,9 +360,14 @@ ${'<'}/script>
 				<p>Plan routes with MapRouting, switch between driving, cycling, or walking profiles.</p>
 			</div>
 			<div class="use-case-card">
-				<div class="use-case-icon">📦</div>
-				<h3>Logistics</h3>
-				<p>Fleet management with MapDelivery showing all vehicles, routes, and delivery statuses.</p>
+				<div class="use-case-icon">🏪</div>
+				<h3>Store Locator</h3>
+				<p>Show user's current location with MapLocateMe and calculate routes to nearby stores with MapRouting.</p>
+			</div>
+			<div class="use-case-card">
+				<div class="use-case-icon">🗺️</div>
+				<h3>Travel Planning</h3>
+				<p>Plot multi-stop routes with MapRouting, display distances and estimated travel times.</p>
 			</div>
 		</div>
 	</section>

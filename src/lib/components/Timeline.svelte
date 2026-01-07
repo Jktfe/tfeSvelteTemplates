@@ -333,12 +333,11 @@
 		{@const isClickable = !!onEventClick || !!event.href}
 		{@const alignClass = getAlignmentClass(index)}
 
-		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			class="timeline-item {alignClass}"
 			class:timeline-item--completed={event.completed}
 			class:timeline-item--clickable={isClickable}
-			role="listitem"
+			role={isClickable ? 'button' : 'listitem'}
 			tabindex={isClickable ? 0 : undefined}
 			onclick={() => isClickable && handleEventClick(event)}
 			onkeydown={(e) => isClickable && handleKeyDown(e, event)}
