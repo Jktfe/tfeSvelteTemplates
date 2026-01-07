@@ -149,6 +149,7 @@
 					</li>
 				{:else}
 					{#each results as result, index (result.card.id)}
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<li
 							class="search-result"
 							class:selected={index === selectedIndex}

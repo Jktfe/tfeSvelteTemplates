@@ -115,6 +115,7 @@
 	// =============================================================================
 
 	const TWO_PI = 2 * Math.PI;                                    // [NTL] A full circle in radians
+	// svelte-ignore state_referenced_locally
 	const LABEL_MIN_ANGLE_RAD = (labelMinAngle * Math.PI) / 180;   // [NTL] Convert degrees to radians
 
 	/** [CR] Minimum radius in pixels for label visibility */

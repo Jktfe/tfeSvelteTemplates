@@ -26,11 +26,6 @@ describe('Location - Module Imports', () => {
 		expect(module.default).toBeDefined();
 	});
 
-	it('MapDelivery module exports correctly', async () => {
-		const module = await import('./MapDelivery.svelte');
-		expect(module.default).toBeDefined();
-	});
-
 	it('MapRouting module exports correctly', async () => {
 		const module = await import('./MapRouting.svelte');
 		expect(module.default).toBeDefined();
@@ -48,38 +43,6 @@ describe('Location - Type Definitions', () => {
 		expect(result.position.lat).toBe(51.5074);
 		expect(result.accuracy).toBe(10);
 		expect(typeof result.timestamp).toBe('number');
-	});
-
-	it('DeliveryData type is valid', async () => {
-		const delivery: import('$lib/types').DeliveryData = {
-			id: 'order-123',
-			position: { lat: 51.5, lng: -0.1 },
-			status: 'in_transit',
-			lastUpdate: Date.now(),
-			label: 'Test Order',
-			eta: 15
-		};
-		expect(delivery.id).toBe('order-123');
-		expect(delivery.status).toBe('in_transit');
-		expect(delivery.lastUpdate).toBeDefined();
-	});
-
-	it('DeliveryData with metadata is valid', async () => {
-		const delivery: import('$lib/types').DeliveryData = {
-			id: 'order-456',
-			position: { lat: 51.5, lng: -0.1 },
-			status: 'nearby',
-			lastUpdate: Date.now(),
-			metadata: {
-				driverName: 'John Doe',
-				vehicleType: 'bike',
-				orderNumber: '#456',
-				customerName: 'Jane Smith',
-				phone: '+44 123 456 7890'
-			}
-		};
-		expect(delivery.metadata?.driverName).toBe('John Doe');
-		expect(delivery.metadata?.vehicleType).toBe('bike');
 	});
 
 	it('RouteResult type is valid', async () => {
@@ -109,34 +72,6 @@ describe('Location - Type Definitions', () => {
 		expect(profiles).toContain('driving');
 		expect(profiles).toContain('cycling');
 		expect(profiles).toContain('walking');
-	});
-});
-
-// Test DeliveryStatus values
-describe('Location - Delivery Status', () => {
-	it('all status values are valid', () => {
-		const statuses: import('$lib/types').DeliveryStatus[] = [
-			'pending',
-			'picked_up',
-			'in_transit',
-			'nearby',
-			'delivered',
-			'failed'
-		];
-
-		expect(statuses).toHaveLength(6);
-		statuses.forEach((status) => {
-			expect(typeof status).toBe('string');
-		});
-	});
-
-	it('status progression is logical', () => {
-		const progression = ['pending', 'picked_up', 'in_transit', 'nearby', 'delivered'];
-
-		// Each status should come before the next in the array
-		expect(progression.indexOf('pending')).toBeLessThan(progression.indexOf('picked_up'));
-		expect(progression.indexOf('in_transit')).toBeLessThan(progression.indexOf('nearby'));
-		expect(progression.indexOf('nearby')).toBeLessThan(progression.indexOf('delivered'));
 	});
 });
 

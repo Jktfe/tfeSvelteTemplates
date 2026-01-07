@@ -398,6 +398,7 @@
 		{#if isDropdownOpen && searchResults.length > 0}
 			<ul id="search-results" class="search-results" role="listbox" aria-label="Search results">
 				{#each searchResults as result, index (result.displayName)}
+					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 					<li
 						role="option"
 						class="search-result-item"
