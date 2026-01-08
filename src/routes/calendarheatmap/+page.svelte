@@ -34,7 +34,7 @@
 	/**
 	 * Generate filtered data based on selected range
 	 */
-	const filteredData = $derived(() => {
+	const filteredData = $derived.by(() => {
 		const days = dateRangePresets[selectedRange].days;
 		const startDate = new SvelteDate();
 		startDate.setDate(startDate.getDate() - days);
@@ -44,7 +44,7 @@
 	/**
 	 * Calculate start date for selected range
 	 */
-	const rangeStartDate = $derived(() => {
+	const rangeStartDate = $derived.by(() => {
 		const days = dateRangePresets[selectedRange].days;
 		const date = new SvelteDate();
 		date.setDate(date.getDate() - days);
@@ -264,7 +264,7 @@ ${'<'}/script>
 		</div>
 
 		<div class="example-demo">
-			<CalendarHeatmap data={filteredData()} startDate={rangeStartDate()} endDate={new SvelteDate()} />
+			<CalendarHeatmap data={filteredData} startDate={rangeStartDate} endDate={new SvelteDate()} />
 		</div>
 
 		<div class="code-block">

@@ -6,7 +6,7 @@
  * This sets up our testing environment for Svelte 5 components.
  *
  * What's happening here:
- *   - We're using jsdom to simulate a browser environment
+ *   - We're using happy-dom to simulate a browser environment (faster than jsdom)
  *   - SvelteKit's Vite plugin handles all the Svelte compilation
  *   - Tests live alongside their components (co-located)
  *   - Global test utilities are available without imports
@@ -43,7 +43,8 @@ export default defineConfig({
 		globals: true,
 
 		// Simulates a browser environment for component testing
-		environment: 'jsdom',
+		// Using happy-dom instead of jsdom for better ES Module support
+		environment: 'happy-dom',
 
 		// Where to find test files - we're co-locating them with components
 		include: ['src/**/*.{test,spec}.ts'],

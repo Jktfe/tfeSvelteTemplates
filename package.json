@@ -46,7 +46,7 @@
 		"eslint": "^9.39.2",
 		"eslint-plugin-svelte": "^3.13.1",
 		"globals": "^17.0.0",
-		"jsdom": "^27.3.0",
+		"happy-dom": "^20.1.0",
 		"postcss": "^8.5.6",
 		"svelte": "^5.16.1",
 		"svelte-check": "^4.3.5",

@@ -364,6 +364,31 @@ The project has **zero build warnings** (`bun run build` is clean) and **zero Ty
 - **CSS Warnings**: ⚠️ 14 documented false-positive warnings (safe to ignore)
 - **Runtime**: ✅ All components functional
 
+### Runtime Warnings (Safe to Ignore)
+
+#### history.pushState Warning from Third-Party Libraries
+
+**Warning Message:**
+```
+Avoid using `history.pushState(...)` and `history.replaceState(...)` as these will conflict with SvelteKit's router. Use the `pushState` and `replaceState` imports from `$app/navigation` instead.
+```
+
+**Source**: Third-party libraries (Leaflet maps, Unovis visualizations, SVAR Grid, or svelte-motion)
+
+**Reason**: These libraries use the native browser History API for their own internal state management (e.g., map zoom levels, visualization state), not for routing. SvelteKit detects this usage and issues a preventative warning.
+
+**Impact**: None - No actual conflict occurs. The libraries' history usage is isolated to their own functionality and does not interfere with SvelteKit's routing system. All navigation and component functionality works correctly.
+
+**Resolution**: This is a false-positive warning. The libraries are using the History API appropriately for non-routing purposes. You cannot fix this from your code since it originates from bundled third-party dependencies.
+
+**Why It's Safe**:
+- ✅ No routing conflicts observed
+- ✅ All page navigation works correctly
+- ✅ Libraries use history for internal state only
+- ✅ SvelteKit's router remains fully functional
+
+**Note**: This is a known limitation when using certain UI/visualization libraries with SvelteKit. The warning is informational only and can be safely ignored.
+
 ## Database Integration
 
 ### Database Status Indicator

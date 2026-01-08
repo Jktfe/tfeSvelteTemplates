@@ -259,7 +259,7 @@
 	 * [CR] Reactive date range computation with sensible defaults.
 	 * [NTL] If you don't specify dates, we show the last 365 days - just like GitHub!
 	 */
-	let dateRange = $derived(() => {
+	let dateRange = $derived.by(() => {
 		const end = endDate || new SvelteDate();
 		const start = startDate || new SvelteDate(end.getTime() - 365 * 24 * 60 * 60 * 1000);
 		return { start, end };
@@ -270,7 +270,7 @@
 	 * [NTL] Instead of searching through the array every time (slow!), we build
 	 *       a lookup table. Think of it like an index in a book - much faster!
 	 */
-	let dataMap = $derived(() => {
+	let dataMap = $derived.by(() => {
 		const map = new SvelteMap<string, number>();
 		for (const item of data) {
 			map.set(item.date, item.value);
@@ -283,7 +283,7 @@
 	 * [NTL] We need to know the highest activity level so we can scale
 	 *       all the colours proportionally. The minimum is 1 to avoid divide-by-zero.
 	 */
-	let maxValue = $derived(() => {
+	let maxValue = $derived.by(() => {
 		return Math.max(...data.map((d) => d.value), 1);
 	});
 
@@ -292,7 +292,7 @@
 	 * [NTL] This creates 5 shades (by default) from light grey to dark green,
 	 *       like GitHub's contribution levels. Level 0 = no activity, Level 4 = lots!
 	 */
-	let colorPalette = $derived(() => {
+	let colorPalette = $derived.by(() => {
 		const palette = [colorLow]; // Level 0
 		for (let i = 1; i < levels; i++) {
 			const factor = i / (levels - 1);
@@ -307,8 +307,8 @@
 	 *       rows (days). Each cell either has a date+value or is null (padding).
 	 *       We start each week on Sunday, just like GitHub's contribution graph.
 	 */
-	let calendarWeeks = $derived(() => {
-		const { start, end } = dateRange();
+	let calendarWeeks = $derived.by(() => {
+		const { start, end } = dateRange;
 		const weeks: Array<Array<{ date: Date; value: number } | null>> = [];
 
 		// Find first Sunday on or before start date
@@ -329,7 +329,7 @@
 				// Only include cells within start-end range
 				if (cellDate >= start && cellDate <= end) {
 					const dateStr = toISODate(cellDate);
-					const value = dataMap().get(dateStr) || 0;
+					const value = dataMap.get(dateStr) || 0;
 					week.push({ date: cellDate, value });
 				} else {
 					// Pad with null for cells outside range
@@ -355,13 +355,13 @@
 	 * [NTL] We walk through the weeks and whenever we see a new month,
 	 *       we note where to put its label. Simple but effective!
 	 */
-	let monthLabels = $derived(() => {
+	let monthLabels = $derived.by(() => {
 		if (!showMonthLabels) return [];
 
 		const labels: Array<{ label: string; x: number }> = [];
 		let lastMonth = -1;
 
-		calendarWeeks().forEach((week, weekIndex) => {
+		calendarWeeks.forEach((week, weekIndex) => {
 			// Check first non-null cell in week
 			const firstCell = week.find((cell) => cell !== null);
 			if (firstCell) {
@@ -383,8 +383,8 @@
 	 * [CR] Dynamically calculate SVG width based on number of weeks.
 	 * [NTL] The calendar grows horizontally as more weeks are added.
 	 */
-	let containerWidth = $derived(() => {
-		const gridWidth = calendarWeeks().length * (cellSize + cellGap) - cellGap;
+	let containerWidth = $derived.by(() => {
+		const gridWidth = calendarWeeks.length * (cellSize + cellGap) - cellGap;
 		return WEEK_LABEL_WIDTH + gridWidth + 10;
 	});
 
@@ -392,7 +392,7 @@
 	 * [CR] Dynamically calculate SVG height based on 7 days.
 	 * [NTL] Height is always fixed to 7 rows (one per day of the week).
 	 */
-	let containerHeight = $derived(() => {
+	let containerHeight = $derived.by(() => {
 		const gridHeight = 7 * (cellSize + cellGap) - cellGap;
 		return MONTH_LABEL_HEIGHT + gridHeight + 10;
 	});
@@ -409,7 +409,7 @@
 	 */
 	function getColorLevel(value: number): number {
 		if (value === 0) return 0;
-		const percentage = value / maxValue();
+		const percentage = value / maxValue;
 		return Math.min(Math.ceil(percentage * (levels - 1)), levels - 1);
 	}
 
@@ -419,7 +419,7 @@
 	 */
 	function getCellColor(value: number): string {
 		const level = getColorLevel(value);
-		return colorPalette()[level];
+		return colorPalette[level];
 	}
 
 	// =========================================================================
@@ -489,7 +489,7 @@
 		switch (event.key) {
 			case 'ArrowRight':
 				event.preventDefault();
-				newWeekIndex = Math.min(weekIndex + 1, calendarWeeks().length - 1);
+				newWeekIndex = Math.min(weekIndex + 1, calendarWeeks.length - 1);
 				break;
 			case 'ArrowLeft':
 				event.preventDefault();
@@ -506,7 +506,7 @@
 			case 'Enter':
 			case ' ': {
 				event.preventDefault();
-				const cell = calendarWeeks()[weekIndex][dayIndex];
+				const cell = calendarWeeks[weekIndex][dayIndex];
 				if (cell) handleCellClick(cell);
 				return;
 			}
@@ -515,7 +515,7 @@
 		}
 
 		// Update focus if new position is valid
-		const newCell = calendarWeeks()[newWeekIndex]?.[newDayIndex];
+		const newCell = calendarWeeks[newWeekIndex]?.[newDayIndex];
 		if (newCell) {
 			focusedCell = { weekIndex: newWeekIndex, dayIndex: newDayIndex };
 		}
@@ -530,21 +530,21 @@
 >
 	<!-- SVG Calendar Grid -->
 	<svg
-		width={containerWidth()}
-		height={containerHeight()}
-		viewBox="0 0 {containerWidth()} {containerHeight()}"
+		width={containerWidth}
+		height={containerHeight}
+		viewBox="0 0 {containerWidth} {containerHeight}"
 		class="calendar-svg"
 	>
 		<!-- Month Labels -->
 		{#if showMonthLabels}
-			{#each monthLabels() as { label, x } (label)}
+			{#each monthLabels as { label, x }, index (`${index}-${label}`)}
 				<text x={x} y={MONTH_LABEL_HEIGHT - 5} class="month-label">{label}</text>
 			{/each}
 		{/if}
 
 		<!-- Weekday Labels -->
 		{#if showWeekLabels}
-			{#each WEEKDAY_LABELS as label, i (label)}
+			{#each WEEKDAY_LABELS as label, i (i)}
 				<text
 					x={WEEK_LABEL_WIDTH - 5}
 					y={MONTH_LABEL_HEIGHT + WEEKDAY_INDICES[i] * (cellSize + cellGap) + cellSize / 2}
@@ -559,7 +559,7 @@
 
 		<!-- Calendar Grid -->
 		<g transform="translate({WEEK_LABEL_WIDTH}, {MONTH_LABEL_HEIGHT})">
-			{#each calendarWeeks() as week, weekIndex (weekIndex)}
+			{#each calendarWeeks as week, weekIndex (weekIndex)}
 				{#each week as cell, dayIndex (`${weekIndex}-${dayIndex}`)}
 					{#if cell}
 						{@const x = weekIndex * (cellSize + cellGap)}
@@ -606,7 +606,7 @@
 	{#if showLegend}
 		<div class="legend">
 			<span class="legend-label">Less</span>
-			{#each colorPalette() as color (color)}
+			{#each colorPalette as color, index (index)}
 				<div class="legend-cell" style:background-color={color}></div>
 			{/each}
 			<span class="legend-label">More</span>

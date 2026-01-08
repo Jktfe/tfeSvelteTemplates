@@ -46,7 +46,7 @@
 	 * Calculate statistics from bubble data
 	 * Includes guard clause for empty data arrays
 	 */
-	const stats = $derived(() => {
+	const stats = $derived.by(() => {
 		// Guard clause: return defaults if data is empty
 		if (FALLBACK_BUBBLE_DATA.length === 0) {
 			return {
@@ -102,19 +102,19 @@
 	<!-- Statistics Cards -->
 	<section class="stats-section">
 		<div class="stat-card">
-			<div class="stat-value">{stats().count}</div>
+			<div class="stat-value">{stats.count}</div>
 			<div class="stat-label">Total Bubbles</div>
 		</div>
 		<div class="stat-card">
-			<div class="stat-value">{stats().groups}</div>
+			<div class="stat-value">{stats.groups}</div>
 			<div class="stat-label">Groups</div>
 		</div>
 		<div class="stat-card">
-			<div class="stat-value">{stats().totalValue.toLocaleString()}</div>
+			<div class="stat-value">{stats.totalValue.toLocaleString()}</div>
 			<div class="stat-label">Total Value</div>
 		</div>
 		<div class="stat-card">
-			<div class="stat-value">{stats().largestBubble.label}</div>
+			<div class="stat-value">{stats.largestBubble.label}</div>
 			<div class="stat-label">Largest Bubble</div>
 		</div>
 	</section>

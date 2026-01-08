@@ -279,7 +279,7 @@
 	const leafCounts = $derived(precomputeLeafCounts(data));   // [NTL] Count leaves first
 	const maxTreeDepth = $derived(getMaxDepth(data));          // [NTL] Then measure depth
 	const rootNode = $derived(buildLayout(data, leafCounts, null, 0, 0, 2 * Math.PI, maxTreeDepth)); // [NTL] Build full layout
-	const allNodes = $derived(flattenNodes(rootNode));         // [NTL] Flatten for rendering
+	const allNodes = $derived(flattenNodes(rootNode).map((node, index) => ({ ...node, _uid: index }))); // [NTL] Flatten for rendering with unique IDs
 	const allLinks = $derived(getLinks(rootNode));             // [NTL] Extract all connections
 
 	// [CR] Calculate effective visible depth - defaults to max depth on first render
@@ -520,7 +520,7 @@
 
 		<!-- Nodes layer -->
 		<g class="nodes">
-			{#each visibleNodes as node (node.name)}
+			{#each visibleNodes as node (node._uid)}
 				{@const pos = polarToCartesian(node.x, node.y)}
 				<g
 					class="node"
@@ -551,7 +551,7 @@
 				font-size={fontSize}
 				fill={labelColor}
 			>
-				{#each visibleNodes as node (node.name)}
+				{#each visibleNodes as node (node._uid)}
 					{@const anchor = getTextAnchor(node.x)}
 					{@const offset = getLabelOffset(node)}
 					<text
