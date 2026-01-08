@@ -41,21 +41,21 @@
 		{ id: 'firstName', header: 'First Name', width: 120 },
 		{ id: 'lastName', header: 'Last Name', width: 120 },
 		{
-			id: 'salary',
+			id: 'salary',  // Original field for data access
 			header: 'Standard (No Decimals)',
 			width: 160,
 			type: 'number',
 			formatter: formatCurrency  // £75,000
 		},
 		{
-			id: 'salary',
+			id: 'salary',  // Original field for data access
 			header: 'With Decimals',
 			width: 160,
 			type: 'number',
 			formatter: formatCurrencyDecimals  // £75,000.00
 		},
 		{
-			id: 'salary',
+			id: 'salary',  // Original field for data access
 			header: 'Compact (K/M)',
 			width: 130,
 			type: 'number',
@@ -590,7 +590,7 @@ const columns: DataGridColumn[] = [
     hireDateTo: ''
   ${'}'});
 
-  const filteredData = $derived(() => ${'{'}
+  const filteredData = $derived.by(() => ${'{'}
     return data.filter(employee => ${'{'}
       // Apply filter logic
       return true;
@@ -606,7 +606,7 @@ const columns: DataGridColumn[] = [
 />
 
 <DataGridAdvanced
-  data=${'{'} filteredData() ${'}'}
+  data=${'{'} filteredData ${'}'}
   editable=${'{'} false ${'}'}
   selectable=${'{'} false ${'}'}
   pageSize=${'{'} 20 ${'}'}

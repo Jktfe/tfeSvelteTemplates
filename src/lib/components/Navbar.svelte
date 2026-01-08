@@ -93,9 +93,9 @@
 	// [CR] Using a Set for O(1) lookup performance when checking expanded state
 	let expandedCategories: SvelteSet<string> = new SvelteSet();
 
-	// [CR] Auto-expand the category containing the active page on initial render
-	// [NTL] When the page loads, we automatically open the section that contains
-	//       the current page - so users can see where they are in the menu!
+	// [CR] Auto-expand the category containing the active page on navigation
+	// [NTL] When you navigate to a page, we automatically open the section that
+	//       contains that page and close other categories - keeps the menu tidy!
 	$effect(() => {
 		// [CR] Only depend on menuCategories, not expandedCategories (avoid infinite loop)
 		const activeCategory = menuCategories.find((category) =>
@@ -105,6 +105,9 @@
 			// [CR] Uses untrack() to write state without creating a reactive dependency
 			// [NTL] This prevents the effect from running forever in a loop
 			untrack(() => {
+				// [CR] CRITICAL: Clear all expanded categories first, then expand only the active one
+				// [NTL] This ensures only one section is open at a time, preventing the "stuck" state
+				expandedCategories.clear();
 				expandedCategories.add(activeCategory.name);
 				expandedCategories = new SvelteSet(expandedCategories);
 			});

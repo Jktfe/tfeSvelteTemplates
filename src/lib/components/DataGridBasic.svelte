@@ -329,7 +329,7 @@
 		<table class="datagrid-table" class:striped class:hoverable class:compact>
 			<thead>
 				<tr>
-					{#each columns as column (column.id)}
+					{#each columns as column, columnIndex (`${columnIndex}-${column.id}`)}
 						<th
 							class:sortable={sortable && column.sortable !== false}
 							class:sorted={sortColumn === column.id}
@@ -374,7 +374,7 @@
 				{:else}
 					{#each paginatedData() as row, rowIndex (row.id ?? rowIndex)}
 						<tr>
-							{#each columns as column (column.id)}
+							{#each columns as column, columnIndex (`${columnIndex}-${column.id}`)}
 								{@const cellValue = getRowValue(row, column.id)}
 								<td
 									class={getCellClass(cellValue, column, row)}
