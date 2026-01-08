@@ -62,6 +62,7 @@
 -->
 
 <script lang="ts">
+	import { SvelteSet, SvelteMap } from 'svelte/reactivity';
 	// [CR] Type imports for props and data structures
 	import type { BubblePackingProps, BubbleItem } from '$lib/types';
 	import { BUBBLE_COLOR_SCHEME } from '$lib/constants';
@@ -147,7 +148,7 @@
 	 *       group names so we can assign colours from our palette.
 	 */
 	function getGroups(items: BubbleItem[]): string[] {
-		const groups = new Set<string>();
+		const groups = new SvelteSet<string>();
 		for (const item of items) {
 			if (item.group) groups.add(item.group);
 		}
@@ -166,7 +167,7 @@
 		if (items.length === 0) return [];
 
 		const groups = getGroups(items);
-		const groupColorMap = new Map<string, string>();
+		const groupColorMap = new SvelteMap<string, string>();
 		groups.forEach((group, i) => {
 			groupColorMap.set(group, colorScheme[i % colorScheme.length]);
 		});
@@ -483,7 +484,7 @@
 	<!-- Legend -->
 	{#if legendGroups().length > 1}
 		<div class="legend">
-			{#each legendGroups() as { group, color }}
+			{#each legendGroups() as { group, color } (group)}
 				<div class="legend-item">
 					<div class="legend-color" style:background-color={color}></div>
 					<span class="legend-label">{group}</span>

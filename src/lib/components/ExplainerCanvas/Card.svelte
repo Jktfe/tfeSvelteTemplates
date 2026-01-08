@@ -168,8 +168,7 @@
 	></div>
 {:else}
 	<!-- Full card representation -->
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions a11y_no_noninteractive_tabindex a11y_no_redundant_roles a11y_role_supports_aria_props -->
-	<article
+	<div
 		class="explainer-card"
 		class:expanded={isExpanded}
 		class:active={isActive}
@@ -177,13 +176,14 @@
 		style:left="{card.position.x}px"
 		style:top="{card.position.y}px"
 		style:width="{isExpanded ? CARD_WIDTH + 100 : CARD_WIDTH}px"
-		role="article"
+		role="button"
 		tabindex="0"
 		onclick={handleClick}
 		onkeydown={handleKeydown}
 		onmouseenter={onHover}
 		onmouseleave={onHoverEnd}
 		aria-expanded={isExpanded}
+		aria-label={card.title}
 	>
 		<!-- Card header - sticky when expanded -->
 		<header class="card-header">
@@ -228,7 +228,7 @@
 					{#if card.links && card.links.length > 0}
 						<nav class="card-links" aria-label="Related cards">
 							<span class="links-label">Related:</span>
-							{#each card.links as linkId}
+							{#each card.links as linkId (linkId)}
 								<button
 									type="button"
 									class="link-pill"
@@ -274,7 +274,7 @@
 				<path d="M6 9l6 6 6-6" />
 			</svg>
 		</div>
-	</article>
+	</div>
 {/if}
 
 <style>

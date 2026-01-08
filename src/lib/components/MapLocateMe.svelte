@@ -61,7 +61,7 @@
   @component
 -->
 <script lang="ts">
-	import type { MapLocateMeProps, GeolocationResult, GeolocationErrorType, LatLng } from '$lib/types';
+	import type { MapLocateMeProps, GeolocationResult, GeolocationErrorType } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
 	import type { Map as LeafletMap, Marker as LeafletMarker, Circle as LeafletCircle } from 'leaflet';
 
@@ -315,6 +315,9 @@
 
 	/**
 	 * Start locating user position
+	 *
+	 * Build warning: "`locateMe` is updated" is a false positive
+	 * Reason: This is a function, not a state variable. Compiler confused by export statement.
 	 */
 	function locateMe(): void {
 		if (!isGeolocationSupported) {

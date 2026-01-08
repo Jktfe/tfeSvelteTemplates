@@ -37,6 +37,7 @@
 	{#each content as block, index (index)}
 		{#if block.type === 'markdown'}
 			<div class="content-block content-markdown">
+				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html renderBlock(block)}
 			</div>
 		{:else if block.type === 'image'}

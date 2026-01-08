@@ -26,8 +26,10 @@
 	const pastDate = new Date('2020-01-01T00:00:00');
 
 	// State for interactive demo
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let completionCount = $state(0);
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	function handleComplete() {
 		completionCount++;
 	}

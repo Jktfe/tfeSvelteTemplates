@@ -90,7 +90,7 @@
         Each card maintains visual continuity during the transition.
       </p>
 
-      {#each data.expandingCards as card}
+      {#each data.expandingCards as card (card.heading)}
         <div class="demo-container-tall">
           <ExpandingCard
             imageSrc={card.imageSrc}
@@ -111,7 +111,7 @@
   let { data } = $props();
 </script>
 
-{#each data.expandingCards as card}
+{#each data.expandingCards as card (card.heading)}
   <ExpandingCard
     imageSrc={card.imageSrc}
     imageAlt={card.imageAlt}

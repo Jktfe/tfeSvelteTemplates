@@ -126,7 +126,7 @@ ${'<'}/script>
 
 		<h3>Load from JSON</h3>
 		<div class="code-block">
-			<pre><code>{`<ExplainerCanvas src="/data/canvas.json" />`}</code></pre>
+			<pre><code>&lt;ExplainerCanvas src="/data/canvas.json" /&gt;</code></pre>
 		</div>
 
 		<h3>Custom Async Loader</h3>

@@ -14,8 +14,7 @@
  * ============================================================
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/svelte';
+import { describe, it, expect } from 'vitest';
 import type { ExplainerCard, ExplainerCanvasData, ExplainerPosition } from '$lib/types';
 
 // Import utility functions for direct testing

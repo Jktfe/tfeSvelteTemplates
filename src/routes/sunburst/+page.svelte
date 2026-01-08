@@ -195,7 +195,7 @@ ${'<'}/script>
 		</p>
 
 		<div class="scheme-switcher">
-			{#each Object.keys(colorSchemes) as scheme}
+			{#each Object.keys(colorSchemes) as scheme (scheme)}
 				<button
 					class="scheme-button"
 					class:active={selectedScheme === scheme}

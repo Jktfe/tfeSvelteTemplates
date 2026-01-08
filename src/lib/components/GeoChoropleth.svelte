@@ -46,12 +46,14 @@
 	 * @component GeoChoropleth
 	 */
 
+	import { SvelteMap } from 'svelte/reactivity';
 	import { Chart, GeoContext, GeoPath, Svg } from 'layerchart';
 	import { geoMercator } from 'd3-geo';
 	import { scaleSequential, scaleLinear } from 'd3-scale';
 	import { interpolateBlues, interpolateOrRd } from 'd3-scale-chromatic';
 	import type { GeoRegionProperties, GeoRegionData, GeoColorScale } from '$lib/types';
 	import { GEO_COLOR_SCALES } from '$lib/constants';
+	import type { GeoJSON } from 'geojson';
 
 	// Props interface inline to avoid import issues
 	interface Props {
@@ -89,7 +91,7 @@
 
 	// Create a lookup map from regionId to value
 	const dataLookup = $derived(() => {
-		const map = new Map<string, GeoRegionData>();
+		const map = new SvelteMap<string, GeoRegionData>();
 		data.forEach((d) => map.set(d.regionId, d));
 		return map;
 	});
@@ -252,7 +254,7 @@
 	{#if showLegend && data.length > 0}
 		<div class="legend">
 			<div class="legend-gradient">
-				{#each legendItems() as item}
+				{#each legendItems() as item (item.value)}
 					<div
 						class="legend-color"
 						style="background-color: {item.color}"

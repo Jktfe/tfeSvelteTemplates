@@ -23,7 +23,7 @@
  * ============================================================
  */
 
-import { render, screen } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 import AnimatedBeam from './AnimatedBeam.svelte';
 

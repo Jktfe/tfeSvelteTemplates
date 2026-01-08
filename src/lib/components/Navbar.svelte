@@ -62,7 +62,8 @@
 	// =========================================================================
 
 	import { untrack } from 'svelte';
-	import type { NavbarProps, MenuCategory } from '$lib/types';
+	import { SvelteSet } from 'svelte/reactivity';
+	import type { NavbarProps } from '$lib/types';
 	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
 	import { lockScroll } from '$lib/scrollLock';
 
@@ -74,6 +75,7 @@
 	let {
 		menuCategories = [],      // [NTL] Navigation items grouped by category
 		menuItems = [],           // [NTL] Legacy flat list (for backwards compatibility)
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		currentPageTitle = 'Home', // [NTL] Shows which page you're on
 		logoIcon = '⚡',          // [NTL] The emoji/icon next to the logo
 		logoText = 'Svelte Templates', // [NTL] The text in the logo
@@ -89,7 +91,7 @@
 	// =========================================================================
 
 	// [CR] Using a Set for O(1) lookup performance when checking expanded state
-	let expandedCategories = $state<Set<string>>(new Set());
+	let expandedCategories: SvelteSet<string> = new SvelteSet();
 
 	// [CR] Auto-expand the category containing the active page on initial render
 	// [NTL] When the page loads, we automatically open the section that contains
@@ -104,7 +106,7 @@
 			// [NTL] This prevents the effect from running forever in a loop
 			untrack(() => {
 				expandedCategories.add(activeCategory.name);
-				expandedCategories = new Set(expandedCategories);
+				expandedCategories = new SvelteSet(expandedCategories);
 			});
 		}
 	});
@@ -117,7 +119,7 @@
 			expandedCategories.add(categoryName);
 		}
 		// [CR] Create new Set to trigger Svelte 5 reactivity (Sets are reference-compared)
-		expandedCategories = new Set(expandedCategories);
+		expandedCategories = new SvelteSet(expandedCategories);
 	}
 
 	// [CR] Helper function for checking expansion state
@@ -341,7 +343,7 @@
 <!-- Left Panel Menu -->
 <!-- Focus trap and element-scoped keyboard handling for accessibility -->
 <!-- tabindex="-1" allows programmatic focus without being in tab order when closed -->
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions - Intentional: nav needs keyboard handling for escape key and focus trap (WCAG 2.1.1, 2.4.3) -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <nav
 	id="panel-menu"
 	class={panelClass}
@@ -354,7 +356,7 @@
 		{#if menuCategories.length > 0}
 			<!-- Categorised navigation (preferred) -->
 			<div class="panel-categories">
-				{#each menuCategories as category, categoryIndex}
+				{#each menuCategories as category, categoryIndex (category.name)}
 					{@const isExpanded = isCategoryExpanded(category.name)}
 					{@const hasActiveItem = category.items.some((item) => item.active)}
 					{@const isSingleItem = category.items.length === 1}
@@ -409,7 +411,7 @@
 									id="category-{category.name.replace(/\s+/g, '-').toLowerCase()}"
 									class="panel-category-items"
 								>
-									{#each category.items as item, itemIndex}
+									{#each category.items as item, itemIndex (item.href)}
 										<li class="panel-menu-item" style="--item-index: {itemIndex}">
 											<a
 												href={item.href}
@@ -437,7 +439,7 @@
 		{:else if menuItems && menuItems.length > 0}
 			<!-- Legacy flat menu (for backwards compatibility) -->
 			<ul class="panel-menu">
-				{#each menuItems as item, index}
+				{#each menuItems as item, index (item.href)}
 					<li class="panel-menu-item" style="--item-index: {index}">
 						<a
 							href={item.href}

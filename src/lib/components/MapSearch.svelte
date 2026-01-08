@@ -49,7 +49,7 @@
   @component
 -->
 <script lang="ts">
-	import type { MapSearchProps, LatLng, GeoSearchResult } from '$lib/types';
+	import type { MapSearchProps, GeoSearchResult } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
 	import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 
@@ -398,7 +398,6 @@
 		{#if isDropdownOpen && searchResults.length > 0}
 			<ul id="search-results" class="search-results" role="listbox" aria-label="Search results">
 				{#each searchResults as result, index (result.displayName)}
-					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 					<li
 						role="option"
 						class="search-result-item"
@@ -406,6 +405,12 @@
 						aria-selected={index === highlightedIndex}
 						onmouseenter={() => (highlightedIndex = index)}
 						onclick={() => selectResult(result)}
+						onkeydown={(e: KeyboardEvent) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								selectResult(result);
+							}
+						}}
 					>
 						<svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />

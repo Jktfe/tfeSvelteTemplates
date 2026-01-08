@@ -21,7 +21,7 @@
  * ============================================================
  */
 
-import { render, screen, fireEvent } from '@testing-library/svelte';
+import { render, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import DomeGallery from './DomeGallery.svelte';
 

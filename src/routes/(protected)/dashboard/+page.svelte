@@ -17,6 +17,7 @@
 	import { SignedIn, UserButton } from 'svelte-clerk';
 	import { useClerkContext } from 'svelte-clerk/client';
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { data } = $props();
 
 	// Access Clerk context for user information
@@ -97,13 +98,13 @@
 					in, you would have been redirected to the sign-in page.
 				</p>
 				<pre class="code-block">// src/routes/(protected)/+layout.server.ts
-export const load = async ({'{'} locals, url {'}'}) => {'{'}
+export const load = async ({'{'} locals, url }) => {'{'}
   const auth = locals.auth();
   if (!auth?.userId) {'{'}
-    throw redirect(303, `/auth/sign-in?redirect_url=${'{'}url.pathname{'}'}`);
-  {'}'}
-  return {'{'} userId: auth.userId {'}'};
-{'}'}</pre>
+    throw redirect(303, `/auth/sign-in?redirect_url=${'{'}url.pathname}`);
+  }
+  return {'{'} userId: auth.userId };
+}</pre>
 			</div>
 		</section>
 	</SignedIn>

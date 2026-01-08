@@ -606,7 +606,6 @@
 		<g class="arcs">
 			{#each visibleNodes as node (node.id)}
 				{@const path = getArcPath(node, cx, cy, maxRadius)}
-				{@const labelInfo = getLabelInfo(node, cx, cy, maxRadius)}
 				{@const hasChildren = node.children && node.children.length > 0}
 
 				{#if path}

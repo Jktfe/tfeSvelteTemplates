@@ -70,8 +70,8 @@
 	import { animate, stagger } from 'animejs';
 	import type { TimelineProps, TimelineEvent } from '$lib/types';
 
-	// [CR] Extend base props with Svelte 5 patterns
-	interface Props extends TimelineProps {}
+	// [CR] Use base props type directly (no need for empty extending interface)
+	type Props = TimelineProps;
 
 	// [CR] Destructure props with sensible defaults using Svelte 5 $props() rune
 	let {
@@ -333,6 +333,7 @@
 		{@const isClickable = !!onEventClick || !!event.href}
 		{@const alignClass = getAlignmentClass(index)}
 
+		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 		<div
 			class="timeline-item {alignClass}"
 			class:timeline-item--completed={event.completed}

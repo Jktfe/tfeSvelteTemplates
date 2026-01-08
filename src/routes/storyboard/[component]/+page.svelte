@@ -78,7 +78,7 @@
 			{#if availableStoryboards.length > 0}
 				<h2>Available Storyboards</h2>
 				<ul class="storyboard-list">
-					{#each availableStoryboards as name}
+					{#each availableStoryboards as name (name)}
 						<li>
 							<a href="/storyboard/{name}">{name}</a>
 						</li>

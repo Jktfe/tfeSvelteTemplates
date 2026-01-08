@@ -498,7 +498,7 @@
 	<div class="control-panel">
 		<!-- Profile Selector -->
 		<div class="profile-selector" role="radiogroup" aria-label="Travel mode">
-			{#each ['driving', 'cycling', 'walking'] as p}
+			{#each ['driving', 'cycling', 'walking'] as p (p)}
 				<button
 					type="button"
 					class="profile-btn"
@@ -508,6 +508,7 @@
 					title={p.charAt(0).toUpperCase() + p.slice(1)}
 				>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						{@html getProfileIcon(p as RoutingProfile)}
 					</svg>
 				</button>
@@ -589,7 +590,7 @@
 
 			{#if instructionsExpanded}
 				<div class="instructions-list">
-					{#each currentRoute.steps as step, i}
+					{#each currentRoute.steps as step, i (i)}
 						<div class="instruction-item">
 							<span class="step-number">{i + 1}</span>
 							<div class="step-content">

@@ -12,5 +12,11 @@
 		"moduleResolution": "bundler",
 		"types": ["vitest/globals", "@testing-library/jest-dom"]
 	},
-	"include": ["vitest.d.ts", "src/**/*", ".svelte-kit/ambient.d.ts"]
+	"include": [
+		"vitest.d.ts",
+		"vitest.setup.ts",
+		"src/**/*",
+		"tests/**/*",
+		".svelte-kit/ambient.d.ts"
+	]
 }

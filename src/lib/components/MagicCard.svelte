@@ -120,7 +120,6 @@
 
 <!-- [CR] Main card container with mouse event listeners -->
 <!-- [NTL] This div is like a stage - it watches where your mouse goes and tells the spotlight! -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
 	onmouseenter={handleMouseEnter}
 	onmousemove={handleMouseMove}

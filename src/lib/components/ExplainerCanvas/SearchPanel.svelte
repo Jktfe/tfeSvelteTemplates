@@ -149,13 +149,18 @@
 					</li>
 				{:else}
 					{#each results as result, index (result.card.id)}
-						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<li
 							class="search-result"
 							class:selected={index === selectedIndex}
 							role="option"
 							aria-selected={index === selectedIndex}
 							onclick={() => handleResultClick(result)}
+							onkeydown={(e: KeyboardEvent) => {
+								if (e.key === 'Enter' || e.key === ' ') {
+									e.preventDefault();
+									handleResultClick(result);
+								}
+							}}
 						>
 							<div class="result-content">
 								<div class="result-title">{result.card.title}</div>

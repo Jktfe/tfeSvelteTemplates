@@ -124,6 +124,7 @@ export function forceUnlockAll(): void {
  * </div>
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export function scrollLockAction(_node: HTMLElement): { destroy: () => void } {
 	const unlock = lockScroll();
 

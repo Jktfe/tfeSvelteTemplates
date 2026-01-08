@@ -21,7 +21,7 @@
  */
 
 import { render, screen, fireEvent } from '@testing-library/svelte';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import FolderFiles from './FolderFiles.svelte';
 import type { Folder, FileItem } from '$lib/types';
 

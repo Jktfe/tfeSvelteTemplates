@@ -8,7 +8,7 @@
 	 * @component
 	 */
 
-	import type { ExplainerCard, ExplainerTooltip } from '$lib/types';
+	import type { ExplainerCard } from '$lib/types';
 	import CardContent from './CardContent.svelte';
 
 	interface BreadcrumbItem {
@@ -102,7 +102,7 @@
 			{#if breadcrumbPath.length > 0}
 				<div class="header-path">
 					{canvasTitle}
-					{#each breadcrumbPath.slice(0, -1) as item}
+					{#each breadcrumbPath.slice(0, -1) as item (item.title)}
 						<span class="path-separator">›</span>
 						{item.title}
 					{/each}
@@ -167,7 +167,7 @@
 							<nav class="card-links" aria-label="Related cards">
 								<span class="links-label">Related:</span>
 								<div class="links-list">
-									{#each card.links as linkId}
+									{#each card.links as linkId (linkId)}
 										<button
 											type="button"
 											class="link-pill"

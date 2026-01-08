@@ -55,7 +55,7 @@
 <script lang="ts">
 	// [CR] SVAR Grid imports - the heavy-lifting library
 	import { Grid, Willow, WillowDark } from '@svar-ui/svelte-grid';
-	import type { DataGridAdvancedProps, Employee, DataGridColumn } from '$lib/types';
+	import type { DataGridAdvancedProps, DataGridColumn } from '$lib/types';
 	import { sanitizeClassName } from '$lib/dataGridFormatters';
 	import {
 		DEPARTMENT_OPTIONS_GRID,

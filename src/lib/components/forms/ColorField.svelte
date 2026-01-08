@@ -94,7 +94,7 @@
 		<!-- Preset Colours -->
 		{#if showPresets && presetColors.length > 0}
 			<div class="color-presets" role="group" aria-label="Preset colours">
-				{#each presetColors as preset, index}
+				{#each presetColors as preset (preset)}
 					<button
 						type="button"
 						class="preset-swatch"

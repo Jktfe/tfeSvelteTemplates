@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteDate } from 'svelte/reactivity';
 	import CalendarHeatmap from '$lib/components/CalendarHeatmap.svelte';
 	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 	import type { PageData } from './$types';
@@ -35,9 +36,9 @@
 	 */
 	const filteredData = $derived(() => {
 		const days = dateRangePresets[selectedRange].days;
-		const startDate = new Date();
+		const startDate = new SvelteDate();
 		startDate.setDate(startDate.getDate() - days);
-		return data.calendarData.filter((d) => new Date(d.date) >= startDate);
+		return data.calendarData.filter((d) => new SvelteDate(d.date) >= startDate);
 	});
 
 	/**
@@ -45,7 +46,7 @@
 	 */
 	const rangeStartDate = $derived(() => {
 		const days = dateRangePresets[selectedRange].days;
-		const date = new Date();
+		const date = new SvelteDate();
 		date.setDate(date.getDate() - days);
 		return date;
 	});
@@ -183,7 +184,7 @@ ${'<'}/script>
 		</p>
 
 		<div class="scheme-switcher">
-			{#each Object.entries(colorSchemes) as [key, scheme]}
+			{#each Object.entries(colorSchemes) as [key, scheme] (key)}
 				<button
 					class="scheme-button"
 					class:active={selectedScheme === key}
@@ -251,7 +252,7 @@ ${'<'}/script>
 		</p>
 
 		<div class="range-filter">
-			{#each Object.entries(dateRangePresets) as [key, preset]}
+			{#each Object.entries(dateRangePresets) as [key, preset] (key)}
 				<button
 					class="range-button"
 					class:active={selectedRange === key}
@@ -263,7 +264,7 @@ ${'<'}/script>
 		</div>
 
 		<div class="example-demo">
-			<CalendarHeatmap data={filteredData()} startDate={rangeStartDate()} endDate={new Date()} />
+			<CalendarHeatmap data={filteredData()} startDate={rangeStartDate()} endDate={new SvelteDate()} />
 		</div>
 
 		<div class="code-block">

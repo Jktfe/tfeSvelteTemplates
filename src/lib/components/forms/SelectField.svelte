@@ -75,7 +75,7 @@
 			{/if}
 
 			<!-- Options list -->
-			{#each options as option}
+			{#each options as option (option.value)}
 				<option value={option.value} disabled={option.disabled} selected={value === option.value}>
 					{option.label}
 				</option>

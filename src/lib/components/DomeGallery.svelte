@@ -174,6 +174,7 @@
 	let startPos: { x: number; y: number } | null = null; // Mouse position at drag start
 	let dragging = false; // Is user currently dragging?
 	let moved = false; // Has drag exceeded threshold?
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let lastDragEndTime = 0; // Timestamp of last drag end (prevents click after drag)
 	let inertiaRAF: number | null = null; // requestAnimationFrame ID for cancellation
 	let opening = false; // Is image enlarging animation in progress?
@@ -658,6 +659,7 @@
 		const img = document.createElement('img');
 		img.src = rawSrc;
 		overlay.appendChild(img);
+		// eslint-disable-next-line svelte/no-dom-manipulating
 		viewerEl?.appendChild(overlay);
 
 		// [CR] Calculate initial transform (from tile position to frame position)
@@ -801,6 +803,7 @@
 
 		// [CR] Swap overlays and trigger closing animation
 		overlay.remove();
+		// eslint-disable-next-line svelte/no-dom-manipulating
 		rootEl.appendChild(animatingOverlay);
 		void animatingOverlay.getBoundingClientRect(); // Force layout
 
@@ -1034,7 +1037,6 @@
 		: 'none'};"
 >
 	<!-- [CR] Main interactive area - captures all pointer events for drag rotation -->
-	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<main
 		bind:this={mainEl}
 		class="sphere-main"
@@ -1062,7 +1064,6 @@
 					>
 						<!-- [CR] Clickable image tile - button role for accessibility -->
 						<!-- [NTL] Each photo you can click on - tap or click to enlarge! -->
-						<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 						<div
 							class="item__image"
 							role="button"

@@ -46,7 +46,7 @@
 
 <script lang="ts">
 	// [CR] Type imports for type-safe props
-	import type { AnimatedBeamProps, BeamNode, BeamConnection } from '$lib/types';
+	import type { AnimatedBeamProps } from '$lib/types';
 	// [CR] Default data for demo purposes
 	import {
 		DEFAULT_BEAM_NODES_UNI,
@@ -123,7 +123,7 @@
 
 		<!-- Beams layer (rendered behind nodes) -->
 		<g class="beams">
-			{#each beamPaths as path, i}
+			{#each beamPaths as path (`${path.x1}-${path.y1}-${path.x2}-${path.y2}`)}
 				<line
 					x1={path.x1}
 					y1={path.y1}
@@ -140,7 +140,7 @@
 
 		<!-- Nodes layer (rendered on top of beams) -->
 		<g class="nodes">
-			{#each nodes as node}
+			{#each nodes as node (node.id)}
 				<circle
 					cx={node.x}
 					cy={node.y}
