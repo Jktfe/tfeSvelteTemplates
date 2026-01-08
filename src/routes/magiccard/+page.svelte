@@ -75,7 +75,7 @@
 			</p>
 
 			<div class="cards-grid">
-				{#each products as product}
+				{#each products as product (product.title)}
 					<MagicCard gradientColor="#146ef5" gradientOpacity={0.15}>
 						<div class="product-card">
 							<div class="product-icon">{product.icon}</div>

@@ -79,6 +79,7 @@
 	// [CR] ============================================================
 
 	// [CR] Container and content dimensions for calculating scroll speed
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let containerWidth = $state(0);
 	let contentWidth = $state(0);
 
@@ -346,8 +347,8 @@
 	// [CR] Restart animation when direction or duration changes
 	$effect(() => {
 		if (!isDragging && isVisible) {
-			duration;
-			currentDirection;
+			void duration;
+			void currentDirection;
 			stopAnimation();
 			startAnimation();
 		}
@@ -394,6 +395,7 @@
 			{/if}
 		</div>
 		<!-- [CR] Additional copies for seamless infinite loop -->
+		<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 		{#each { length: actualRepeat - 1 } as _, i (i)}
 			<div
 				class={cn('flex shrink-0 [gap:1rem]', {

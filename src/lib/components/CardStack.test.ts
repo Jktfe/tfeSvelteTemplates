@@ -21,7 +21,7 @@
  */
 
 import { render, screen, fireEvent } from '@testing-library/svelte';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import CardStack from './CardStack.svelte';
 
 // Sample cards for testing

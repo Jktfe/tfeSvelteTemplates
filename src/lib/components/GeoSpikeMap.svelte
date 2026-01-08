@@ -52,6 +52,7 @@
 	import { geoMercator } from 'd3-geo';
 	import { scaleLinear } from 'd3-scale';
 	import type { GeoDataPoint } from '$lib/types';
+	import type { GeoJSON } from 'geojson';
 
 	// Props interface
 	interface Props {
@@ -201,7 +202,7 @@
 			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()} let:projection>
 				<!-- Background geography if provided -->
 				{#if geojson}
-					{#each bgFeatures as feature}
+					{#each bgFeatures as feature, i (feature.id ?? feature.properties?.id ?? i)}
 						<GeoPath
 							geojson={feature}
 							fill="#e5e7eb"
@@ -218,13 +219,21 @@
 					{@const projected = projection?.([point.long, point.lat])}
 					{@const x = projected?.[0] ?? 0}
 					{@const y = projected?.[1] ?? 0}
-					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 					<g
 						class="spike-group"
 						transform="translate({x}, {y})"
+						role="button"
+						tabindex="0"
+						aria-label={`${point.name}: ${point.value}`}
 						onpointermove={(e: PointerEvent) => handleMouseMove(e, point)}
 						onpointerleave={handleMouseLeave}
 						onclick={() => handleClick(point)}
+						onkeydown={(e: KeyboardEvent) => {
+							if (e.key === 'Enter' || e.key === ' ') {
+								e.preventDefault();
+								handleClick(point);
+							}
+						}}
 					>
 						<!-- Shadow/base -->
 						<ellipse

@@ -68,7 +68,6 @@
 		SpeedDialProps,
 		SpeedDialAction,
 		SpeedDialDirection,
-		SpeedDialType
 	} from '$lib/types';
 	// [CR] DOMPurify wrapper for XSS-safe SVG rendering
 	import { sanitizeSVG } from '$lib/utils';
@@ -360,7 +359,7 @@
 >
 	<!-- Action items container -->
 	<div class="speed-dial-actions" class:is-visible={isOpen}>
-		{#each actions as action, index}
+		{#each actions as action, index (action.id)}
 			<button
 				class="speed-dial-action {action.class || ''}"
 				class:is-disabled={action.disabled}
@@ -374,6 +373,7 @@
 				<!-- Icon: Support for emoji or sanitized SVG -->
 				<span class="action-icon" aria-hidden="true">
 					{#if isHtmlIcon(action.icon)}
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						{@html getSafeIcon(action.icon)}
 					{:else}
 						{action.icon}
@@ -404,6 +404,7 @@
 			<!-- Custom icon (sanitized) -->
 			<span class="button-icon" aria-hidden="true">
 				{#if isHtmlIcon(buttonIcon)}
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html getSafeIcon(buttonIcon)}
 				{:else}
 					{buttonIcon}

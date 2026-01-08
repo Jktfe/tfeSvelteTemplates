@@ -53,6 +53,7 @@
   @component
 -->
 <script lang="ts">
+	import { SvelteMap } from 'svelte/reactivity';
 	import type { MapLiveProps, MapMarker, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
 	import { escapeHtml } from '$lib/htmlUtils';
@@ -100,17 +101,20 @@
 	let isAddMode = $state(true);
 
 	/** Map of marker IDs to Leaflet markers */
-	let markerMap = $state<Map<number, LeafletMarker>>(new Map());
+	let markerMap: SvelteMap<number, LeafletMarker> = new SvelteMap();
 
 	/** Counter for generating unique marker IDs */
 	let nextMarkerId = $state(1);
 
 	/** Currently editing marker (for popup form) */
-	let editingMarker = $state<MapMarker | null>(null);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let _editingMarker = $state<MapMarker | null>(null);
 
 	/** Edit form values */
-	let editTitle = $state('');
-	let editDescription = $state('');
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let _editTitle = $state('');
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let _editDescription = $state('');
 
 	// ==================================================
 	// DERIVED STATE
@@ -188,7 +192,7 @@
 				mapInstance = undefined;
 				map = undefined;
 				markerLayer = undefined;
-				markerMap = new Map();
+				markerMap = new SvelteMap();
 			}
 		};
 	});
@@ -388,7 +392,7 @@
 		}
 		markers = [];
 		markerLayer?.clearLayers();
-		markerMap = new Map();
+		markerMap = new SvelteMap();
 	}
 
 	/**

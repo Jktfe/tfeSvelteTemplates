@@ -65,6 +65,7 @@
 -->
 
 <script lang="ts">
+	import { SvelteMap, SvelteDate } from 'svelte/reactivity';
 	// [CR] Type import for props interface
 	import type { CalendarHeatmapProps } from '$lib/types';
 
@@ -238,9 +239,6 @@
 	 * [NTL] JavaScript uses 0 for Sunday, which is handy because our calendar
 	 *       starts each column on Sunday just like GitHub's!
 	 */
-	function getDayOfWeek(date: Date): number {
-		return date.getDay();
-	}
 
 	/**
 	 * [CR] Get abbreviated month name for the month label row.
@@ -262,8 +260,8 @@
 	 * [NTL] If you don't specify dates, we show the last 365 days - just like GitHub!
 	 */
 	let dateRange = $derived(() => {
-		const end = endDate || new Date();
-		const start = startDate || new Date(end.getTime() - 365 * 24 * 60 * 60 * 1000);
+		const end = endDate || new SvelteDate();
+		const start = startDate || new SvelteDate(end.getTime() - 365 * 24 * 60 * 60 * 1000);
 		return { start, end };
 	});
 
@@ -273,7 +271,7 @@
 	 *       a lookup table. Think of it like an index in a book - much faster!
 	 */
 	let dataMap = $derived(() => {
-		const map = new Map<string, number>();
+		const map = new SvelteMap<string, number>();
 		for (const item of data) {
 			map.set(item.date, item.value);
 		}
@@ -314,19 +312,19 @@
 		const weeks: Array<Array<{ date: Date; value: number } | null>> = [];
 
 		// Find first Sunday on or before start date
-		const firstDay = new Date(start);
+		const firstDay = new SvelteDate(start);
 		const dayOffset = firstDay.getDay(); // 0 = Sunday
 		firstDay.setDate(firstDay.getDate() - dayOffset);
 
 		// Generate all weeks until we pass end date
-		let currentDate = new Date(firstDay);
+		let currentDate = new SvelteDate(firstDay);
 		while (currentDate <= end || weeks.length === 0 || weeks[weeks.length - 1].length < 7) {
 			// Start new week
 			const week: Array<{ date: Date; value: number } | null> = [];
 
 			// Generate 7 days for this week
 			for (let dayIndex = 0; dayIndex < 7; dayIndex++) {
-				const cellDate = new Date(currentDate);
+				const cellDate = new SvelteDate(currentDate);
 
 				// Only include cells within start-end range
 				if (cellDate >= start && cellDate <= end) {
@@ -506,11 +504,12 @@
 				newDayIndex = Math.max(dayIndex - 1, 0);
 				break;
 			case 'Enter':
-			case ' ':
+			case ' ': {
 				event.preventDefault();
 				const cell = calendarWeeks()[weekIndex][dayIndex];
 				if (cell) handleCellClick(cell);
 				return;
+			}
 			default:
 				return;
 		}
@@ -538,14 +537,14 @@
 	>
 		<!-- Month Labels -->
 		{#if showMonthLabels}
-			{#each monthLabels() as { label, x }}
+			{#each monthLabels() as { label, x } (label)}
 				<text x={x} y={MONTH_LABEL_HEIGHT - 5} class="month-label">{label}</text>
 			{/each}
 		{/if}
 
 		<!-- Weekday Labels -->
 		{#if showWeekLabels}
-			{#each WEEKDAY_LABELS as label, i}
+			{#each WEEKDAY_LABELS as label, i (label)}
 				<text
 					x={WEEK_LABEL_WIDTH - 5}
 					y={MONTH_LABEL_HEIGHT + WEEKDAY_INDICES[i] * (cellSize + cellGap) + cellSize / 2}
@@ -560,8 +559,8 @@
 
 		<!-- Calendar Grid -->
 		<g transform="translate({WEEK_LABEL_WIDTH}, {MONTH_LABEL_HEIGHT})">
-			{#each calendarWeeks() as week, weekIndex}
-				{#each week as cell, dayIndex}
+			{#each calendarWeeks() as week, weekIndex (weekIndex)}
+				{#each week as cell, dayIndex (`${weekIndex}-${dayIndex}`)}
 					{#if cell}
 						{@const x = weekIndex * (cellSize + cellGap)}
 						{@const y = dayIndex * (cellSize + cellGap)}
@@ -607,7 +606,7 @@
 	{#if showLegend}
 		<div class="legend">
 			<span class="legend-label">Less</span>
-			{#each colorPalette() as color}
+			{#each colorPalette() as color (color)}
 				<div class="legend-cell" style:background-color={color}></div>
 			{/each}
 			<span class="legend-label">More</span>

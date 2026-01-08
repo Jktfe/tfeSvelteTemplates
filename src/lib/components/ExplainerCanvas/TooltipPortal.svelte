@@ -47,6 +47,7 @@
 		aria-live="polite"
 	>
 		<div class="tooltip-content">
+			<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 			{@html renderedContent}
 		</div>
 		<div class="tooltip-arrow"></div>

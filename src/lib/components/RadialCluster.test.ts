@@ -26,7 +26,7 @@
  * ============================================================
  */
 
-import { render, screen } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 import RadialCluster from './RadialCluster.svelte';
 
@@ -51,6 +51,7 @@ const sampleData = {
 };
 
 // Simple single-level data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const simpleData = {
 	name: 'Root',
 	children: [

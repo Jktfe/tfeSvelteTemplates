@@ -104,7 +104,7 @@
 
 				<div class="demo-container">
 					<Marquee pauseOnHover={true} duration={60}>
-						{#each testimonials as testimonial}
+						{#each testimonials as testimonial (testimonial.id)}
 							<div class="testimonial-card">
 								<div class="avatar">{testimonial.avatar}</div>
 								<p class="quote">"{testimonial.quote}"</p>
@@ -134,7 +134,7 @@
 </script>
 
 <Marquee pauseOnHover={true} duration={60}>
-  {#each testimonials as testimonial}
+  {#each testimonials as testimonial (testimonial.author)}
     <div class="testimonial-card">
       <p>{testimonial.quote}</p>
       <strong>{testimonial.name}</strong>
@@ -159,7 +159,7 @@
 
 				<div class="demo-container">
 					<Marquee pauseOnHover={true} duration={20}>
-						{#each companies as company}
+						{#each companies as company (company)}
 							<div class="logo-card">{company}</div>
 						{/each}
 					</Marquee>
@@ -169,7 +169,7 @@
 					<summary>View Code Example</summary>
 					<pre><code
 							>{`<Marquee pauseOnHover={true} duration={20}>
-  {#each companies as company}
+  {#each companies as company (company.name)}
     <div class="logo-card">{company}</div>
   {/each}
 </Marquee>`}</code
@@ -190,7 +190,7 @@
 
 				<div class="demo-container">
 					<Marquee pauseOnHover={true} reverse={true} duration={40}>
-						{#each features as feature}
+						{#each features as feature (feature)}
 							<div class="feature-badge">{feature}</div>
 						{/each}
 					</Marquee>
@@ -200,7 +200,7 @@
 					<summary>View Code Example</summary>
 					<pre><code
 							>{`<Marquee pauseOnHover={true} reverse={true} duration={40}>
-  {#each features as feature}
+  {#each features as feature (feature.name)}
     <div class="feature-badge">{feature}</div>
   {/each}
 </Marquee>`}</code
@@ -240,7 +240,7 @@
 
 				<div class="demo-container">
 					<MarqueeDraggable duration={30} dragMomentum={true}>
-						{#each products as product}
+						{#each products as product (product.name)}
 							<div class="product-card">
 								<div class="product-emoji">{product.emoji}</div>
 								<p class="product-name">{product.name}</p>
@@ -263,7 +263,7 @@
 </script>
 
 <MarqueeDraggable duration={30} dragMomentum={true}>
-  {#each products as product}
+  {#each products as product (product.name)}
     <div class="product-card">
       <div class="product-emoji">{product.emoji}</div>
       <p class="product-name">{product.name}</p>
@@ -287,7 +287,7 @@
 
 				<div class="demo-container">
 					<MarqueeDraggable duration={50} dragMomentum={true}>
-						{#each testimonialsInteractive as testimonial}
+						{#each testimonialsInteractive as testimonial (testimonial.id)}
 							<div class="testimonial-card">
 								<div class="avatar">{testimonial.avatar}</div>
 								<p class="quote">"{testimonial.quote}"</p>
@@ -304,7 +304,7 @@
 					<summary>View Code Example</summary>
 					<pre><code
 							>{`<MarqueeDraggable duration={50} dragMomentum={true}>
-  {#each testimonials as testimonial}
+  {#each testimonials as testimonial (testimonial.author)}
     <div class="testimonial-card">
       <div class="avatar">{testimonial.avatar}</div>
       <p class="quote">"{testimonial.quote}"</p>
@@ -332,7 +332,7 @@
 
 				<div class="demo-container">
 					<MarqueeDraggable duration={20} reverse={true} dragMomentum={true}>
-						{#each featuresInteractive as feature}
+						{#each featuresInteractive as feature (feature)}
 							<div class="feature-badge interactive">{feature}</div>
 						{/each}
 					</MarqueeDraggable>
@@ -342,7 +342,7 @@
 					<summary>View Code Example</summary>
 					<pre><code
 							>{`<MarqueeDraggable duration={20} reverse={true} dragMomentum={true}>
-  {#each features as feature}
+  {#each features as feature (feature.name)}
     <div class="feature-badge">{feature}</div>
   {/each}
 </MarqueeDraggable>`}</code

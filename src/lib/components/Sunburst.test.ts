@@ -27,7 +27,7 @@
  * ============================================================
  */
 
-import { render, screen } from '@testing-library/svelte';
+import { render } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 import Sunburst from './Sunburst.svelte';
 
@@ -55,6 +55,7 @@ const sampleData = {
 };
 
 // Simple single-level data
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const simpleData = {
 	id: 'root',
 	name: 'Root',
@@ -185,7 +186,6 @@ describe('Sunburst', () => {
 		const { container } = render(Sunburst, {
 			props: { data: sampleData }
 		});
-		const labels = container.querySelectorAll('.label');
 		// Labels may or may not appear depending on arc size
 		// Just check that the labels container exists
 		const labelsGroup = container.querySelector('.labels');

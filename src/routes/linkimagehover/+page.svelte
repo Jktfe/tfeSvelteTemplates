@@ -88,7 +88,7 @@
 
 			<div class="demo-container">
 				<div class="links-grid">
-					{#each cityLinks as link}
+					{#each cityLinks as link (link.href)}
 						<LinkImageHover
 							href={link.href}
 							text={link.text}
@@ -102,7 +102,7 @@
 			<details class="code-block">
 				<summary>View Code Example</summary>
 				<pre><code>{`<div class="grid">
-  {#each cityLinks as link}
+  {#each cityLinks as link (link.href)}
     <LinkImageHover
       href={link.href}
       text={link.text}
@@ -126,7 +126,7 @@
 
 			<div class="demo-container">
 				<div class="links-grid">
-					{#each natureLinks as link}
+					{#each natureLinks as link (link.href)}
 						<LinkImageHover
 							href={link.href}
 							text={link.text}
@@ -140,7 +140,7 @@
 			<details class="code-block">
 				<summary>View Code Example</summary>
 				<pre><code>{`<div class="grid">
-  {#each links as link}
+  {#each links as link (link.href)}
     <LinkImageHover
       href={link.href}
       text={link.text}

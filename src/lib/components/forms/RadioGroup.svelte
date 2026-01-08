@@ -63,7 +63,7 @@
 		aria-required={required}
 		onblur={handleBlur}
 	>
-		{#each options as option, index}
+		{#each options as option, index (option.value)}
 			{@const optionId = `${name}-${index}`}
 			{@const isDisabled = disabled || option.disabled}
 			{@const isChecked = String(value) === String(option.value)}

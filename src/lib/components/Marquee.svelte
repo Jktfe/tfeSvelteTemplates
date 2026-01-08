@@ -161,6 +161,7 @@
 		{/if}
 	</div>
 	<!-- [CR] Additional copies for seamless infinite loop -->
+	<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
 	{#each { length: actualRepeat - 1 } as _, i (i)}
 		<div
 			class={cn('flex shrink-0 justify-around [gap:var(--gap)]', {

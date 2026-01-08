@@ -24,7 +24,9 @@
 	 * Generate IDs for aria associations
 	 */
 	let groupId = $derived(`checkbox-group-${name}`);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let helpId = $derived(`${name}-help`);
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let errorId = $derived(`${name}-error`);
 
 	/**
@@ -86,7 +88,7 @@
 		class:error={hasError}
 		onblur={handleBlur}
 	>
-		{#each options as option, index}
+		{#each options as option, index (option.value)}
 			{@const optionId = `${name}-${index}`}
 			{@const isDisabled = disabled || option.disabled || (isMaxReached && !isChecked(option.value))}
 			{@const checked = isChecked(option.value)}

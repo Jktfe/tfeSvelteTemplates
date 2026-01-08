@@ -390,7 +390,8 @@
 	 * Svelte action to ensure keyboard listener is attached via DOM manipulation
 	 * This provides a fallback if ClerkProvider breaks $effect reactivity
 	 */
-	function ensureKeyboardListener(node: HTMLElement) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function ensureKeyboardListener(_node: HTMLElement) {
 		// Add listener immediately via DOM manipulation as a fallback
 		const existingHandler = handleKeydown;
 		window.addEventListener('keydown', existingHandler);

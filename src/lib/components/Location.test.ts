@@ -17,7 +17,7 @@
  * ============================================================
  */
 
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 
 // Test that components can be imported without errors
 describe('Location - Module Imports', () => {

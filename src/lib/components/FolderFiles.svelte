@@ -37,6 +37,7 @@
 	 */
 
 	// [CR] IMPORTS
+	import { SvelteSet } from 'svelte/reactivity';
 	import type { Folder, FileItem } from '$lib/types';
 	import { lockScroll } from '$lib/scrollLock';
 
@@ -79,7 +80,7 @@
 
 	// [CR] Mobile selection state - Set of selected item IDs for tap-to-select
 	// [NTL] On mobile, you tap items to select them, then use buttons to move
-	let selectedItems = $state<Set<number>>(new Set());
+	let selectedItems: SvelteSet<number> = new SvelteSet();
 
 	// [CR] Mobile preview state - tracks which folder is "previewed" (first tap)
 	// [NTL] On mobile: first tap shows cascade + tooltip, second tap opens folder
@@ -292,14 +293,13 @@
 	 * [NTL] Tap a file card → checkmark appears. Tap again → checkmark gone.
 	 */
 	function toggleSelection(item: FileItem) {
-		const newSet = new Set(selectedItems);
-		if (newSet.has(item.id)) {
-			newSet.delete(item.id);
+		// [CR] SvelteSet is reactive, so mutation triggers updates
+		// [NTL] No need to create new Set, just add/delete directly
+		if (selectedItems.has(item.id)) {
+			selectedItems.delete(item.id);
 		} else {
-			newSet.add(item.id);
+			selectedItems.add(item.id);
 		}
-		// [CR] Must reassign Set to trigger Svelte reactivity
-		selectedItems = newSet;
 	}
 
 	/**
@@ -307,7 +307,8 @@
 	 * [NTL] "Clear" button - uncheck everything
 	 */
 	function clearSelection() {
-		selectedItems = new Set();
+		// [CR] SvelteSet.clear() is reactive
+		selectedItems.clear();
 	}
 
 	/**
@@ -402,8 +403,12 @@
 </script>
 
 <!-- FILING CABINET VIEW (closed state) -->
+<!--
+	Build warning: "onclick needs keyboard handler" is acceptable here
+	Reason: Container div that clears mobile preview on tap/click outside folders
+	Interactive elements (folders) inside have proper keyboard support
+-->
 {#if !openFolder}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
 		class="filing-cabinet-container"
 		role="region"
@@ -517,10 +522,8 @@
 						{/if}
 					</div>
 
-					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<div class="content-grid" role="listbox" aria-label="Selected items list">
 						{#each leftPanelItems as item (item.id)}
-							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div
 								draggable={!isTouchDevice}
 								ondragstart={(e) => !isTouchDevice && handleDragStart(e, item)}
@@ -589,10 +592,8 @@
 						</div>
 					</div>
 
-					<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 					<div class="content-grid" role="listbox" aria-label="All items list">
 						{#each rightPanelItems as item (item.id)}
-							<!-- svelte-ignore a11y_click_events_have_key_events -->
 							<div
 								draggable={!isTouchDevice}
 								ondragstart={(e) => !isTouchDevice && handleDragStart(e, item)}

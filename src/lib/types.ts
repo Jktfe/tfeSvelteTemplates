@@ -750,7 +750,6 @@ export interface DataGridColumn {
  * @property theme - Theme name: 'willow' (light) or 'willowDark' (default: 'willow')
  */
 export interface DataGridAdvancedProps {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	data: any[];
 	columns?: DataGridColumn[];
 	editable?: boolean;
@@ -773,7 +772,6 @@ export interface DataGridAdvancedProps {
  * @property compact - Compact row spacing (default: false)
  */
 export interface DataGridBasicProps {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	data: any[];
 	columns: DataGridColumn[];
 	sortable?: boolean;

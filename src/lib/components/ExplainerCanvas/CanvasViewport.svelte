@@ -99,7 +99,8 @@
 	/**
 	 * Handle panzoom events
 	 */
-	function handlePanzoomChange(e: Event) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function handlePanzoomChange(_e: Event) {
 		if (skipViewportSync || !panzoomInstance) return;
 
 		const pan = panzoomInstance.getPan();
@@ -163,6 +164,7 @@
 	// Sync when viewport prop changes
 	$effect(() => {
 		// Access viewport to track it
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const _ = viewport;
 		syncFromViewport();
 	});

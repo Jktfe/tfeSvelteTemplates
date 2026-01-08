@@ -441,7 +441,7 @@
 			</p>
 
 			<div class="categories-list">
-				{#each categories as category}
+				{#each categories as category (category.name)}
 					<div class="category-card">
 						<h3 class="category-header">
 							<span class="category-icon">{category.icon}</span>

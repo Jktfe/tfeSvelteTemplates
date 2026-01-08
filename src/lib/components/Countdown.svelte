@@ -63,8 +63,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import type { CountdownProps, CountdownUnit, CountdownSegment } from '$lib/types';
 
-	// [CR] Extend base props with Svelte 5 patterns
-	interface Props extends CountdownProps {}
+	// [CR] Use base props type directly (no need for empty extending interface)
+	type Props = CountdownProps;
 
 	// [CR] Destructure props with sensible defaults using Svelte 5 $props() rune
 	// [NTL] These are all the settings you can tweak to customise your countdown!

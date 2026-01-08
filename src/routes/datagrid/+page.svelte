@@ -520,7 +520,7 @@ const columns: DataGridColumn[] = [
       ])
     ${'}'}
   ];
-<\/script>
+</script>
 
 <DataGridBasic ${'{'} data ${'}'} ${'{'} columns ${'}'} />`}</code></pre>
 		</div>
@@ -537,7 +537,7 @@ const columns: DataGridColumn[] = [
       id: 'salary',
       header: 'Salary',
       type: 'number',
-      formatter: (val) => \`£\$\{val.toLocaleString()\}\`
+      formatter: (val) => \`£$\{val.toLocaleString()}\`
     ${'}'}
   ];
 
@@ -545,7 +545,7 @@ const columns: DataGridColumn[] = [
     ${'{'} name: 'John Doe', email: 'john@example.com', salary: 75000 ${'}'},
     // ... more rows
   ];
-<\/script>
+</script>
 
 <DataGridBasic
   ${'{'} data ${'}'}
@@ -563,7 +563,7 @@ const columns: DataGridColumn[] = [
 
   // Auto-generates columns from data structure
   const employees = []; // Your employee data
-<\/script>
+</script>
 
 <DataGridAdvanced
   data=${'{'} employees ${'}'}
@@ -596,7 +596,7 @@ const columns: DataGridColumn[] = [
       return true;
     ${'}'});
   ${'}'});
-<\/script>
+</script>
 
 <DataGridFilters
   departments=${'{'} ['Engineering', 'Sales', 'Marketing'] ${'}'}
@@ -619,7 +619,7 @@ const columns: DataGridColumn[] = [
 	<section class="department-section">
 		<h2>Department Breakdown</h2>
 		<div class="department-grid">
-			{#each Object.entries(data.stats.departmentBreakdown).sort((a, b) => b[1] - a[1]) as [dept, count]}
+			{#each Object.entries(data.stats.departmentBreakdown).sort((a, b) => b[1] - a[1]) as [dept, count] (dept)}
 				<div class="department-card">
 					<div class="department-name">{dept}</div>
 					<div class="department-count">{count} employee{count === 1 ? '' : 's'}</div>

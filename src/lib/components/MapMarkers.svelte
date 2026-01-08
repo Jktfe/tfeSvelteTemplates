@@ -46,6 +46,7 @@
   @component
 -->
 <script lang="ts">
+	import { SvelteMap } from 'svelte/reactivity';
 	import type { MapMarkersProps, MapMarker, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
 	import { escapeHtml } from '$lib/htmlUtils';
@@ -65,7 +66,8 @@
 		/** Map container height in pixels (default: 500) */
 		height = 500,
 		/** Group nearby markers into clusters (default: false) - NOT YET IMPLEMENTED */
-		enableClustering = false,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		enableClustering: _enableClustering = false,
 		/** Show category filter UI (default: true) */
 		showCategories = true,
 		/** Callback when marker is clicked */
@@ -89,7 +91,7 @@
 	let activeCategory = $state<string | null>(null);
 
 	/** Map of marker IDs to Leaflet markers */
-	let markerMap = $state<Map<number, LeafletMarker>>(new Map());
+	let markerMap: SvelteMap<number, LeafletMarker> = new SvelteMap();
 
 	// ==================================================
 	// DERIVED STATE
@@ -199,7 +201,7 @@
 				mapInstance = undefined;
 				map = undefined;
 				markerLayer = undefined;
-				markerMap = new Map();
+				markerMap = new SvelteMap();
 			}
 		};
 	});
@@ -227,7 +229,7 @@
 
 		// Clear existing markers
 		markerLayer.clearLayers();
-		markerMap = new Map();
+		markerMap = new SvelteMap();
 
 		// Add new markers
 		for (const markerData of markersToAdd) {

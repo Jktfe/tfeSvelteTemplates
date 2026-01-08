@@ -99,14 +99,6 @@
 	let isValid = $derived(Object.keys(errors).length === 0);
 
 	/**
-	 * Visible errors - only show for touched fields
-	 * Improves UX by not showing errors before user has attempted input
-	 */
-	let visibleErrors = $derived(
-		Object.fromEntries(Object.entries(errors).filter(([key]) => touched[key]))
-	);
-
-	/**
 	 * Validate a single field
 	 * @param field - Field name to validate
 	 * @param value - Field value
@@ -166,6 +158,7 @@
 	 */
 	$effect(() => {
 		// Re-run validation when any form field changes
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const _ = JSON.stringify(formData);
 		validateForm();
 	});

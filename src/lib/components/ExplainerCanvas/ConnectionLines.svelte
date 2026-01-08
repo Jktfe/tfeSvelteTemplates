@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { SvelteMap, SvelteSet } from 'svelte/reactivity';
 	/**
 	 * Connection Lines Component
 	 *
@@ -29,7 +30,7 @@
 	 * Build a map of card IDs to positions for quick lookup
 	 */
 	function buildPositionMap(cardList: ExplainerCard[]): Map<string, ExplainerPosition> {
-		const map = new Map<string, ExplainerPosition>();
+		const map = new SvelteMap<string, ExplainerPosition>();
 		for (const card of cardList) {
 			map.set(card.id, card.position);
 		}
@@ -55,7 +56,7 @@
 	): ConnectionLine[] {
 		const positionMap = buildPositionMap(cardList);
 		const connections: ConnectionLine[] = [];
-		const seen = new Set<string>();
+		const seen = new SvelteSet<string>();
 
 		for (const card of cardList) {
 			if (!card.links) continue;

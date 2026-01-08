@@ -1,7 +1,8 @@
 <script lang="ts">
-	import type { MenuCategory, MenuItem } from '$lib/types';
+	import type { MenuCategory } from '$lib/types';
 
 	// Example categorised menu for the demo (mirrors the actual app structure)
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const demoCategories: MenuCategory[] = [
 		{
 			name: 'Home',

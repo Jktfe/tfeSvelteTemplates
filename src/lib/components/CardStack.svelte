@@ -94,10 +94,12 @@
 <script lang="ts">
 	// [CR] Type imports for props and layout configuration
 	import type { CardStackProps, CardLayoutConfig, CalculatedCardLayout } from '$lib/types';
+	import { sanitizeHTML } from '$lib/utils';
 
 	// [CR] Props with sensible defaults - dimensions are base values, recalculated at runtime
 	// [NTL] These are the "starter settings" - the maths will adjust them to fit your screen!
-	let { cards = [], cardWidth: baseCardWidth = 300, cardHeight: baseCardHeight = 400, partialRevealSide = 'right', stackDirection = 'ltr' }: CardStackProps & { stackDirection?: 'ltr' | 'rtl' } = $props();
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	let { cards = [], cardWidth: baseCardWidth = 300, cardHeight: baseCardHeight = 400, partialRevealSide: _partialRevealSide = 'right', stackDirection = 'ltr' }: CardStackProps & { stackDirection?: 'ltr' | 'rtl' } = $props();
 
 	// [CR] DOM reference for measuring container width
 	let containerEl = $state<HTMLElement | null>(null);
@@ -114,6 +116,7 @@
 	let touchStartY = $state(0);
 
 	// [CR] SSR-safe reduced motion preference
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let prefersReducedMotion = $state(false);
 
 	/**
@@ -142,7 +145,8 @@
 	// [NTL] - How far cards should rise on hover
 	// [NTL] Cards stay the same size regardless of how many are in the stack!
 	function calculateCardLayout(config: CardLayoutConfig): CalculatedCardLayout {
-		const { containerWidth, cardCount, titleHeight, bodyHeight } = config;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { containerWidth, cardCount, titleHeight, bodyHeight: _bodyHeight } = config;
 
 		// Safety minimums
 		const MIN_HOVER_UP = 30;
@@ -421,8 +425,8 @@
 <!-- Main container that holds all cards -->
 <!-- tabindex="0" makes the container focusable for keyboard navigation -->
 <!-- Keyboard events are scoped to this element to prevent conflicts with multiple instances -->
-<!-- svelte-ignore a11y_no_noninteractive_tabindex - Intentional: region with tabindex="0" enables keyboard navigation per WCAG 2.1.1 -->
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions - Intentional: touch/keyboard handlers required for card cycling accessibility -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
 	class="stack-container"
 	bind:this={containerEl}
@@ -496,7 +500,6 @@
 					{/if}
 
 					<!-- Card content with gradient background (if provided) -->
-					<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions a11y_interactive_supports_focus -->
 					{#if card?.content}
 						<div class="card-content" role="presentation" onclick={(e) => {
 							// Only stop propagation for non-link clicks to prevent card toggle
@@ -506,8 +509,9 @@
 								e.stopPropagation();
 							}
 						}}>
-							<!-- Render HTML content - allows rich formatting like icons and links -->
-							{@html card.content}
+							<!-- Render HTML content - sanitized to prevent XSS -->
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html sanitizeHTML(card.content || '')}
 						</div>
 					{/if}
 					</div>

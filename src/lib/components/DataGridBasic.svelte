@@ -287,6 +287,7 @@
 	// [CR] Reset to first page when filter changes
 	// [NTL] When you search, jump back to page 1 to see results from the start
 	$effect(() => {
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const _ = filterText;
 		currentPage = 1;
 	});
@@ -328,7 +329,7 @@
 		<table class="datagrid-table" class:striped class:hoverable class:compact>
 			<thead>
 				<tr>
-					{#each columns as column}
+					{#each columns as column (column.id)}
 						<th
 							class:sortable={sortable && column.sortable !== false}
 							class:sorted={sortColumn === column.id}
@@ -371,15 +372,16 @@
 						</td>
 					</tr>
 				{:else}
-					{#each paginatedData() as row, rowIndex}
+					{#each paginatedData() as row, rowIndex (row.id ?? rowIndex)}
 						<tr>
-							{#each columns as column}
+							{#each columns as column (column.id)}
 								{@const cellValue = getRowValue(row, column.id)}
 								<td
 									class={getCellClass(cellValue, column, row)}
 									style={getCellStyle(cellValue, column, row)}
 								>
 									{#if column.cellRenderer}
+										<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 										{@html sanitizeHTML(formatCellValue(cellValue, column, row))}
 									{:else}
 										{formatCellValue(cellValue, column, row)}
@@ -421,7 +423,7 @@
 						if (currentPage <= 4) return i + 1;
 						if (currentPage >= totalPages - 3) return totalPages - 6 + i;
 						return currentPage - 3 + i;
-					}) as pageNum}
+					}) as pageNum (pageNum)}
 						<button
 							onclick={() => goToPage(pageNum)}
 							class="page-button"

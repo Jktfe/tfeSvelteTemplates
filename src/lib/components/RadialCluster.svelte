@@ -67,6 +67,7 @@
 -->
 <script lang="ts">
 	// [CR] Type imports for props and layout node structures
+	import { SvelteMap } from 'svelte/reactivity';
 	import type { RadialClusterNode, RadialClusterLayoutNode, RadialClusterProps } from '$lib/types';
 
 	// =============================================================================
@@ -137,8 +138,8 @@
 	 *
 	 * @returns A Map from node reference to its leaf count
 	 */
-	function precomputeLeafCounts(node: RadialClusterNode): Map<RadialClusterNode, number> {
-		const leafCounts = new Map<RadialClusterNode, number>();
+	function precomputeLeafCounts(node: RadialClusterNode): SvelteMap<RadialClusterNode, number> {
+		const leafCounts = new SvelteMap<RadialClusterNode, number>();
 
 		function traverse(n: RadialClusterNode): number {
 			if (!n.children || n.children.length === 0) {
@@ -181,7 +182,7 @@
 	 */
 	function buildLayout(
 		node: RadialClusterNode,
-		leafCounts: Map<RadialClusterNode, number>,
+		leafCounts: SvelteMap<RadialClusterNode, number>,
 		parent: RadialClusterLayoutNode | null = null,
 		depth = 0,
 		angleStart = 0,
@@ -509,7 +510,7 @@
 	>
 		<!-- Links layer - rendered first so nodes appear on top -->
 		<g class="links" fill="none" stroke={linkColor} stroke-opacity={linkOpacity} stroke-width={linkWidth}>
-			{#each visibleLinks as link}
+			{#each visibleLinks as link (`${link.source.name}-${link.target.name}`)}
 				<path
 					d={radialLinkPath(link.source, link.target)}
 					class="link"
@@ -519,7 +520,7 @@
 
 		<!-- Nodes layer -->
 		<g class="nodes">
-			{#each visibleNodes as node}
+			{#each visibleNodes as node (node.name)}
 				{@const pos = polarToCartesian(node.x, node.y)}
 				<g
 					class="node"
@@ -550,7 +551,7 @@
 				font-size={fontSize}
 				fill={labelColor}
 			>
-				{#each visibleNodes as node}
+				{#each visibleNodes as node (node.name)}
 					{@const anchor = getTextAnchor(node.x)}
 					{@const offset = getLabelOffset(node)}
 					<text

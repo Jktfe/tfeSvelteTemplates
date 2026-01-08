@@ -503,46 +503,6 @@ ${'<'}/script>
 		line-height: 1.5;
 	}
 
-	.delivery-controls {
-		display: flex;
-		gap: 0.75rem;
-		margin-bottom: 1rem;
-		flex-wrap: wrap;
-	}
-
-	.control-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 6px;
-		padding: 0.5rem 1rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #666;
-		background: #f0f0f0;
-		border: none;
-		border-radius: 6px;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.control-btn svg {
-		width: 16px;
-		height: 16px;
-	}
-
-	.control-btn:hover {
-		background: #e0e0e0;
-	}
-
-	.control-btn.primary {
-		color: white;
-		background: #22c55e;
-	}
-
-	.control-btn.primary:hover {
-		background: #16a34a;
-	}
-
 	.example-container {
 		border-radius: 12px;
 		overflow: hidden;

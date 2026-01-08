@@ -176,11 +176,7 @@ test.describe('Home Page - Keyboard Navigation', () => {
 		// Focus on the page
 		await page.locator('body').press('Tab');
 
-		// Find all focusable component cards
-		const componentLinks = page.locator('.component-card');
-		const firstCard = componentLinks.first();
-
-		// Eventually a card should be focusable
+		// Eventually a card should be focusable by tabbing
 		await page.keyboard.press('Tab');
 		await page.keyboard.press('Tab');
 		await page.keyboard.press('Tab');

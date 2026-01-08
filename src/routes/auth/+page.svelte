@@ -228,7 +228,7 @@ CLERK_SECRET_KEY=sk_test_...</pre>
 				<span class="step-number">3</span>
 				<div class="step-content">
 					<h4>Create hooks.server.ts</h4>
-					<pre class="code-block">import {'{'} withClerkHandler {'}'} from 'svelte-clerk/server';
+					<pre class="code-block">import {'{'} withClerkHandler } from 'svelte-clerk/server';
 export const handle = withClerkHandler();</pre>
 				</div>
 			</div>

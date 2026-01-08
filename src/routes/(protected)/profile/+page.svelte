@@ -17,6 +17,7 @@
 	import { SignedIn, UserProfile, UserButton } from 'svelte-clerk';
 	import { useClerkContext } from 'svelte-clerk/client';
 
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { data } = $props();
 
 	// Access Clerk context for user information

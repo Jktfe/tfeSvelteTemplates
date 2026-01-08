@@ -302,7 +302,8 @@
 	});
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_tabindex a11y_no_noninteractive_element_interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
 	class="scratch-to-reveal-wrapper {className}"
 	role="application"
@@ -337,7 +338,7 @@
 				onpointerup={handlePointerUp}
 				onpointercancel={handlePointerUp}
 				style:cursor={disabled ? 'not-allowed' : 'pointer'}
-			/>
+			></canvas>
 		{/if}
 	</div>
 
@@ -350,7 +351,7 @@
 					class="progress-bar"
 					style:width="{scratchPercentage}%"
 					style:background-color={progressColor}
-				/>
+				></div>
 			</div>
 		{/if}
 

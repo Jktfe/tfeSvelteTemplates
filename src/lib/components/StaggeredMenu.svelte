@@ -63,7 +63,7 @@
 <nav class="staggered-menu" aria-label="Main navigation">
 	{#if isOpen}
 		<ul class="menu-list">
-			{#each items as item, index}
+			{#each items as item, index (item.href)}
 				<li
 					class="menu-item"
 					style="--stagger-delay: {index * 0.05}s"
