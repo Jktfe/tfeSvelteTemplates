@@ -25,7 +25,9 @@ import type {
 	GeoDataPoint,
 	GeoRegionData,
 	ExplainerCanvasData,
-	TimelineEvent
+	TimelineEvent,
+	InteractiveCardsProject,
+	InteractiveCardsTestimonial
 } from './types';
 
 /**
@@ -2499,5 +2501,171 @@ export const FALLBACK_COMPANY_TIMELINE: TimelineEvent[] = [
 		icon: '🔮',
 		color: '#6366f1',
 		completed: false
+	}
+];
+
+/**
+ * Fallback project list for the InteractiveCards component.
+ *
+ * Uses the public Cloudflare R2 "picasso-ecommerce" bucket from the reference
+ * spec — these are the same paint-1..paint-7 paintings the spec describes.
+ * Accent colours rotate through the seven hex values from the spec.
+ */
+const INTERACTIVE_CARDS_CDN =
+	'https://pub-dc2abe5caae44240a6d1913566a75e0f.r2.dev/picasso-ecommerce';
+
+export const FALLBACK_INTERACTIVE_PROJECTS: InteractiveCardsProject[] = [
+	{
+		id: 0,
+		title: 'Ember Study No. 1',
+		artist: 'Isla Moreno',
+		medium: 'Oil on washi paper',
+		description:
+			'A smouldering composition of raw sienna and quiet blues. Painted in the hush before dawn, this study explores the warmth that lingers in cold places.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-1.jpg`,
+		accent: '#2B5B8A',
+		badgeLabel: 'Iconic',
+		badgeColor: '#2B5B8A',
+		price: '$295',
+		sizes: ['18×24"', '24×36"', '30×40"'],
+		materials: ['Washi Paper', 'Canvas', 'Framed'],
+		edition: 'Museum Edition — 100 prints',
+		testimonial:
+			'It completely changed the feel of our reading room. Every visitor stops in front of it.',
+		testimonialAuthor: '— Sarah, New York'
+	},
+	{
+		id: 1,
+		title: 'Goldleaf Harbour',
+		artist: 'Kenji Aoyama',
+		medium: 'Gouache and gold leaf',
+		description:
+			'Flecks of real gold leaf catch the afternoon light against a harbour rendered in muted teals. A study in stillness and shimmer.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-2.jpg`,
+		accent: '#C4882E',
+		badgeLabel: 'Best Seller',
+		badgeColor: '#C4882E',
+		price: '$340',
+		sizes: ['16×20"', '24×30"', '36×48"'],
+		materials: ['Gold Leaf', 'Canvas', 'Framed'],
+		edition: 'Open Edition',
+		testimonial: 'The gold leaf looks alive depending on the time of day. Pure magic.',
+		testimonialAuthor: '— Marcus, Kyoto'
+	},
+	{
+		id: 2,
+		title: 'Midnight Orchard',
+		artist: 'Priya Naravan',
+		medium: 'Acrylic on linen',
+		description:
+			'Inky indigo branches arc across a bone-white sky. The composition feels half-remembered, like a scene from a dream you cannot quite place.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-3.jpg`,
+		accent: '#3A5BA0',
+		badgeLabel: 'Staff Pick',
+		badgeColor: '#3A5BA0',
+		price: '$260',
+		sizes: ['12×16"', '20×28"', '30×42"'],
+		materials: ['Linen', 'Canvas', 'Framed'],
+		edition: 'Signed Edition — 75 prints',
+		testimonial: 'Calming and strange in the best way. I see something new every week.',
+		testimonialAuthor: '— Noa, Tel Aviv'
+	},
+	{
+		id: 3,
+		title: 'Slow River',
+		artist: 'Oren Bekele',
+		medium: 'Watercolour on cotton',
+		description:
+			'Three washes of cobalt describe a river without ever drawing its edges. Light does most of the work here; the painter merely got out of its way.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-4.jpg`,
+		accent: '#5B7FA5',
+		badgeLabel: 'Signed',
+		badgeColor: '#5B7FA5',
+		price: '$215',
+		sizes: ['11×14"', '18×24"', '24×36"'],
+		materials: ['Cotton Paper', 'Matted', 'Framed'],
+		edition: 'Signed Edition — 50 prints',
+		testimonial: 'Hangs in my studio. It keeps me honest about what painting can do.',
+		testimonialAuthor: '— Luis, Mexico City'
+	},
+	{
+		id: 4,
+		title: 'Fern Cathedral',
+		artist: 'Anya Whitlock',
+		medium: 'Egg tempera on panel',
+		description:
+			'A forest floor rendered with the patience of a miniaturist. Over forty glazes of green give the work its stained-glass luminosity.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-5.jpg`,
+		accent: '#6B8F5E',
+		badgeLabel: 'New',
+		badgeColor: '#6B8F5E',
+		price: '$310',
+		sizes: ['14×18"', '22×28"', '28×36"'],
+		materials: ['Wood Panel', 'Canvas', 'Framed'],
+		edition: 'Museum Edition — 100 prints',
+		testimonial: 'Photos don’t do it justice. It glows.',
+		testimonialAuthor: '— Priya, London'
+	},
+	{
+		id: 5,
+		title: 'Kiln Song',
+		artist: 'Tomás Ferreira',
+		medium: 'Mixed media on board',
+		description:
+			'Ochre and cinnabar applied with a palette knife, then scorched at the edges. The texture is unmistakably physical, even in print.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-6.jpg`,
+		accent: '#C4652E',
+		badgeLabel: 'Trending',
+		badgeColor: '#C4652E',
+		price: '$285',
+		sizes: ['16×20"', '24×30"', '32×40"'],
+		materials: ['Wood Panel', 'Canvas', 'Framed'],
+		edition: 'Open Edition',
+		testimonial: 'Warm, grounded, and a little defiant. Exactly what our café needed.',
+		testimonialAuthor: '— Elena, Lisbon'
+	},
+	{
+		id: 6,
+		title: 'Violet Observatory',
+		artist: 'Amara Qureshi',
+		medium: 'Pastel on charcoal paper',
+		description:
+			'A twilight study of a rural observatory, its dome catching the last violet of dusk. Pastel smudged with a gloved hand produces an almost atmospheric haze.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-7.jpg`,
+		accent: '#8B6DAF',
+		badgeLabel: 'Exclusive',
+		badgeColor: '#8B6DAF',
+		price: '$355',
+		sizes: ['18×24"', '24×36"', '36×48"'],
+		materials: ['Charcoal Paper', 'Matted', 'Framed'],
+		edition: 'Museum Edition — 100 prints',
+		testimonial: 'The colour palette is unlike anything else in my collection.',
+		testimonialAuthor: '— Amara, Karachi'
+	}
+];
+
+/**
+ * Fallback testimonial slides for the InteractiveCards awards/quotes strip.
+ * First slide is rendered as the "Awards" layout; the rest appear as quotes.
+ */
+export const FALLBACK_INTERACTIVE_TESTIMONIALS: InteractiveCardsTestimonial[] = [
+	{
+		author: 'Elena Navarro',
+		title: 'Interior Designer · Lisbon',
+		photo: 'https://images.unsplash.com/photo-1560329072-17f59dcd30a4?w=200&h=200&fit=crop',
+		quote:
+			'These prints hold the room together. Clients always ask where I source them.'
+	},
+	{
+		author: 'Tomás Ferreira',
+		title: 'Gallery Owner · São Paulo',
+		photo: 'https://images.unsplash.com/photo-1584307833174-a3bbb76ab367?w=200&h=200&fit=crop',
+		quote: 'Museum-quality reproduction. Our collectors can barely tell the difference.'
+	},
+	{
+		author: 'Amara Qureshi',
+		title: 'Architect · Karachi',
+		photo: 'https://images.unsplash.com/photo-1610431205421-739e027cc0ce?w=200&h=200&fit=crop',
+		quote: 'A tiny canvas with an outsized presence. I kept reaching for it.'
 	}
 ];

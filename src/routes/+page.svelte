@@ -150,6 +150,13 @@
 					icon: '🃏',
 					description: 'Interactive horizontal card displays',
 					screenshot: screenshotPath('CardStackShot.png')
+				},
+				{
+					name: 'InteractiveCards',
+					href: '/interactivecards',
+					icon: '🖼️',
+					description: 'Scroll-driven paintings portfolio with add-to-cart',
+					screenshot: screenshotPath('CardStackShot.png')
 				}
 			]
 		},

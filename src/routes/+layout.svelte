@@ -93,6 +93,12 @@
 					href: '/scratchtoreveal',
 					icon: '🎰',
 					active: isActive('/scratchtoreveal')
+				},
+				{
+					label: 'InteractiveCards',
+					href: '/interactivecards',
+					icon: '🖼️',
+					active: isActive('/interactivecards')
 				}
 			]
 		},

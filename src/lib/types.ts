@@ -2458,3 +2458,62 @@ export interface TimelineProps {
 	dateFormat?: ((date: Date | string) => string) | 'relative';
 	onEventClick?: (event: TimelineEvent) => void;
 }
+
+/**
+ * InteractiveCards - Scroll-driven paintings portfolio project
+ *
+ * Each project represents a single painting/product with ecommerce metadata.
+ * Data shape follows the "picasso-ecommerce" spec but works with any image URLs.
+ */
+export interface InteractiveCardsProject {
+	id: number;
+	title: string;
+	artist: string;
+	medium: string;
+	description: string;
+	image: string;
+	accent: string;
+	badgeLabel: string;
+	badgeColor: string;
+	price: string;
+	sizes: string[];
+	materials: string[];
+	edition: string;
+	testimonial: string;
+	testimonialAuthor: string;
+}
+
+/**
+ * InteractiveCards - Testimonial slide used by the awards/quotes slider
+ */
+export interface InteractiveCardsTestimonial {
+	author: string;
+	title: string;
+	photo: string;
+	quote: string;
+}
+
+/**
+ * Props for the InteractiveCards component
+ *
+ * @property projects - Array of painting projects (falls back to 7 demo paintings)
+ * @property testimonials - Array of testimonial slides for the awards strip
+ * @property headline - Two-line hero headline (defaults to the painter copy)
+ * @property subheading - Long-form description shown under the cards
+ * @property wallImageLight - Wall texture URL used in light mode
+ * @property wallImageDark - Wall texture URL used in dark mode
+ * @property frameImage - Ornate frame PNG revealed in detail view
+ * @property roomImage - Room mockup shown in the painter preview overlay
+ * @property scrollHeight - CSS length for the pinned scroll spacer (default "500vh")
+ */
+export interface InteractiveCardsProps {
+	projects?: InteractiveCardsProject[];
+	testimonials?: InteractiveCardsTestimonial[];
+	headline?: [string, string];
+	subheading?: string;
+	wallImageLight?: string;
+	wallImageDark?: string;
+	frameImage?: string;
+	roomImage?: string;
+	scrollHeight?: string;
+}
