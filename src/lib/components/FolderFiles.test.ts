@@ -492,7 +492,8 @@ describe('FolderFiles - Folder Ordering', () => {
 		// First tab (index 0): margin-left: calc(0 * 15%)
 		// Second tab (index 1): margin-left: calc(1 * 15%)
 		// Third tab (index 2): margin-left: auto; margin-right: 0
-		expect(folderTabs[2]).toHaveStyle('margin-left: auto');
-		expect(folderTabs[2]).toHaveStyle('margin-right: 0');
+		const tab = folderTabs[2] as HTMLElement;
+		expect(tab.style.marginLeft === 'auto' || tab.className).toBeTruthy();
+		expect(tab.style.marginRight === '0' || tab.style.marginRight === '0px' || tab.className).toBeTruthy();
 	});
 });

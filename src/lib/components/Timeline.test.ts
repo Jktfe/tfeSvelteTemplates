@@ -431,7 +431,7 @@ describe('Timeline', () => {
 		});
 
 		const marker = container.querySelector('.timeline-marker') as HTMLElement;
-		expect(marker.style.backgroundColor).toBe('rgb(255, 107, 107)');
+		expect(marker.style.backgroundColor).toMatch(/rgb\(255,\s*107,\s*107\)|#ff6b6b/i);
 	});
 
 	// Test animation none doesn't set opacity

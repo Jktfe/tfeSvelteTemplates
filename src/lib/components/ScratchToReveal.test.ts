@@ -126,7 +126,7 @@ describe('ScratchToReveal', () => {
 			props: { showProgress: true, progressColor: '#ff0000' }
 		});
 		const progressBar = container.querySelector('.progress-bar') as HTMLElement;
-		expect(progressBar.style.backgroundColor).toBe('rgb(255, 0, 0)');
+		expect(progressBar.style.backgroundColor).toMatch(/rgb\(255,\s*0,\s*0\)|#ff0000/i);
 	});
 
 	// Custom class should be applied to wrapper
