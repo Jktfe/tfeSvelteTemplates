@@ -1,0 +1,149 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button "Open menu" [ref=e7] [cursor=pointer]
+        - link "Svelte Templates" [ref=e11] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e12]: ⚡
+          - generic [ref=e13]: Svelte Templates
+      - generic [ref=e14]:
+        - link "View on GitHub" [ref=e15] [cursor=pointer]:
+          - /url: https://github.com/Jktfe/tfeSvelteTemplates
+          - img [ref=e16]
+        - generic "Configure Clerk to enable authentication" [ref=e18]:
+          - generic [ref=e19]: 🔓
+          - generic [ref=e20]: Demo Mode
+  - navigation "Main navigation" [ref=e21]:
+    - generic [ref=e23]:
+      - link "Home" [ref=e25] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e26]: 🏠
+        - generic [ref=e27]: Home
+      - button "Navigation" [ref=e29] [cursor=pointer]:
+        - generic [ref=e30]: ☰
+        - generic [ref=e31]: Navigation
+        - img [ref=e33]
+      - button "Native UI" [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]: 💫
+        - generic [ref=e38]: Native UI
+        - img [ref=e40]
+      - button "Helpful UX" [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]: 🎭
+        - generic [ref=e45]: Helpful UX
+        - img [ref=e47]
+      - button "Time" [ref=e50] [cursor=pointer]:
+        - generic [ref=e51]: ⏱️
+        - generic [ref=e52]: Time
+        - img [ref=e54]
+      - button "Cards" [ref=e57] [cursor=pointer]:
+        - generic [ref=e58]: 🃏
+        - generic [ref=e59]: Cards
+        - img [ref=e61]
+      - button "Data Visualisation" [ref=e64] [cursor=pointer]:
+        - generic [ref=e65]: 📊
+        - generic [ref=e66]: Data Visualisation
+        - img [ref=e68]
+      - button "Interactive" [ref=e71] [cursor=pointer]:
+        - generic [ref=e72]: 🌊
+        - generic [ref=e73]: Interactive
+        - img [ref=e75]
+      - button "Media & Images" [ref=e78] [cursor=pointer]:
+        - generic [ref=e79]: 🖼️
+        - generic [ref=e80]: Media & Images
+        - img [ref=e82]
+      - button "Forms & CRUD" [ref=e85] [cursor=pointer]:
+        - generic [ref=e86]: 📝
+        - generic [ref=e87]: Forms & CRUD
+        - img [ref=e89]
+      - button "Location Ops" [ref=e92] [cursor=pointer]:
+        - generic [ref=e93]: 🗺️
+        - generic [ref=e94]: Location Ops
+        - img [ref=e96]
+      - button "Authentication" [ref=e99] [cursor=pointer]:
+        - generic [ref=e100]: 🔐
+        - generic [ref=e101]: Authentication
+        - img [ref=e103]
+  - main [ref=e105]:
+    - generic [ref=e106]:
+      - generic [ref=e107]:
+        - heading "Bento Grid" [level=1] [ref=e108]
+        - paragraph [ref=e109]: A flexible, responsive grid system inspired by "Bento box" designs.
+        - status [ref=e110]:
+          - generic [ref=e111]: 🟡
+          - generic [ref=e112]: Using Fallback Data
+      - generic [ref=e113]:
+        - heading "Feature Showcase" [level=2] [ref=e114]
+        - generic [ref=e115]:
+          - article [ref=e116]:
+            - generic [ref=e117]:
+              - generic [ref=e118]: 🚀
+              - generic [ref=e119]:
+                - heading "Core Engine" [level=3] [ref=e120]
+                - paragraph [ref=e121]: Powered by Svelte 5 runes for maximum performance and reactive clarity.
+          - article [ref=e122]:
+            - generic [ref=e123]:
+              - generic [ref=e124]: 📦
+              - generic [ref=e125]:
+                - heading "Zero Deps" [level=3] [ref=e126]
+                - paragraph [ref=e127]: Pure Svelte and CSS. No bloated libraries.
+          - article [ref=e128]:
+            - generic [ref=e129]:
+              - generic [ref=e130]: 📱
+              - generic [ref=e131]:
+                - heading "Responsive by Design" [level=3] [ref=e132]
+                - paragraph [ref=e133]: Seamlessly reflows from mobile to desktop using CSS Grid.
+          - article [ref=e134]:
+            - generic [ref=e135]:
+              - generic [ref=e136]: 🏆
+              - generic [ref=e137]:
+                - heading "Gold Standard" [level=3] [ref=e138]
+                - paragraph [ref=e139]: Following strict quality guidelines for production readiness.
+          - article [ref=e140]:
+            - generic [ref=e141]:
+              - generic [ref=e142]: 🌙
+              - generic [ref=e143]:
+                - heading "Dark Mode Support" [level=3] [ref=e144]
+                - paragraph [ref=e145]: Elegant aesthetics for any environment.
+          - article [ref=e146]:
+            - generic [ref=e147]:
+              - generic [ref=e148]: ♿
+              - generic [ref=e149]:
+                - heading "Accessible" [level=3] [ref=e150]
+                - paragraph [ref=e151]: Semantic HTML and keyboard support out of the box.
+      - generic [ref=e152]:
+        - heading "Visual Gallery Style" [level=2] [ref=e153]
+        - paragraph [ref=e154]: Bento grids are excellent for visual portfolios. Each tile can feature high-quality imagery with text overlays.
+        - generic [ref=e155]:
+          - article [ref=e156]:
+            - img "Mountain Retreat" [ref=e158]
+            - heading "Mountain Retreat" [level=3] [ref=e161]
+          - article [ref=e162]:
+            - img "Ocean Breeze" [ref=e164]
+            - heading "Ocean Breeze" [level=3] [ref=e167]
+          - article [ref=e168]:
+            - img "Forest Path" [ref=e170]
+            - heading "Forest Path" [level=3] [ref=e173]
+      - generic [ref=e174]:
+        - heading "Why use a Bento Grid?" [level=2] [ref=e175]
+        - generic [ref=e176]:
+          - generic [ref=e177]:
+            - heading "Visual Hierarchy" [level=3] [ref=e178]
+            - paragraph [ref=e179]: Varying tile sizes naturally guide the user's eye to the most important content.
+          - generic [ref=e180]:
+            - heading "High Density" [level=3] [ref=e181]
+            - paragraph [ref=e182]: Pack a lot of information into a compact space without feeling cluttered.
+          - generic [ref=e183]:
+            - heading "Refined Aesthetic" [level=3] [ref=e184]
+            - paragraph [ref=e185]: A modern, clean look that works perfectly for landing pages and dashboards.
+  - contentinfo [ref=e186]:
+    - paragraph [ref=e188]:
+      - text: Built with
+      - link "Svelte 5" [ref=e189] [cursor=pointer]:
+        - /url: https://svelte.dev
+      - text: •
+      - link "SvelteKit" [ref=e190] [cursor=pointer]:
+        - /url: https://kit.svelte.dev
+      - text: •
+      - link "TypeScript" [ref=e191] [cursor=pointer]:
+        - /url: https://www.typescriptlang.org
