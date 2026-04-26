@@ -2458,3 +2458,194 @@ export interface TimelineProps {
 	dateFormat?: ((date: Date | string) => string) | 'relative';
 	onEventClick?: (event: TimelineEvent) => void;
 }
+
+// =============================================================================
+// BENTO GRID COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Bento Grid Item data structure
+ * Represents a single tile in the Bento box layout
+ * 
+ * @property id - Unique identifier for the item
+ * @property title - Main heading for the tile
+ * @property description - Subtext or body content
+ * @property icon - Optional SVG path, emoji, or icon character
+ * @property image - Optional background or illustration image URL
+ * @property colSpan - Number of grid columns to span (default: 1)
+ * @property rowSpan - Number of grid rows to span (default: 1)
+ * @property class - Additional CSS classes for the tile
+ * @property href - Optional link destination
+ */
+export interface BentoItem {
+	id: string | number;
+	title: string;
+	description?: string;
+	icon?: string;
+	image?: string;
+	colSpan?: number;
+	rowSpan?: number;
+	class?: string;
+	href?: string;
+}
+
+/**
+ * Props for BentoGrid component
+ * Responsive bento-box style grid system
+ * 
+ * @property items - Array of items to display in the grid
+ * @property cols - Number of columns at large screen sizes (default: 3)
+ * @property gap - Gap between items in pixels or CSS units (default: 16)
+ * @property class - Additional CSS classes for the grid container
+ * @property itemClass - Additional CSS classes applied to all items
+ */
+export interface BentoGridProps {
+	items: BentoItem[];
+	cols?: number;
+	gap?: number | string;
+	class?: string;
+	itemClass?: string;
+}
+
+// =============================================================================
+// COMMAND PALETTE COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Single action/command in the Command Palette
+ * Represents a selectable item that can trigger navigation or a callback
+ *
+ * @property id - Unique identifier for the command
+ * @property label - Display text for the command
+ * @property description - Optional secondary text (shown smaller beneath label)
+ * @property icon - Optional emoji or icon character
+ * @property group - Group name for section headers (e.g., 'Actions', 'Navigation', 'Recent')
+ * @property shortcut - Optional keyboard shortcut hint (e.g., '⌘N')
+ * @property href - Optional URL for navigation commands
+ * @property onSelect - Optional callback when command is selected
+ * @property disabled - Whether the command is disabled (default: false)
+ * @property keywords - Additional search terms not shown in UI (helps fuzzy matching)
+ */
+export interface CommandPaletteItem {
+	id: string;
+	label: string;
+	description?: string;
+	icon?: string;
+	group?: string;
+	shortcut?: string;
+	href?: string;
+	onSelect?: () => void;
+	disabled?: boolean;
+	keywords?: string[];
+}
+
+/**
+ * Props for CommandPalette component
+ * Keyboard-driven searchable command interface overlay
+ *
+ * @property items - Array of available commands/actions
+ * @property placeholder - Search input placeholder text (default: 'Type a command or search...')
+ * @property emptyMessage - Message when no results match (default: 'No results found.')
+ * @property shortcutKey - Key to open palette with ⌘/Ctrl (default: 'k')
+ * @property maxResults - Maximum results to display (default: 10)
+ * @property isOpen - Bindable open state (default: false)
+ * @property onSelect - Callback when a command is selected
+ * @property onClose - Callback when palette is closed
+ * @property class - Additional CSS classes for the overlay
+ */
+export interface CommandPaletteProps {
+	items: CommandPaletteItem[];
+	placeholder?: string;
+	emptyMessage?: string;
+	shortcutKey?: string;
+	maxResults?: number;
+	isOpen?: boolean;
+	onSelect?: (item: CommandPaletteItem) => void;
+	onClose?: () => void;
+	class?: string;
+}
+
+// =============================================================================
+// FLOATING DOCK COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Single item in the Floating Dock
+ *
+ * @property id - Unique identifier
+ * @property title - Tooltip/label text
+ * @property icon - SVG path or icon character
+ * @property href - Destination URL
+ */
+export interface FloatingDockItem {
+	id: string | number;
+	title: string;
+	icon: string;
+	href?: string;
+}
+
+/**
+ * Props for FloatingDock component
+ *
+ * @property items - Array of dock items
+ * @property magnification - Max scaling factor on hover (default: 2)
+ * @property distance - Distance in pixels where magnification begins (default: 140)
+ * @property class - Additional CSS classes for the dock
+ */
+export interface FloatingDockProps {
+	items: FloatingDockItem[];
+	magnification?: number;
+	distance?: number;
+	class?: string;
+}
+
+// =============================================================================
+// TOAST NOTIFICATION COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Severity level for toast notifications
+ * Determines colour scheme and default icon
+ */
+export type ToastSeverity = 'success' | 'error' | 'warning' | 'info';
+
+/**
+ * Position on screen where toasts appear
+ */
+export type ToastPosition = 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left';
+
+/**
+ * Single toast notification data
+ *
+ * @property id - Unique identifier (auto-generated if not provided)
+ * @property message - Main notification text
+ * @property severity - Visual style: 'success' | 'error' | 'warning' | 'info' (default: 'info')
+ * @property duration - Auto-dismiss time in ms (default: 5000, 0 = no auto-dismiss)
+ * @property dismissible - Show close button (default: true)
+ * @property action - Optional action button
+ */
+export interface ToastData {
+	id?: string;
+	message: string;
+	severity?: ToastSeverity;
+	duration?: number;
+	dismissible?: boolean;
+	action?: {
+		label: string;
+		onclick: () => void;
+	};
+}
+
+/**
+ * Props for ToastNotification container component
+ * Renders and manages the toast stack
+ *
+ * @property position - Where toasts appear on screen (default: 'top-right')
+ * @property maxVisible - Maximum toasts shown at once (default: 5)
+ * @property class - Additional CSS classes for the container
+ */
+export interface ToastNotificationProps {
+	position?: ToastPosition;
+	maxVisible?: number;
+	class?: string;
+}

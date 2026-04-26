@@ -25,7 +25,11 @@ import type {
 	GeoDataPoint,
 	GeoRegionData,
 	ExplainerCanvasData,
-	TimelineEvent
+	TimelineEvent,
+	BentoItem,
+	CommandPaletteItem,
+	FloatingDockItem,
+	ToastData
 } from './types';
 
 /**
@@ -2499,5 +2503,234 @@ export const FALLBACK_COMPANY_TIMELINE: TimelineEvent[] = [
 		icon: '🔮',
 		color: '#6366f1',
 		completed: false
+	}
+];
+
+// =============================================================================
+// BENTO GRID FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback data for Bento Grid component
+ * Showcases a variety of tile sizes and content types
+ */
+export const FALLBACK_BENTO_ITEMS: BentoItem[] = [
+	{
+		id: 1,
+		title: 'Analytics Dashboard',
+		description: 'Monitor your key performance indicators in real-time with our advanced analytics suite.',
+		icon: '📊',
+		colSpan: 2,
+		rowSpan: 2,
+		class: 'bg-blue-50 dark:bg-blue-900/20'
+	},
+	{
+		id: 2,
+		title: 'Cloud Storage',
+		description: 'Secure and scalable cloud storage for all your digital assets.',
+		icon: '☁️',
+		colSpan: 1,
+		rowSpan: 1,
+		class: 'bg-indigo-50 dark:bg-indigo-900/20'
+	},
+	{
+		id: 3,
+		title: 'Global Connectivity',
+		description: 'Connect with users across the globe with our high-speed network.',
+		icon: '🌍',
+		colSpan: 1,
+		rowSpan: 2,
+		class: 'bg-purple-50 dark:bg-purple-900/20'
+	},
+	{
+		id: 4,
+		title: 'Smart Security',
+		description: 'Enterprise-grade security to keep your data safe and sound.',
+		icon: '🔒',
+		colSpan: 1,
+		rowSpan: 1,
+		class: 'bg-slate-50 dark:bg-slate-900/20'
+	},
+	{
+		id: 5,
+		title: 'Team Collaboration',
+		description: 'Empower your team with tools built for seamless collaboration.',
+		icon: '👥',
+		colSpan: 2,
+		rowSpan: 1,
+		class: 'bg-emerald-50 dark:bg-emerald-900/20'
+	}
+];
+
+// ==================================================
+// COMMAND PALETTE FALLBACK DATA
+// ==================================================
+
+/**
+ * Fallback command palette items for demo page
+ * Demonstrates grouped commands with icons, shortcuts, and descriptions
+ */
+export const FALLBACK_COMMAND_PALETTE_ITEMS: CommandPaletteItem[] = [
+	{
+		id: 'new-file',
+		label: 'New File',
+		description: 'Create a new document',
+		icon: '📄',
+		group: 'Actions',
+		shortcut: '⌘N',
+		keywords: ['create', 'add', 'document']
+	},
+	{
+		id: 'save',
+		label: 'Save',
+		description: 'Save current document',
+		icon: '💾',
+		group: 'Actions',
+		shortcut: '⌘S',
+		keywords: ['store', 'write']
+	},
+	{
+		id: 'search',
+		label: 'Search Files',
+		description: 'Find files in the project',
+		icon: '🔍',
+		group: 'Actions',
+		shortcut: '⌘P',
+		keywords: ['find', 'lookup', 'open']
+	},
+	{
+		id: 'export-pdf',
+		label: 'Export as PDF',
+		description: 'Download document as PDF',
+		icon: '📑',
+		group: 'Actions',
+		keywords: ['download', 'print', 'pdf']
+	},
+	{
+		id: 'nav-home',
+		label: 'Home',
+		description: 'Go to homepage',
+		icon: '🏠',
+		group: 'Navigation',
+		href: '/'
+	},
+	{
+		id: 'nav-dashboard',
+		label: 'Dashboard',
+		description: 'View your dashboard',
+		icon: '📊',
+		group: 'Navigation',
+		href: '/dashboard'
+	},
+	{
+		id: 'nav-settings',
+		label: 'Settings',
+		description: 'Manage preferences',
+		icon: '⚙️',
+		group: 'Navigation',
+		href: '/settings',
+		keywords: ['preferences', 'config']
+	},
+	{
+		id: 'nav-profile',
+		label: 'Profile',
+		description: 'View your profile',
+		icon: '👤',
+		group: 'Navigation',
+		href: '/profile'
+	},
+	{
+		id: 'recent-doc1',
+		label: 'Q4 Report.docx',
+		description: 'Opened 2 hours ago',
+		icon: '📝',
+		group: 'Recent',
+		keywords: ['report', 'quarterly']
+	},
+	{
+		id: 'recent-doc2',
+		label: 'Project Roadmap.md',
+		description: 'Opened yesterday',
+		icon: '🗺️',
+		group: 'Recent',
+		keywords: ['roadmap', 'plan']
+	},
+	{
+		id: 'recent-doc3',
+		label: 'API Documentation',
+		description: 'Opened 3 days ago',
+		icon: '📚',
+		group: 'Recent',
+		keywords: ['api', 'docs', 'reference']
+	},
+	{
+		id: 'toggle-dark',
+		label: 'Toggle Dark Mode',
+		description: 'Switch between light and dark theme',
+		icon: '🌙',
+		group: 'Preferences',
+		keywords: ['theme', 'dark', 'light', 'appearance']
+	},
+	{
+		id: 'toggle-sidebar',
+		label: 'Toggle Sidebar',
+		description: 'Show or hide the sidebar',
+		icon: '📐',
+		group: 'Preferences',
+		shortcut: '⌘B',
+		keywords: ['panel', 'sidebar', 'layout']
+	}
+];
+
+// =============================================================================
+// FLOATING DOCK FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback items for Floating Dock
+ * Showcases a mix of utility and navigation icons
+ */
+export const FALLBACK_DOCK_ITEMS: FloatingDockItem[] = [
+	{ id: 1, title: 'Home', icon: '🏠', href: '/' },
+	{ id: 2, title: 'Dashboard', icon: '📊', href: '/dashboard' },
+	{ id: 3, title: 'Profile', icon: '👤', href: '/profile' },
+	{ id: 4, title: 'Settings', icon: '⚙️', href: '/settings' },
+	{ id: 5, title: 'Search', icon: '🔍', href: '/commandpalette' },
+	{ id: 6, title: 'Help', icon: '❓', href: '/help' }
+];
+
+// =============================================================================
+// TOAST NOTIFICATION FALLBACK DATA
+// =============================================================================
+
+/**
+ * Fallback data for Toast notifications
+ * Showcases different severities and durations
+ */
+export const FALLBACK_TOAST_ITEMS: ToastData[] = [
+	{
+		id: 't1',
+		message: 'Welcome back, James!',
+		severity: 'info',
+		duration: 3000
+	},
+	{
+		id: 't2',
+		message: 'Build successful. 869 modules transformed.',
+		severity: 'success',
+		duration: 5000
+	},
+	{
+		id: 't3',
+		message: 'High latency detected on API endpoint.',
+		severity: 'warning',
+		duration: 0
+	},
+	{
+		id: 't4',
+		message: 'Authentication failed. Please check your credentials.',
+		severity: 'error',
+		duration: 10000,
+		dismissible: true
 	}
 ];

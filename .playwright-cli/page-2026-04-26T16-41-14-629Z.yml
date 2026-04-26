@@ -1,0 +1,156 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button "Open menu" [ref=e7] [cursor=pointer]
+        - link "Svelte Templates" [ref=e11] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e12]: ⚡
+          - generic [ref=e13]: Svelte Templates
+      - generic [ref=e14]:
+        - link "View on GitHub" [ref=e15] [cursor=pointer]:
+          - /url: https://github.com/Jktfe/tfeSvelteTemplates
+          - img [ref=e16]
+        - generic "Configure Clerk to enable authentication" [ref=e18]:
+          - generic [ref=e19]: 🔓
+          - generic [ref=e20]: Demo Mode
+  - navigation "Main navigation" [ref=e21]:
+    - generic [ref=e23]:
+      - link "Home" [ref=e25] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e26]: 🏠
+        - generic [ref=e27]: Home
+      - button "Navigation" [ref=e29] [cursor=pointer]:
+        - generic [ref=e30]: ☰
+        - generic [ref=e31]: Navigation
+        - img [ref=e33]
+      - button "Native UI" [ref=e36] [cursor=pointer]:
+        - generic [ref=e37]: 💫
+        - generic [ref=e38]: Native UI
+        - img [ref=e40]
+      - generic [ref=e42]:
+        - button "Helpful UX" [expanded] [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]: 🎭
+          - generic [ref=e45]: Helpful UX
+          - img [ref=e47]
+        - list [ref=e161]:
+          - listitem [ref=e162]:
+            - link "Marquee" [ref=e163] [cursor=pointer]:
+              - /url: /marquee
+              - generic [ref=e164]: 🎭
+              - generic [ref=e165]: Marquee
+          - listitem [ref=e166]:
+            - link "LinkImageHover" [ref=e167] [cursor=pointer]:
+              - /url: /linkimagehover
+              - generic [ref=e168]: 🔗
+              - generic [ref=e169]: LinkImageHover
+          - listitem [ref=e170]:
+            - link "AnimatedBeam" [ref=e171] [cursor=pointer]:
+              - /url: /animatedbeam
+              - generic [ref=e172]: ✨
+              - generic [ref=e173]: AnimatedBeam
+          - listitem [ref=e174]:
+            - link "CommandPalette" [ref=e175] [cursor=pointer]:
+              - /url: /commandpalette
+              - generic [ref=e176]: 🔎
+              - generic [ref=e177]: CommandPalette
+          - listitem [ref=e178]:
+            - link "ToastNotification" [ref=e179] [cursor=pointer]:
+              - /url: /toastnotification
+              - generic [ref=e180]: 🔔
+              - generic [ref=e181]: ToastNotification
+      - button "Time" [ref=e50] [cursor=pointer]:
+        - generic [ref=e51]: ⏱️
+        - generic [ref=e52]: Time
+        - img [ref=e54]
+      - button "Cards" [ref=e57] [cursor=pointer]:
+        - generic [ref=e58]: 🃏
+        - generic [ref=e59]: Cards
+        - img [ref=e61]
+      - button "Data Visualisation" [ref=e64] [cursor=pointer]:
+        - generic [ref=e65]: 📊
+        - generic [ref=e66]: Data Visualisation
+        - img [ref=e68]
+      - button "Interactive" [ref=e71] [cursor=pointer]:
+        - generic [ref=e72]: 🌊
+        - generic [ref=e73]: Interactive
+        - img [ref=e75]
+      - button "Media & Images" [ref=e78] [cursor=pointer]:
+        - generic [ref=e79]: 🖼️
+        - generic [ref=e80]: Media & Images
+        - img [ref=e82]
+      - button "Forms & CRUD" [ref=e85] [cursor=pointer]:
+        - generic [ref=e86]: 📝
+        - generic [ref=e87]: Forms & CRUD
+        - img [ref=e89]
+      - button "Location Ops" [ref=e92] [cursor=pointer]:
+        - generic [ref=e93]: 🗺️
+        - generic [ref=e94]: Location Ops
+        - img [ref=e96]
+      - button "Authentication" [ref=e99] [cursor=pointer]:
+        - generic [ref=e100]: 🔐
+        - generic [ref=e101]: Authentication
+        - img [ref=e103]
+  - main [ref=e105]:
+    - generic [ref=e106]:
+      - generic [ref=e107]:
+        - heading "Toast Notification" [level=1] [ref=e108]
+        - paragraph [ref=e109]: A robust, accessible notification system for non-blocking global alerts.
+        - status [ref=e110]:
+          - generic [ref=e111]: 🟡
+          - generic [ref=e112]: Using Fallback Data
+      - generic [ref=e113]:
+        - generic [ref=e114]:
+          - heading "Interactive Demo" [level=2] [ref=e115]
+          - generic [ref=e116]:
+            - button "Success Toast" [ref=e117] [cursor=pointer]
+            - button "Error Toast" [ref=e118] [cursor=pointer]
+            - button "Warning Toast" [ref=e119] [cursor=pointer]
+            - button "Info Toast" [ref=e120] [cursor=pointer]
+            - button "With Action" [active] [ref=e121] [cursor=pointer]
+            - button "Persistent" [ref=e122] [cursor=pointer]
+        - generic [ref=e123]:
+          - heading "Key Implementation Details" [level=2] [ref=e124]
+          - list [ref=e125]:
+            - listitem [ref=e126]:
+              - img [ref=e128]
+              - generic [ref=e130]:
+                - strong [ref=e131]: "Rune Singleton:"
+                - text: Uses Svelte 5 module script runes for simple global state management.
+            - listitem [ref=e132]:
+              - img [ref=e134]
+              - generic [ref=e136]:
+                - strong [ref=e137]: "Stackable:"
+                - text: Handles multiple notifications simultaneously with smooth transitions.
+            - listitem [ref=e138]:
+              - img [ref=e140]
+              - generic [ref=e142]:
+                - strong [ref=e143]: "A11y Compliant:"
+                - text: Proper ARIA roles and keyboard support out of the box.
+      - generic [ref=e144]:
+        - heading "Quick Start" [level=2] [ref=e145]
+        - generic [ref=e146]:
+          - generic [ref=e147]:
+            - paragraph [ref=e148]: "1. Add the container to your root layout:"
+            - code [ref=e150]: <ToastNotification position="top-right" />
+          - generic [ref=e151]:
+            - paragraph [ref=e152]: "2. Trigger a toast from anywhere:"
+            - code [ref=e154]: "import { addToast } from '$lib/toast.svelte'; addToast({ message: \"Successfully saved!\", severity: \"success\" });"
+      - status "Notifications":
+        - status [ref=e191]:
+          - img [ref=e193]
+          - generic [ref=e195]:
+            - paragraph [ref=e196]: Message deleted.
+            - button "Undo" [ref=e197] [cursor=pointer]
+          - button "Dismiss notification" [ref=e198] [cursor=pointer]: ×
+  - contentinfo [ref=e155]:
+    - paragraph [ref=e157]:
+      - text: Built with
+      - link "Svelte 5" [ref=e158] [cursor=pointer]:
+        - /url: https://svelte.dev
+      - text: •
+      - link "SvelteKit" [ref=e159] [cursor=pointer]:
+        - /url: https://kit.svelte.dev
+      - text: •
+      - link "TypeScript" [ref=e160] [cursor=pointer]:
+        - /url: https://www.typescriptlang.org

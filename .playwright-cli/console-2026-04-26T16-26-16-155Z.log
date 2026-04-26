@@ -1,0 +1,2 @@
+[     277ms] [LOG] %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit @ https://va.vercel-scripts.com/v1/script.debug.js:0
+[     278ms] [LOG] %c[Vercel Web Analytics]%c [view] http://127.0.0.1:5188/bentogrid color: rgb(120, 120, 120) color: inherit {o: http://127.0.0.1:5188/bentogrid, sv: 0.1.3, sdkn: @vercel/analytics, sdkv: 1.6.1, ts: 1777220776432} /_vercel/insights/view @ https://va.vercel-scripts.com/v1/script.debug.js:0

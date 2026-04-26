@@ -1,0 +1,397 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - button "Close menu" [expanded] [ref=e279] [cursor=pointer]
+        - link "Svelte Templates" [ref=e11] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e12]: ⚡
+          - generic [ref=e13]: Svelte Templates
+      - generic [ref=e14]:
+        - link "View on GitHub" [ref=e15] [cursor=pointer]:
+          - /url: https://github.com/Jktfe/tfeSvelteTemplates
+          - img [ref=e16]
+        - generic "Configure Clerk to enable authentication" [ref=e18]:
+          - generic [ref=e19]: 🔓
+          - generic [ref=e20]: Demo Mode
+  - navigation "Main navigation" [ref=e21]:
+    - generic [ref=e23]:
+      - link "Home" [ref=e25] [cursor=pointer]:
+        - /url: /
+        - generic [ref=e26]: 🏠
+        - generic [ref=e27]: Home
+      - generic [ref=e29]:
+        - button "Navigation" [expanded] [active] [ref=e30] [cursor=pointer]:
+          - generic [ref=e31]: ☰
+          - generic [ref=e32]: Navigation
+          - img [ref=e34]
+        - list [ref=e282]:
+          - listitem [ref=e283]:
+            - link "Navbar" [ref=e284] [cursor=pointer]:
+              - /url: /navbar
+              - generic [ref=e285]: ☰
+              - generic [ref=e286]: Navbar
+          - listitem [ref=e287]:
+            - link "SpeedDial" [ref=e288] [cursor=pointer]:
+              - /url: /speeddial
+              - generic [ref=e289]: ⚡
+              - generic [ref=e290]: SpeedDial
+          - listitem [ref=e291]:
+            - link "FloatingDock" [ref=e292] [cursor=pointer]:
+              - /url: /floatingdock
+              - generic [ref=e293]: 🧲
+              - generic [ref=e294]: FloatingDock
+      - button "Native UI" [ref=e37] [cursor=pointer]:
+        - generic [ref=e38]: 💫
+        - generic [ref=e39]: Native UI
+        - img [ref=e41]
+      - button "Helpful UX" [ref=e44] [cursor=pointer]:
+        - generic [ref=e45]: 🎭
+        - generic [ref=e46]: Helpful UX
+        - img [ref=e48]
+      - button "Time" [ref=e51] [cursor=pointer]:
+        - generic [ref=e52]: ⏱️
+        - generic [ref=e53]: Time
+        - img [ref=e55]
+      - button "Cards" [ref=e58] [cursor=pointer]:
+        - generic [ref=e59]: 🃏
+        - generic [ref=e60]: Cards
+        - img [ref=e62]
+      - button "Data Visualisation" [ref=e65] [cursor=pointer]:
+        - generic [ref=e66]: 📊
+        - generic [ref=e67]: Data Visualisation
+        - img [ref=e69]
+      - button "Interactive" [ref=e72] [cursor=pointer]:
+        - generic [ref=e73]: 🌊
+        - generic [ref=e74]: Interactive
+        - img [ref=e76]
+      - button "Media & Images" [ref=e79] [cursor=pointer]:
+        - generic [ref=e80]: 🖼️
+        - generic [ref=e81]: Media & Images
+        - img [ref=e83]
+      - button "Forms & CRUD" [ref=e86] [cursor=pointer]:
+        - generic [ref=e87]: 📝
+        - generic [ref=e88]: Forms & CRUD
+        - img [ref=e90]
+      - button "Location Ops" [ref=e93] [cursor=pointer]:
+        - generic [ref=e94]: 🗺️
+        - generic [ref=e95]: Location Ops
+        - img [ref=e97]
+      - button "Authentication" [ref=e100] [cursor=pointer]:
+        - generic [ref=e101]: 🔐
+        - generic [ref=e102]: Authentication
+        - img [ref=e104]
+  - main [ref=e106]:
+    - generic [ref=e108]:
+      - generic [ref=e109]:
+        - heading "Svelte 5 Component Templates" [level=1] [ref=e110]
+        - paragraph [ref=e111]: Modern interactions. Smooth animations. Clean design. A growing collection of production-ready Svelte 5 components, inspired by Magic UI, Aceternity, and Sikandar S. Bhide's animation-svelte.
+        - paragraph [ref=e112]: Rebuilt with runes, thoroughly documented, made accessible, with some original creations mixed in. Copy, customise, and use in your projects.
+        - generic [ref=e113]:
+          - link "Browse 33 Components" [ref=e114] [cursor=pointer]:
+            - /url: "#components"
+          - link "View on GitHub" [ref=e115] [cursor=pointer]:
+            - /url: https://github.com/Jktfe/tfeSvelteTemplates
+            - img [ref=e116]
+            - text: View on GitHub
+        - paragraph [ref=e118]:
+          - text: Built by
+          - strong [ref=e119]: "@Jktfe"
+          - text: with patient support from Claude. Feel free to use, adapt, and let me know where you use it!
+      - generic [ref=e120]:
+        - heading "Component Categories" [level=2] [ref=e121]
+        - paragraph [ref=e122]: 33 components organised into 11 categories. Hover to preview, click to select, then follow the link to see the demo.
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - heading "☰ Navigation 3" [level=3] [ref=e125]:
+              - generic [ref=e126]: ☰
+              - text: Navigation
+              - generic [ref=e127]: "3"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e129]:
+              - generic [ref=e130]:
+                - 'button "Card 1 of 3: Navbar" [ref=e131] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Navbar - Image 1"
+                      - generic: Navbar
+                - 'button "Card 2 of 3: SpeedDial" [ref=e132] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "SpeedDial - Image 2"
+                      - generic: SpeedDial
+                - 'button "Card 3 of 3: FloatingDock" [ref=e133] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "FloatingDock - Image 3"
+                      - generic: FloatingDock
+          - generic [ref=e134]:
+            - heading "💫 Native UI 3" [level=3] [ref=e135]:
+              - generic [ref=e136]: 💫
+              - text: Native UI
+              - generic [ref=e137]: "3"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e139]:
+              - generic [ref=e140]:
+                - 'button "Card 1 of 3: ShineBorder" [ref=e141] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "ShineBorder - Image 1"
+                      - generic: ShineBorder
+                - 'button "Card 2 of 3: SwishButton" [ref=e142] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "SwishButton - Image 2"
+                      - generic: SwishButton
+                - 'button "Card 3 of 3: MagicCard" [ref=e143] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "MagicCard - Image 3"
+                      - generic: MagicCard
+          - generic [ref=e144]:
+            - heading "🎭 Helpful UX 3" [level=3] [ref=e145]:
+              - generic [ref=e146]: 🎭
+              - text: Helpful UX
+              - generic [ref=e147]: "3"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e149]:
+              - generic [ref=e150]:
+                - 'button "Card 1 of 3: Marquee" [ref=e151] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Marquee - Image 1"
+                      - generic: Marquee
+                - 'button "Card 2 of 3: LinkImageHover" [ref=e152] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "LinkImageHover - Image 2"
+                      - generic: LinkImageHover
+                - 'button "Card 3 of 3: AnimatedBeam" [ref=e153] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "AnimatedBeam - Image 3"
+                      - generic: AnimatedBeam
+          - generic [ref=e154]:
+            - heading "⏱️ Time 2" [level=3] [ref=e155]:
+              - generic [ref=e156]: ⏱️
+              - text: Time
+              - generic [ref=e157]: "2"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e159]:
+              - generic [ref=e160]:
+                - 'button "Card 1 of 2: Countdown" [ref=e161] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Countdown - Image 1"
+                      - generic: Countdown
+                - 'button "Card 2 of 2: Timeline" [ref=e162] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Timeline - Image 2"
+                      - generic: Timeline
+          - generic [ref=e163]:
+            - heading "🃏 Cards 4" [level=3] [ref=e164]:
+              - generic [ref=e165]: 🃏
+              - text: Cards
+              - generic [ref=e166]: "4"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e168]:
+              - generic [ref=e169]:
+                - 'button "Card 1 of 4: BentoGrid" [ref=e170] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "BentoGrid - Image 1"
+                      - generic: BentoGrid
+                - 'button "Card 2 of 4: ScratchToReveal" [ref=e171] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "ScratchToReveal - Image 2"
+                      - generic: ScratchToReveal
+                - 'button "Card 3 of 4: ExpandingCard" [ref=e172] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "ExpandingCard - Image 3"
+                      - generic: ExpandingCard
+                - 'button "Card 4 of 4: CardStack" [ref=e173] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "CardStack - Image 4"
+                      - generic: CardStack
+          - generic [ref=e174]:
+            - heading "📊 Data Visualisation 5" [level=3] [ref=e175]:
+              - generic [ref=e176]: 📊
+              - text: Data Visualisation
+              - generic [ref=e177]: "5"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e179]:
+              - generic [ref=e180]:
+                - 'button "Card 1 of 5: DataGrid" [ref=e181] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "DataGrid - Image 1"
+                      - generic: DataGrid
+                - 'button "Card 2 of 5: CalendarHeatmap" [ref=e182] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "CalendarHeatmap - Image 2"
+                      - generic: CalendarHeatmap
+                - 'button "Card 3 of 5: BubblePacking" [ref=e183] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "BubblePacking - Image 3"
+                      - generic: BubblePacking
+                - 'button "Card 4 of 5: RadialCluster" [ref=e184] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "RadialCluster - Image 4"
+                      - generic: RadialCluster
+                - 'button "Card 5 of 5: Sunburst" [ref=e185] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Sunburst - Image 5"
+                      - generic: Sunburst
+          - generic [ref=e186]:
+            - heading "🌊 Interactive 3" [level=3] [ref=e187]:
+              - generic [ref=e188]: 🌊
+              - text: Interactive
+              - generic [ref=e189]: "3"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e191]:
+              - generic [ref=e192]:
+                - 'button "Card 1 of 3: Sankey" [ref=e193] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Sankey - Image 1"
+                      - generic: Sankey
+                - 'button "Card 2 of 3: FolderFiles" [ref=e194] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "FolderFiles - Image 2"
+                      - generic: FolderFiles
+                - 'button "Card 3 of 3: ExplainerCanvas" [ref=e195] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "ExplainerCanvas - Image 3"
+                      - generic: ExplainerCanvas
+          - generic [ref=e196]:
+            - heading "🖼️ Media & Images 2" [level=3] [ref=e197]:
+              - generic [ref=e198]: 🖼️
+              - text: Media & Images
+              - generic [ref=e199]: "2"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e201]:
+              - generic [ref=e202]:
+                - 'button "Card 1 of 2: BeforeAfter" [ref=e203] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "BeforeAfter - Image 1"
+                      - generic: BeforeAfter
+                - 'button "Card 2 of 2: DomeGallery" [ref=e204] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "DomeGallery - Image 2"
+                      - generic: DomeGallery
+          - generic [ref=e205]:
+            - heading "📝 Forms & CRUD 2" [level=3] [ref=e206]:
+              - generic [ref=e207]: 📝
+              - text: Forms & CRUD
+              - generic [ref=e208]: "2"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e210]:
+              - generic [ref=e211]:
+                - 'button "Card 1 of 2: Forms" [ref=e212] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Forms - Image 1"
+                      - generic: Forms
+                - 'button "Card 2 of 2: Editor" [ref=e213] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Editor - Image 2"
+                      - generic: Editor
+          - generic [ref=e214]:
+            - heading "🗺️ Location Ops 3" [level=3] [ref=e215]:
+              - generic [ref=e216]: 🗺️
+              - text: Location Ops
+              - generic [ref=e217]: "3"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e219]:
+              - generic [ref=e220]:
+                - 'button "Card 1 of 3: Maps" [ref=e221] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Maps - Image 1"
+                      - generic: Maps
+                - 'button "Card 2 of 3: Location" [ref=e222] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Location - Image 2"
+                      - generic: Location
+                - 'button "Card 3 of 3: GeoViz" [ref=e223] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "GeoViz - Image 3"
+                      - generic: GeoViz
+          - generic [ref=e224]:
+            - heading "🔐 Authentication 3" [level=3] [ref=e225]:
+              - generic [ref=e226]: 🔐
+              - text: Authentication
+              - generic [ref=e227]: "3"
+            - region "Card stack with swipe navigation. Use arrow keys to select cards when focused. Press Escape to deselect." [ref=e229]:
+              - generic [ref=e230]:
+                - 'button "Card 1 of 3: Auth Demo" [ref=e231] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Auth Demo - Image 1"
+                      - generic: Auth Demo
+                - 'button "Card 2 of 3: Dashboard" [ref=e232] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Dashboard - Image 2"
+                      - generic: Dashboard
+                - 'button "Card 3 of 3: Profile" [ref=e233] [cursor=pointer]':
+                  - generic:
+                    - generic:
+                      - img "Profile - Image 3"
+                      - generic: Profile
+      - generic [ref=e234]:
+        - heading "Quick Start" [level=2] [ref=e235]
+        - generic [ref=e236]:
+          - generic [ref=e237]:
+            - generic [ref=e238]: "1"
+            - generic [ref=e239]:
+              - heading "Browse Components" [level=3] [ref=e240]
+              - paragraph [ref=e241]: Explore the categories above to find the components you need.
+          - generic [ref=e242]:
+            - generic [ref=e243]: "2"
+            - generic [ref=e244]:
+              - heading "Copy to Your Project" [level=3] [ref=e245]
+              - paragraph [ref=e246]:
+                - text: Copy component files from
+                - code [ref=e247]: src/lib/components/
+                - text: to your project.
+          - generic [ref=e248]:
+            - generic [ref=e249]: "3"
+            - generic [ref=e250]:
+              - heading "Customise & Use" [level=3] [ref=e251]
+              - paragraph [ref=e252]: Import and use with your data. All props are fully typed and documented.
+      - generic [ref=e254]:
+        - generic [ref=e255]:
+          - generic [ref=e256]: ⚡
+          - generic [ref=e257]: Svelte 5 Runes
+        - generic [ref=e258]:
+          - generic [ref=e259]: 📱
+          - generic [ref=e260]: Fully Responsive
+        - generic [ref=e261]:
+          - generic [ref=e262]: ♿
+          - generic [ref=e263]: Accessible
+        - generic [ref=e264]:
+          - generic [ref=e265]: 🚀
+          - generic [ref=e266]: Zero Deps Options
+        - generic [ref=e267]:
+          - generic [ref=e268]: 📝
+          - generic [ref=e269]: TypeScript
+        - generic [ref=e270]:
+          - generic [ref=e271]: 🎨
+          - generic [ref=e272]: Modern Design
+  - contentinfo [ref=e273]:
+    - paragraph [ref=e275]:
+      - text: Built with
+      - link "Svelte 5" [ref=e276] [cursor=pointer]:
+        - /url: https://svelte.dev
+      - text: •
+      - link "SvelteKit" [ref=e277] [cursor=pointer]:
+        - /url: https://kit.svelte.dev
+      - text: •
+      - link "TypeScript" [ref=e278] [cursor=pointer]:
+        - /url: https://www.typescriptlang.org

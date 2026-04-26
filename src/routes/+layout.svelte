@@ -38,7 +38,13 @@
 			icon: '☰',
 			items: [
 				{ label: 'Navbar', href: '/navbar', icon: '☰', active: isActive('/navbar') },
-				{ label: 'SpeedDial', href: '/speeddial', icon: '⚡', active: isActive('/speeddial') }
+				{ label: 'SpeedDial', href: '/speeddial', icon: '⚡', active: isActive('/speeddial') },
+				{
+					label: 'FloatingDock',
+					href: '/floatingdock',
+					icon: '🧲',
+					active: isActive('/floatingdock')
+				}
 			]
 		},
 		{
@@ -66,6 +72,18 @@
 					href: '/animatedbeam',
 					icon: '✨',
 					active: isActive('/animatedbeam')
+				},
+				{
+					label: 'CommandPalette',
+					href: '/commandpalette',
+					icon: '🔎',
+					active: isActive('/commandpalette')
+				},
+				{
+					label: 'ToastNotification',
+					href: '/toastnotification',
+					icon: '🔔',
+					active: isActive('/toastnotification')
 				}
 			]
 		},

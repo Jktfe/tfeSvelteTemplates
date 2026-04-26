@@ -49,6 +49,13 @@
 					icon: '⚡',
 					description: 'Floating action button with expandable menu',
 					screenshot: screenshotPath('SpeedDialShot.png')
+				},
+				{
+					name: 'FloatingDock',
+					href: '/floatingdock',
+					icon: '🧲',
+					description: 'macOS-style dock with proximity magnification',
+					screenshot: screenshotPath('FloatingDockShot.png')
 				}
 			]
 		},
@@ -103,6 +110,13 @@
 					icon: '⚡',
 					description: 'SVG beams for data flow visualization',
 					screenshot: screenshotPath('AnimatedBeanShot.png')
+				},
+				{
+					name: 'ToastNotification',
+					href: '/toastnotification',
+					icon: '🔔',
+					description: 'Stackable global alerts with actions',
+					screenshot: screenshotPath('ToastNotificationShot.png')
 				}
 			]
 		},
@@ -130,6 +144,13 @@
 			name: 'Cards',
 			icon: '🃏',
 			components: [
+				{
+					name: 'BentoGrid',
+					href: '/bentogrid',
+					icon: '🍱',
+					description: 'Responsive grid system for modern layouts',
+					screenshot: screenshotPath('BentoGridShot.png')
+				},
 				{
 					name: 'ScratchToReveal',
 					href: '/scratchtoreveal',
@@ -321,12 +342,15 @@
 	const iconColors: Record<string, { bg: string; text: string }> = {
 		'☰': { bg: '#dbeafe', text: '#1d4ed8' },
 		'⚡': { bg: '#fef3c7', text: '#d97706' },
+		'🧲': { bg: '#e0f2fe', text: '#0369a1' },
 		'💫': { bg: '#ede9fe', text: '#7c3aed' },
 		'🎯': { bg: '#fce7f3', text: '#db2777' },
 		'✨': { bg: '#fef3c7', text: '#d97706' },
 		'🎭': { bg: '#f3e8ff', text: '#9333ea' },
 		'🔗': { bg: '#dbeafe', text: '#2563eb' },
+		'🔔': { bg: '#fef3c7', text: '#b45309' },
 		'⏱️': { bg: '#fef3c7', text: '#d97706' },
+		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
 		'🎴': { bg: '#fef3c7', text: '#ea580c' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
