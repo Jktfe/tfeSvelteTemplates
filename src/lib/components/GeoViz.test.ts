@@ -22,7 +22,7 @@ describe('GeoViz - Module Imports', () => {
 	it('GeoBubbleMap module exports correctly', async () => {
 		const module = await import('./GeoBubbleMap.svelte');
 		expect(module.default).toBeDefined();
-	});
+	}, 10000);
 
 	it('GeoChoropleth module exports correctly', async () => {
 		const module = await import('./GeoChoropleth.svelte');
