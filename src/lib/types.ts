@@ -2649,3 +2649,33 @@ export interface ToastNotificationProps {
 	maxVisible?: number;
 	class?: string;
 }
+
+// =============================================================================
+// TYPEWRITER COMPONENT TYPES
+// =============================================================================
+
+/**
+ * Props for Typewriter component
+ * Animated text that types out characters one-by-one with a blinking cursor
+ *
+ * @property phrases - Array of strings to cycle through
+ * @property typeSpeed - Milliseconds per character when typing (default: 80)
+ * @property deleteSpeed - Milliseconds per character when deleting (default: 50)
+ * @property pauseDuration - Milliseconds to pause after typing a phrase (default: 2000)
+ * @property loop - Whether to loop through phrases or stop after one pass (default: true)
+ * @property showCursor - Show blinking cursor (default: true)
+ * @property cursorChar - Character used for cursor (default: '|')
+ * @property startDelay - Milliseconds to wait before starting (default: 0)
+ * @property class - Additional CSS classes
+ */
+export interface TypewriterProps {
+	phrases: string[];
+	typeSpeed?: number;
+	deleteSpeed?: number;
+	pauseDuration?: number;
+	loop?: boolean;
+	showCursor?: boolean;
+	cursorChar?: string;
+	startDelay?: number;
+	class?: string;
+}

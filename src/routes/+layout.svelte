@@ -84,6 +84,12 @@
 					href: '/toastnotification',
 					icon: '🔔',
 					active: isActive('/toastnotification')
+				},
+				{
+					label: 'Typewriter',
+					href: '/typewriter',
+					icon: '⌨️',
+					active: isActive('/typewriter')
 				}
 			]
 		},
