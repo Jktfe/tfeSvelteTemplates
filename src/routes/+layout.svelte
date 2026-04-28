@@ -108,6 +108,12 @@
 					href: '/typewriter',
 					icon: '⌨️',
 					active: isActive('/typewriter')
+				},
+				{
+					label: 'AvatarStack',
+					href: '/avatarstack',
+					icon: '👥',
+					active: isActive('/avatarstack')
 				}
 			]
 		},

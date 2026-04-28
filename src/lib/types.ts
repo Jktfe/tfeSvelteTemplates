@@ -2782,3 +2782,43 @@ export interface MorphingDialogProps {
 	closeOnEscape?: boolean;
 	class?: string;
 }
+
+/**
+ * One person/entity in an AvatarStack.
+ *
+ * Either provide `src` for a real image, or rely on `name` to render initials.
+ * `name` is also used for the alt text and tooltip — always supply it.
+ */
+export interface AvatarStackPerson {
+	/** Display name. Used for alt text, tooltip, and initials fallback. */
+	name: string;
+	/** Image URL. Falls back to initials when missing or failing to load. */
+	src?: string;
+	/** Optional explicit alt text override. Defaults to `name`. */
+	alt?: string;
+	/** Optional explicit initials override. Defaults to first letter of each word in `name`, max 2. */
+	initials?: string;
+	/** Optional explicit background colour for the initials fallback. Defaults to a deterministic colour derived from `name`. */
+	color?: string;
+}
+
+/**
+ * Props for AvatarStack — overlapping group of avatars with overflow counter.
+ *
+ * @property people - The list of people to display.
+ * @property max - Maximum avatars to show before collapsing into "+N more". Default 4.
+ * @property size - Avatar diameter in px. Default 36.
+ * @property overlap - How many px each avatar overlaps the previous. Default 12.
+ * @property borderColor - Ring colour separating overlapping avatars. Default 'white'.
+ * @property showOverflow - Render the "+N" counter when people.length > max. Default true.
+ * @property class - Additional classes for the outer container.
+ */
+export interface AvatarStackProps {
+	people: AvatarStackPerson[];
+	max?: number;
+	size?: number;
+	overlap?: number;
+	borderColor?: string;
+	showOverflow?: boolean;
+	class?: string;
+}
