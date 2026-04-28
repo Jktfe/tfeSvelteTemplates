@@ -236,6 +236,13 @@
 					icon: '💬',
 					description: 'Accessible hover/focus tooltip with four placements and keyboard support',
 					screenshot: screenshotPath('TooltipShot.png')
+				},
+				{
+					name: 'Pagination',
+					href: '/pagination',
+					icon: '📑',
+					description: 'Page-number navigation with smart ellipsis, two-way bind, ARIA-correct buttons',
+					screenshot: screenshotPath('PaginationShot.png')
 				}
 			]
 		},
@@ -527,7 +534,8 @@
 		'🚨': { bg: '#fee2e2', text: '#991b1b' },
 		'🎚️': { bg: '#e0f2fe', text: '#0369a1' },
 		'🎛️': { bg: '#ede9fe', text: '#5b21b6' },
-		'💬': { bg: '#f0fdf4', text: '#166534' }
+		'💬': { bg: '#f0fdf4', text: '#166534' },
+		'📑': { bg: '#fef3c7', text: '#92400e' }
 	};
 
 	// Convert components to Card format with screenshots
