@@ -173,6 +173,13 @@
 					icon: '📭',
 					description: 'Universal "nothing here yet" placeholder with optional CTA',
 					screenshot: screenshotPath('EmptyStateShot.png')
+				},
+				{
+					name: 'SkeletonLoader',
+					href: '/skeletonloader',
+					icon: '💀',
+					description: 'Three-shape primitive for content placeholders while data loads',
+					screenshot: screenshotPath('SkeletonLoaderShot.png')
 				}
 			]
 		},
@@ -455,7 +462,8 @@
 		'💧': { bg: '#cffafe', text: '#0e7490' },
 		'🏷️': { bg: '#fef3c7', text: '#a16207' },
 		'📈': { bg: '#dcfce7', text: '#15803d' },
-		'📭': { bg: '#fef3c7', text: '#a16207' }
+		'📭': { bg: '#fef3c7', text: '#a16207' },
+		'💀': { bg: '#e5e7eb', text: '#374151' }
 	};
 
 	// Convert components to Card format with screenshots

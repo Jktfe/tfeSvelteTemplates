@@ -126,6 +126,12 @@
 					href: '/emptystate',
 					icon: '📭',
 					active: isActive('/emptystate')
+				},
+				{
+					label: 'SkeletonLoader',
+					href: '/skeletonloader',
+					icon: '💀',
+					active: isActive('/skeletonloader')
 				}
 			]
 		},
