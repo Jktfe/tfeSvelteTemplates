@@ -204,6 +204,12 @@
 					href: '/accordion',
 					icon: '🪗',
 					active: isActive('/accordion')
+				},
+				{
+					label: 'Switch',
+					href: '/switch',
+					icon: '🔘',
+					active: isActive('/switch')
 				}
 			]
 		},
