@@ -228,6 +228,12 @@
 					href: '/divider',
 					icon: '➖',
 					active: isActive('/divider')
+				},
+				{
+					label: 'Tabs',
+					href: '/tabs',
+					icon: '🗂',
+					active: isActive('/tabs')
 				}
 			]
 		},

@@ -292,6 +292,13 @@
 					icon: '➖',
 					description: 'Section separator with optional label, horizontal or vertical orientation, three thicknesses, three line styles, and proper ARIA semantics',
 					screenshot: screenshotPath('DividerShot.png')
+				},
+				{
+					name: 'Tabs',
+					href: '/tabs',
+					icon: '🗂',
+					description: 'Tabbed content switcher with full WAI-ARIA tablist, roving tabindex, underline + pill variants, horizontal + vertical, full keyboard nav',
+					screenshot: screenshotPath('TabsShot.png')
 				}
 			]
 		},
@@ -598,7 +605,8 @@
 		'🔘': { bg: '#dbeafe', text: '#1d4ed8' },
 		'🎚': { bg: '#e0e7ff', text: '#4338ca' },
 		'🪗': { bg: '#fef9c3', text: '#854d0e' },
-		'➖': { bg: '#f3f4f6', text: '#374151' }
+		'➖': { bg: '#f3f4f6', text: '#374151' },
+		'🗂': { bg: '#fef3c7', text: '#a16207' }
 	};
 
 	// Convert components to Card format with screenshots
