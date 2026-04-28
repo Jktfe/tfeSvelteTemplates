@@ -53,7 +53,13 @@
 			items: [
 				{ label: 'ShineBorder', href: '/shineborder', icon: '💫', active: isActive('/shineborder') },
 				{ label: 'SwishButton', href: '/swishbutton', icon: '🎯', active: isActive('/swishbutton') },
-				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: isActive('/magiccard') }
+				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: isActive('/magiccard') },
+				{
+					label: 'MorphingDialog',
+					href: '/morphingdialog',
+					icon: '🪄',
+					active: isActive('/morphingdialog')
+				}
 			]
 		},
 		{
@@ -173,6 +179,12 @@
 			icon: '📝',
 			items: [
 				{ label: 'Forms', href: '/forms', icon: '📝', active: isActive('/forms') },
+				{
+					label: 'UploadDropzone',
+					href: '/uploaddropzone',
+					icon: '📤',
+					active: isActive('/uploaddropzone')
+				},
 				{ label: 'Editor', href: '/editor', icon: '✏️', active: isActive('/editor') }
 			]
 		},
@@ -182,6 +194,7 @@
 			items: [
 				{ label: 'Maps', href: '/maps', icon: '🗺️', active: isActive('/maps') },
 				{ label: 'Location', href: '/location', icon: '📍', active: isActive('/location') },
+				{ label: 'GlobePresence', href: '/globepresence', icon: '🌍', active: isActive('/globepresence') },
 				{ label: 'GeoViz', href: '/geo', icon: '🌍', active: isActive('/geo') }
 			]
 		},

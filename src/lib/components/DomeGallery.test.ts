@@ -191,7 +191,7 @@ describe('DomeGallery', () => {
 		it('images have draggable="false" to prevent browser drag', () => {
 			render(DomeGallery, { props: { images: testImages } });
 			const img = document.querySelector('.item__image img') as HTMLImageElement;
-			expect(img.draggable).toBe(false);
+			expect(img).toHaveAttribute('draggable', 'false');
 		});
 	});
 

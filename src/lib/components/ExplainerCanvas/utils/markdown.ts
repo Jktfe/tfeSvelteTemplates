@@ -9,6 +9,7 @@
 
 import { marked, type Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
+import DOMPurify from 'isomorphic-dompurify';
 import type { Config } from 'dompurify';
 
 /**
@@ -75,31 +76,17 @@ const DOMPURIFY_CONFIG: Config = {
 };
 
 /**
- * Sanitise HTML using DOMPurify for robust XSS protection
- * Only runs in browser environment (SSR returns unsanitized but trusted HTML)
+ * Sanitise HTML using DOMPurify for robust XSS protection.
  *
  * @param html - Raw HTML string
  * @returns Sanitised HTML string
  */
 function sanitiseHtml(html: string): string {
-	// During SSR, return HTML as-is (it's trusted server-generated content)
-	if (typeof window === 'undefined') {
-		return html;
-	}
-
-	// In browser, use DOMPurify if available
 	try {
-		// DOMPurify is attached to window in browser environment
-		const DOMPurify = (window as any).DOMPurify;
-		if (DOMPurify) {
-			return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string;
-		}
+		return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string;
 	} catch {
-		// If DOMPurify fails, return escaped HTML as fallback
+		return escapeHtml(html);
 	}
-
-	// Fallback: return HTML as-is (already from marked which is trusted)
-	return html;
 }
 
 /**

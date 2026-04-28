@@ -83,6 +83,13 @@
 					icon: '✨',
 					description: 'Cards with dynamic spotlight effects',
 					screenshot: screenshotPath('MagicCardShot.png')
+				},
+				{
+					name: 'MorphingDialog',
+					href: '/morphingdialog',
+					icon: '🪄',
+					description: 'Shared-element morph dialog transition',
+					screenshot: screenshotPath('MorphingDialogShot.png')
 				}
 			]
 		},
@@ -274,6 +281,13 @@
 					screenshot: screenshotPath('FormsShot.png')
 				},
 				{
+					name: 'UploadDropzone',
+					href: '/uploaddropzone',
+					icon: '📤',
+					description: 'Drag, paste and validate file uploads',
+					screenshot: screenshotPath('FormsShot.png')
+				},
+				{
 					name: 'Editor',
 					href: '/editor',
 					icon: '✏️',
@@ -299,6 +313,13 @@
 					icon: '📍',
 					description: 'Locate me, delivery & routing demos',
 					screenshot: screenshotPath('LocationShot.png')
+				},
+				{
+					name: 'GlobePresence',
+					href: '/globepresence',
+					icon: '🌍',
+					description: 'High-performance 3D globe visualization',
+					screenshot: screenshotPath('GlobePresenceShot.png')
 				},
 				{
 					name: 'GeoViz',
@@ -369,7 +390,8 @@
 		'📍': { bg: '#fee2e2', text: '#ef4444' },
 		'🌍': { bg: '#d1fae5', text: '#10b981' },
 		'🔐': { bg: '#fce7f3', text: '#be185d' },
-		'👤': { bg: '#e0e7ff', text: '#6366f1' }
+		'👤': { bg: '#e0e7ff', text: '#6366f1' },
+		'📤': { bg: '#e0f2fe', text: '#0369a1' }
 	};
 
 	// Convert components to Card format with screenshots

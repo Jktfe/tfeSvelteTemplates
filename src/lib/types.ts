@@ -648,6 +648,52 @@ export interface FileFieldProps extends BaseFieldProps {
 	maxFiles?: number;
 }
 
+/**
+ * UploadDropzone - typed upload state and validation contracts
+ */
+export type UploadDropzoneStatus = 'ready' | 'uploading' | 'success' | 'error';
+
+export type UploadDropzoneRejectionReason = 'type' | 'size' | 'count';
+
+export interface UploadDropzoneItem {
+	id: string;
+	name: string;
+	size: number;
+	type: string;
+	file?: File;
+	status?: UploadDropzoneStatus;
+	progress?: number;
+	previewUrl?: string;
+	error?: string;
+	meta?: Record<string, unknown>;
+}
+
+export interface UploadDropzoneRejection {
+	file: File;
+	reason: UploadDropzoneRejectionReason;
+	message: string;
+}
+
+export interface UploadDropzoneProps {
+	files?: UploadDropzoneItem[];
+	accept?: string;
+	multiple?: boolean;
+	maxFiles?: number;
+	maxSize?: number;
+	disabled?: boolean;
+	title?: string;
+	description?: string;
+	browseLabel?: string;
+	emptyLabel?: string;
+	class?: string;
+	fileItem?: import('svelte').Snippet<[UploadDropzoneItem]>;
+	onChange?: (items: UploadDropzoneItem[]) => void;
+	onFilesAdded?: (items: UploadDropzoneItem[]) => void;
+	onFilesRejected?: (rejections: UploadDropzoneRejection[]) => void;
+	onRemove?: (item: UploadDropzoneItem) => void;
+	onRetry?: (item: UploadDropzoneItem) => void;
+}
+
 // ==================================================
 // DATAGRID COMPONENT TYPES
 // ==================================================
@@ -2000,6 +2046,29 @@ export interface GeoDataPoint {
 }
 
 /**
+ * GlobePresence - Types for 3D Globe Visualization
+ */
+
+export interface GlobeMarker {
+	id: string;
+	name: string;
+	lat: number;
+	long: number;
+	value?: number;
+	color?: string;
+	label?: string;
+}
+
+export interface GlobePresenceProps {
+	markers?: GlobeMarker[];
+	autoRotate?: boolean;
+	rotationSpeed?: number;
+	interactive?: boolean;
+	theme?: 'dark' | 'light';
+	class?: string;
+}
+
+/**
  * Database row structure for geo data points
  * Maps to schema defined in database/schema_geo.sql
  */
@@ -2677,5 +2746,35 @@ export interface TypewriterProps {
 	showCursor?: boolean;
 	cursorChar?: string;
 	startDelay?: number;
+	class?: string;
+}
+
+/**
+ * Props for MorphingDialog component
+ * A modal that morphs from a trigger element into a full dialog overlay
+ *
+ * @property open - Whether the dialog is currently open (bindable)
+ * @property duration - Morph animation duration in milliseconds (default: 400)
+ * @property easing - CSS easing function for the morph transition (default: 'cubic-bezier(0.4, 0, 0.2, 1)')
+ * @property overlayColor - Background overlay colour (default: 'rgba(0, 0, 0, 0.5)')
+ * @property overlayBlur - Backdrop blur amount in pixels (default: 4)
+ * @property dialogWidth - Maximum width of the expanded dialog (default: '560px')
+ * @property dialogHeight - Maximum height of the expanded dialog (default: 'auto')
+ * @property borderRadius - Border radius of the expanded dialog (default: '16px')
+ * @property closeOnOverlay - Whether clicking the overlay closes the dialog (default: true)
+ * @property closeOnEscape - Whether pressing Escape closes the dialog (default: true)
+ * @property class - Additional CSS classes for the dialog container
+ */
+export interface MorphingDialogProps {
+	open?: boolean;
+	duration?: number;
+	easing?: string;
+	overlayColor?: string;
+	overlayBlur?: number;
+	dialogWidth?: string;
+	dialogHeight?: string;
+	borderRadius?: string;
+	closeOnOverlay?: boolean;
+	closeOnEscape?: boolean;
 	class?: string;
 }
