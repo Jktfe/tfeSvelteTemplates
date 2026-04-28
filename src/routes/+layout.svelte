@@ -156,6 +156,12 @@
 					href: '/ratingstars',
 					icon: '⭐',
 					active: isActive('/ratingstars')
+				},
+				{
+					label: 'AlertBanner',
+					href: '/alertbanner',
+					icon: '🚨',
+					active: isActive('/alertbanner')
 				}
 			]
 		},
