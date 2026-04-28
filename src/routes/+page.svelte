@@ -166,6 +166,13 @@
 					icon: '🏷️',
 					description: '3 variants × 6 tones × 3 sizes — status pills, tags, dismissible chips',
 					screenshot: screenshotPath('BadgePillShot.png')
+				},
+				{
+					name: 'EmptyState',
+					href: '/emptystate',
+					icon: '📭',
+					description: 'Universal "nothing here yet" placeholder with optional CTA',
+					screenshot: screenshotPath('EmptyStateShot.png')
 				}
 			]
 		},
@@ -447,7 +454,8 @@
 		'🪄': { bg: '#f5d0fe', text: '#a21caf' },
 		'💧': { bg: '#cffafe', text: '#0e7490' },
 		'🏷️': { bg: '#fef3c7', text: '#a16207' },
-		'📈': { bg: '#dcfce7', text: '#15803d' }
+		'📈': { bg: '#dcfce7', text: '#15803d' },
+		'📭': { bg: '#fef3c7', text: '#a16207' }
 	};
 
 	// Convert components to Card format with screenshots

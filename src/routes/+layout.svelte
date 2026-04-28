@@ -120,6 +120,12 @@
 					href: '/badgepill',
 					icon: '🏷️',
 					active: isActive('/badgepill')
+				},
+				{
+					label: 'EmptyState',
+					href: '/emptystate',
+					icon: '📭',
+					active: isActive('/emptystate')
 				}
 			]
 		},
