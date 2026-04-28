@@ -143,8 +143,8 @@ addToast({
 		</div>
 	</section>
 
-	<!-- The Component Instance -->
-	<ToastNotification position="top-right" />
+	<!-- The Component Instance — offsetY clears the sticky navbar -->
+	<ToastNotification position="top-right" offsetY="5rem" />
 </div>
 
 <style>

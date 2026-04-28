@@ -44,6 +44,12 @@
 					href: '/floatingdock',
 					icon: '🧲',
 					active: isActive('/floatingdock')
+				},
+				{
+					label: 'LiquidTabBar',
+					href: '/liquidtabbar',
+					icon: '💧',
+					active: isActive('/liquidtabbar')
 				}
 			]
 		},
@@ -53,6 +59,12 @@
 			items: [
 				{ label: 'ShineBorder', href: '/shineborder', icon: '💫', active: isActive('/shineborder') },
 				{ label: 'SwishButton', href: '/swishbutton', icon: '🎯', active: isActive('/swishbutton') },
+				{
+					label: 'MagneticButton',
+					href: '/magneticbutton',
+					icon: '🧲',
+					active: isActive('/magneticbutton')
+				},
 				{ label: 'MagicCard', href: '/magiccard', icon: '✨', active: isActive('/magiccard') },
 				{
 					label: 'MorphingDialog',
@@ -112,6 +124,7 @@
 			icon: '🃏',
 			items: [
 				{ label: 'CardStack', href: '/cardstack', icon: '🃏', active: isActive('/cardstack') },
+				{ label: 'BentoGrid', href: '/bentogrid', icon: '🍱', active: isActive('/bentogrid') },
 				{
 					label: 'ExpandingCard',
 					href: '/expandingcard',
