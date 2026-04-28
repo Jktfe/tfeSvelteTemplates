@@ -285,6 +285,13 @@
 					icon: '🎚',
 					description: 'Continuous-value range input with styled track + thumb, value bubble, custom formatters, full keyboard a11y',
 					screenshot: screenshotPath('SliderShot.png')
+				},
+				{
+					name: 'Divider',
+					href: '/divider',
+					icon: '➖',
+					description: 'Section separator with optional label, horizontal or vertical orientation, three thicknesses, three line styles, and proper ARIA semantics',
+					screenshot: screenshotPath('DividerShot.png')
 				}
 			]
 		},
@@ -582,7 +589,8 @@
 		'🍞': { bg: '#fef3c7', text: '#a16207' },
 		'🔘': { bg: '#dbeafe', text: '#1d4ed8' },
 		'🎚': { bg: '#e0e7ff', text: '#4338ca' },
-		'🪗': { bg: '#fef9c3', text: '#854d0e' }
+		'🪗': { bg: '#fef9c3', text: '#854d0e' },
+		'➖': { bg: '#f3f4f6', text: '#374151' }
 	};
 
 	// Convert components to Card format with screenshots

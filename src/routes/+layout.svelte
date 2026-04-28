@@ -222,6 +222,12 @@
 					href: '/slider',
 					icon: '🎚',
 					active: isActive('/slider')
+				},
+				{
+					label: 'Divider',
+					href: '/divider',
+					icon: '➖',
+					active: isActive('/divider')
 				}
 			]
 		},
