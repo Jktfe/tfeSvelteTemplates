@@ -174,7 +174,8 @@
 					icon: '🎯',
 					active: isActive('/radialcluster')
 				},
-				{ label: 'Sunburst', href: '/sunburst', icon: '☀️', active: isActive('/sunburst') }
+				{ label: 'Sunburst', href: '/sunburst', icon: '☀️', active: isActive('/sunburst') },
+				{ label: 'StatCard', href: '/statcard', icon: '📈', active: isActive('/statcard') }
 			]
 		},
 		{
