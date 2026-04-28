@@ -138,6 +138,12 @@
 					href: '/progressring',
 					icon: '⭕',
 					active: isActive('/progressring')
+				},
+				{
+					label: 'Stepper',
+					href: '/stepper',
+					icon: '🪜',
+					active: isActive('/stepper')
 				}
 			]
 		},
