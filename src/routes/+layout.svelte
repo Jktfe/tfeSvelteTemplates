@@ -170,10 +170,22 @@
 					active: isActive('/filterchips')
 				},
 				{
+					label: 'SegmentedControl',
+					href: '/segmentedcontrol',
+					icon: '🎛️',
+					active: isActive('/segmentedcontrol')
+				},
+				{
 					label: 'Tooltip',
 					href: '/tooltip',
 					icon: '💬',
 					active: isActive('/tooltip')
+				},
+				{
+					label: 'Pagination',
+					href: '/pagination',
+					icon: '📑',
+					active: isActive('/pagination')
 				}
 			]
 		},
