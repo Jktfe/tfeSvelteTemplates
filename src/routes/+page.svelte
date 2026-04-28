@@ -180,6 +180,13 @@
 					icon: '💀',
 					description: 'Three-shape primitive for content placeholders while data loads',
 					screenshot: screenshotPath('SkeletonLoaderShot.png')
+				},
+				{
+					name: 'ProgressRing',
+					href: '/progressring',
+					icon: '⭕',
+					description: 'Circular progress indicator with determinate and indeterminate modes',
+					screenshot: screenshotPath('ProgressRingShot.png')
 				}
 			]
 		},
@@ -463,7 +470,8 @@
 		'🏷️': { bg: '#fef3c7', text: '#a16207' },
 		'📈': { bg: '#dcfce7', text: '#15803d' },
 		'📭': { bg: '#fef3c7', text: '#a16207' },
-		'💀': { bg: '#e5e7eb', text: '#374151' }
+		'💀': { bg: '#e5e7eb', text: '#374151' },
+		'⭕': { bg: '#dbeafe', text: '#1d4ed8' }
 	};
 
 	// Convert components to Card format with screenshots
