@@ -152,6 +152,13 @@
 					icon: '⌨️',
 					description: 'Cycling typewriter text with blinking cursor',
 					screenshot: screenshotPath('TypewriterShot.png')
+				},
+				{
+					name: 'AvatarStack',
+					href: '/avatarstack',
+					icon: '👥',
+					description: 'Overlapping avatars with +N overflow and image-to-initials fallback',
+					screenshot: screenshotPath('AvatarStackShot.png')
 				}
 			]
 		},
