@@ -114,6 +114,12 @@
 					href: '/avatarstack',
 					icon: '👥',
 					active: isActive('/avatarstack')
+				},
+				{
+					label: 'BadgePill',
+					href: '/badgepill',
+					icon: '🏷️',
+					active: isActive('/badgepill')
 				}
 			]
 		},

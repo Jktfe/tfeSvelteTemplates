@@ -159,6 +159,13 @@
 					icon: '👥',
 					description: 'Overlapping avatars with +N overflow and image-to-initials fallback',
 					screenshot: screenshotPath('AvatarStackShot.png')
+				},
+				{
+					name: 'BadgePill',
+					href: '/badgepill',
+					icon: '🏷️',
+					description: '3 variants × 6 tones × 3 sizes — status pills, tags, dismissible chips',
+					screenshot: screenshotPath('BadgePillShot.png')
 				}
 			]
 		},
@@ -431,7 +438,8 @@
 		'📤': { bg: '#e0f2fe', text: '#0369a1' },
 		'👥': { bg: '#ccfbf1', text: '#0d9488' },
 		'🪄': { bg: '#f5d0fe', text: '#a21caf' },
-		'💧': { bg: '#cffafe', text: '#0e7490' }
+		'💧': { bg: '#cffafe', text: '#0e7490' },
+		'🏷️': { bg: '#fef3c7', text: '#a16207' }
 	};
 
 	// Convert components to Card format with screenshots
