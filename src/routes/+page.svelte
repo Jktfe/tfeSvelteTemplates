@@ -56,6 +56,13 @@
 					icon: '🧲',
 					description: 'macOS-style dock with proximity magnification',
 					screenshot: screenshotPath('FloatingDockShot.png')
+				},
+				{
+					name: 'LiquidTabBar',
+					href: '/liquidtabbar',
+					icon: '💧',
+					description: 'Tab bar with a gooey SVG filter that flows the active pill between tabs',
+					screenshot: screenshotPath('LiquidTabBarShot.png')
 				}
 			]
 		},
