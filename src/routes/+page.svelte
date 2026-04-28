@@ -261,6 +261,13 @@
 					icon: '☀️',
 					description: 'Zoomable hierarchical chart',
 					screenshot: screenshotPath('SunburstShot.png')
+				},
+				{
+					name: 'StatCard',
+					href: '/statcard',
+					icon: '📈',
+					description: 'KPI card with sentiment-aware trend',
+					screenshot: screenshotPath('StatCardShot.png')
 				}
 			]
 		},
@@ -439,7 +446,8 @@
 		'👥': { bg: '#ccfbf1', text: '#0d9488' },
 		'🪄': { bg: '#f5d0fe', text: '#a21caf' },
 		'💧': { bg: '#cffafe', text: '#0e7490' },
-		'🏷️': { bg: '#fef3c7', text: '#a16207' }
+		'🏷️': { bg: '#fef3c7', text: '#a16207' },
+		'📈': { bg: '#dcfce7', text: '#15803d' }
 	};
 
 	// Convert components to Card format with screenshots
