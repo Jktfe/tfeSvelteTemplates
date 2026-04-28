@@ -140,6 +140,12 @@
 					active: isActive('/progressring')
 				},
 				{
+					label: 'ProgressBar',
+					href: '/progressbar',
+					icon: '📊',
+					active: isActive('/progressbar')
+				},
+				{
 					label: 'CopyButton',
 					href: '/copybutton',
 					icon: '📋',
