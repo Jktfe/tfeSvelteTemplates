@@ -210,7 +210,7 @@ describe('BeforeAfter', () => {
 		it('applies default aspect ratio', () => {
 			render(BeforeAfter, { props: testProps });
 			const container = document.querySelector('.before-after-container') as HTMLElement;
-			expect(container.style.aspectRatio).toBe('16/9');
+			expect(container.style.aspectRatio.replace(/\s/g, '')).toBe('16/9');
 		});
 
 		it('applies custom aspect ratio', () => {
@@ -218,7 +218,7 @@ describe('BeforeAfter', () => {
 				props: { ...testProps, aspectRatio: '4/3' }
 			});
 			const container = document.querySelector('.before-after-container') as HTMLElement;
-			expect(container.style.aspectRatio).toBe('4/3');
+			expect(container.style.aspectRatio.replace(/\s/g, '')).toBe('4/3');
 		});
 
 		it('applies default width', () => {
@@ -265,7 +265,7 @@ describe('BeforeAfter', () => {
 				props: { ...testProps, handleColor: '#333333' }
 			});
 			const handle = document.querySelector('.handle') as HTMLElement;
-			expect(handle.style.background).toBe('rgb(51, 51, 51)');
+			expect(['rgb(51, 51, 51)', '#333333']).toContain(handle.style.background);
 		});
 
 		it('applies custom class name', () => {
