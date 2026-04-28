@@ -314,6 +314,12 @@
 			items: [
 				{ label: 'Forms', href: '/forms', icon: '📝', active: isActive('/forms') },
 				{
+					label: 'PinInput',
+					href: '/pininput',
+					icon: '🔢',
+					active: isActive('/pininput')
+				},
+				{
 					label: 'UploadDropzone',
 					href: '/uploaddropzone',
 					icon: '📤',
