@@ -189,6 +189,13 @@
 					screenshot: screenshotPath('ProgressRingShot.png')
 				},
 				{
+					name: 'ProgressBar',
+					href: '/progressbar',
+					icon: '📊',
+					description: 'Linear progress indicator with determinate, indeterminate, sizes, variants, and labels',
+					screenshot: screenshotPath('ProgressBarShot.png')
+				},
+				{
 					name: 'CopyButton',
 					href: '/copybutton',
 					icon: '📋',
