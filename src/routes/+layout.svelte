@@ -162,6 +162,18 @@
 					href: '/alertbanner',
 					icon: '🚨',
 					active: isActive('/alertbanner')
+				},
+				{
+					label: 'FilterChips',
+					href: '/filterchips',
+					icon: '🎚️',
+					active: isActive('/filterchips')
+				},
+				{
+					label: 'Tooltip',
+					href: '/tooltip',
+					icon: '💬',
+					active: isActive('/tooltip')
 				}
 			]
 		},
