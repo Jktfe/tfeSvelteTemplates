@@ -78,6 +78,13 @@
 					screenshot: screenshotPath('SwishButtonShot.png')
 				},
 				{
+					name: 'MagneticButton',
+					href: '/magneticbutton',
+					icon: '🧲',
+					description: 'Buttons drift towards the cursor with configurable strength and radius',
+					screenshot: screenshotPath('MagneticButtonShot.png')
+				},
+				{
 					name: 'MagicCard',
 					href: '/magiccard',
 					icon: '✨',
@@ -119,11 +126,25 @@
 					screenshot: screenshotPath('AnimatedBeanShot.png')
 				},
 				{
+					name: 'CommandPalette',
+					href: '/commandpalette',
+					icon: '🔎',
+					description: 'Spotlight-style fuzzy command launcher',
+					screenshot: screenshotPath('CommandPaletteShot.png')
+				},
+				{
 					name: 'ToastNotification',
 					href: '/toastnotification',
 					icon: '🔔',
 					description: 'Stackable global alerts with actions',
 					screenshot: screenshotPath('ToastNotificationShot.png')
+				},
+				{
+					name: 'Typewriter',
+					href: '/typewriter',
+					icon: '⌨️',
+					description: 'Cycling typewriter text with blinking cursor',
+					screenshot: screenshotPath('TypewriterShot.png')
 				}
 			]
 		},
@@ -285,7 +306,7 @@
 					href: '/uploaddropzone',
 					icon: '📤',
 					description: 'Drag, paste and validate file uploads',
-					screenshot: screenshotPath('FormsShot.png')
+					screenshot: screenshotPath('UploadDropzoneShot.png')
 				},
 				{
 					name: 'Editor',
@@ -370,6 +391,8 @@
 		'🎭': { bg: '#f3e8ff', text: '#9333ea' },
 		'🔗': { bg: '#dbeafe', text: '#2563eb' },
 		'🔔': { bg: '#fef3c7', text: '#b45309' },
+		'🔎': { bg: '#e0e7ff', text: '#4338ca' },
+		'⌨️': { bg: '#f3f4f6', text: '#374151' },
 		'⏱️': { bg: '#fef3c7', text: '#d97706' },
 		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },

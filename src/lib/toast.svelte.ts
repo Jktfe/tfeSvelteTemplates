@@ -1,7 +1,7 @@
 import type { ToastData } from './types';
 
-// Internal state for the toast stack
-const toastStack = $state<Required<ToastData>[]>([]);
+// Internal state for the toast stack wrapped in an object for proper Svelte 5 module reactivity
+export const toastState = $state({ stack: [] as Required<ToastData>[] });
 
 /**
  * Public API to trigger a toast from anywhere
@@ -17,7 +17,7 @@ export function addToast(toast: ToastData) {
 		action: toast.action || { label: '', onclick: () => {} }
 	};
 
-	toastStack.push(newToast);
+	toastState.stack.push(newToast);
 
 	// Handle auto-dismiss
 	if (newToast.duration > 0) {
@@ -33,15 +33,15 @@ export function addToast(toast: ToastData) {
  * Public API to dismiss a specific toast
  */
 export function dismissToast(id: string) {
-	const index = toastStack.findIndex((t) => t.id === id);
+	const index = toastState.stack.findIndex((t) => t.id === id);
 	if (index !== -1) {
-		toastStack.splice(index, 1);
+		toastState.stack.splice(index, 1);
 	}
 }
 
 /**
- * Get the current toast stack
+ * Get the current toast stack (legacy accessor, prefer using toastState directly in Svelte 5)
  */
 export function getToasts() {
-	return toastStack;
+	return toastState.stack;
 }

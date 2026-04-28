@@ -46,20 +46,19 @@
 
 <script lang="ts">
 	import type { ToastNotificationProps } from '$lib/types';
-	import { getToasts, dismissToast } from '$lib/toast.svelte';
+	import { toastState, dismissToast } from '$lib/toast.svelte';
 	import { fade, fly } from 'svelte/transition';
 
 	let {
 		position = 'top-right',
 		maxVisible = 5,
+		offsetY = '1rem',
+		offsetX = '1rem',
 		class: className = ''
 	}: ToastNotificationProps = $props();
 
-	// Reference the reactive state from the global singleton
-	const toastStack = getToasts();
-
 	// Limit the displayed toasts to maxVisible
-	let displayedToasts = $derived(toastStack.slice(-maxVisible));
+	let displayedToasts = $derived(toastState.stack.slice(-maxVisible));
 
 	// SVG icon paths for consistent rendering across platforms.
 	const severityIcons: Record<string, string> = {
@@ -87,6 +86,8 @@
 
 <div
 	class="toast-container {position} {className}"
+	style:--toast-offset-y={offsetY}
+	style:--toast-offset-x={offsetX}
 	aria-live="polite"
 	aria-label="Notifications"
 	role="status"
@@ -143,16 +144,16 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		padding: 1rem;
 		pointer-events: none; /* [NTL] Don't block interaction with elements beneath the container */
-		max-width: 100%;
+		max-width: calc(100% - 2rem);
 		width: 400px;
 	}
 
-	.top-right { top: 0; right: 0; }
-	.top-left { top: 0; left: 0; }
-	.bottom-right { bottom: 0; right: 0; flex-direction: column-reverse; }
-	.bottom-left { bottom: 0; left: 0; flex-direction: column-reverse; }
+	/* [NTL] Edge offsets are CSS variables so consumers can clear sticky navbars. */
+	.top-right { top: var(--toast-offset-y, 1rem); right: var(--toast-offset-x, 1rem); }
+	.top-left { top: var(--toast-offset-y, 1rem); left: var(--toast-offset-x, 1rem); }
+	.bottom-right { bottom: var(--toast-offset-y, 1rem); right: var(--toast-offset-x, 1rem); flex-direction: column-reverse; }
+	.bottom-left { bottom: var(--toast-offset-y, 1rem); left: var(--toast-offset-x, 1rem); flex-direction: column-reverse; }
 
 	/* [CR] ============================================================ */
 	/* [CR] TOAST ITEM */

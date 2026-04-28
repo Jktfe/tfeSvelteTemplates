@@ -2716,6 +2716,10 @@ export interface ToastData {
 export interface ToastNotificationProps {
 	position?: ToastPosition;
 	maxVisible?: number;
+	/** Vertical offset from the top/bottom edge — set high enough to clear sticky navbars. Default `1rem`. */
+	offsetY?: string;
+	/** Horizontal offset from the left/right edge. Default `1rem`. */
+	offsetX?: string;
 	class?: string;
 }
 

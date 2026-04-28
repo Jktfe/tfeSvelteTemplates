@@ -59,6 +59,11 @@ coverage/
 # Test output
 playwright-report/
 test-results/
+.playwright-cli/
+.playwright-mcp/
+output/
+# Repo-root screenshot scratch (use static/ComponentScreenshots/ for committed assets)
+/morphingdialog-*.png
 
 # Generated documentation
 HLV/
