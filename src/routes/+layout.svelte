@@ -186,6 +186,12 @@
 					href: '/pagination',
 					icon: '📑',
 					active: isActive('/pagination')
+				},
+				{
+					label: 'Breadcrumbs',
+					href: '/breadcrumbs',
+					icon: '🍞',
+					active: isActive('/breadcrumbs')
 				}
 			]
 		},

@@ -243,6 +243,13 @@
 					icon: '📑',
 					description: 'Page-number navigation with smart ellipsis, two-way bind, ARIA-correct buttons',
 					screenshot: screenshotPath('PaginationShot.png')
+				},
+				{
+					name: 'Breadcrumbs',
+					href: '/breadcrumbs',
+					icon: '🍞',
+					description: 'Hierarchical path navigation with smart truncation and ARIA-correct semantics',
+					screenshot: screenshotPath('BreadcrumbsShot.png')
 				}
 			]
 		},
@@ -535,7 +542,8 @@
 		'🎚️': { bg: '#e0f2fe', text: '#0369a1' },
 		'🎛️': { bg: '#ede9fe', text: '#5b21b6' },
 		'💬': { bg: '#f0fdf4', text: '#166534' },
-		'📑': { bg: '#fef3c7', text: '#92400e' }
+		'📑': { bg: '#fef3c7', text: '#92400e' },
+		'🍞': { bg: '#fef3c7', text: '#a16207' }
 	};
 
 	// Convert components to Card format with screenshots
