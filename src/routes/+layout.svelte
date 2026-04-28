@@ -132,6 +132,12 @@
 					href: '/skeletonloader',
 					icon: '💀',
 					active: isActive('/skeletonloader')
+				},
+				{
+					label: 'ProgressRing',
+					href: '/progressring',
+					icon: '⭕',
+					active: isActive('/progressring')
 				}
 			]
 		},
