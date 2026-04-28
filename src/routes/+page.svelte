@@ -196,6 +196,13 @@
 					screenshot: screenshotPath('ProgressBarShot.png')
 				},
 				{
+					name: 'KbdShortcut',
+					href: '/kbdshortcut',
+					icon: '🎹',
+					description: 'Keyboard key cap display — auto Mac/Windows glyph swap (⌘ vs Ctrl), sizes, custom separators',
+					screenshot: screenshotPath('KbdShortcutShot.png')
+				},
+				{
 					name: 'CopyButton',
 					href: '/copybutton',
 					icon: '📋',
@@ -271,6 +278,13 @@
 					icon: '🔘',
 					description: 'iOS-style boolean toggle with sliding thumb, two-way binding, three sizes/variants, role="switch" semantics',
 					screenshot: screenshotPath('SwitchShot.png')
+				},
+				{
+					name: 'Slider',
+					href: '/slider',
+					icon: '🎚',
+					description: 'Continuous-value range input with styled track + thumb, value bubble, custom formatters, full keyboard a11y',
+					screenshot: screenshotPath('SliderShot.png')
 				}
 			]
 		},
@@ -526,6 +540,7 @@
 		'🔔': { bg: '#fef3c7', text: '#b45309' },
 		'🔎': { bg: '#e0e7ff', text: '#4338ca' },
 		'⌨️': { bg: '#f3f4f6', text: '#374151' },
+		'🎹': { bg: '#e5e7eb', text: '#1f2937' },
 		'⏱️': { bg: '#fef3c7', text: '#d97706' },
 		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
@@ -566,6 +581,7 @@
 		'📑': { bg: '#fef3c7', text: '#92400e' },
 		'🍞': { bg: '#fef3c7', text: '#a16207' },
 		'🔘': { bg: '#dbeafe', text: '#1d4ed8' },
+		'🎚': { bg: '#e0e7ff', text: '#4338ca' },
 		'🪗': { bg: '#fef9c3', text: '#854d0e' }
 	};
 

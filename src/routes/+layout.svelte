@@ -146,6 +146,12 @@
 					active: isActive('/progressbar')
 				},
 				{
+					label: 'KbdShortcut',
+					href: '/kbdshortcut',
+					icon: '🎹',
+					active: isActive('/kbdshortcut')
+				},
+				{
 					label: 'CopyButton',
 					href: '/copybutton',
 					icon: '📋',
@@ -210,6 +216,12 @@
 					href: '/switch',
 					icon: '🔘',
 					active: isActive('/switch')
+				},
+				{
+					label: 'Slider',
+					href: '/slider',
+					icon: '🎚',
+					active: isActive('/slider')
 				}
 			]
 		},
