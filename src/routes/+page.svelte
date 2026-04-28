@@ -264,6 +264,13 @@
 					icon: '🪗',
 					description: 'Collapsible content sections with single/multiple-open modes and smooth grid-row animation',
 					screenshot: screenshotPath('AccordionShot.png')
+				},
+				{
+					name: 'Switch',
+					href: '/switch',
+					icon: '🔘',
+					description: 'iOS-style boolean toggle with sliding thumb, two-way binding, three sizes/variants, role="switch" semantics',
+					screenshot: screenshotPath('SwitchShot.png')
 				}
 			]
 		},
@@ -558,6 +565,7 @@
 		'💬': { bg: '#f0fdf4', text: '#166534' },
 		'📑': { bg: '#fef3c7', text: '#92400e' },
 		'🍞': { bg: '#fef3c7', text: '#a16207' },
+		'🔘': { bg: '#dbeafe', text: '#1d4ed8' },
 		'🪗': { bg: '#fef9c3', text: '#854d0e' }
 	};
 
