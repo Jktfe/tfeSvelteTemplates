@@ -130,7 +130,7 @@
 					href: '/animatedbeam',
 					icon: '⚡',
 					description: 'SVG beams for data flow visualization',
-					screenshot: screenshotPath('AnimatedBeanShot.png')
+					screenshot: screenshotPath('AnimatedBeamShot.png')
 				},
 				{
 					name: 'CommandPalette',
@@ -428,7 +428,10 @@
 		'🌍': { bg: '#d1fae5', text: '#10b981' },
 		'🔐': { bg: '#fce7f3', text: '#be185d' },
 		'👤': { bg: '#e0e7ff', text: '#6366f1' },
-		'📤': { bg: '#e0f2fe', text: '#0369a1' }
+		'📤': { bg: '#e0f2fe', text: '#0369a1' },
+		'👥': { bg: '#ccfbf1', text: '#0d9488' },
+		'🪄': { bg: '#f5d0fe', text: '#a21caf' },
+		'💧': { bg: '#cffafe', text: '#0e7490' }
 	};
 
 	// Convert components to Card format with screenshots
