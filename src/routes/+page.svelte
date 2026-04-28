@@ -456,6 +456,13 @@
 					screenshot: screenshotPath('FormsShot.png')
 				},
 				{
+					name: 'PinInput',
+					href: '/pininput',
+					icon: '🔢',
+					description: 'Segmented OTP / verification code entry — auto-advance, paste-distribute, masking',
+					screenshot: screenshotPath('PinInputShot.png')
+				},
+				{
 					name: 'UploadDropzone',
 					href: '/uploaddropzone',
 					icon: '📤',
@@ -548,6 +555,7 @@
 		'🔎': { bg: '#e0e7ff', text: '#4338ca' },
 		'⌨️': { bg: '#f3f4f6', text: '#374151' },
 		'🎹': { bg: '#e5e7eb', text: '#1f2937' },
+		'🔢': { bg: '#dbeafe', text: '#1d4ed8' },
 		'⏱️': { bg: '#fef3c7', text: '#d97706' },
 		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
