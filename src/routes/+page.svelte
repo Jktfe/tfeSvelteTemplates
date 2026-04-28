@@ -250,6 +250,13 @@
 					icon: '🍞',
 					description: 'Hierarchical path navigation with smart truncation and ARIA-correct semantics',
 					screenshot: screenshotPath('BreadcrumbsShot.png')
+				},
+				{
+					name: 'Accordion',
+					href: '/accordion',
+					icon: '🪗',
+					description: 'Collapsible content sections with single/multiple-open modes and smooth grid-row animation',
+					screenshot: screenshotPath('AccordionShot.png')
 				}
 			]
 		},
@@ -543,7 +550,8 @@
 		'🎛️': { bg: '#ede9fe', text: '#5b21b6' },
 		'💬': { bg: '#f0fdf4', text: '#166534' },
 		'📑': { bg: '#fef3c7', text: '#92400e' },
-		'🍞': { bg: '#fef3c7', text: '#a16207' }
+		'🍞': { bg: '#fef3c7', text: '#a16207' },
+		'🪗': { bg: '#fef9c3', text: '#854d0e' }
 	};
 
 	// Convert components to Card format with screenshots

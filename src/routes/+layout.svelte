@@ -192,6 +192,12 @@
 					href: '/breadcrumbs',
 					icon: '🍞',
 					active: isActive('/breadcrumbs')
+				},
+				{
+					label: 'Accordion',
+					href: '/accordion',
+					icon: '🪗',
+					active: isActive('/accordion')
 				}
 			]
 		},
