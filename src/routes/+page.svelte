@@ -208,6 +208,13 @@
 					icon: '⭐',
 					description: 'Interactive 1–N star rating with hover preview and keyboard a11y',
 					screenshot: screenshotPath('RatingStarsShot.png')
+				},
+				{
+					name: 'AlertBanner',
+					href: '/alertbanner',
+					icon: '🚨',
+					description: 'Inline status banner — info, success, warning, error',
+					screenshot: screenshotPath('AlertBannerShot.png')
 				}
 			]
 		},
@@ -495,7 +502,8 @@
 		'⭕': { bg: '#dbeafe', text: '#1d4ed8' },
 		'📋': { bg: '#fef9c3', text: '#854d0e' },
 		'🪜': { bg: '#e0e7ff', text: '#4338ca' },
-		'⭐': { bg: '#fef3c7', text: '#b45309' }
+		'⭐': { bg: '#fef3c7', text: '#b45309' },
+		'🚨': { bg: '#fee2e2', text: '#991b1b' }
 	};
 
 	// Convert components to Card format with screenshots
