@@ -189,11 +189,25 @@
 					screenshot: screenshotPath('ProgressRingShot.png')
 				},
 				{
+					name: 'CopyButton',
+					href: '/copybutton',
+					icon: '📋',
+					description: 'One-click copy-to-clipboard with a brief Copied! confirmation',
+					screenshot: screenshotPath('CopyButtonShot.png')
+				},
+				{
 					name: 'Stepper',
 					href: '/stepper',
 					icon: '🪜',
 					description: 'Multi-step progress indicator with done/current/pending states',
 					screenshot: screenshotPath('StepperShot.png')
+				},
+				{
+					name: 'RatingStars',
+					href: '/ratingstars',
+					icon: '⭐',
+					description: 'Interactive 1–N star rating with hover preview and keyboard a11y',
+					screenshot: screenshotPath('RatingStarsShot.png')
 				}
 			]
 		},
@@ -479,7 +493,9 @@
 		'📭': { bg: '#fef3c7', text: '#a16207' },
 		'💀': { bg: '#e5e7eb', text: '#374151' },
 		'⭕': { bg: '#dbeafe', text: '#1d4ed8' },
-		'🪜': { bg: '#e0e7ff', text: '#4338ca' }
+		'📋': { bg: '#fef9c3', text: '#854d0e' },
+		'🪜': { bg: '#e0e7ff', text: '#4338ca' },
+		'⭐': { bg: '#fef3c7', text: '#b45309' }
 	};
 
 	// Convert components to Card format with screenshots

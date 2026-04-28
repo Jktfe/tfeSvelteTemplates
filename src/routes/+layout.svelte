@@ -140,10 +140,22 @@
 					active: isActive('/progressring')
 				},
 				{
+					label: 'CopyButton',
+					href: '/copybutton',
+					icon: '📋',
+					active: isActive('/copybutton')
+				},
+				{
 					label: 'Stepper',
 					href: '/stepper',
 					icon: '🪜',
 					active: isActive('/stepper')
+				},
+				{
+					label: 'RatingStars',
+					href: '/ratingstars',
+					icon: '⭐',
+					active: isActive('/ratingstars')
 				}
 			]
 		},
