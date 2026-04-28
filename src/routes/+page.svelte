@@ -215,6 +215,20 @@
 					icon: '🚨',
 					description: 'Inline status banner — info, success, warning, error',
 					screenshot: screenshotPath('AlertBannerShot.png')
+				},
+				{
+					name: 'FilterChips',
+					href: '/filterchips',
+					icon: '🎚️',
+					description: 'Toggleable chip row for filtering content (multi/single, removable, sizes)',
+					screenshot: screenshotPath('FilterChipsShot.png')
+				},
+				{
+					name: 'Tooltip',
+					href: '/tooltip',
+					icon: '💬',
+					description: 'Accessible hover/focus tooltip with four placements and keyboard support',
+					screenshot: screenshotPath('TooltipShot.png')
 				}
 			]
 		},
@@ -503,7 +517,9 @@
 		'📋': { bg: '#fef9c3', text: '#854d0e' },
 		'🪜': { bg: '#e0e7ff', text: '#4338ca' },
 		'⭐': { bg: '#fef3c7', text: '#b45309' },
-		'🚨': { bg: '#fee2e2', text: '#991b1b' }
+		'🚨': { bg: '#fee2e2', text: '#991b1b' },
+		'🎚️': { bg: '#e0f2fe', text: '#0369a1' },
+		'💬': { bg: '#f0fdf4', text: '#166534' }
 	};
 
 	// Convert components to Card format with screenshots
