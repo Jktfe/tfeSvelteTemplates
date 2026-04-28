@@ -187,6 +187,13 @@
 					icon: '⭕',
 					description: 'Circular progress indicator with determinate and indeterminate modes',
 					screenshot: screenshotPath('ProgressRingShot.png')
+				},
+				{
+					name: 'Stepper',
+					href: '/stepper',
+					icon: '🪜',
+					description: 'Multi-step progress indicator with done/current/pending states',
+					screenshot: screenshotPath('StepperShot.png')
 				}
 			]
 		},
@@ -471,7 +478,8 @@
 		'📈': { bg: '#dcfce7', text: '#15803d' },
 		'📭': { bg: '#fef3c7', text: '#a16207' },
 		'💀': { bg: '#e5e7eb', text: '#374151' },
-		'⭕': { bg: '#dbeafe', text: '#1d4ed8' }
+		'⭕': { bg: '#dbeafe', text: '#1d4ed8' },
+		'🪜': { bg: '#e0e7ff', text: '#4338ca' }
 	};
 
 	// Convert components to Card format with screenshots
