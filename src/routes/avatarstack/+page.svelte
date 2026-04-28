@@ -95,7 +95,7 @@
 
 			<div class="space-y-4">
 				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre class="bg-neutral-900 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`&lt;script lang="ts"&gt;
+				<pre class="bg-neutral-900 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
   import AvatarStack from '$lib/components/AvatarStack.svelte';
 
   const team = [
@@ -103,9 +103,9 @@
     { name: 'Grace Hopper' },
     { name: 'Margaret Hamilton' }
   ];
-&lt;/script&gt;
+</${''}script>
 
-&lt;AvatarStack people={team} max={3} /&gt;`}</code></pre>
+<AvatarStack people={team} max={3} />`}</code></pre>
 			</div>
 		</section>
 	</div>
