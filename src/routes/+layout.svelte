@@ -336,6 +336,12 @@
 					href: '/equalizerbars',
 					icon: '🎵',
 					active: isActive('/equalizerbars')
+				},
+				{
+					label: 'HoldToConfirm',
+					href: '/holdtoconfirm',
+					icon: '⏳',
+					active: isActive('/holdtoconfirm')
 				}
 			]
 		},
