@@ -769,7 +769,8 @@
 		'🔦': { bg: '#ffe4e6', text: '#be123c' },
 		'🅰️': { bg: '#e0e7ff', text: '#4338ca' },
 		'📐': { bg: '#1e293b', text: '#a5b4fc' },
-		'📼': { bg: '#0a0a0a', text: '#ff00c8' }
+		'📼': { bg: '#0a0a0a', text: '#ff00c8' },
+		'🪀': { bg: '#fef3c7', text: '#92400e' }
 	};
 
 	// Convert components to Card format with screenshots
