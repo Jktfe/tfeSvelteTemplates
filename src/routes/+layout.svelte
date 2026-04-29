@@ -342,6 +342,12 @@
 					href: '/holdtoconfirm',
 					icon: '⏳',
 					active: isActive('/holdtoconfirm')
+				},
+				{
+					label: 'ContextMenu',
+					href: '/contextmenu',
+					icon: '🖱️',
+					active: isActive('/contextmenu')
 				}
 			]
 		},
