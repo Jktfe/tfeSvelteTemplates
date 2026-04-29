@@ -175,6 +175,13 @@
 					screenshot: screenshotPath('ScrambledTextShot.png')
 				},
 				{
+					name: 'TrueFocus',
+					href: '/truefocus',
+					icon: '🔦',
+					description: 'Cycle through highlighting one word at a time inside a phrase, with a single morphing focus box that slides and resizes between words. Hover-to-pause, click-to-pin, prefers-reduced-motion safe',
+					screenshot: screenshotPath('TrueFocusShot.png')
+				},
+				{
 					name: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
@@ -668,7 +675,8 @@
 		'🙂': { bg: '#dbeafe', text: '#1d4ed8' },
 		'📺': { bg: '#fef3c7', text: '#b45309' },
 		'💥': { bg: '#fee2e2', text: '#be123c' },
-		'🔀': { bg: '#ede9fe', text: '#5b21b6' }
+		'🔀': { bg: '#ede9fe', text: '#5b21b6' },
+		'🔦': { bg: '#ffe4e6', text: '#be123c' }
 	};
 
 	// Convert components to Card format with screenshots

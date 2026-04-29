@@ -128,6 +128,12 @@
 					active: isActive('/scrambledtext')
 				},
 				{
+					label: 'TrueFocus',
+					href: '/truefocus',
+					icon: '🔦',
+					active: isActive('/truefocus')
+				},
+				{
 					label: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
