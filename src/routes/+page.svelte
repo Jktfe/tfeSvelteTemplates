@@ -562,6 +562,13 @@
 					screenshot: screenshotPath('AuroraBackdropShot.png')
 				},
 				{
+					name: 'MeshGradient',
+					href: '/meshgradient',
+					icon: '🎨',
+					description: 'Ambient animated mesh-gradient backdrop — N (1–12) large blurry radial-gradient blobs drifting on a single filter:blur layer with cascaded CSS custom properties + @keyframes. Six named palettes (sunset / aurora / ember / cosmic / mint / monochrome) cycled per-blob, configurable blur and opacity, speed multiplier (0 freezes), zero JS animation loop, GPU-composited, prefers-reduced-motion safe',
+					screenshot: screenshotPath('MeshGradientShot.png')
+				},
+				{
 					name: 'SplitFlap',
 					href: '/splitflap',
 					icon: '🪧',
@@ -800,7 +807,8 @@
 		'📼': { bg: '#0a0a0a', text: '#ff00c8' },
 		'🪀': { bg: '#fef3c7', text: '#92400e' },
 		'🪩': { bg: '#1a0a2e', text: '#ff7eee' },
-		'🛸': { bg: '#1e1b4b', text: '#fbbf24' }
+		'🛸': { bg: '#1e1b4b', text: '#fbbf24' },
+		'🎨': { bg: '#1a1a2e', text: '#ff6b9d' }
 	};
 
 	// Convert components to Card format with screenshots

@@ -409,6 +409,12 @@
 					active: isActive('/aurora-backdrop')
 				},
 				{
+					label: 'MeshGradient',
+					href: '/meshgradient',
+					icon: '🎨',
+					active: isActive('/meshgradient')
+				},
+				{
 					label: 'SplitFlap',
 					href: '/splitflap',
 					icon: '🪧',
