@@ -231,6 +231,13 @@
 					screenshot: screenshotPath('ProgressBarShot.png')
 				},
 				{
+					name: 'ScrollProgressBar',
+					href: '/scrollprogressbar',
+					icon: '📜',
+					description: 'Viewport-level reading-progress bar — thin / bold / gradient / pulse variants, top or bottom edge, role=progressbar a11y',
+					screenshot: screenshotPath('ScrollProgressBarShot.png')
+				},
+				{
 					name: 'Spinner',
 					href: '/spinner',
 					icon: '🌀',
@@ -823,6 +830,7 @@
 		'🏷️': { bg: '#fef3c7', text: '#a16207' },
 		'📈': { bg: '#dcfce7', text: '#15803d' },
 		'☁️': { bg: '#e0f2fe', text: '#0369a1' },
+		'📜': { bg: '#fef3c7', text: '#7c3aed' },
 		'📭': { bg: '#fef3c7', text: '#a16207' },
 		'💀': { bg: '#e5e7eb', text: '#374151' },
 		'⭕': { bg: '#dbeafe', text: '#1d4ed8' },
