@@ -288,6 +288,12 @@
 					href: '/scrollreveal',
 					icon: '🎬',
 					active: isActive('/scrollreveal')
+				},
+				{
+					label: 'OrbitalRing',
+					href: '/orbitalring',
+					icon: '🛸',
+					active: isActive('/orbitalring')
 				}
 			]
 		},
