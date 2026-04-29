@@ -294,6 +294,12 @@
 					href: '/orbitalring',
 					icon: '🛸',
 					active: isActive('/orbitalring')
+				},
+				{
+					label: 'MagnetGrid',
+					href: '/magnetgrid',
+					icon: '🧲',
+					active: isActive('/magnetgrid')
 				}
 			]
 		},
@@ -449,6 +455,12 @@
 					href: '/holocard',
 					icon: '🪩',
 					active: isActive('/holocard')
+				},
+				{
+					label: 'ElectricBorder',
+					href: '/electricborder',
+					icon: '⚡',
+					active: isActive('/electricborder')
 				}
 			]
 		},
