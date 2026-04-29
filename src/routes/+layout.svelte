@@ -306,6 +306,12 @@
 					href: '/pixeltrail',
 					icon: '🌠',
 					active: isActive('/pixeltrail')
+				},
+				{
+					label: 'NoiseField',
+					href: '/noisefield',
+					icon: '🌫️',
+					active: isActive('/noisefield')
 				}
 			]
 		},
