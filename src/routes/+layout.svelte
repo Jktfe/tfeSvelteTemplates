@@ -395,6 +395,12 @@
 					href: '/splitflap',
 					icon: '🪧',
 					active: isActive('/splitflap')
+				},
+				{
+					label: 'NeonSign',
+					href: '/neonsign',
+					icon: '💡',
+					active: isActive('/neonsign')
 				}
 			]
 		},
