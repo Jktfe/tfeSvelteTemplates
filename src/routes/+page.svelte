@@ -425,6 +425,13 @@
 					icon: '⏳',
 					description: 'Press-and-hold confirmation button for destructive UX flows — hold-to-delete, hold-to-send, hold-to-leave-call. Three variants (ring SVG stroke-dashoffset / bar linear horizontal fill / glow radial pulse). Pointer + keyboard parity from line one — Enter and Space trigger a programmatic hold cycle, no 2-step click fakery. setPointerCapture keeps the gesture alive even if the user drags outside. Duration clamped [200, 10000] ms. role="button" + aria-pressed reflects holding state. prefers-reduced-motion bypass collapses to a single-press confirm with visible text fallback explaining the original contract — safety preserved, animation removed. Defeats habituation: native confirm() dialogs become noise, sustained pressure cannot be muscle-memoried.',
 					screenshot: screenshotPath('HoldToConfirmShot.png')
+				},
+				{
+					name: 'ContextMenu',
+					href: '/contextmenu',
+					icon: '🖱️',
+					description: 'Right-click / long-press menu primitive. Wraps any trigger; right-click suppresses the native browser menu and opens a custom one at the click position. Pointer + keyboard parity from line one — Shift+F10 and the dedicated ContextMenu key open via keyboard, ↑/↓ navigate (skipping dividers and disabled), Home/End jump first/last enabled, Enter/Space activate, Esc/Tab close, click outside dismisses. Items declared as a single prop array of { id, label, shortcut?, disabled?, danger? } | { type: "divider" }. clampToViewport flips when the menu would overflow the right or bottom edge. Native menu suppression via preventDefault. Mount-on-open — zero DOM cost when closed. role=menu / role=menuitem / role=separator with aria-orientation, aria-label, aria-haspopup, aria-expanded. prefers-reduced-motion skips the entrance animation.',
+					screenshot: screenshotPath('ContextMenuShot.png')
 				}
 			]
 		},
@@ -871,7 +878,8 @@
 		'🌫️': { bg: '#14141a', text: '#c9c9d1' },
 		'🛣️': { bg: '#050510', text: '#00f0ff' },
 		'🎵': { bg: '#0d0d1a', text: '#38bdf8' },
-		'⏳': { bg: '#0d0d1a', text: '#10b981' }
+		'⏳': { bg: '#0d0d1a', text: '#10b981' },
+		'🖱️': { bg: '#0d0d1a', text: '#a78bfa' }
 	};
 
 	// Convert components to Card format with screenshots
