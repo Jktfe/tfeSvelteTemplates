@@ -595,6 +595,13 @@
 					icon: '🪀',
 					description: 'Damped-harmonic swing wrapper for any element — pivots from a configurable offset transform-origin under theta(t) = A·exp(-decay·t)·cos(2π·f·t). Four triggers (mount / viewport / click / manual), imperative swing() and stop(). Pure helpers exported for unit tests, auto-halts when envelope drops below 0.05°, prefers-reduced-motion safe at the stylesheet level',
 					screenshot: screenshotPath('PendulumShot.png')
+				},
+				{
+					name: 'HoloCard',
+					href: '/holocard',
+					icon: '🪩',
+					description: 'Holographic-foil shimmer wrapper — cursor-driven CSS conic-gradient ring rotates with the cursor angle from center, plus a diagonal sheen overlay that tracks pointer position. Pokemon-card foil aesthetic. Three intensities (subtle / iridescent / cosmic), four palettes (rainbow / pastel / cosmic / gold). Composes with Tilt3D for full physical-collectible-card behaviour. Pure helpers exported, prefers-reduced-motion safe',
+					screenshot: screenshotPath('HoloCardShot.png')
 				}
 			]
 		},
@@ -770,7 +777,8 @@
 		'🅰️': { bg: '#e0e7ff', text: '#4338ca' },
 		'📐': { bg: '#1e293b', text: '#a5b4fc' },
 		'📼': { bg: '#0a0a0a', text: '#ff00c8' },
-		'🪀': { bg: '#fef3c7', text: '#92400e' }
+		'🪀': { bg: '#fef3c7', text: '#92400e' },
+		'🪩': { bg: '#1a0a2e', text: '#ff7eee' }
 	};
 
 	// Convert components to Card format with screenshots
