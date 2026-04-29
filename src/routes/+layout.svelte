@@ -122,6 +122,12 @@
 					active: isActive('/shinytext')
 				},
 				{
+					label: 'ScrambledText',
+					href: '/scrambledtext',
+					icon: '🔀',
+					active: isActive('/scrambledtext')
+				},
+				{
 					label: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
