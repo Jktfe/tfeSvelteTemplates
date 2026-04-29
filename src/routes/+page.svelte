@@ -574,6 +574,13 @@
 					icon: '💯',
 					description: 'Number-animation primitive — eases a value from start → end on viewport entry, mount, or manual trigger. Five easings (linear / quad / cubic / quart / expo), locale-aware Intl.NumberFormat, prefix/suffix, decimal precision, optional flash-on-complete. Direction-agnostic for count-down, asset-free, prefers-reduced-motion safe',
 					screenshot: screenshotPath('CountUpShot.png')
+				},
+				{
+					name: 'Tilt3D',
+					href: '/tilt3d',
+					icon: '📐',
+					description: 'Cursor-driven 3D rotation wrapper — Stripe / Linear / Apple product-page card depth. Pure CSS perspective + rotateX / rotateY, optional radial-gradient glare overlay tracks the pointer, three reset modes (spring / instant / none). Pure helpers exported for unit tests, prefers-reduced-motion safe at the stylesheet level',
+					screenshot: screenshotPath('Tilt3DShot.png')
 				}
 			]
 		},
@@ -746,7 +753,8 @@
 		'💥': { bg: '#fee2e2', text: '#be123c' },
 		'🔀': { bg: '#ede9fe', text: '#5b21b6' },
 		'🔦': { bg: '#ffe4e6', text: '#be123c' },
-		'🅰️': { bg: '#e0e7ff', text: '#4338ca' }
+		'🅰️': { bg: '#e0e7ff', text: '#4338ca' },
+		'📐': { bg: '#1e293b', text: '#a5b4fc' }
 	};
 
 	// Convert components to Card format with screenshots
