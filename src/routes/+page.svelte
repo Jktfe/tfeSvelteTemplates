@@ -404,6 +404,13 @@
 					icon: '🛣️',
 					description: 'Ambient 3D-perspective grid backdrop — two infinite grid planes (floor and optional ceiling) tilted in real CSS 3D space via transform-style: preserve-3d, drifting toward the viewer through a single background-position keyframe. Synthwave / TRON / arcade-tunnel energy. Three intensities (calm / standard / rush) bundling drift duration + cell size + line opacity. Three modes (mono achromatic / neon cyan-and-magenta with drop-shadow glow / wireframe hairline). Pure CSS — no canvas, no WebGL, no rAF — horizon fade via mask-image, prefers-reduced-motion safe.',
 					screenshot: screenshotPath('PerspectiveGridShot.png')
+				},
+				{
+					name: 'EqualizerBars',
+					href: '/equalizerbars',
+					icon: '🎵',
+					description: 'Compact "things are alive" indicator — N vertical bars oscillating in concert via phased CSS keyframes, like a frozen-in-motion audio spectrum analyser. Four variants (equalizer smooth sine / spectrum peak-biased FFT / pulse binary high-low / heartbeat sparse double-spike). Configurable bar count (1–64), speed (0.25–4×), height, colour. Inactive state freezes bars at deterministic seeded heights via mulberry32 LCG — SSR-stable. Pure CSS — zero rAF, zero canvas, GPU-composited transform: scaleY(). Phase stagger via negative animation-delay per bar; role="img" + aria-label; prefers-reduced-motion safe.',
+					screenshot: screenshotPath('EqualizerBarsShot.png')
 				}
 			]
 		},
@@ -513,6 +520,13 @@
 					icon: '📈',
 					description: 'KPI card with sentiment-aware trend',
 					screenshot: screenshotPath('StatCardShot.png')
+				},
+				{
+					name: 'WordCloud',
+					href: '/wordcloud',
+					icon: '☁️',
+					description: 'Frequency-weighted text-cloud — organic, grid, radial',
+					screenshot: screenshotPath('WordCloudShot.png')
 				}
 			]
 		},
@@ -808,6 +822,7 @@
 		'💧': { bg: '#cffafe', text: '#0e7490' },
 		'🏷️': { bg: '#fef3c7', text: '#a16207' },
 		'📈': { bg: '#dcfce7', text: '#15803d' },
+		'☁️': { bg: '#e0f2fe', text: '#0369a1' },
 		'📭': { bg: '#fef3c7', text: '#a16207' },
 		'💀': { bg: '#e5e7eb', text: '#374151' },
 		'⭕': { bg: '#dbeafe', text: '#1d4ed8' },
@@ -839,7 +854,8 @@
 		'🎨': { bg: '#1a1a2e', text: '#ff6b9d' },
 		'🌠': { bg: '#0a0a14', text: '#00f0ff' },
 		'🌫️': { bg: '#14141a', text: '#c9c9d1' },
-		'🛣️': { bg: '#050510', text: '#00f0ff' }
+		'🛣️': { bg: '#050510', text: '#00f0ff' },
+		'🎵': { bg: '#0d0d1a', text: '#38bdf8' }
 	};
 
 	// Convert components to Card format with screenshots
