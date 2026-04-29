@@ -161,6 +161,13 @@
 					screenshot: screenshotPath('TypewriterShot.png')
 				},
 				{
+					name: 'ShinyText',
+					href: '/shinytext',
+					icon: '✨',
+					description: 'CSS gradient shimmer that sweeps a brighter highlight band through your text — configurable colours, LR/RL direction, loop or one-shot, prefers-reduced-motion safe',
+					screenshot: screenshotPath('ShinyTextShot.png')
+				},
+				{
 					name: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
@@ -483,6 +490,13 @@
 					icon: '🎪',
 					description: '3D spherical image gallery',
 					screenshot: screenshotPath('DomeGalleryShot.png')
+				},
+				{
+					name: 'PortfolioPhotographer',
+					href: '/portfolio-photographer',
+					icon: '📷',
+					description: 'Editorial photographer-portfolio hero — wireframe lens background, drifting CSS-gradient photo reel, Halton-sequence focal scatter, serif display name, asset-free, reduced-motion-aware',
+					screenshot: screenshotPath('PortfolioPhotographerShot.png')
 				}
 			]
 		},
