@@ -518,6 +518,13 @@
 					icon: '🌊',
 					description: 'Warped-fluid-mesh full-bleed editorial hero — CSS conic gradient displaced by inline-SVG feTurbulence/feDisplacementMap, Lissajous focal dot, per-glyph deal-in headline, three palette presets, asset-free, reduced-motion-aware',
 					screenshot: screenshotPath('MembraneHeroShot.png')
+				},
+				{
+					name: 'Cardwall',
+					href: '/cardwall',
+					icon: '🎴',
+					description: 'Full-bleed perspective billboard wall — multi-row marquee of CSS-gradient tiles drifting on a tilted 3D plane, click-to-pin interaction, Halton-sequence palette/label selection, asset-free, SSR-deterministic, reduced-motion-aware',
+					screenshot: screenshotPath('CardwallShot.png')
 				}
 			]
 		},

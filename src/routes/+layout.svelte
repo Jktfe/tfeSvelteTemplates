@@ -371,6 +371,12 @@
 					href: '/membrane-hero',
 					icon: '🌊',
 					active: isActive('/membrane-hero')
+				},
+				{
+					label: 'Cardwall',
+					href: '/cardwall',
+					icon: '🎴',
+					active: isActive('/cardwall')
 				}
 			]
 		},
