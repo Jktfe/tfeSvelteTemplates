@@ -312,6 +312,12 @@
 					href: '/noisefield',
 					icon: '🌫️',
 					active: isActive('/noisefield')
+				},
+				{
+					label: 'TickerTape',
+					href: '/tickertape',
+					icon: '📈',
+					active: isActive('/tickertape')
 				}
 			]
 		},
