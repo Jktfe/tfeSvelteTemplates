@@ -203,6 +203,13 @@
 					screenshot: screenshotPath('SpinnerShot.png')
 				},
 				{
+					name: 'Drawer',
+					href: '/drawer',
+					icon: '📥',
+					description: 'Slide-in modal panel from any edge — focus trap, scroll lock, focus restore, persistent flag, prefers-reduced-motion fallback',
+					screenshot: screenshotPath('DrawerShot.png')
+				},
+				{
 					name: 'KbdShortcut',
 					href: '/kbdshortcut',
 					icon: '🎹',
@@ -306,6 +313,13 @@
 					icon: '🗂',
 					description: 'Tabbed content switcher with full WAI-ARIA tablist, roving tabindex, underline + pill variants, horizontal + vertical, full keyboard nav',
 					screenshot: screenshotPath('TabsShot.png')
+				},
+				{
+					name: 'Avatar',
+					href: '/avatar',
+					icon: '🙂',
+					description: 'Single user identity element — image with onerror auto-fallback to initials, deterministic colour-from-name palette, three sizes, three shapes, optional status dot',
+					screenshot: screenshotPath('AvatarShot.png')
 				}
 			]
 		},
@@ -571,6 +585,7 @@
 		'🎹': { bg: '#e5e7eb', text: '#1f2937' },
 		'🔢': { bg: '#dbeafe', text: '#1d4ed8' },
 		'🌀': { bg: '#e0e7ff', text: '#4338ca' },
+		'📥': { bg: '#ecfdf5', text: '#047857' },
 		'⏱️': { bg: '#fef3c7', text: '#d97706' },
 		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
@@ -614,7 +629,8 @@
 		'🎚': { bg: '#e0e7ff', text: '#4338ca' },
 		'🪗': { bg: '#fef9c3', text: '#854d0e' },
 		'➖': { bg: '#f3f4f6', text: '#374151' },
-		'🗂': { bg: '#fef3c7', text: '#a16207' }
+		'🗂': { bg: '#fef3c7', text: '#a16207' },
+		'🙂': { bg: '#dbeafe', text: '#1d4ed8' }
 	};
 
 	// Convert components to Card format with screenshots

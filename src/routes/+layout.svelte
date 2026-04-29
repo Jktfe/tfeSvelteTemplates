@@ -152,6 +152,12 @@
 					active: isActive('/spinner')
 				},
 				{
+					label: 'Drawer',
+					href: '/drawer',
+					icon: '📥',
+					active: isActive('/drawer')
+				},
+				{
 					label: 'KbdShortcut',
 					href: '/kbdshortcut',
 					icon: '🎹',
@@ -240,6 +246,12 @@
 					href: '/tabs',
 					icon: '🗂',
 					active: isActive('/tabs')
+				},
+				{
+					label: 'Avatar',
+					href: '/avatar',
+					icon: '🙂',
+					active: isActive('/avatar')
 				}
 			]
 		},
