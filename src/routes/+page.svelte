@@ -660,6 +660,7 @@
 		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
 		'🎴': { bg: '#fef3c7', text: '#ea580c' },
+		'🌌': { bg: '#e0e7ff', text: '#4338ca' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
 		'📊': { bg: '#e0e7ff', text: '#4f46e5' },
 		'📅': { bg: '#d1fae5', text: '#059669' },
