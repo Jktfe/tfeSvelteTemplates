@@ -282,6 +282,12 @@
 					href: '/avatar',
 					icon: '🙂',
 					active: isActive('/avatar')
+				},
+				{
+					label: 'ScrollReveal',
+					href: '/scrollreveal',
+					icon: '🎬',
+					active: isActive('/scrollreveal')
 				}
 			]
 		},
