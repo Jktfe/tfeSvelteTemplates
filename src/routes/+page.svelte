@@ -511,6 +511,13 @@
 					icon: '📷',
 					description: 'Editorial photographer-portfolio hero — wireframe lens background, drifting CSS-gradient photo reel, Halton-sequence focal scatter, serif display name, asset-free, reduced-motion-aware',
 					screenshot: screenshotPath('PortfolioPhotographerShot.png')
+				},
+				{
+					name: 'MembraneHero',
+					href: '/membrane-hero',
+					icon: '🌊',
+					description: 'Warped-fluid-mesh full-bleed editorial hero — CSS conic gradient displaced by inline-SVG feTurbulence/feDisplacementMap, Lissajous focal dot, per-glyph deal-in headline, three palette presets, asset-free, reduced-motion-aware',
+					screenshot: screenshotPath('MembraneHeroShot.png')
 				}
 			]
 		},
