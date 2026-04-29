@@ -581,6 +581,20 @@
 					icon: '📐',
 					description: 'Cursor-driven 3D rotation wrapper — Stripe / Linear / Apple product-page card depth. Pure CSS perspective + rotateX / rotateY, optional radial-gradient glare overlay tracks the pointer, three reset modes (spring / instant / none). Pure helpers exported for unit tests, prefers-reduced-motion safe at the stylesheet level',
 					screenshot: screenshotPath('Tilt3DShot.png')
+				},
+				{
+					name: 'GlitchText',
+					href: '/glitchtext',
+					icon: '📼',
+					description: 'RGB-channel-split text glitch primitive — cyan / magenta offset clones drift behind the base layer, occasional clip-path tear bands slice and shove a horizontal strip. Three intensities (subtle / moderate / wild), three triggers (auto / hover with keyboard parity / one-shot viewport). Pure CSS pseudo-elements, deterministic per-seed jitter, prefers-reduced-motion safe',
+					screenshot: screenshotPath('GlitchTextShot.png')
+				},
+				{
+					name: 'Pendulum',
+					href: '/pendulum',
+					icon: '🪀',
+					description: 'Damped-harmonic swing wrapper for any element — pivots from a configurable offset transform-origin under theta(t) = A·exp(-decay·t)·cos(2π·f·t). Four triggers (mount / viewport / click / manual), imperative swing() and stop(). Pure helpers exported for unit tests, auto-halts when envelope drops below 0.05°, prefers-reduced-motion safe at the stylesheet level',
+					screenshot: screenshotPath('PendulumShot.png')
 				}
 			]
 		},
@@ -754,7 +768,8 @@
 		'🔀': { bg: '#ede9fe', text: '#5b21b6' },
 		'🔦': { bg: '#ffe4e6', text: '#be123c' },
 		'🅰️': { bg: '#e0e7ff', text: '#4338ca' },
-		'📐': { bg: '#1e293b', text: '#a5b4fc' }
+		'📐': { bg: '#1e293b', text: '#a5b4fc' },
+		'📼': { bg: '#0a0a0a', text: '#ff00c8' }
 	};
 
 	// Convert components to Card format with screenshots

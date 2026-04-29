@@ -425,6 +425,18 @@
 					href: '/tilt3d',
 					icon: '📐',
 					active: isActive('/tilt3d')
+				},
+				{
+					label: 'GlitchText',
+					href: '/glitchtext',
+					icon: '📼',
+					active: isActive('/glitchtext')
+				},
+				{
+					label: 'Pendulum',
+					href: '/pendulum',
+					icon: '🪀',
+					active: isActive('/pendulum')
 				}
 			]
 		},
