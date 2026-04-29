@@ -439,6 +439,13 @@
 					icon: '📖',
 					description: 'Auto-tracking table of contents that highlights the heading the reader is currently looking at and smooth-scrolls to a section on click. Three variants — rail (sticky vertical sidebar, indented hierarchy with connecting line, left or right anchor), top (horizontal scrolling pill row for short docs, top-level only), drawer (FAB + tray for mobile / content-dense pages). Single IntersectionObserver covers all tracked headings; top-band rootMargin "0px 0px -60% 0px" updates the active item as you read past a heading rather than when it leaves the viewport. Three-tier active resolver — intersecting (highest ratio, doc-order tiebreak) → passed (largest top) → fallback. Stack-based heading-tree builder handles non-monotonic level skips. Real <nav> wrapper with configurable aria-label, real <a href="#id"> anchors (keyboard reachable, open-in-new-tab works, link works without JS), aria-current="location" for screen readers, drawer toggle is a real <button> with aria-expanded + aria-controls. Escape closes drawer. prefers-reduced-motion → instant scrollIntoView. Pairs with ScrollProgressBar — bar tells you how much, TOC tells you where.',
 					screenshot: screenshotPath('ReadingTOCShot.png')
+				},
+				{
+					name: 'ConfettiBurst',
+					href: '/confettiburst',
+					icon: '🎉',
+					description: 'Trigger-fired celebration particle burst. Mount once anywhere on the page; call fire() imperatively when a moment deserves celebration — successful submit, level-up, hold-to-confirm completion, payment received. Canvas-rendered for 60fps even at high particle counts. The DOM stays empty while idle — <canvas> only mounts during a burst and unmounts on completion. Configurable count [10, 500], spread [0, 180]°, velocity, gravity, duration [200, 5000] ms, palette, origin (\'center\' or { x, y }). bind:this exposes a single fire(opts?) method. Per-shot opts override origin and palette without re-mounting. onComplete callback fires when burst finishes (or immediately under reduced motion). prefers-reduced-motion: reduce → fire() calls onComplete synchronously and skips canvas mount, contract preserved. Pure-physics helpers (generateParticles / stepParticle / mulberry32) testable without DOM via seeded RNG. aria-hidden="true" — burst is decorative; consumer signals semantic event via own UI.',
+					screenshot: screenshotPath('ConfettiBurstShot.png')
 				}
 			]
 		},
@@ -887,7 +894,8 @@
 		'🎵': { bg: '#0d0d1a', text: '#38bdf8' },
 		'⏳': { bg: '#0d0d1a', text: '#10b981' },
 		'🖱️': { bg: '#0d0d1a', text: '#a78bfa' },
-		'📖': { bg: '#fef3c7', text: '#92400e' }
+		'📖': { bg: '#fef3c7', text: '#92400e' },
+		'🎉': { bg: '#1a0a2e', text: '#fde047' }
 	};
 
 	// Convert components to Card format with screenshots
