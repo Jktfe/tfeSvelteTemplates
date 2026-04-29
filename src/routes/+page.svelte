@@ -418,6 +418,13 @@
 					icon: '🎵',
 					description: 'Compact "things are alive" indicator — N vertical bars oscillating in concert via phased CSS keyframes, like a frozen-in-motion audio spectrum analyser. Four variants (equalizer smooth sine / spectrum peak-biased FFT / pulse binary high-low / heartbeat sparse double-spike). Configurable bar count (1–64), speed (0.25–4×), height, colour. Inactive state freezes bars at deterministic seeded heights via mulberry32 LCG — SSR-stable. Pure CSS — zero rAF, zero canvas, GPU-composited transform: scaleY(). Phase stagger via negative animation-delay per bar; role="img" + aria-label; prefers-reduced-motion safe.',
 					screenshot: screenshotPath('EqualizerBarsShot.png')
+				},
+				{
+					name: 'HoldToConfirm',
+					href: '/holdtoconfirm',
+					icon: '⏳',
+					description: 'Press-and-hold confirmation button for destructive UX flows — hold-to-delete, hold-to-send, hold-to-leave-call. Three variants (ring SVG stroke-dashoffset / bar linear horizontal fill / glow radial pulse). Pointer + keyboard parity from line one — Enter and Space trigger a programmatic hold cycle, no 2-step click fakery. setPointerCapture keeps the gesture alive even if the user drags outside. Duration clamped [200, 10000] ms. role="button" + aria-pressed reflects holding state. prefers-reduced-motion bypass collapses to a single-press confirm with visible text fallback explaining the original contract — safety preserved, animation removed. Defeats habituation: native confirm() dialogs become noise, sustained pressure cannot be muscle-memoried.',
+					screenshot: screenshotPath('HoldToConfirmShot.png')
 				}
 			]
 		},
@@ -863,7 +870,8 @@
 		'🌠': { bg: '#0a0a14', text: '#00f0ff' },
 		'🌫️': { bg: '#14141a', text: '#c9c9d1' },
 		'🛣️': { bg: '#050510', text: '#00f0ff' },
-		'🎵': { bg: '#0d0d1a', text: '#38bdf8' }
+		'🎵': { bg: '#0d0d1a', text: '#38bdf8' },
+		'⏳': { bg: '#0d0d1a', text: '#10b981' }
 	};
 
 	// Convert components to Card format with screenshots
