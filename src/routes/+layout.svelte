@@ -360,6 +360,12 @@
 					href: '/confettiburst',
 					icon: '🎉',
 					active: isActive('/confettiburst')
+				},
+				{
+					label: 'CodeBlock',
+					href: '/codeblock',
+					icon: '💻',
+					active: isActive('/codeblock')
 				}
 			]
 		},

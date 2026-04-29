@@ -446,6 +446,13 @@
 					icon: '🎉',
 					description: 'Trigger-fired celebration particle burst. Mount once anywhere on the page; call fire() imperatively when a moment deserves celebration — successful submit, level-up, hold-to-confirm completion, payment received. Canvas-rendered for 60fps even at high particle counts. The DOM stays empty while idle — <canvas> only mounts during a burst and unmounts on completion. Configurable count [10, 500], spread [0, 180]°, velocity, gravity, duration [200, 5000] ms, palette, origin (\'center\' or { x, y }). bind:this exposes a single fire(opts?) method. Per-shot opts override origin and palette without re-mounting. onComplete callback fires when burst finishes (or immediately under reduced motion). prefers-reduced-motion: reduce → fire() calls onComplete synchronously and skips canvas mount, contract preserved. Pure-physics helpers (generateParticles / stepParticle / mulberry32) testable without DOM via seeded RNG. aria-hidden="true" — burst is decorative; consumer signals semantic event via own UI.',
 					screenshot: screenshotPath('ConfettiBurstShot.png')
+				},
+				{
+					name: 'CodeBlock',
+					href: '/codeblock',
+					icon: '💻',
+					description: 'Token-coloured source-code display with five visual variants (plain, lined, titled, diff, terminal), three sizes, and a copy button — backed by an in-house ~5 KB tokenizer instead of a 200 KB highlighter library. Six languages recognised out of the box: ts, js, svelte, json, bash, plain. Pass language="…" to override the heuristic detector. Variants — plain (no chrome, hover-revealed floating copy button), lined (line-number gutter, ideal for tutorials), titled (header bar with title / fileName, language tag and copy button — looks like a code-editor tab), diff (recognises +/-/space prefixes, marker column, whole-row green/red tinting), terminal (dark green-on-black palette, traffic-light dots, $ prompt before each line, fixed look ignores theme prop). Optional highlight="1,3-5,8" tints specific lines. wrap toggles soft-wrap vs scroll. theme=\'light\'|\'dark\'. Copy button is a real <button> with aria-live="polite" status, feature-detected via navigator.clipboard so older / insecure-context browsers never see a feature that wouldn\'t work. {@html} render path is XSS-safe — every byte runs through escapeHtml() before injection. Region wrapper is <div role="region"> with configurable aria-label. Line numbers and diff markers are aria-hidden so screen readers read the code only. prefers-reduced-motion: reduce shortens the copy-feedback window and removes hover transitions. Pure helpers exported from the module-script (parseLineRange, formatLineNumber, countLines, supportsClipboardAPI, isReducedMotion, pickVariant, pickSize) plus tokenize, detectLanguage, escapeHtml from $lib/tokenize. Single linear tokenizer pass per render, output cached via $derived. Suitable for snippets up to a few thousand LOC. Pairs naturally with ScrollProgressBar and ReadingTOC for long-form documentation flows.',
+					screenshot: screenshotPath('CodeBlockShot.png')
 				}
 			]
 		},
@@ -895,7 +902,8 @@
 		'⏳': { bg: '#0d0d1a', text: '#10b981' },
 		'🖱️': { bg: '#0d0d1a', text: '#a78bfa' },
 		'📖': { bg: '#fef3c7', text: '#92400e' },
-		'🎉': { bg: '#1a0a2e', text: '#fde047' }
+		'🎉': { bg: '#1a0a2e', text: '#fde047' },
+		'💻': { bg: '#0d1117', text: '#79c0ff' }
 	};
 
 	// Convert components to Card format with screenshots
