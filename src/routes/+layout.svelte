@@ -318,6 +318,12 @@
 					href: '/tickertape',
 					icon: '📈',
 					active: isActive('/tickertape')
+				},
+				{
+					label: 'PerspectiveGrid',
+					href: '/perspectivegrid',
+					icon: '🛣️',
+					active: isActive('/perspectivegrid')
 				}
 			]
 		},

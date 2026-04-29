@@ -397,6 +397,13 @@
 					icon: '📈',
 					description: 'Horizontal infinite-scroll strip of structured TickerItem tuples — {label, value, delta, trend, href}. Bloomberg / airport-board energy as a Svelte 5 primitive. Four variants (default / finance / sports / minimal) each with their own colour grammar. Trend chevrons inferred from delta sign or set explicitly. Pure CSS keyframe scroll on a 2× back-to-back track, hover-to-pause via animation-play-state, edge fade via mask-image, configurable speed + direction. Zero rAF, zero deps, prefers-reduced-motion settles to static frame.',
 					screenshot: screenshotPath('TickerTapeShot.png')
+				},
+				{
+					name: 'PerspectiveGrid',
+					href: '/perspectivegrid',
+					icon: '🛣️',
+					description: 'Ambient 3D-perspective grid backdrop — two infinite grid planes (floor and optional ceiling) tilted in real CSS 3D space via transform-style: preserve-3d, drifting toward the viewer through a single background-position keyframe. Synthwave / TRON / arcade-tunnel energy. Three intensities (calm / standard / rush) bundling drift duration + cell size + line opacity. Three modes (mono achromatic / neon cyan-and-magenta with drop-shadow glow / wireframe hairline). Pure CSS — no canvas, no WebGL, no rAF — horizon fade via mask-image, prefers-reduced-motion safe.',
+					screenshot: screenshotPath('PerspectiveGridShot.png')
 				}
 			]
 		},
@@ -831,7 +838,8 @@
 		'🛸': { bg: '#1e1b4b', text: '#fbbf24' },
 		'🎨': { bg: '#1a1a2e', text: '#ff6b9d' },
 		'🌠': { bg: '#0a0a14', text: '#00f0ff' },
-		'🌫️': { bg: '#14141a', text: '#c9c9d1' }
+		'🌫️': { bg: '#14141a', text: '#c9c9d1' },
+		'🛣️': { bg: '#050510', text: '#00f0ff' }
 	};
 
 	// Convert components to Card format with screenshots
