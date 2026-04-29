@@ -560,6 +560,13 @@
 					icon: '💡',
 					description: 'Glowing neon-tube text — five-stop CSS text-shadow stack creates the inner-tube core through to the outer atmospheric haze. Six palettes (pink / cyan / yellow / green / red / purple), deterministic flicker (none / subtle / broken), per-character burnt-out mode, on/off power state. Asset-free, prefers-reduced-motion safe',
 					screenshot: screenshotPath('NeonSignShot.png')
+				},
+				{
+					name: 'CRTScreen',
+					href: '/crtscreen',
+					icon: '🖥️',
+					description: 'Retro CRT-monitor frame for arbitrary content — repeating-gradient scanlines, RGB chromatic aberration via channel-split text-shadow, optional vertical tracking roll, corner vignette. Four named profiles (amber / green-phosphor / broadcast / modern), curved-glass option, asset-free, prefers-reduced-motion safe',
+					screenshot: screenshotPath('CRTScreenShot.png')
 				}
 			]
 		},
@@ -685,6 +692,7 @@
 		'🪧': { bg: '#1f2937', text: '#fde68a' },
 		'💡': { bg: '#0a0815', text: '#ff3aa9' },
 		'🎬': { bg: '#f1f5f9', text: '#0f172a' },
+		'🖥️': { bg: '#160d05', text: '#ffb84d' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
 		'📊': { bg: '#e0e7ff', text: '#4f46e5' },
 		'📅': { bg: '#d1fae5', text: '#059669' },

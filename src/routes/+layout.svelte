@@ -407,6 +407,12 @@
 					href: '/neonsign',
 					icon: '💡',
 					active: isActive('/neonsign')
+				},
+				{
+					label: 'CRTScreen',
+					href: '/crtscreen',
+					icon: '🖥️',
+					active: isActive('/crtscreen')
 				}
 			]
 		},
