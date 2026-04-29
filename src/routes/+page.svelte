@@ -182,6 +182,13 @@
 					screenshot: screenshotPath('TrueFocusShot.png')
 				},
 				{
+					name: 'VariableProximity',
+					href: '/variableproximity',
+					icon: '🅰️',
+					description: 'Cursor-reactive typography — each letter independently morphs along variable-font axes (wght/wdth/slnt/opsz) as the pointer approaches. Three falloff curves, rAF-throttled, CSS-eased, capability-detected, prefers-reduced-motion safe',
+					screenshot: screenshotPath('VariableProximityShot.png')
+				},
+				{
 					name: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
@@ -525,6 +532,13 @@
 					icon: '🎴',
 					description: 'Full-bleed perspective billboard wall — multi-row marquee of CSS-gradient tiles drifting on a tilted 3D plane, click-to-pin interaction, Halton-sequence palette/label selection, asset-free, SSR-deterministic, reduced-motion-aware',
 					screenshot: screenshotPath('CardwallShot.png')
+				},
+				{
+					name: 'AuroraBackdrop',
+					href: '/aurora-backdrop',
+					icon: '🌌',
+					description: 'Full-bleed pure-CSS aurora — four conic-gradient ribbons stack with mix-blend-mode screen and rotate at non-harmonic periods, fading at the corners through a soft radial veil. Three palettes (classic / dawn / deep), zero JS in the steady state, asset-free, prefers-reduced-motion safe',
+					screenshot: screenshotPath('AuroraBackdropShot.png')
 				}
 			]
 		},
@@ -690,7 +704,8 @@
 		'📺': { bg: '#fef3c7', text: '#b45309' },
 		'💥': { bg: '#fee2e2', text: '#be123c' },
 		'🔀': { bg: '#ede9fe', text: '#5b21b6' },
-		'🔦': { bg: '#ffe4e6', text: '#be123c' }
+		'🔦': { bg: '#ffe4e6', text: '#be123c' },
+		'🅰️': { bg: '#e0e7ff', text: '#4338ca' }
 	};
 
 	// Convert components to Card format with screenshots
