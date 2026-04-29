@@ -196,6 +196,13 @@
 					screenshot: screenshotPath('ProgressBarShot.png')
 				},
 				{
+					name: 'Spinner',
+					href: '/spinner',
+					icon: '🌀',
+					description: 'Indeterminate loading indicator — ring / dots / bars / pulse, three sizes, currentColor inheritance',
+					screenshot: screenshotPath('SpinnerShot.png')
+				},
+				{
 					name: 'KbdShortcut',
 					href: '/kbdshortcut',
 					icon: '🎹',
@@ -563,6 +570,7 @@
 		'⌨️': { bg: '#f3f4f6', text: '#374151' },
 		'🎹': { bg: '#e5e7eb', text: '#1f2937' },
 		'🔢': { bg: '#dbeafe', text: '#1d4ed8' },
+		'🌀': { bg: '#e0e7ff', text: '#4338ca' },
 		'⏱️': { bg: '#fef3c7', text: '#d97706' },
 		'🍱': { bg: '#fff7ed', text: '#ea580c' },
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },

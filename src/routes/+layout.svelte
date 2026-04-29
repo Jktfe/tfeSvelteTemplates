@@ -146,6 +146,12 @@
 					active: isActive('/progressbar')
 				},
 				{
+					label: 'Spinner',
+					href: '/spinner',
+					icon: '🌀',
+					active: isActive('/spinner')
+				},
+				{
 					label: 'KbdShortcut',
 					href: '/kbdshortcut',
 					icon: '🎹',
