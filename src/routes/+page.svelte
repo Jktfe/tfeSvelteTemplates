@@ -362,6 +362,13 @@
 					icon: '🎬',
 					description: 'Viewport-entry stagger primitive — IntersectionObserver-driven cascading reveal as direct children cross the threshold. Six directions (up / down / left / right / scale / rotate), per-child stagger via CSS custom properties, one-shot or replay, prefers-reduced-motion safe. Zero rAF, zero scroll listeners, zero dependencies',
 					screenshot: screenshotPath('ScrollRevealShot.png')
+				},
+				{
+					name: 'OrbitalRing',
+					href: '/orbitalring',
+					icon: '🛸',
+					description: 'Circular orbital layout primitive — N children distributed evenly around a ring that auto-rotates clockwise or counter-clockwise. World-frame upright (planet orientation) or rotates with the ring (constellation orientation). Optional centred snippet, pause on hover, pause when offscreen via IntersectionObserver. Pure CSS transforms via cascaded custom properties, single rAF dispatcher updates one transform per frame regardless of item count, prefers-reduced-motion safe',
+					screenshot: screenshotPath('OrbitalRingShot.png')
 				}
 			]
 		},
@@ -778,7 +785,8 @@
 		'📐': { bg: '#1e293b', text: '#a5b4fc' },
 		'📼': { bg: '#0a0a0a', text: '#ff00c8' },
 		'🪀': { bg: '#fef3c7', text: '#92400e' },
-		'🪩': { bg: '#1a0a2e', text: '#ff7eee' }
+		'🪩': { bg: '#1a0a2e', text: '#ff7eee' },
+		'🛸': { bg: '#1e1b4b', text: '#fbbf24' }
 	};
 
 	// Convert components to Card format with screenshots
