@@ -383,6 +383,13 @@
 					icon: '🌠',
 					description: 'Cursor-tracked decaying pixel trail — mousemove spawns small squares that fade + scale + drift on a CSS keyframe and self-clean on a per-pixel setTimeout. Distance-throttled spawn keeps trail density consistent at any cursor speed. Three sizes (small/medium/large), three palettes (mono-white/cyber-cyan/sunset-warm), trail-length cap with FIFO eviction. Pure helpers exported, prefers-reduced-motion safe, no rAF',
 					screenshot: screenshotPath('PixelTrailShot.png')
+				},
+				{
+					name: 'NoiseField',
+					href: '/noisefield',
+					icon: '🌫️',
+					description: 'Ambient grain / film-noise / TV-static overlay — a single SVG feTurbulence + feColorMatrix filter renders noise, layered over the slot via mix-blend-mode. Three intensities (fine/medium/coarse), three modes (mono/chroma/retro with scanlines), optional stuttering shimmer via steps() keyframe. SSR-safe filter ID, pure SVG + CSS, zero rAF, prefers-reduced-motion settles to static grain',
+					screenshot: screenshotPath('NoiseFieldShot.png')
 				}
 			]
 		},
@@ -816,7 +823,8 @@
 		'🪩': { bg: '#1a0a2e', text: '#ff7eee' },
 		'🛸': { bg: '#1e1b4b', text: '#fbbf24' },
 		'🎨': { bg: '#1a1a2e', text: '#ff6b9d' },
-		'🌠': { bg: '#0a0a14', text: '#00f0ff' }
+		'🌠': { bg: '#0a0a14', text: '#00f0ff' },
+		'🌫️': { bg: '#14141a', text: '#c9c9d1' }
 	};
 
 	// Convert components to Card format with screenshots
