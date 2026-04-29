@@ -134,6 +134,12 @@
 					active: isActive('/truefocus')
 				},
 				{
+					label: 'VariableProximity',
+					href: '/variableproximity',
+					icon: '🅰️',
+					active: isActive('/variableproximity')
+				},
+				{
 					label: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
@@ -377,6 +383,12 @@
 					href: '/cardwall',
 					icon: '🎴',
 					active: isActive('/cardwall')
+				},
+				{
+					label: 'AuroraBackdrop',
+					href: '/aurora-backdrop',
+					icon: '🌌',
+					active: isActive('/aurora-backdrop')
 				}
 			]
 		},
