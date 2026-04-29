@@ -369,6 +369,13 @@
 					icon: '🛸',
 					description: 'Circular orbital layout primitive — N children distributed evenly around a ring that auto-rotates clockwise or counter-clockwise. World-frame upright (planet orientation) or rotates with the ring (constellation orientation). Optional centred snippet, pause on hover, pause when offscreen via IntersectionObserver. Pure CSS transforms via cascaded custom properties, single rAF dispatcher updates one transform per frame regardless of item count, prefers-reduced-motion safe',
 					screenshot: screenshotPath('OrbitalRingShot.png')
+				},
+				{
+					name: 'MagnetGrid',
+					href: '/magnetgrid',
+					icon: '🧲',
+					description: 'Cursor-driven displacement field — N×M grid of arbitrary cells where every cell shifts toward (or away from) the pointer with a smooth quadratic falloff, like iron filings under a roving magnet. Pass a cell snippet to render glyphs, icons, or anything else; default is a styled dot. Attract or repel mode, configurable radius and strength, settle-on-leave via CSS transition. Pure CSS transforms driven by pointer events writing custom properties, no rAF loop, no canvas, prefers-reduced-motion safe',
+					screenshot: screenshotPath('MagnetGridShot.png')
 				}
 			]
 		},
@@ -609,6 +616,13 @@
 					icon: '🪩',
 					description: 'Holographic-foil shimmer wrapper — cursor-driven CSS conic-gradient ring rotates with the cursor angle from center, plus a diagonal sheen overlay that tracks pointer position. Pokemon-card foil aesthetic. Three intensities (subtle / iridescent / cosmic), four palettes (rainbow / pastel / cosmic / gold). Composes with Tilt3D for full physical-collectible-card behaviour. Pure helpers exported, prefers-reduced-motion safe',
 					screenshot: screenshotPath('HoloCardShot.png')
+				},
+				{
+					name: 'ElectricBorder',
+					href: '/electricborder',
+					icon: '⚡',
+					description: 'Animated electric-arc border — SVG feTurbulence + feDisplacementMap distort a stroked rectangle while a turbulence-frequency animation drives the live crackling motion. Three intensities (mild / crackling / lightning), three palettes (electric-blue / plasma-purple / volt-yellow). Per-instance unique filter IDs, zero per-frame JS, GPU-accelerated. Composes with Tilt3D for the full sci-fi UI panel feel. Pure helpers exported, prefers-reduced-motion safe',
+					screenshot: screenshotPath('ElectricBorderShot.png')
 				}
 			]
 		},
