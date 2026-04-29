@@ -365,6 +365,12 @@
 					href: '/portfolio-photographer',
 					icon: '📷',
 					active: isActive('/portfolio-photographer')
+				},
+				{
+					label: 'MembraneHero',
+					href: '/membrane-hero',
+					icon: '🌊',
+					active: isActive('/membrane-hero')
 				}
 			]
 		},
