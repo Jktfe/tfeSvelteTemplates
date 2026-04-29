@@ -567,6 +567,13 @@
 					icon: '🖥️',
 					description: 'Retro CRT-monitor frame for arbitrary content — repeating-gradient scanlines, RGB chromatic aberration via channel-split text-shadow, optional vertical tracking roll, corner vignette. Four named profiles (amber / green-phosphor / broadcast / modern), curved-glass option, asset-free, prefers-reduced-motion safe',
 					screenshot: screenshotPath('CRTScreenShot.png')
+				},
+				{
+					name: 'CountUp',
+					href: '/countup',
+					icon: '💯',
+					description: 'Number-animation primitive — eases a value from start → end on viewport entry, mount, or manual trigger. Five easings (linear / quad / cubic / quart / expo), locale-aware Intl.NumberFormat, prefix/suffix, decimal precision, optional flash-on-complete. Direction-agnostic for count-down, asset-free, prefers-reduced-motion safe',
+					screenshot: screenshotPath('CountUpShot.png')
 				}
 			]
 		},
@@ -693,6 +700,7 @@
 		'💡': { bg: '#0a0815', text: '#ff3aa9' },
 		'🎬': { bg: '#f1f5f9', text: '#0f172a' },
 		'🖥️': { bg: '#160d05', text: '#ffb84d' },
+		'💯': { bg: '#0f172a', text: '#7dd3fc' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
 		'📊': { bg: '#e0e7ff', text: '#4f46e5' },
 		'📅': { bg: '#d1fae5', text: '#059669' },

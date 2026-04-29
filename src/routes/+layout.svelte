@@ -413,6 +413,12 @@
 					href: '/crtscreen',
 					icon: '🖥️',
 					active: isActive('/crtscreen')
+				},
+				{
+					label: 'CountUp',
+					href: '/countup',
+					icon: '💯',
+					active: isActive('/countup')
 				}
 			]
 		},
