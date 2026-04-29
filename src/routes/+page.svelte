@@ -104,6 +104,13 @@
 					icon: '🪄',
 					description: 'Shared-element morph dialog transition',
 					screenshot: screenshotPath('MorphingDialogShot.png')
+				},
+				{
+					name: 'ClickSpark',
+					href: '/clickspark',
+					icon: '💥',
+					description: 'Wrap anything to spray particles outward from the click point — four spark shapes (dot, plus, line, star), composable rapid bursts, prefers-reduced-motion safe',
+					screenshot: screenshotPath('ClickSparkShot.png')
 				}
 			]
 		},
@@ -374,6 +381,13 @@
 					icon: '🃏',
 					description: 'Interactive horizontal card displays',
 					screenshot: screenshotPath('CardStackShot.png')
+				},
+				{
+					name: 'StreamShowcase',
+					href: '/streamshowcase',
+					icon: '📺',
+					description: 'Editorial streaming-platform shelf — brush-script hero with a 10-card fan carousel splayed around a shared pivot, click/drag/keyboard interaction, asset-free CSS-only motion, reduced-motion fallback',
+					screenshot: screenshotPath('StreamShowcaseShot.png')
 				}
 			]
 		},
@@ -630,7 +644,9 @@
 		'🪗': { bg: '#fef9c3', text: '#854d0e' },
 		'➖': { bg: '#f3f4f6', text: '#374151' },
 		'🗂': { bg: '#fef3c7', text: '#a16207' },
-		'🙂': { bg: '#dbeafe', text: '#1d4ed8' }
+		'🙂': { bg: '#dbeafe', text: '#1d4ed8' },
+		'📺': { bg: '#fef3c7', text: '#b45309' },
+		'💥': { bg: '#fee2e2', text: '#be123c' }
 	};
 
 	// Convert components to Card format with screenshots

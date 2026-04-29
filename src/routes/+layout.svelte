@@ -71,6 +71,12 @@
 					href: '/morphingdialog',
 					icon: '🪄',
 					active: isActive('/morphingdialog')
+				},
+				{
+					label: 'ClickSpark',
+					href: '/clickspark',
+					icon: '💥',
+					active: isActive('/clickspark')
 				}
 			]
 		},
@@ -280,6 +286,12 @@
 					href: '/scratchtoreveal',
 					icon: '🎰',
 					active: isActive('/scratchtoreveal')
+				},
+				{
+					label: 'StreamShowcase',
+					href: '/streamshowcase',
+					icon: '📺',
+					active: isActive('/streamshowcase')
 				}
 			]
 		},
