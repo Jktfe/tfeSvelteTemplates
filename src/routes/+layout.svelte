@@ -389,6 +389,12 @@
 					href: '/aurora-backdrop',
 					icon: '🌌',
 					active: isActive('/aurora-backdrop')
+				},
+				{
+					label: 'SplitFlap',
+					href: '/splitflap',
+					icon: '🪧',
+					active: isActive('/splitflap')
 				}
 			]
 		},
