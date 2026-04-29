@@ -432,6 +432,13 @@
 					icon: '🖱️',
 					description: 'Right-click / long-press menu primitive. Wraps any trigger; right-click suppresses the native browser menu and opens a custom one at the click position. Pointer + keyboard parity from line one — Shift+F10 and the dedicated ContextMenu key open via keyboard, ↑/↓ navigate (skipping dividers and disabled), Home/End jump first/last enabled, Enter/Space activate, Esc/Tab close, click outside dismisses. Items declared as a single prop array of { id, label, shortcut?, disabled?, danger? } | { type: "divider" }. clampToViewport flips when the menu would overflow the right or bottom edge. Native menu suppression via preventDefault. Mount-on-open — zero DOM cost when closed. role=menu / role=menuitem / role=separator with aria-orientation, aria-label, aria-haspopup, aria-expanded. prefers-reduced-motion skips the entrance animation.',
 					screenshot: screenshotPath('ContextMenuShot.png')
+				},
+				{
+					name: 'ReadingTOC',
+					href: '/readingtoc',
+					icon: '📖',
+					description: 'Auto-tracking table of contents that highlights the heading the reader is currently looking at and smooth-scrolls to a section on click. Three variants — rail (sticky vertical sidebar, indented hierarchy with connecting line, left or right anchor), top (horizontal scrolling pill row for short docs, top-level only), drawer (FAB + tray for mobile / content-dense pages). Single IntersectionObserver covers all tracked headings; top-band rootMargin "0px 0px -60% 0px" updates the active item as you read past a heading rather than when it leaves the viewport. Three-tier active resolver — intersecting (highest ratio, doc-order tiebreak) → passed (largest top) → fallback. Stack-based heading-tree builder handles non-monotonic level skips. Real <nav> wrapper with configurable aria-label, real <a href="#id"> anchors (keyboard reachable, open-in-new-tab works, link works without JS), aria-current="location" for screen readers, drawer toggle is a real <button> with aria-expanded + aria-controls. Escape closes drawer. prefers-reduced-motion → instant scrollIntoView. Pairs with ScrollProgressBar — bar tells you how much, TOC tells you where.',
+					screenshot: screenshotPath('ReadingTOCShot.png')
 				}
 			]
 		},
@@ -879,7 +886,8 @@
 		'🛣️': { bg: '#050510', text: '#00f0ff' },
 		'🎵': { bg: '#0d0d1a', text: '#38bdf8' },
 		'⏳': { bg: '#0d0d1a', text: '#10b981' },
-		'🖱️': { bg: '#0d0d1a', text: '#a78bfa' }
+		'🖱️': { bg: '#0d0d1a', text: '#a78bfa' },
+		'📖': { bg: '#fef3c7', text: '#92400e' }
 	};
 
 	// Convert components to Card format with screenshots
