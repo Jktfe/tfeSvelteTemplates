@@ -354,6 +354,12 @@
 					href: '/readingtoc',
 					icon: '📖',
 					active: isActive('/readingtoc')
+				},
+				{
+					label: 'ConfettiBurst',
+					href: '/confettiburst',
+					icon: '🎉',
+					active: isActive('/confettiburst')
 				}
 			]
 		},
