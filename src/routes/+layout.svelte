@@ -324,6 +324,12 @@
 					href: '/perspectivegrid',
 					icon: '🛣️',
 					active: isActive('/perspectivegrid')
+				},
+				{
+					label: 'EqualizerBars',
+					href: '/equalizerbars',
+					icon: '🎵',
+					active: isActive('/equalizerbars')
 				}
 			]
 		},
@@ -385,7 +391,8 @@
 					active: isActive('/radialcluster')
 				},
 				{ label: 'Sunburst', href: '/sunburst', icon: '☀️', active: isActive('/sunburst') },
-				{ label: 'StatCard', href: '/statcard', icon: '📈', active: isActive('/statcard') }
+				{ label: 'StatCard', href: '/statcard', icon: '📈', active: isActive('/statcard') },
+				{ label: 'WordCloud', href: '/wordcloud', icon: '☁️', active: isActive('/wordcloud') }
 			]
 		},
 		{
