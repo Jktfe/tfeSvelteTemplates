@@ -176,6 +176,12 @@
 					active: isActive('/progressbar')
 				},
 				{
+					label: 'ScrollProgressBar',
+					href: '/scrollprogressbar',
+					icon: '📜',
+					active: isActive('/scrollprogressbar')
+				},
+				{
 					label: 'Spinner',
 					href: '/spinner',
 					icon: '🌀',
