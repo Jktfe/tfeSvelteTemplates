@@ -116,6 +116,12 @@
 					active: isActive('/typewriter')
 				},
 				{
+					label: 'ShinyText',
+					href: '/shinytext',
+					icon: '✨',
+					active: isActive('/shinytext')
+				},
+				{
 					label: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
@@ -341,7 +347,13 @@
 			icon: '🖼️',
 			items: [
 				{ label: 'BeforeAfter', href: '/beforeafter', icon: '↔️', active: isActive('/beforeafter') },
-				{ label: 'DomeGallery', href: '/domegallery', icon: '🎪', active: isActive('/domegallery') }
+				{ label: 'DomeGallery', href: '/domegallery', icon: '🎪', active: isActive('/domegallery') },
+				{
+					label: 'PortfolioPhotographer',
+					href: '/portfolio-photographer',
+					icon: '📷',
+					active: isActive('/portfolio-photographer')
+				}
 			]
 		},
 		{
