@@ -419,6 +419,12 @@
 					href: '/countup',
 					icon: '💯',
 					active: isActive('/countup')
+				},
+				{
+					label: 'Tilt3D',
+					href: '/tilt3d',
+					icon: '📐',
+					active: isActive('/tilt3d')
 				}
 			]
 		},
