@@ -355,6 +355,13 @@
 					icon: '🙂',
 					description: 'Single user identity element — image with onerror auto-fallback to initials, deterministic colour-from-name palette, three sizes, three shapes, optional status dot',
 					screenshot: screenshotPath('AvatarShot.png')
+				},
+				{
+					name: 'ScrollReveal',
+					href: '/scrollreveal',
+					icon: '🎬',
+					description: 'Viewport-entry stagger primitive — IntersectionObserver-driven cascading reveal as direct children cross the threshold. Six directions (up / down / left / right / scale / rotate), per-child stagger via CSS custom properties, one-shot or replay, prefers-reduced-motion safe. Zero rAF, zero scroll listeners, zero dependencies',
+					screenshot: screenshotPath('ScrollRevealShot.png')
 				}
 			]
 		},
@@ -677,6 +684,7 @@
 		'🌌': { bg: '#e0e7ff', text: '#4338ca' },
 		'🪧': { bg: '#1f2937', text: '#fde68a' },
 		'💡': { bg: '#0a0815', text: '#ff3aa9' },
+		'🎬': { bg: '#f1f5f9', text: '#0f172a' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
 		'📊': { bg: '#e0e7ff', text: '#4f46e5' },
 		'📅': { bg: '#d1fae5', text: '#059669' },
