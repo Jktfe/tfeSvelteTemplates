@@ -168,6 +168,13 @@
 					screenshot: screenshotPath('ShinyTextShot.png')
 				},
 				{
+					name: 'ScrambledText',
+					href: '/scrambledtext',
+					icon: '🔀',
+					description: 'Glyph-shuffle reveal — characters scramble through a configurable pool then settle to the final string. Left-to-right or random order, replay-on-hover, prefers-reduced-motion safe',
+					screenshot: screenshotPath('ScrambledTextShot.png')
+				},
+				{
 					name: 'AvatarStack',
 					href: '/avatarstack',
 					icon: '👥',
@@ -660,7 +667,8 @@
 		'🗂': { bg: '#fef3c7', text: '#a16207' },
 		'🙂': { bg: '#dbeafe', text: '#1d4ed8' },
 		'📺': { bg: '#fef3c7', text: '#b45309' },
-		'💥': { bg: '#fee2e2', text: '#be123c' }
+		'💥': { bg: '#fee2e2', text: '#be123c' },
+		'🔀': { bg: '#ede9fe', text: '#5b21b6' }
 	};
 
 	// Convert components to Card format with screenshots
