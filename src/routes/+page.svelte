@@ -376,6 +376,13 @@
 					icon: '🧲',
 					description: 'Cursor-driven displacement field — N×M grid of arbitrary cells where every cell shifts toward (or away from) the pointer with a smooth quadratic falloff, like iron filings under a roving magnet. Pass a cell snippet to render glyphs, icons, or anything else; default is a styled dot. Attract or repel mode, configurable radius and strength, settle-on-leave via CSS transition. Pure CSS transforms driven by pointer events writing custom properties, no rAF loop, no canvas, prefers-reduced-motion safe',
 					screenshot: screenshotPath('MagnetGridShot.png')
+				},
+				{
+					name: 'PixelTrail',
+					href: '/pixeltrail',
+					icon: '🌠',
+					description: 'Cursor-tracked decaying pixel trail — mousemove spawns small squares that fade + scale + drift on a CSS keyframe and self-clean on a per-pixel setTimeout. Distance-throttled spawn keeps trail density consistent at any cursor speed. Three sizes (small/medium/large), three palettes (mono-white/cyber-cyan/sunset-warm), trail-length cap with FIFO eviction. Pure helpers exported, prefers-reduced-motion safe, no rAF',
+					screenshot: screenshotPath('PixelTrailShot.png')
 				}
 			]
 		},
@@ -808,7 +815,8 @@
 		'🪀': { bg: '#fef3c7', text: '#92400e' },
 		'🪩': { bg: '#1a0a2e', text: '#ff7eee' },
 		'🛸': { bg: '#1e1b4b', text: '#fbbf24' },
-		'🎨': { bg: '#1a1a2e', text: '#ff6b9d' }
+		'🎨': { bg: '#1a1a2e', text: '#ff6b9d' },
+		'🌠': { bg: '#0a0a14', text: '#00f0ff' }
 	};
 
 	// Convert components to Card format with screenshots
