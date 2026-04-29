@@ -546,6 +546,13 @@
 					icon: '🪧',
 					description: 'Mechanical Solari-board character flip — 3D top-half drops down through intermediate charset positions, bottom catches the new glyph, per-character stagger creates a left-to-right cascade. Four charsets (digits/alpha/alnum/solari), forward or shortest traversal, asset-free, prefers-reduced-motion safe',
 					screenshot: screenshotPath('SplitFlapShot.png')
+				},
+				{
+					name: 'NeonSign',
+					href: '/neonsign',
+					icon: '💡',
+					description: 'Glowing neon-tube text — five-stop CSS text-shadow stack creates the inner-tube core through to the outer atmospheric haze. Six palettes (pink / cyan / yellow / green / red / purple), deterministic flicker (none / subtle / broken), per-character burnt-out mode, on/off power state. Asset-free, prefers-reduced-motion safe',
+					screenshot: screenshotPath('NeonSignShot.png')
 				}
 			]
 		},
@@ -669,6 +676,7 @@
 		'🎴': { bg: '#fef3c7', text: '#ea580c' },
 		'🌌': { bg: '#e0e7ff', text: '#4338ca' },
 		'🪧': { bg: '#1f2937', text: '#fde68a' },
+		'💡': { bg: '#0a0815', text: '#ff3aa9' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
 		'📊': { bg: '#e0e7ff', text: '#4f46e5' },
 		'📅': { bg: '#d1fae5', text: '#059669' },
