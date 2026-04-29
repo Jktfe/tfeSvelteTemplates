@@ -539,6 +539,13 @@
 					icon: '🌌',
 					description: 'Full-bleed pure-CSS aurora — four conic-gradient ribbons stack with mix-blend-mode screen and rotate at non-harmonic periods, fading at the corners through a soft radial veil. Three palettes (classic / dawn / deep), zero JS in the steady state, asset-free, prefers-reduced-motion safe',
 					screenshot: screenshotPath('AuroraBackdropShot.png')
+				},
+				{
+					name: 'SplitFlap',
+					href: '/splitflap',
+					icon: '🪧',
+					description: 'Mechanical Solari-board character flip — 3D top-half drops down through intermediate charset positions, bottom catches the new glyph, per-character stagger creates a left-to-right cascade. Four charsets (digits/alpha/alnum/solari), forward or shortest traversal, asset-free, prefers-reduced-motion safe',
+					screenshot: screenshotPath('SplitFlapShot.png')
 				}
 			]
 		},
@@ -661,6 +668,7 @@
 		'🃏': { bg: '#dcfce7', text: '#16a34a' },
 		'🎴': { bg: '#fef3c7', text: '#ea580c' },
 		'🌌': { bg: '#e0e7ff', text: '#4338ca' },
+		'🪧': { bg: '#1f2937', text: '#fde68a' },
 		'🎰': { bg: '#fee2e2', text: '#dc2626' },
 		'📊': { bg: '#e0e7ff', text: '#4f46e5' },
 		'📅': { bg: '#d1fae5', text: '#059669' },
