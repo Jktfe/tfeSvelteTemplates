@@ -437,6 +437,12 @@
 					href: '/pendulum',
 					icon: '🪀',
 					active: isActive('/pendulum')
+				},
+				{
+					label: 'HoloCard',
+					href: '/holocard',
+					icon: '🪩',
+					active: isActive('/holocard')
 				}
 			]
 		},
