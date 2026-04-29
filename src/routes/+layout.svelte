@@ -348,6 +348,12 @@
 					href: '/contextmenu',
 					icon: '🖱️',
 					active: isActive('/contextmenu')
+				},
+				{
+					label: 'ReadingTOC',
+					href: '/readingtoc',
+					icon: '📖',
+					active: isActive('/readingtoc')
 				}
 			]
 		},
