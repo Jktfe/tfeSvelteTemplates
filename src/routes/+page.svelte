@@ -390,6 +390,13 @@
 					icon: '🌫️',
 					description: 'Ambient grain / film-noise / TV-static overlay — a single SVG feTurbulence + feColorMatrix filter renders noise, layered over the slot via mix-blend-mode. Three intensities (fine/medium/coarse), three modes (mono/chroma/retro with scanlines), optional stuttering shimmer via steps() keyframe. SSR-safe filter ID, pure SVG + CSS, zero rAF, prefers-reduced-motion settles to static grain',
 					screenshot: screenshotPath('NoiseFieldShot.png')
+				},
+				{
+					name: 'TickerTape',
+					href: '/tickertape',
+					icon: '📈',
+					description: 'Horizontal infinite-scroll strip of structured TickerItem tuples — {label, value, delta, trend, href}. Bloomberg / airport-board energy as a Svelte 5 primitive. Four variants (default / finance / sports / minimal) each with their own colour grammar. Trend chevrons inferred from delta sign or set explicitly. Pure CSS keyframe scroll on a 2× back-to-back track, hover-to-pause via animation-play-state, edge fade via mask-image, configurable speed + direction. Zero rAF, zero deps, prefers-reduced-motion settles to static frame.',
+					screenshot: screenshotPath('TickerTapeShot.png')
 				}
 			]
 		},
