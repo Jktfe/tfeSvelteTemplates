@@ -300,6 +300,12 @@
 					href: '/magnetgrid',
 					icon: '🧲',
 					active: isActive('/magnetgrid')
+				},
+				{
+					label: 'PixelTrail',
+					href: '/pixeltrail',
+					icon: '🌠',
+					active: isActive('/pixeltrail')
 				}
 			]
 		},
