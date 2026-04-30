@@ -274,6 +274,57 @@ OSRM uses different profile names:
 | `cycling` | `bike` |
 | `walking` | `foot` |
 
+### Theming
+
+`MapRouting` ships with a CSS-custom-property token API. Chrome tokens flip
+automatically with `prefers-color-scheme: dark`; the two semantic tokens
+(`origin`, `destination`) stay constant in both modes — a green "start"
+pin must read as green over any base map tile, light or dark. This is
+the chrome/semantic split codified by [Pattern #67](../../../docs/THEMING.md#pattern-67).
+
+#### Token reference
+
+All tokens are scoped to `.map-routing-container` and prefixed `--mr-`.
+
+| Group | Tokens |
+|-------|--------|
+| **Surfaces** | `canvas`, `surface`, `surface-hover`, `panel-bg`, `overlay-bg` |
+| **Text** | `text`, `text-muted`, `accent-text` |
+| **Strokes** | `border-soft`, `divider`, `divider-strong` |
+| **Accent** | `accent`, `accent-soft` |
+| **Errors** | `error-bg`, `error-bg-soft`, `error-border`, `error-text` |
+| **Shadows** | `shadow-soft`, `shadow-medium`, `shadow-strong`, `marker-shadow` |
+| **Semantic** *(stay constant)* | `origin`, `destination` |
+
+#### Override recipes
+
+```css
+/* Pin the accent to your brand colour, keep semantic markers */
+.my-app .map-routing-container {
+  --mr-accent: #6366f1;
+  --mr-accent-soft: rgba(99, 102, 241, 0.9);
+}
+
+/* Force light chrome inside a dark page section */
+.dark-page .map-routing-container {
+  --mr-canvas: #fafafa;
+  --mr-surface: #ffffff;
+  --mr-text: #1f2937;
+}
+
+/* Brand the start/end pins (semantic tokens — both modes follow this) */
+.my-app .map-routing-container {
+  --mr-origin: #00875a;
+  --mr-destination: #c9372c;
+}
+```
+
+The `routeColor` prop remains the recommended surface for theming the
+polyline itself — the token API covers everything *around* the route
+(panels, controls, instructions, errors, markers).
+
+See [`docs/THEMING.md`](../../../docs/THEMING.md) for the full convention.
+
 ---
 
 ## Props Quick Reference
