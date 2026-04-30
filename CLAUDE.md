@@ -1710,6 +1710,18 @@ Comments should be professional but approachable. The goal is to help coding nov
 - No jargon without explanation
 - Add context for non-obvious decisions
 
+**No JSDoc-style block comments inside Svelte HTML docblocks.**
+The `<!-- @component -->` docblock at the top of a `.svelte` file is parsed by Svelte's `@component` extractor as documentation. Any `/* ... */` block comment nested inside it — including ones inside fenced code examples — silently corrupts the default-export descriptor. `bun run build` still passes; the failure surfaces only in `svelte-check`, AND it reports as `Module X has no default export` against **consumer files** (the components that import the broken module), not against the broken file itself. Symptom is fundamentally misleading and costs hours to bisect.
+
+Mechanical rules for authoring docblocks:
+
+- **In fenced code examples inside the docblock**: introduce CSS or JS examples with prose intros (e.g. "Override the chrome tokens at `:root`:") rather than inline `/* ... */` comments. If a code example would normally include a comment, lift the comment into the prose above the fence.
+- **In docblock prose**: never write the literal `/* */` token, even inside backticks. Refer to the syntax as "block comments" or "JSDoc-style comments" in plain English.
+- **Single-line `//` comments are fine** — they don't trigger the JSDoc parser.
+- **HTML comments (`<!-- -->`) inside the docblock are also fine** — though Svelte may strip them when extracting docs.
+
+When you encounter `Module X has no default export` errors against consumer files where `bun run build` passes cleanly: check the docblock of the imported component for nested `/* ... */` markers first.
+
 ### Component Quality Checklist
 
 Before a component is considered "gold standard":
