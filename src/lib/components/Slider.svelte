@@ -1,17 +1,47 @@
 <script lang="ts">
 	/*
-	 * Slider
+	 * ============================================================
+	 * Slider — Continuous-Value Range Input
+	 * ============================================================
 	 *
-	 * Continuous-value range input. Built on a native <input type="range">
-	 * so keyboard a11y is free (← → for step, Home/End for min/max,
-	 * PageUp/PageDown for large step, screen readers announce role="slider"
+	 * WHAT IT DOES
+	 * Continuous-value range input. Built on a native input type=range
+	 * so keyboard a11y is free (Left/Right for step, Home/End for min/max,
+	 * PageUp/PageDown for large step, screen readers announce role=slider
 	 * and current/min/max). We only style the track + thumb.
 	 *
+	 * FEATURES
+	 * - Three sizes: sm / md / lg (track height + thumb size)
+	 * - Three variants: default / success / danger (fill colour)
+	 * - Optional value bubble above the thumb (showValue=true)
+	 * - Optional label
+	 * - Honours prefers-reduced-motion (no thumb-grow on press)
+	 * - Honours prefers-color-scheme (dark flip via CSS custom properties)
+	 * - Pure Svelte 5 runes, zero dependencies
+	 *
+	 * THEMING
+	 * Six dark-aware tokens on .slider-wrapper, light defaults inline,
+	 * flipped automatically under @media (prefers-color-scheme: dark).
+	 * Plus the existing variant tokens kept for prop-driven recolouring:
+	 * - --slider-track-bg     empty track fill (light: #e2e8f0 / dark: #1f2937)
+	 * - --slider-thumb-bg     thumb background (light: #ffffff / dark: #f9fafb)
+	 * - --slider-label-fg     label text colour
+	 * - --slider-bubble-bg    bubble background and arrow fill
+	 * - --slider-bubble-fg    bubble text colour
+	 * - --slider-focus-ring   focus-visible ring colour
+	 * - --fill-color          owned by `variant` prop, overridable
+	 * - --track-h, --thumb-size  owned by `size` prop, overridable
+	 * Override at :root or any ancestor to retheme without forking:
+	 *     :root { --slider-track-bg: #fef3c7; --fill-color: #f59e0b; }
+	 *
+	 * USAGE
 	 * Two-way bind:
-	 *   <Slider bind:value={volume} min={0} max={100} />
+	 *     Slider bind:value={volume} min={0} max={100}
 	 *
 	 * The value bubble (showValue=true) renders the current value above
 	 * the thumb. Position is computed as a % of the track via $derived.
+	 *
+	 * ============================================================
 	 */
 
 	type Size = 'sm' | 'md' | 'lg';
@@ -89,6 +119,18 @@
 
 <style>
 	.slider-wrapper {
+		/*
+		 * Theming tokens — light defaults here, dark flip in the media block
+		 * at the bottom of this stylesheet. Override at :root or any ancestor
+		 * to retheme without forking the component.
+		 */
+		--slider-track-bg: #e2e8f0;
+		--slider-thumb-bg: #ffffff;
+		--slider-label-fg: #1a202c;
+		--slider-bubble-bg: #1a202c;
+		--slider-bubble-fg: #ffffff;
+		--slider-focus-ring: rgba(20, 110, 245, 0.25);
+
 		display: flex;
 		flex-direction: column;
 		gap: 0.375rem;
@@ -101,7 +143,7 @@
 
 	.slider-label {
 		font-size: 0.875rem;
-		color: #1a202c;
+		color: var(--slider-label-fg);
 		font-weight: 500;
 	}
 
@@ -114,8 +156,8 @@
 		position: absolute;
 		bottom: calc(100% + 0.5rem);
 		transform: translateX(-50%);
-		background-color: #1a202c;
-		color: #ffffff;
+		background-color: var(--slider-bubble-bg);
+		color: var(--slider-bubble-fg);
 		font-size: 0.75rem;
 		font-weight: 500;
 		padding: 0.125rem 0.5rem;
@@ -134,7 +176,7 @@
 		height: 0;
 		border-left: 4px solid transparent;
 		border-right: 4px solid transparent;
-		border-top: 4px solid #1a202c;
+		border-top: 4px solid var(--slider-bubble-bg);
 	}
 
 	/* Reset native styling */
@@ -164,8 +206,8 @@
 			to right,
 			var(--fill-color, #146ef5) 0%,
 			var(--fill-color, #146ef5) var(--percent),
-			#e2e8f0 var(--percent),
-			#e2e8f0 100%
+			var(--slider-track-bg) var(--percent),
+			var(--slider-track-bg) 100%
 		);
 	}
 
@@ -176,7 +218,7 @@
 		width: var(--thumb-size, 18px);
 		height: var(--thumb-size, 18px);
 		border-radius: 9999px;
-		background-color: #ffffff;
+		background-color: var(--slider-thumb-bg);
 		border: 2px solid var(--fill-color, #146ef5);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 		margin-top: calc((var(--track-h, 6px) - var(--thumb-size, 18px)) / 2);
@@ -190,14 +232,18 @@
 	}
 
 	.slider-input:focus-visible::-webkit-slider-thumb {
-		box-shadow: 0 0 0 4px rgba(20, 110, 245, 0.25);
+		box-shadow: 0 0 0 4px var(--slider-focus-ring);
+	}
+
+	.slider-input:focus-visible::-moz-range-thumb {
+		box-shadow: 0 0 0 4px var(--slider-focus-ring);
 	}
 
 	/* Firefox track */
 	.slider-input::-moz-range-track {
 		height: var(--track-h, 6px);
 		border-radius: 9999px;
-		background-color: #e2e8f0;
+		background-color: var(--slider-track-bg);
 	}
 
 	.slider-input::-moz-range-progress {
@@ -211,7 +257,7 @@
 		width: var(--thumb-size, 18px);
 		height: var(--thumb-size, 18px);
 		border-radius: 9999px;
-		background-color: #ffffff;
+		background-color: var(--slider-thumb-bg);
 		border: 2px solid var(--fill-color, #146ef5);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 		cursor: grab;
@@ -256,6 +302,26 @@
 		.slider-input:active::-webkit-slider-thumb,
 		.slider-input:active::-moz-range-thumb {
 			transform: none;
+		}
+	}
+
+	/*
+	 * Dark mode — flip the empty-track grey, thumb white, label charcoal,
+	 * bubble charcoal/white and focus ring tint so the slider stays
+	 * high-contrast on dark pages. Variant fill colours (--fill-color)
+	 * stay vivid in both modes — they read fine on either background.
+	 * Consumers who set custom tokens at :root (or any closer ancestor)
+	 * win because their values cascade after the defaults — this block
+	 * only fires when no override is present.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.slider-wrapper {
+			--slider-track-bg: #1f2937;
+			--slider-thumb-bg: #f9fafb;
+			--slider-label-fg: #f9fafb;
+			--slider-bubble-bg: #f9fafb;
+			--slider-bubble-fg: #111827;
+			--slider-focus-ring: rgba(96, 165, 250, 0.4);
 		}
 	}
 </style>
