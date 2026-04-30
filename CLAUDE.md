@@ -1710,6 +1710,19 @@ Comments should be professional but approachable. The goal is to help coding nov
 - No jargon without explanation
 - Add context for non-obvious decisions
 
+**No author / RFO / self-attestation markers at component sign-off.**
+Shipped source files never carry author bylines, "request-for-feedback" markers, agent handles, audit-pass stamps, or self-graded checklists in the footer. They go stale instantly, leak intra-team process to consumers copying the file out, and add nothing a downstream user can act on.
+
+Keep useful technical comments, warnings, known limitations, and audit trails — but route them appropriately:
+
+- **In the component header**: WHAT IT DOES, FEATURES, ACCESSIBILITY, DEPENDENCIES, USAGE, PROPS, KNOWN WARNINGS (those that affect consumers)
+- **Inline in code**: the "why" behind non-obvious decisions, hidden invariants, workarounds for specific bugs
+- **In the Obsidian audit vault** (`Agent Memory Vault/tfesveltetemplates/`): scoring runs, RFO markers, agent attestations, gold-standard ledger, pattern numbers
+- **In the changelog / commit message / PR description**: who shipped it, why, what changed
+- **Never in a footer comment block at the end of the file.**
+
+If a future audit needs to know whether a component was reviewed and by whom, the answer lives in git log + the Obsidian vault, not in the source. This keeps copy-paste portability clean for the OSS-template promise.
+
 ### Component Quality Checklist
 
 Before a component is considered "gold standard":
