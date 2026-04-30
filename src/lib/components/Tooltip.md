@@ -1,7 +1,7 @@
 ---
 title: Tooltip
 description: Accessible hover/focus tooltip wrapping any trigger, with four placements, configurable delays, and rich-content support via snippet.
-category: Helpful UX
+category: Controls & Input
 author: AntClaude
 ---
 
@@ -60,6 +60,28 @@ Wraps any element (button, link, icon) and shows a small floating panel with hel
 |-------------|-------------|
 | `children`  | The trigger element (button, link, icon). Required. |
 | `tip`       | Optional rich tooltip body. Overrides `text` when provided. |
+
+## Theming
+
+The tooltip exposes three CSS custom properties on `.tooltip-wrap`. Light defaults are baked in; a `@media (prefers-color-scheme: dark)` block flips them automatically when the user prefers dark.
+
+| Property            | Light default                      | Dark default                       | Used by                           |
+|---------------------|-----------------------------------|-----------------------------------|-----------------------------------|
+| `--tooltip-fg`      | `#f9fafb`                          | `#111827`                          | Body text colour                  |
+| `--tooltip-bg`      | `#111827`                          | `#f9fafb`                          | Body and arrow background         |
+| `--tooltip-shadow`  | `0 4px 12px rgba(0, 0, 0, 0.18)`  | `0 4px 14px rgba(0, 0, 0, 0.55)`  | Drop shadow under the body        |
+
+Override at any scope — `:root`, an app shell, or a single section — without forking the component:
+
+```css
+:root {
+  --tooltip-bg: #1e3a8a;   /* navy */
+  --tooltip-fg: #ffffff;
+  --tooltip-shadow: 0 6px 20px rgba(30, 58, 138, 0.35);
+}
+```
+
+If your app already manages its own dark-mode strategy (manual class toggle rather than `prefers-color-scheme`), set the three tokens inside your own `.dark { ... }` selector and the system-preference block becomes a no-op for users who haven't set the OS preference.
 
 ## When to use
 

@@ -18,6 +18,7 @@
     (g → s style), or any string you like
   - Native <kbd> semantic element (free a11y from the browser)
   - Pure CSS bevel — no images, no font icons
+  - Honours prefers-color-scheme (dark flip via CSS custom properties)
   - Zero dependencies
 
   ACCESSIBILITY
@@ -40,6 +41,21 @@
 
   Sequential combo (press g, then s):
       <KbdShortcut keys={['G', 'S']} separator=" → " />
+
+  THEMING
+  Seven CSS custom properties on .kbd, light defaults inline, flipped
+  automatically under @media (prefers-color-scheme: dark). All seven
+  are chrome (no brand variants on a kbd cap) so the whole set flips
+  together — no Pattern #67 split needed.
+  - --kbd-fg            text colour       (light: #374151 / dark: #d1d5db)
+  - --kbd-bg-top        bevel top         (light: #ffffff / dark: #1f2937)
+  - --kbd-bg-bottom     bevel bottom      (light: #f3f4f6 / dark: #111827)
+  - --kbd-border        cap outline       (light: #d1d5db / dark: #4b5563)
+  - --kbd-shadow-inner  inset depth-line  (light: #d1d5db / dark: #4b5563)
+  - --kbd-shadow-drop   outer drop-shadow (light: rgba(0,0,0,0.05) / dark: rgba(0,0,0,0.4))
+  - --kbd-sep-color     separator colour  (light: #9ca3af / dark: #6b7280)
+  Override at :root or any ancestor to retheme without forking:
+      :root { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
 
   PROPS
   | Prop      | Type                  | Default | Description |
@@ -194,6 +210,22 @@
 
 <style>
 	.kbd {
+		/*
+		 * Theming tokens — light defaults here, dark flip in the media
+		 * block at the bottom of this stylesheet. All seven are chrome
+		 * (a kbd cap has no brand-tinted variants — bg/fg/border/shadow
+		 * all read fine on either scheme), so the whole set flips
+		 * together. Override at :root or any ancestor to retheme without
+		 * forking the component.
+		 */
+		--kbd-fg: #374151;
+		--kbd-bg-top: #ffffff;
+		--kbd-bg-bottom: #f3f4f6;
+		--kbd-border: #d1d5db;
+		--kbd-shadow-inner: #d1d5db;
+		--kbd-shadow-drop: rgba(0, 0, 0, 0.05);
+		--kbd-sep-color: #9ca3af;
+
 		display: inline-flex;
 		align-items: center;
 		gap: 0.25rem;
@@ -212,13 +244,13 @@
 		min-width: 1.5em;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		font-weight: 600;
-		color: #374151;
-		background: linear-gradient(180deg, #ffffff 0%, #f3f4f6 100%);
-		border: 1px solid #d1d5db;
+		color: var(--kbd-fg);
+		background: linear-gradient(180deg, var(--kbd-bg-top) 0%, var(--kbd-bg-bottom) 100%);
+		border: 1px solid var(--kbd-border);
 		border-radius: 0.3rem;
 		box-shadow:
-			inset 0 -1px 0 #d1d5db,
-			0 1px 2px rgba(0, 0, 0, 0.05);
+			inset 0 -1px 0 var(--kbd-shadow-inner),
+			0 1px 2px var(--kbd-shadow-drop);
 	}
 
 	.kbd-sm {
@@ -247,8 +279,28 @@
 
 	.kbd-sep {
 		font-size: 0.85em;
-		color: #9ca3af;
+		color: var(--kbd-sep-color);
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		font-weight: 400;
+	}
+
+	/*
+	 * Dark mode — flip all seven chrome tokens so the cap reads on dark
+	 * surfaces. There are no brand variants on a kbd cap (Pattern #67
+	 * doesn't split), so the whole token set flips together. Consumers
+	 * who set custom tokens at :root (or any closer ancestor) win
+	 * because their values cascade after the defaults — this block only
+	 * fires when no override is present.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.kbd {
+			--kbd-fg: #d1d5db;
+			--kbd-bg-top: #1f2937;
+			--kbd-bg-bottom: #111827;
+			--kbd-border: #4b5563;
+			--kbd-shadow-inner: #4b5563;
+			--kbd-shadow-drop: rgba(0, 0, 0, 0.4);
+			--kbd-sep-color: #6b7280;
+		}
 	}
 </style>

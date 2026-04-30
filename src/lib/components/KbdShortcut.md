@@ -1,7 +1,7 @@
 ---
 title: KbdShortcut
 description: Keyboard key cap display — single key or combo, Mac/Windows aware (⌘ vs Ctrl). Native <kbd> for screen readers, pure CSS bevel, zero dependencies.
-category: Helpful UX
+category: Controls & Input
 author: AntClaude
 ---
 
@@ -50,6 +50,33 @@ Renders one or more keys as styled `<kbd>` caps so users can see at a glance whi
 | `separator` | `string`                    | `'+'`       | Joiner between keys; ignored if `keys` is a string. |
 | `ariaLabel` | `string`                    | auto        | Override the SR-announced label. |
 | `class`     | `string`                    | `''`        | Extra classes on the wrapper. |
+
+## Theming
+
+Seven dark-aware CSS custom properties on `.kbd`. Light defaults are inline; a `@media (prefers-color-scheme: dark)` block flips the whole set automatically when the user prefers dark. Unlike Slider or RatingStars, there are **no brand-tinted variants on a kbd cap** — bg, fg, border, and shadow are all chrome — so the whole token set flips together (no Pattern #67 split needed).
+
+| Property            | Light default        | Dark default         | Used by               |
+|---------------------|----------------------|----------------------|-----------------------|
+| `--kbd-fg`          | `#374151`            | `#d1d5db`            | Cap text colour       |
+| `--kbd-bg-top`      | `#ffffff`            | `#1f2937`            | Bevel gradient top    |
+| `--kbd-bg-bottom`   | `#f3f4f6`            | `#111827`            | Bevel gradient bottom |
+| `--kbd-border`      | `#d1d5db`            | `#4b5563`            | Cap outline           |
+| `--kbd-shadow-inner`| `#d1d5db`            | `#4b5563`            | Inset depth-line      |
+| `--kbd-shadow-drop` | `rgba(0,0,0,0.05)`   | `rgba(0,0,0,0.4)`    | Outer drop-shadow     |
+| `--kbd-sep-color`   | `#9ca3af`            | `#6b7280`            | Separator (`+`, `→`)  |
+
+Override at any scope — `:root`, an app shell, or a single section — without forking the component:
+
+```css
+:root {
+  --kbd-bg-top: #fef3c7;     /* warm beige cap */
+  --kbd-bg-bottom: #fde68a;
+  --kbd-border: #f59e0b;
+  --kbd-fg: #78350f;
+}
+```
+
+If your app already manages its own dark-mode strategy (manual class toggle rather than `prefers-color-scheme`), set the seven tokens inside your own `.dark { ... }` selector and the system-preference block becomes a no-op for users who haven't set the OS preference.
 
 ## When to use
 

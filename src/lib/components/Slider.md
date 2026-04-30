@@ -1,7 +1,7 @@
 ---
 title: Slider
 description: Continuous-value range input with styled track and thumb, two-way binding, three sizes, three variants, optional value bubble, and full keyboard a11y.
-category: Helpful UX
+category: Controls & Input
 author: AntClaude
 ---
 
@@ -71,6 +71,34 @@ A continuous-value range input — volume, brightness, opacity, price filters. B
 | `formatValue` | `(v: number) => string`               | —           | Custom formatter for the value bubble. |
 | `onChange`    | `(value: number) => void`             | —           | Fires after each change with the new value. |
 | `class`       | `string`                              | `''`        | Extra classes on the wrapper. |
+
+## Theming
+
+The slider exposes six dark-aware tokens on `.slider-wrapper`, plus the existing variant/size tokens kept for prop-driven recolouring. Light defaults are inline; a `@media (prefers-color-scheme: dark)` block flips them automatically when the user prefers dark.
+
+| Property              | Light default                     | Dark default                      | Used by                        |
+|-----------------------|-----------------------------------|-----------------------------------|--------------------------------|
+| `--slider-track-bg`   | `#e2e8f0`                         | `#1f2937`                         | Empty track fill               |
+| `--slider-thumb-bg`   | `#ffffff`                         | `#f9fafb`                         | Thumb background               |
+| `--slider-label-fg`   | `#1a202c`                         | `#f9fafb`                         | Label text colour              |
+| `--slider-bubble-bg`  | `#1a202c`                         | `#f9fafb`                         | Bubble background and arrow    |
+| `--slider-bubble-fg`  | `#ffffff`                         | `#111827`                         | Bubble text colour             |
+| `--slider-focus-ring` | `rgba(20, 110, 245, 0.25)`        | `rgba(96, 165, 250, 0.4)`         | Focus-visible ring             |
+| `--fill-color`        | per variant prop                  | per variant prop                  | Filled track + thumb border    |
+| `--track-h`           | per size prop                     | per size prop                     | Track height                   |
+| `--thumb-size`        | per size prop                     | per size prop                     | Thumb diameter                 |
+
+Override at any scope — `:root`, an app shell, or a single section — without forking the component:
+
+```css
+:root {
+  --slider-track-bg: #fef3c7;   /* warm yellow track */
+  --fill-color: #f59e0b;        /* amber fill */
+  --slider-focus-ring: rgba(245, 158, 11, 0.3);
+}
+```
+
+If your app already manages its own dark-mode strategy (manual class toggle rather than `prefers-color-scheme`), set the six tokens inside your own `.dark { ... }` selector and the system-preference block becomes a no-op for users who haven't set the OS preference.
 
 ## Keyboard
 
