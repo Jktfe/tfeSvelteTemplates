@@ -1621,6 +1621,8 @@ Use Clerk context in client components (do NOT destructure to maintain reactivit
 
 This section defines the quality standards for all components in this library.
 
+> **Theming:** see [`docs/THEMING.md`](docs/THEMING.md) for the project-wide token convention — chrome flips with `prefers-color-scheme`, brand and semantic tokens stay prop-driven. Reference table covers `Tooltip`, `Slider`, `RatingStars`, `KbdShortcut`. Apply on every new component and every dark-mode pass.
+
 ### Component Documentation Template
 
 Every component file header should include this comprehensive documentation:
