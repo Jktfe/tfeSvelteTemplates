@@ -140,4 +140,33 @@
 			font-size: 0.875rem;
 		}
 	}
+
+	/* Dark mode: keep the four-state semantic palette (green/yellow/red/slate)
+	 * but dial saturation down with rgba tints so the pill sits on dark chrome
+	 * without glaring. Mirrors the pattern used in AuthStatus. */
+	@media (prefers-color-scheme: dark) {
+		.database-status.connected {
+			background: rgba(34, 197, 94, 0.16);
+			border-color: rgba(134, 239, 172, 0.4);
+			color: #86efac;
+		}
+
+		.database-status.fallback {
+			background: rgba(234, 179, 8, 0.16);
+			border-color: rgba(253, 224, 71, 0.4);
+			color: #fde047;
+		}
+
+		.database-status.error {
+			background: rgba(239, 68, 68, 0.16);
+			border-color: rgba(252, 165, 165, 0.4);
+			color: #fca5a5;
+		}
+
+		.database-status.static {
+			background: rgba(148, 163, 184, 0.12);
+			border-color: rgba(148, 163, 184, 0.3);
+			color: #cbd5e1;
+		}
+	}
 </style>
