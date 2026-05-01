@@ -252,6 +252,7 @@
 							demoPath={demoPath}
 							deps={[]}
 							usage={usageSnippet}
+							compact
 						/>
 					</section>
 				{/if}
