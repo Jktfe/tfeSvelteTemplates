@@ -95,6 +95,43 @@ Geolocation errors are mapped to user-friendly messages:
 | 2 | POSITION_UNAVAILABLE | Unable to determine your location... |
 | 3 | TIMEOUT | Location request timed out... |
 
+### Theming
+
+`MapLocateMe` exposes 17 CSS custom properties for full theming control. All
+tokens flip automatically with `prefers-color-scheme: dark` (chrome-only flip,
+no brand variant API — see [`docs/THEMING.md`](../../../docs/THEMING.md)).
+
+**Override at any deeper scope** to customise without forking the component:
+
+```css
+/* Pin the focus accent to your brand colour, regardless of mode */
+.my-app .map-locate-container {
+  --mlm-accent: #6366f1;
+  --mlm-accent-soft: rgba(99, 102, 241, 0.3);
+}
+
+/* Force light chrome inside a dark page section */
+.dark-page .map-locate-container {
+  --mlm-canvas: #fafafa;
+  --mlm-surface: #ffffff;
+  --mlm-text: #1f2937;
+}
+```
+
+**Token reference:**
+
+| Group | Tokens |
+|-------|--------|
+| Surfaces | `--mlm-canvas`, `--mlm-surface`, `--mlm-surface-hover`, `--mlm-info-bg` |
+| Text | `--mlm-text`, `--mlm-text-muted` |
+| Accent (focus / pulse / has-located) | `--mlm-accent`, `--mlm-accent-soft`, `--mlm-pulse-border` |
+| Error states | `--mlm-error-bg`, `--mlm-error-border`, `--mlm-error-text`, `--mlm-error-dismiss-hover` |
+| Accuracy badge | `--mlm-accuracy-bg`, `--mlm-accuracy-text` |
+| Shadows | `--mlm-shadow-soft`, `--mlm-shadow-medium`, `--mlm-shadow-strong` |
+
+The pulse marker border is intentionally kept light in both modes — it reads
+against map tiles rather than the surrounding container chrome.
+
 ---
 
 ## MapDelivery - Real-Time Tracking

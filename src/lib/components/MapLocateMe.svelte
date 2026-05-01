@@ -57,6 +57,26 @@
   | onLocate           | function | undefined  | Callback when location found          |
   | onError            | function | undefined  | Callback when geolocation fails       |
 
+  THEMING (see docs/THEMING.md)
+  All chrome flips with `prefers-color-scheme: dark`. There is no brand
+  variant API on this component, so every token is treated as chrome and
+  flips automatically (Pattern #67 conditional rule, all-chrome path).
+
+  Override any token at a deeper scope to customise — for example to
+  pin the accent to your brand colour or force a single mode:
+
+  ```css
+  .my-app .map-locate-container {
+    --mlm-accent: #6366f1;       // brand-blue, won't flip in dark mode
+    --mlm-canvas: #fafafa;       // lighter container background
+  }
+  ```
+
+  Tokens (17): canvas, surface, surface-hover, info-bg, text, text-muted,
+  accent, accent-soft, pulse-border, error-bg, error-border, error-text,
+  error-dismiss-hover, accuracy-bg, accuracy-text, shadow-soft,
+  shadow-medium, shadow-strong.
+
   ============================================================
   @component
 -->
@@ -459,15 +479,75 @@
 
 <style>
 	/* ==================================================
-     Container Styles
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips for prefers-color-scheme: dark. Override any
+     token at a deeper scope (e.g. .my-app .map-locate-container)
+     to customise without forking the component.
      ================================================== */
 	.map-locate-container {
+		/* Surfaces */
+		--mlm-canvas: #f0f0f0;
+		--mlm-surface: #ffffff;
+		--mlm-surface-hover: #f5f5f5;
+		--mlm-info-bg: rgba(255, 255, 255, 0.95);
+
+		/* Text */
+		--mlm-text: #333333;
+		--mlm-text-muted: #666666;
+
+		/* Accent (geolocation indicator — no brand variant API, treated as chrome) */
+		--mlm-accent: #146ef5;
+		--mlm-accent-soft: rgba(20, 110, 245, 0.3);
+
+		/* Pulse marker border (kept light to read on dark map tiles) */
+		--mlm-pulse-border: #ffffff;
+
+		/* Error states */
+		--mlm-error-bg: #fef2f2;
+		--mlm-error-border: #fecaca;
+		--mlm-error-text: #dc2626;
+		--mlm-error-dismiss-hover: #fee2e2;
+
+		/* Accuracy badge */
+		--mlm-accuracy-bg: #dbeafe;
+		--mlm-accuracy-text: #1d4ed8;
+
+		/* Shadows */
+		--mlm-shadow-soft: rgba(0, 0, 0, 0.1);
+		--mlm-shadow-medium: rgba(0, 0, 0, 0.15);
+		--mlm-shadow-strong: rgba(0, 0, 0, 0.3);
+
+		/* Layout */
 		position: relative;
 		width: 100%;
 		height: var(--map-height, 400px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--mlm-canvas);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-locate-container {
+			--mlm-canvas: #1a1a1a;
+			--mlm-surface: #2a2a2a;
+			--mlm-surface-hover: #3a3a3a;
+			--mlm-info-bg: rgba(42, 42, 42, 0.95);
+			--mlm-text: #e5e5e5;
+			--mlm-text-muted: #9ca3af;
+			--mlm-accent: #3b82f6;
+			--mlm-accent-soft: rgba(59, 130, 246, 0.4);
+			--mlm-error-bg: #3f1f1f;
+			--mlm-error-border: #7f1f1f;
+			--mlm-error-text: #fca5a5;
+			--mlm-error-dismiss-hover: #5f2f2f;
+			--mlm-accuracy-bg: #1e3a8a;
+			--mlm-accuracy-text: #bfdbfe;
+			--mlm-shadow-soft: rgba(0, 0, 0, 0.4);
+			--mlm-shadow-medium: rgba(0, 0, 0, 0.5);
+			--mlm-shadow-strong: rgba(0, 0, 0, 0.6);
+			/* pulse-border intentionally kept #ffffff in both modes — */
+			/* the marker reads against map tiles, not container chrome */
+		}
 	}
 
 	.map-element {
@@ -513,20 +593,20 @@
 		padding: 0;
 		border: none;
 		border-radius: 8px;
-		background: white;
-		color: #333;
+		background: var(--mlm-surface);
+		color: var(--mlm-text);
 		cursor: pointer;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--mlm-shadow-medium);
 		transition: all 0.2s ease;
 	}
 
 	.locate-button:hover:not(:disabled) {
-		background: #f5f5f5;
+		background: var(--mlm-surface-hover);
 		transform: scale(1.05);
 	}
 
 	.locate-button:focus {
-		outline: 2px solid #146ef5;
+		outline: 2px solid var(--mlm-accent);
 		outline-offset: 2px;
 	}
 
@@ -535,7 +615,7 @@
 	}
 
 	.locate-button.has-location {
-		color: #146ef5;
+		color: var(--mlm-accent);
 	}
 
 	.locate-button svg {
@@ -566,12 +646,12 @@
 		align-items: center;
 		gap: 8px;
 		padding: 10px 12px;
-		background: #fef2f2;
-		border: 1px solid #fecaca;
+		background: var(--mlm-error-bg);
+		border: 1px solid var(--mlm-error-border);
 		border-radius: 8px;
-		color: #dc2626;
+		color: var(--mlm-error-text);
 		font-size: 13px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 2px 8px var(--mlm-shadow-soft);
 	}
 
 	.locate-error svg {
@@ -594,13 +674,13 @@
 		padding: 0;
 		border: none;
 		background: transparent;
-		color: #dc2626;
+		color: var(--mlm-error-text);
 		cursor: pointer;
 		border-radius: 4px;
 	}
 
 	.error-dismiss:hover {
-		background: #fee2e2;
+		background: var(--mlm-error-dismiss-hover);
 	}
 
 	.error-dismiss svg {
@@ -620,21 +700,21 @@
 		align-items: center;
 		gap: 8px;
 		padding: 6px 10px;
-		background: rgba(255, 255, 255, 0.95);
+		background: var(--mlm-info-bg);
 		border-radius: 6px;
 		font-size: 12px;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 2px 6px var(--mlm-shadow-soft);
 	}
 
 	.locate-coords {
-		color: #666;
+		color: var(--mlm-text-muted);
 		font-family: monospace;
 	}
 
 	.locate-accuracy-badge {
 		padding: 2px 6px;
-		background: #dbeafe;
-		color: #1d4ed8;
+		background: var(--mlm-accuracy-bg);
+		color: var(--mlm-accuracy-text);
 		border-radius: 4px;
 		font-weight: 500;
 	}
@@ -654,10 +734,10 @@
 		transform: translate(-50%, -50%);
 		width: 14px;
 		height: 14px;
-		background: #146ef5;
-		border: 3px solid white;
+		background: var(--mlm-accent);
+		border: 3px solid var(--mlm-pulse-border);
 		border-radius: 50%;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 2px 6px var(--mlm-shadow-strong);
 	}
 
 	.map-locate-container :global(.pulse-ring) {
@@ -667,7 +747,7 @@
 		transform: translate(-50%, -50%);
 		width: 40px;
 		height: 40px;
-		background: rgba(20, 110, 245, 0.3);
+		background: var(--mlm-accent-soft);
 		border-radius: 50%;
 		animation: pulse-expand 2s ease-out infinite;
 	}
@@ -691,7 +771,7 @@
 
 	.map-locate-container :global(.locate-accuracy) {
 		font-size: 12px;
-		color: #666;
+		color: var(--mlm-text-muted);
 		margin-top: 4px;
 	}
 
@@ -700,7 +780,7 @@
      ================================================== */
 	.map-locate-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--mlm-shadow-medium);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -710,18 +790,18 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--mlm-text);
+		background: var(--mlm-surface);
 		border: none !important;
 	}
 
 	.map-locate-container :global(.leaflet-control-zoom a:hover) {
-		background: #f5f5f5;
+		background: var(--mlm-surface-hover);
 	}
 
 	.map-locate-container :global(.leaflet-popup-content-wrapper) {
 		border-radius: 8px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 12px var(--mlm-shadow-medium);
 	}
 
 	/* ==================================================
