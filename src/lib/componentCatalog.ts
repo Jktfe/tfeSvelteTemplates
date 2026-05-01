@@ -1,4 +1,5 @@
 import type { MenuCategory } from './types';
+import { getDocsHtmlForPath } from './componentDocs';
 
 export interface ComponentCatalogItem {
 	name: string;
@@ -670,6 +671,8 @@ export interface CatalogShellProps {
 	install: string;
 	resources: { label: string; href: string }[];
 	codeFileName: string;
+	/** Pre-rendered HTML from the sibling .md, sanitised by `renderMarkdown`. */
+	docsHtml?: string;
 }
 
 const REPO_BLOB = 'https://github.com/Jktfe/tfeSvelteTemplates/blob/main/';
@@ -703,7 +706,8 @@ export function shellPropsFromCatalog(
 		agentSteps: item.agentHint ? [item.agentHint] : [],
 		install: `cp ${item.source} ./src/lib/components/`,
 		resources,
-		codeFileName: sourceFile
+		codeFileName: sourceFile,
+		docsHtml: getDocsHtmlForPath(item.docs)
 	};
 }
 

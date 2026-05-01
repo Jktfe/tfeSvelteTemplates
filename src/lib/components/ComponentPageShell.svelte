@@ -110,6 +110,12 @@
 		codeFileName?: string;
 		/** Override the syntax language for the Implementation snippet (defaults to 'svelte') */
 		codeLanguage?: string;
+		/**
+		 * Pre-rendered, sanitised HTML for the "Logic explainer" section.
+		 * Comes from the sibling `<Component>.md` via `getDocsHtmlForPath`.
+		 * When omitted the section is hidden.
+		 */
+		docsHtml?: string;
 		demo?: import('svelte').Snippet;
 		api?: import('svelte').Snippet;
 	}
@@ -135,6 +141,7 @@
 		codeExplanation,
 		codeFileName,
 		codeLanguage = 'svelte',
+		docsHtml,
 		demo,
 		api
 	}: ComponentPageShellProps = $props();
@@ -196,12 +203,25 @@
 					</section>
 				{/if}
 
+				<!-- Logic explainer (rendered from the sibling .md doc) -->
+				{#if docsHtml}
+					<section class="cp-card cp-explainer" aria-labelledby="cp-explainer-title">
+						<header class="cp-card__head">
+							<h2 id="cp-explainer-title">Logic explainer</h2>
+							<span class="cp-eyebrow">03</span>
+						</header>
+						<!-- docsHtml is sanitised by DOMPurify upstream in renderMarkdown -->
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+						<div class="cp-explainer__body">{@html docsHtml}</div>
+					</section>
+				{/if}
+
 				<!-- API -->
 				{#if api}
 					<section class="cp-card" aria-labelledby="cp-api-title">
 						<header class="cp-card__head">
 							<h2 id="cp-api-title">API</h2>
-							<span class="cp-eyebrow">03</span>
+							<span class="cp-eyebrow">04</span>
 						</header>
 						<div class="cp-api">{@render api()}</div>
 					</section>
@@ -491,6 +511,133 @@
 		background: var(--surface-2);
 		padding: 1px 6px;
 		border-radius: var(--r-1);
+	}
+
+	/* ===== Logic explainer (renders sibling .md) ===== */
+	.cp-explainer__body {
+		color: var(--fg-2);
+		font-size: 15px;
+		line-height: 1.65;
+		display: grid;
+		gap: 16px;
+	}
+	/* Headings — page already shows the section title at 28px; doc H2/H3/H4
+	   step down so the in-section outline reads cleanly. */
+	.cp-explainer :global(h2) {
+		font-family: var(--font-display);
+		font-size: 20px;
+		font-weight: 500;
+		letter-spacing: 0.01em;
+		text-transform: none;
+		color: var(--fg-1);
+		margin: 24px 0 0;
+		line-height: 1.25;
+	}
+	.cp-explainer :global(h2:first-child) {
+		margin-top: 0;
+	}
+	.cp-explainer :global(h3) {
+		font-family: var(--font-sans);
+		font-size: 16px;
+		font-weight: 600;
+		color: var(--fg-1);
+		margin: 16px 0 0;
+	}
+	.cp-explainer :global(h4) {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		margin: 12px 0 0;
+	}
+	.cp-explainer :global(p) {
+		margin: 0;
+	}
+	.cp-explainer :global(ul),
+	.cp-explainer :global(ol) {
+		margin: 0;
+		padding-left: 22px;
+		display: grid;
+		gap: 6px;
+	}
+	.cp-explainer :global(li) {
+		line-height: 1.6;
+	}
+	.cp-explainer :global(a) {
+		color: var(--accent);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.cp-explainer :global(a:hover) {
+		color: var(--accent-strong);
+	}
+	.cp-explainer :global(strong) {
+		color: var(--fg-1);
+		font-weight: 600;
+	}
+	.cp-explainer :global(em) {
+		color: var(--fg-1);
+	}
+	/* Inline code — small, monospace, light bg. Distinct from .cp-install (dark). */
+	.cp-explainer :global(code) {
+		font-family: var(--font-mono);
+		font-size: 13px;
+		background: var(--surface-2);
+		padding: 1px 6px;
+		border-radius: var(--r-1);
+		color: var(--fg-1);
+	}
+	/* Code blocks (pseudo-code, ASCII diagrams, snippets). Preserve whitespace
+	   so state-flow diagrams render correctly. */
+	.cp-explainer :global(pre) {
+		margin: 0;
+		padding: 16px 18px;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		overflow-x: auto;
+		font-family: var(--font-mono);
+		font-size: 13px;
+		line-height: 1.55;
+		white-space: pre;
+	}
+	.cp-explainer :global(pre code) {
+		background: transparent;
+		padding: 0;
+		font: inherit;
+		color: inherit;
+	}
+	/* Tables (props reference, edge cases). */
+	.cp-explainer :global(table) {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 14px;
+	}
+	.cp-explainer :global(th),
+	.cp-explainer :global(td) {
+		text-align: left;
+		padding: 10px 12px;
+		border-bottom: 1px solid var(--border);
+		vertical-align: top;
+	}
+	.cp-explainer :global(th) {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		font-weight: 500;
+		background: var(--surface-2);
+	}
+	.cp-explainer :global(blockquote) {
+		margin: 0;
+		padding: 12px 16px;
+		border-left: 3px solid var(--accent);
+		background: var(--surface-2);
+		border-radius: 0 var(--r-2) var(--r-2) 0;
+		color: var(--fg-2);
+		font-style: italic;
 	}
 
 	/* ===== Sidebar lists ===== */
