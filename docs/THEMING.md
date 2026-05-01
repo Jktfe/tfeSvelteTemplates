@@ -97,25 +97,28 @@ The rule held identically across **greenfield, extension, migration, and additiv
 
 Token APIs have one big advantage over hardcoded values: **consumers retheme without forking the component**. The cascade does the work.
 
-### Scope 1 — global override (`:root`)
+### Scope 1 — global override
 
-Override the token everywhere in the app.
+Override the token for every instance of the component across the app.
 
 ```css
-:root {
-  /* Warm beige kbd caps across the whole app */
+body .kbd.kbd {
+  --kbd-fg:        #78350f;
   --kbd-bg-top:    #fef3c7;
   --kbd-bg-bottom: #fde68a;
   --kbd-border:    #f59e0b;
-  --kbd-fg:        #78350f;
 }
 ```
 
-This sets the value once. The component's inline light defaults still cascade for tokens you don't override. Flip block in the component still fires under dark unless you override there too — see scope 3.
+This sets warm-beige kbd caps everywhere `<KbdShortcut>` is rendered. The `body .kbd.kbd` selector totals (0,2,1) specificity, which beats the component's own `.kbd { ... }` rule once Svelte's scope-hash class is added — see the callout below.
+
+> **Why the doubled `.kbd`, and why declared on the element itself?** Svelte scopes component styles by appending a hash class to every selector — so `.kbd { --kbd-fg: ... }` in the component's `<style>` block compiles to `.kbd.svelte-1etmya9 { --kbd-fg: ... }`, giving it 2-class specificity (0,2,0). For a consumer-side rule to override CSS variables on the *same* element it must satisfy two conditions: (1) declare the variable directly on that element — inherited values from an ancestor lose to declared values regardless of how specific the ancestor selector is — and (2) total ≥(0,2,0) specificity. The doubled `.kbd.kbd` is the simplest selector that hits the specificity bar without coupling to Svelte's implementation hash; the leading `body ` lifts it to (0,2,1) so it wins unconditionally over the component's (0,2,0) rule even when the cascade order goes against you. The same caveat applies to every component in this library that follows the inline-default convention (`Tooltip`, `Slider`, `RatingStars`, `KbdShortcut`, `Breadcrumbs`, …) — adapt the doubled-class pattern to each component's root class.
+>
+> **Patterns that look like they should work, but don't:** `:root { --kbd-* }` and `body { --kbd-* }` only inherit down to the kbd element, where the component's own declared value still wins. `body .kbd { ... }` declares directly on the element but only totals (0,1,1) — still loses to the scoped (0,2,0). The doubled-class trick is the cheapest fix.
 
 ### Scope 2 — ancestor scope
 
-Override the token only inside a particular section of your app.
+Override the token only inside a particular section of your app. The same two conditions as scope 1 apply: declare on the element itself, and clear the (0,2,0) scoped specificity. Because the parent component doesn't render the child's element directly, Svelte will strip the selector unless wrapped in `:global()`.
 
 ```svelte
 <section class="docs-area">
@@ -123,22 +126,26 @@ Override the token only inside a particular section of your app.
 </section>
 
 <style>
-  .docs-area {
-    --tooltip-bg:     #1e3a8a; /* Deep blue tooltips in docs only */
+  /* Deep-blue tooltips inside .docs-area only.
+     :global(...) breaks out of the parent's CSS scoping so the rule
+     reaches the child component's element; the doubled .tooltip-wrap
+     gives it (0,3,0) specificity, beating the child's scoped (0,2,0). */
+  .docs-area :global(.tooltip-wrap.tooltip-wrap) {
+    --tooltip-bg:     #1e3a8a;
     --tooltip-fg:     #ffffff;
     --tooltip-shadow: 0 8px 24px rgba(30, 58, 138, 0.35);
   }
 </style>
 ```
 
-Anywhere else in the app, tooltips render with their default chrome.
+Anywhere else in the app, tooltips render with their default chrome. The same doubled-class + `:global()` pattern works for any component in this library — substitute the component's root class (`.tooltip-wrap`, `.kbd`, `.slider-wrap`, `.rating-stars`, `.breadcrumbs`, …).
 
-### Scope 3 — component instance + manual `.dark` class
+### Scope 3 — manual `.dark` class toggle
 
-If your app manages dark mode with a manual class toggle (rather than relying on `prefers-color-scheme`), set the chrome tokens inside your `.dark` selector and the component picks them up.
+If your app manages dark mode with a manual class toggle (rather than relying on `prefers-color-scheme`), declare the chrome tokens directly on the component element under your `.dark` selector.
 
 ```css
-:root.dark .your-component-wrap {
+:root.dark .kbd {
   --kbd-fg:           #d1d5db;
   --kbd-bg-top:       #1f2937;
   --kbd-bg-bottom:    #111827;
@@ -149,7 +156,7 @@ If your app manages dark mode with a manual class toggle (rather than relying on
 }
 ```
 
-The component's own `@media (prefers-color-scheme: dark)` block still fires when the OS preference is dark *and* no override is present — your `.dark` selector wins because it cascades after the media block when the class is applied. For users who haven't set an OS preference, your manual toggle is the only signal and it works as intended.
+`:root.dark .kbd` totals (0,2,1) specificity, which clears Svelte's scoped (0,2,0) — the same threshold scope 1 has to clear. The component's own `@media (prefers-color-scheme: dark)` block still fires when the OS preference is dark *and* no manual override is present; your `.dark` selector wins because it has higher specificity than the in-component media-block rule. For users who haven't set an OS preference, your manual toggle is the only signal and it works as intended.
 
 ---
 
