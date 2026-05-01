@@ -51,6 +51,48 @@
   />
   ```
 
+  THEMING (see docs/THEMING.md)
+  Chrome tokens flip with `prefers-color-scheme: dark`; the two
+  semantic markers stay constant in both modes (Pattern #67 split:
+  chrome flips, semantic stays).
+
+  Override any token at a deeper scope to customise without forking.
+  Pin the accent to your brand colour:
+
+  ```css
+  .my-app .map-routing-container {
+    --mr-accent: #6366f1;
+    --mr-accent-soft: rgba(99, 102, 241, 0.9);
+  }
+  ```
+
+  Force light chrome inside a dark page section:
+
+  ```css
+  .dark-page .map-routing-container {
+    --mr-canvas: #fafafa;
+    --mr-surface: #ffffff;
+    --mr-text: #1f2937;
+  }
+  ```
+
+  Chrome tokens (flip in dark mode):
+    Surfaces — canvas, surface, surface-hover, panel-bg, overlay-bg
+    Text     — text, text-muted, accent-text
+    Strokes  — border-soft, divider, divider-strong
+    Accent   — accent, accent-soft
+    Errors   — error-bg, error-bg-soft, error-border, error-text
+    Shadows  — shadow-soft, shadow-medium, shadow-strong, marker-shadow
+
+  Semantic tokens (stay constant in both modes):
+    origin (start marker green), destination (end marker red)
+    These never flip — a green "start" pin must read as green
+    against any base map tile, light or dark.
+
+  Note: code samples deliberately omit CSS comments — JSDoc-style
+  block comments inside this HTML docblock confuse Svelte's
+  `@component` extractor and silently break the default export.
+
   ============================================================
   @component
 -->
