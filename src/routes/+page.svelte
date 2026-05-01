@@ -210,36 +210,6 @@
 		</div>
 	</div>
 
-	<!-- ===== Featured GSAP suite ===== -->
-	<section class="t-featured">
-		<div class="t-wrap">
-			<div class="t-featured__grid">
-				<div>
-					<div class="t-featured__num">— Suite · 06.13</div>
-					<h2 class="t-featured__title">
-						GSAP, sequenced.<br /><span class="blue">For copy-and-ship agents.</span>
-					</h2>
-					<p class="t-featured__body">
-						SplitText heroes, reveal wrappers, a kinetic canvas field, fan decks, and a Flip grid —
-						grouped on one route, with provenance chips and copy-for-your-agent prompts.
-					</p>
-					<ul class="t-featured__list">
-						<li><b>01</b><span>SplitText hero with stagger and word focus</span></li>
-						<li><b>02</b><span>Reveal wrapper for any block, viewport-driven</span></li>
-						<li><b>03</b><span>Kinetic canvas field, pointer-reactive</span></li>
-						<li><b>04</b><span>Fan deck and Flip grid, scoped keyboard control</span></li>
-					</ul>
-					<a class="t-btn t-btn--blue" href="/gsap-suite">
-						Open /gsap-suite <span class="arrow" aria-hidden="true">↗</span>
-					</a>
-				</div>
-				<div class="t-featured__visual" aria-hidden="true">
-					<canvas bind:this={canvasEl}></canvas>
-				</div>
-			</div>
-		</div>
-	</section>
-
 	<!-- ===== Index head ===== -->
 	<section id="components" class="t-index-head">
 		<div class="t-wrap">
@@ -352,6 +322,38 @@
 						add it.
 					</p>
 					<div class="t-step__code">{'<Component data={...} />'}</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- ===== Featured GSAP suite =====
+	     Sits at the bottom of the page so the catalogue + how-to read first;
+	     this stays as the parting feature spread before the editorial footer. -->
+	<section class="t-featured">
+		<div class="t-wrap">
+			<div class="t-featured__grid">
+				<div>
+					<div class="t-featured__num">— Suite · 06.13</div>
+					<h2 class="t-featured__title">
+						GSAP, sequenced.<br /><span class="blue">For copy-and-ship agents.</span>
+					</h2>
+					<p class="t-featured__body">
+						SplitText heroes, reveal wrappers, a kinetic canvas field, fan decks, and a Flip grid —
+						grouped on one route, with provenance chips and copy-for-your-agent prompts.
+					</p>
+					<ul class="t-featured__list">
+						<li><b>01</b><span>SplitText hero with stagger and word focus</span></li>
+						<li><b>02</b><span>Reveal wrapper for any block, viewport-driven</span></li>
+						<li><b>03</b><span>Kinetic canvas field, pointer-reactive</span></li>
+						<li><b>04</b><span>Fan deck and Flip grid, scoped keyboard control</span></li>
+					</ul>
+					<a class="t-btn t-btn--blue" href="/gsap-suite">
+						Open /gsap-suite <span class="arrow" aria-hidden="true">↗</span>
+					</a>
+				</div>
+				<div class="t-featured__visual" aria-hidden="true">
+					<canvas bind:this={canvasEl}></canvas>
 				</div>
 			</div>
 		</div>
