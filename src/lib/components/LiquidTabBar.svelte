@@ -61,12 +61,24 @@
 		tabs: Tab[];
 		activeTab?: string;
 		class?: string;
+		// Colours accept any CSS value (hex, rgb, var(...)). Defaults preserve
+		// the original dark-pill look so existing consumers stay unchanged.
+		bg?: string;
+		pillColor?: string;
+		activeText?: string;
+		inactiveText?: string;
+		inactiveHoverText?: string;
 	}
 
 	let {
 		tabs = [],
 		activeTab = $bindable(tabs[0]?.id ?? ''),
-		class: className = ''
+		class: className = '',
+		bg = '#171717',
+		pillColor = '#ffffff',
+		activeText = '#000000',
+		inactiveText = '#a3a3a3',
+		inactiveHoverText = '#ffffff'
 	}: Props = $props();
 
 	// Each entry corresponds to the tab at the same index. `bind:this` populates them.
@@ -126,7 +138,8 @@
 <div
 	role="tablist"
 	aria-label="Tabs"
-	class={cn('relative inline-flex items-center rounded-full bg-neutral-900 p-2', className)}
+	class={cn('ltb relative inline-flex items-center rounded-full p-2', className)}
+	style="--ltb-bg:{bg};--ltb-pill:{pillColor};--ltb-active:{activeText};--ltb-inactive:{inactiveText};--ltb-inactive-hover:{inactiveHoverText};"
 >
 	<!--
 		Inline SVG filter so the component travels without external assets.
@@ -156,7 +169,7 @@
 	<div class="absolute inset-0 pointer-events-none" style="filter: url(#gooey-filter);">
 		<div
 			class={cn(
-				'absolute bg-white rounded-full top-2 bottom-2',
+				'ltb-pill absolute rounded-full top-2 bottom-2',
 				prefersReducedMotion ? 'transition-none' : 'transition-all duration-500'
 			)}
 			style="width: {pillWidth}px; transform: translateX({pillOffset}px);"
@@ -171,9 +184,9 @@
 			aria-selected={activeTab === tab.id}
 			tabindex={activeTab === tab.id ? 0 : -1}
 			class={cn(
-				'relative z-10 px-4 py-1.5 text-sm font-medium rounded-full',
+				'ltb-btn relative z-10 px-4 py-1.5 text-sm font-medium rounded-full',
 				prefersReducedMotion ? '' : 'transition-colors duration-300',
-				activeTab === tab.id ? 'text-black' : 'text-neutral-400 hover:text-white'
+				activeTab === tab.id ? 'ltb-btn--active' : 'ltb-btn--inactive'
 			)}
 			onclick={() => (activeTab = tab.id)}
 			onkeydown={(event) => handleKeydown(event, i)}
@@ -182,3 +195,21 @@
 		</button>
 	{/each}
 </div>
+
+<style>
+	.ltb {
+		background: var(--ltb-bg);
+	}
+	.ltb-pill {
+		background: var(--ltb-pill);
+	}
+	.ltb-btn--active {
+		color: var(--ltb-active);
+	}
+	.ltb-btn--inactive {
+		color: var(--ltb-inactive);
+	}
+	.ltb-btn--inactive:hover {
+		color: var(--ltb-inactive-hover);
+	}
+</style>

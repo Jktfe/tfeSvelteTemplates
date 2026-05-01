@@ -287,7 +287,15 @@
 							in this shelf
 						</div>
 						<div class="t-cat__toggle" aria-controls={`cat-body-${slug}`}>
-							<LiquidTabBar tabs={shelfToggleTabs} bind:activeTab={shelfTabs[slug]} />
+							<LiquidTabBar
+								tabs={shelfToggleTabs}
+								bind:activeTab={shelfTabs[slug]}
+								bg="var(--accent)"
+								pillColor="#ffffff"
+								activeText="var(--accent)"
+								inactiveText="rgba(255, 255, 255, 0.7)"
+								inactiveHoverText="#ffffff"
+							/>
 						</div>
 					</div>
 				</div>
