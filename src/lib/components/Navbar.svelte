@@ -117,11 +117,18 @@
 		}
 	});
 
-	// [CR] Toggle category expansion - add if missing, remove if present
+	// [CR] Single-open accordion: opening a shelf collapses every other shelf,
+	//      so the open shelf is always the one highlighted. Clicking the open
+	//      shelf again closes it (no shelf highlighted).
+	// [NTL] Picture a stack of folders - opening one auto-closes the rest.
+	//       This keeps focus on a single section so the menu never feels noisy.
 	function toggleCategory(categoryName: string) {
 		if (expandedCategories.has(categoryName)) {
+			// [CR] Already open → close it (no shelf will be highlighted afterwards)
 			expandedCategories.delete(categoryName);
 		} else {
+			// [CR] Opening a new shelf: clear all others first to enforce single-open
+			expandedCategories.clear();
 			expandedCategories.add(categoryName);
 		}
 		// [CR] Create new Set to trigger Svelte 5 reactivity (Sets are reference-compared)
@@ -878,7 +885,7 @@
 		}
 
 		.panel-menu-link.active,
-		.panel-category-header.has-active,
+		.panel-category-header.expanded,
 		.panel-category-link.active,
 		:global(.panel-category-items .panel-menu-link.active) {
 			background-color: rgba(96, 165, 250, 0.18);
@@ -1087,8 +1094,16 @@
 		outline-offset: -2px;
 	}
 
-	.panel-category-header.has-active {
+	/*
+	 * Shelf highlight follows the OPEN state, not the active-page state:
+	 * "open ⇔ highlighted" is the contract. The active page's shelf
+	 * auto-opens on navigation (see $effect above), so on landing the
+	 * highlight still lands on the active shelf — but if the user picks
+	 * a different shelf manually, the highlight follows them.
+	 */
+	.panel-category-header.expanded {
 		color: var(--accent, #004695);
+		background-color: color-mix(in srgb, var(--accent, #004695) 8%, transparent);
 	}
 
 	/* Single-item category link (like Home) */
