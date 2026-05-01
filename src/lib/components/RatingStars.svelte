@@ -40,11 +40,16 @@
   Override the chrome tokens by targeting .rating-stars directly with
   at least 2-class specificity — required to overcome the (0,2,0)
   specificity of the component's scoped internal styles. Svelte appends
-  a hash class to every selector, so an ancestor :root or body rule only
-  inherits the variable and lands at (0,1,0) — the component's own
-  declared default still wins. See docs/THEMING.md for the full
-  specificity arithmetic. Doubled-class trick is the cheapest
-  unconditional override:
+  a hash class to every selector, so the component's own
+  .rating-stars.svelte-HASH rule declares the default directly on the
+  .rating-stars element. An ancestor :root or body rule sets a value
+  that descendants would inherit, but that inherited value is shadowed
+  by the component's own declaration on the same element — declared
+  values always win over inherited values on the element where they're
+  declared, regardless of the ancestor rule's specificity. The override
+  therefore needs to declare on the same element with ≥(0,2,0)
+  specificity. See docs/THEMING.md for the full mechanism. The
+  doubled-class trick is the cheapest unconditional override:
       body .rating-stars.rating-stars { --rating-star-filled: #ef4444; --rating-star-empty: #fee2e2; }
   The legacy filledColor / emptyColor props are still accepted and,
   when passed, take precedence by injecting an inline-style override
@@ -210,10 +215,13 @@
 		 * colour (gold) and stays vivid on both schemes; only chrome flips.
 		 * To retheme, target .rating-stars with ≥2-class specificity —
 		 * required to overcome this rule's (0,2,0) scoped specificity. An
-		 * ancestor :root rule only inherits the token (lands at (0,1,0)) and
-		 * loses to this declared default. See docs/THEMING.md for the full
-		 * arithmetic. The filledColor / emptyColor props are still accepted
-		 * as inline-style overrides on the wrapper.
+		 * ancestor :root or body rule sets a value that descendants would
+		 * inherit, but that inherited value is shadowed by this rule's own
+		 * declaration on the .rating-stars element — declared values always
+		 * win over inherited values on the element where they're declared.
+		 * See docs/THEMING.md for the full mechanism. The filledColor /
+		 * emptyColor props are still accepted as inline-style overrides on
+		 * the wrapper.
 		 */
 		--rating-star-filled: #fbbf24;
 		--rating-star-empty: #e5e7eb;

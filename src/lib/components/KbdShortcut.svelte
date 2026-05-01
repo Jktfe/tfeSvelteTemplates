@@ -57,10 +57,15 @@
   Override the chrome tokens by targeting .kbd directly with at least
   2-class specificity — required to overcome the (0,2,0) specificity
   of the component's scoped internal styles. Svelte appends a hash
-  class to every selector, so an ancestor :root or body rule only
-  inherits the variable and lands at (0,1,0) — the component's own
-  declared default still wins. See docs/THEMING.md for the full
-  specificity arithmetic. Doubled-class trick is the cheapest
+  class to every selector, so the component's own .kbd.svelte-HASH
+  rule declares the default directly on the .kbd element. An ancestor
+  :root or body rule sets a value that descendants would inherit, but
+  that inherited value is shadowed by the component's own declaration
+  on the same element — declared values always win over inherited
+  values on the element where they're declared, regardless of the
+  ancestor rule's specificity. The override therefore needs to declare
+  on the same element with ≥(0,2,0) specificity. See docs/THEMING.md
+  for the full mechanism. The doubled-class trick is the cheapest
   unconditional override:
       body .kbd.kbd { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
 
@@ -224,9 +229,11 @@
 		 * all read fine on either scheme), so the whole set flips
 		 * together. To retheme, target .kbd with ≥2-class specificity
 		 * — required to overcome this rule's (0,2,0) scoped specificity.
-		 * An ancestor :root rule only inherits the token (lands at
-		 * (0,1,0)) and loses to this declared default. See docs/THEMING.md
-		 * for the full arithmetic.
+		 * An ancestor :root or body rule sets a value that descendants
+		 * would inherit, but that inherited value is shadowed by this
+		 * rule's own declaration on the .kbd element — declared values
+		 * always win over inherited values on the element where they're
+		 * declared. See docs/THEMING.md for the full mechanism.
 		 */
 		--kbd-fg: #374151;
 		--kbd-bg-top: #ffffff;

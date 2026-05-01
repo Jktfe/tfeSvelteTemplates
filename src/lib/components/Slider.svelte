@@ -34,11 +34,16 @@
 	 * Override the chrome tokens by targeting .slider-wrapper directly with
 	 * at least 2-class specificity — required to overcome the (0,2,0)
 	 * specificity of the component's scoped internal styles. Svelte appends
-	 * a hash class to every selector, so an ancestor :root or body rule only
-	 * inherits the variable and lands at (0,1,0) — the component's own
-	 * declared default still wins. See docs/THEMING.md for the full
-	 * specificity arithmetic. Doubled-class trick is the cheapest
-	 * unconditional override:
+	 * a hash class to every selector, so the component's own
+	 * .slider-wrapper.svelte-HASH rule declares the default directly on the
+	 * .slider-wrapper element. An ancestor :root or body rule sets a value
+	 * that descendants would inherit, but that inherited value is shadowed
+	 * by the component's own declaration on the same element — declared
+	 * values always win over inherited values on the element where they're
+	 * declared, regardless of the ancestor rule's specificity. The override
+	 * therefore needs to declare on the same element with ≥(0,2,0)
+	 * specificity. See docs/THEMING.md for the full mechanism. The
+	 * doubled-class trick is the cheapest unconditional override:
 	 *     body .slider-wrapper.slider-wrapper { --slider-track-bg: #fef3c7; --fill-color: #f59e0b; }
 	 *
 	 * USAGE
@@ -131,9 +136,11 @@
 		 * block at the bottom of this stylesheet. To retheme, target
 		 * .slider-wrapper with ≥2-class specificity — required to
 		 * overcome this rule's (0,2,0) scoped specificity. An ancestor
-		 * :root rule only inherits the token (lands at (0,1,0)) and
-		 * loses to this declared default. See docs/THEMING.md for the
-		 * full arithmetic.
+		 * :root or body rule sets a value that descendants would
+		 * inherit, but that inherited value is shadowed by this rule's
+		 * own declaration on the .slider-wrapper element — declared
+		 * values always win over inherited values on the element where
+		 * they're declared. See docs/THEMING.md for the full mechanism.
 		 */
 		--slider-track-bg: #e2e8f0;
 		--slider-thumb-bg: #ffffff;
