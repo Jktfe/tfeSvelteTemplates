@@ -54,8 +54,20 @@
   - --kbd-shadow-inner  inset depth-line  (light: #d1d5db / dark: #4b5563)
   - --kbd-shadow-drop   outer drop-shadow (light: rgba(0,0,0,0.05) / dark: rgba(0,0,0,0.4))
   - --kbd-sep-color     separator colour  (light: #9ca3af / dark: #6b7280)
-  Override at :root or any ancestor to retheme without forking:
-      :root { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
+  Override the chrome tokens by targeting .kbd directly with at least
+  2-class specificity — required to overcome the (0,2,0) specificity
+  of the component's scoped internal styles. Svelte appends a hash
+  class to every selector, so the component's own .kbd.svelte-HASH
+  rule declares the default directly on the .kbd element. An ancestor
+  :root or body rule sets a value that descendants would inherit, but
+  that inherited value is shadowed by the component's own declaration
+  on the same element — declared values always win over inherited
+  values on the element where they're declared, regardless of the
+  ancestor rule's specificity. The override therefore needs to declare
+  on the same element with ≥(0,2,0) specificity. See docs/THEMING.md
+  for the full mechanism. The doubled-class trick is the cheapest
+  unconditional override:
+      body .kbd.kbd { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
 
   PROPS
   | Prop      | Type                  | Default | Description |
@@ -215,8 +227,13 @@
 		 * block at the bottom of this stylesheet. All seven are chrome
 		 * (a kbd cap has no brand-tinted variants — bg/fg/border/shadow
 		 * all read fine on either scheme), so the whole set flips
-		 * together. Override at :root or any ancestor to retheme without
-		 * forking the component.
+		 * together. To retheme, target .kbd with ≥2-class specificity
+		 * — required to overcome this rule's (0,2,0) scoped specificity.
+		 * An ancestor :root or body rule sets a value that descendants
+		 * would inherit, but that inherited value is shadowed by this
+		 * rule's own declaration on the .kbd element — declared values
+		 * always win over inherited values on the element where they're
+		 * declared. See docs/THEMING.md for the full mechanism.
 		 */
 		--kbd-fg: #374151;
 		--kbd-bg-top: #ffffff;
@@ -287,10 +304,11 @@
 	/*
 	 * Dark mode — flip all seven chrome tokens so the cap reads on dark
 	 * surfaces. There are no brand variants on a kbd cap (Pattern #67
-	 * doesn't split), so the whole token set flips together. Consumers
-	 * who set custom tokens at :root (or any closer ancestor) win
-	 * because their values cascade after the defaults — this block only
-	 * fires when no override is present.
+	 * doesn't split), so the whole token set flips together. Consumer
+	 * overrides that reach ≥2-class specificity (e.g. body .kbd.kbd) still
+	 * win in dark mode — they clear the component's scoped (0,2,0) baseline
+	 * and cascade after this block. See docs/THEMING.md for the full
+	 * arithmetic.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.kbd {

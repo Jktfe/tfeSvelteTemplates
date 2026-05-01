@@ -31,8 +31,20 @@
 	 * - --slider-focus-ring   focus-visible ring colour
 	 * - --fill-color          owned by `variant` prop, overridable
 	 * - --track-h, --thumb-size  owned by `size` prop, overridable
-	 * Override at :root or any ancestor to retheme without forking:
-	 *     :root { --slider-track-bg: #fef3c7; --fill-color: #f59e0b; }
+	 * Override the chrome tokens by targeting .slider-wrapper directly with
+	 * at least 2-class specificity — required to overcome the (0,2,0)
+	 * specificity of the component's scoped internal styles. Svelte appends
+	 * a hash class to every selector, so the component's own
+	 * .slider-wrapper.svelte-HASH rule declares the default directly on the
+	 * .slider-wrapper element. An ancestor :root or body rule sets a value
+	 * that descendants would inherit, but that inherited value is shadowed
+	 * by the component's own declaration on the same element — declared
+	 * values always win over inherited values on the element where they're
+	 * declared, regardless of the ancestor rule's specificity. The override
+	 * therefore needs to declare on the same element with ≥(0,2,0)
+	 * specificity. See docs/THEMING.md for the full mechanism. The
+	 * doubled-class trick is the cheapest unconditional override:
+	 *     body .slider-wrapper.slider-wrapper { --slider-track-bg: #fef3c7; --fill-color: #f59e0b; }
 	 *
 	 * USAGE
 	 * Two-way bind:
@@ -120,9 +132,15 @@
 <style>
 	.slider-wrapper {
 		/*
-		 * Theming tokens — light defaults here, dark flip in the media block
-		 * at the bottom of this stylesheet. Override at :root or any ancestor
-		 * to retheme without forking the component.
+		 * Theming tokens — light defaults here, dark flip in the media
+		 * block at the bottom of this stylesheet. To retheme, target
+		 * .slider-wrapper with ≥2-class specificity — required to
+		 * overcome this rule's (0,2,0) scoped specificity. An ancestor
+		 * :root or body rule sets a value that descendants would
+		 * inherit, but that inherited value is shadowed by this rule's
+		 * own declaration on the .slider-wrapper element — declared
+		 * values always win over inherited values on the element where
+		 * they're declared. See docs/THEMING.md for the full mechanism.
 		 */
 		--slider-track-bg: #e2e8f0;
 		--slider-thumb-bg: #ffffff;
@@ -310,9 +328,10 @@
 	 * bubble charcoal/white and focus ring tint so the slider stays
 	 * high-contrast on dark pages. Variant fill colours (--fill-color)
 	 * stay vivid in both modes — they read fine on either background.
-	 * Consumers who set custom tokens at :root (or any closer ancestor)
-	 * win because their values cascade after the defaults — this block
-	 * only fires when no override is present.
+	 * Consumer overrides that reach ≥2-class specificity (e.g. body
+	 * .slider-wrapper.slider-wrapper) still win in dark mode — they
+	 * clear the component's scoped (0,2,0) baseline and cascade after
+	 * this block. See docs/THEMING.md for the full arithmetic.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.slider-wrapper {

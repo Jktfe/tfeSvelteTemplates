@@ -37,8 +37,20 @@
   - --rating-star-filled  filled star fill (light + dark: #fbbf24, gold-brand)
   - --rating-star-empty   empty star fill (light: #e5e7eb / dark: #374151)
   - --rating-focus-ring   focus-visible ring (light: #3b82f6 / dark: #60a5fa)
-  Override at :root or any ancestor to retheme without forking:
-      :root { --rating-star-filled: #ef4444; --rating-star-empty: #fee2e2; }
+  Override the chrome tokens by targeting .rating-stars directly with
+  at least 2-class specificity — required to overcome the (0,2,0)
+  specificity of the component's scoped internal styles. Svelte appends
+  a hash class to every selector, so the component's own
+  .rating-stars.svelte-HASH rule declares the default directly on the
+  .rating-stars element. An ancestor :root or body rule sets a value
+  that descendants would inherit, but that inherited value is shadowed
+  by the component's own declaration on the same element — declared
+  values always win over inherited values on the element where they're
+  declared, regardless of the ancestor rule's specificity. The override
+  therefore needs to declare on the same element with ≥(0,2,0)
+  specificity. See docs/THEMING.md for the full mechanism. The
+  doubled-class trick is the cheapest unconditional override:
+      body .rating-stars.rating-stars { --rating-star-filled: #ef4444; --rating-star-empty: #fee2e2; }
   The legacy filledColor / emptyColor props are still accepted and,
   when passed, take precedence by injecting an inline-style override
   on the wrapper.
@@ -201,8 +213,15 @@
 		 * Theming tokens — light defaults here, dark flip in the media block
 		 * at the bottom of this stylesheet. Filled-star is treated as a brand
 		 * colour (gold) and stays vivid on both schemes; only chrome flips.
-		 * Override at :root or any ancestor to retheme without forking the
-		 * component, or pass filledColor / emptyColor props for inline overrides.
+		 * To retheme, target .rating-stars with ≥2-class specificity —
+		 * required to overcome this rule's (0,2,0) scoped specificity. An
+		 * ancestor :root or body rule sets a value that descendants would
+		 * inherit, but that inherited value is shadowed by this rule's own
+		 * declaration on the .rating-stars element — declared values always
+		 * win over inherited values on the element where they're declared.
+		 * See docs/THEMING.md for the full mechanism. The filledColor /
+		 * emptyColor props are still accepted as inline-style overrides on
+		 * the wrapper.
 		 */
 		--rating-star-filled: #fbbf24;
 		--rating-star-empty: #e5e7eb;
@@ -297,10 +316,11 @@
 	 * stars stay readable on dark surfaces. The filled gold (#fbbf24) is
 	 * deliberately NOT flipped: gold reads fine on both schemes, and a
 	 * star rating system relies on a constant brand-coloured "filled"
-	 * signal so users can compare ratings at a glance. Consumers who set
-	 * custom tokens at :root (or any closer ancestor) win because their
-	 * values cascade after the defaults — this block only fires when no
-	 * override is present.
+	 * signal so users can compare ratings at a glance. Consumer overrides
+	 * that reach ≥2-class specificity (e.g. body .rating-stars.rating-stars)
+	 * still win in dark mode — they clear the component's scoped (0,2,0)
+	 * baseline and cascade after this block. See docs/THEMING.md for the
+	 * full arithmetic.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.rating-stars {
