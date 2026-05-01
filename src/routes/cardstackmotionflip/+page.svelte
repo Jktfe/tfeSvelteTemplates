@@ -14,7 +14,7 @@
 
 	const usageSnippet = `<script>
   import CardStackMotionFlip from '$lib/components/CardStackMotionFlip.svelte';
-<\/script>
+</${'script'}>
 
 <CardStackMotionFlip
   cards={cards}

@@ -18,7 +18,7 @@
 
 	const usageSnippet = `<script>
   import ShineBorder from '$lib/components/ShineBorder.svelte';
-<\/script>
+</${'script'}>
 
 <ShineBorder color="#146ef5" duration={3} borderWidth={2} borderRadius={8}>
   <div class="card">

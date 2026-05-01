@@ -72,7 +72,7 @@
     { id: 'aws', label: 'AWS', value: 80, group: 'Cloud' },
     { id: 'azure', label: 'Azure', value: 65, group: 'Cloud' }
   ];
-<\/script>
+</${'script'}>
 
 <BubblePacking
   data={bubbleData}

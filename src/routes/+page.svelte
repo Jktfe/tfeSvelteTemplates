@@ -24,7 +24,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { componentCategories, componentCount } from '$lib/componentCatalog';
-	import type { ComponentCatalogCategory } from '$lib/componentCatalog';
 
 	const categories = componentCategories;
 	const total = componentCount;
@@ -201,9 +200,9 @@
 	<!-- ===== Ticker ===== -->
 	<div class="t-ticker" aria-hidden="true">
 		<div class="t-ticker__track">
-			{#each [0, 1, 2] as _}
+			{#each [0, 1, 2] as repeatIndex (repeatIndex)}
 				<span class="t-ticker__group">
-					{#each ticker as item}
+					{#each ticker as item (item)}
 						<span>{item}</span><span class="dot">●</span>
 					{/each}
 				</span>

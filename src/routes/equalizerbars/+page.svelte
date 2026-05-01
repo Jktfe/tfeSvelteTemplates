@@ -11,7 +11,7 @@
 
 	const usageSnippet = `<script>
   import EqualizerBars from '$lib/components/EqualizerBars.svelte';
-<\/script>
+</${'script'}>
 
 <EqualizerBars variant="equalizer" bars={16} height={96} color="#38bdf8" />`;
 

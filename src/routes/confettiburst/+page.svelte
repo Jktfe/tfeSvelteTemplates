@@ -50,7 +50,7 @@
   import ConfettiBurst from '$lib/components/ConfettiBurst.svelte';
 
   let burst = $state<ConfettiBurst | null>(null);
-<\/script>
+</${'script'}>
 
 <button onclick={() => burst?.fire()}>Celebrate</button>
 <ConfettiBurst bind:this={burst} />`;

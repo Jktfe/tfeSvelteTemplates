@@ -8,7 +8,7 @@
 
 	const usageSnippet = `<script>
   import ElectricBorder from '$lib/components/ElectricBorder.svelte';
-<\/script>
+</${'script'}>
 
 <ElectricBorder intensity="crackling" palette="electric-blue" radius={28}>
   <button class="cta">⚡ Activate</button>

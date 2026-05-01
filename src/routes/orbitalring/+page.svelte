@@ -42,7 +42,7 @@
 
 	const usageSnippet = `<script>
   import OrbitalRing from '$lib/components/OrbitalRing.svelte';
-<\/script>
+</${'script'}>
 
 <OrbitalRing items={planets} radius={200} spinDurationMs={30000}>
   {#snippet center()}<div class="sun">☀</div>{/snippet}

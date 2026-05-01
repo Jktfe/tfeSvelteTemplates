@@ -23,7 +23,7 @@
 
 	const usageSnippet = `<script>
   import BeforeAfter from '$lib/components/BeforeAfter.svelte';
-<\/script>
+</${'script'}>
 
 <BeforeAfter
   beforeImage="/before.jpg"

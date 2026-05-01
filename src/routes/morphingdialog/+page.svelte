@@ -7,7 +7,7 @@
 
 	const usageSnippet = `<script>
   import MorphingDialog from '$lib/components/MorphingDialog.svelte';
-<\/script>
+</${'script'}>
 
 <MorphingDialog>
   {#snippet trigger(props)}

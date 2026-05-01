@@ -11,7 +11,7 @@
 
 	const usageSnippet = `<script>
   import MagneticButton from '$lib/components/MagneticButton.svelte';
-<\/script>
+</${'script'}>
 
 <MagneticButton strength={0.3} radius={120}>
   <button type="button">Hover me</button>

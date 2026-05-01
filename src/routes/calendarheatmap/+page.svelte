@@ -59,7 +59,7 @@
     { date: '2024-01-15', value: 12 },
     { date: '2024-01-16', value: 8 }
   ];
-<\/script>
+</${'script'}>
 
 <CalendarHeatmap
   data={activityData}

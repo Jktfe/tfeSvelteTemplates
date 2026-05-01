@@ -15,7 +15,7 @@
   import SwishButton from '$lib/components/SwishButton.svelte';
 
   let count = $state(0);
-<\/script>
+</${'script'}>
 
 <SwishButton text="Get started" onclick={() => count++} />`;
 

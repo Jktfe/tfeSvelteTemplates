@@ -32,7 +32,7 @@
 
 	const usageSnippet = `<script>
   import ScrollReveal from '$lib/components/ScrollReveal.svelte';
-<\/script>
+</${'script'}>
 
 <ScrollReveal direction="up" stagger={120} duration={650}>
   {#each items as item}

@@ -50,7 +50,7 @@
 	const usageSnippet = `<script>
   import RadialCluster from '$lib/components/RadialCluster.svelte';
   import { FALLBACK_RADIAL_CLUSTER_DATA } from '$lib/constants';
-<\/script>
+</${'script'}>
 
 <RadialCluster
   data={FALLBACK_RADIAL_CLUSTER_DATA}

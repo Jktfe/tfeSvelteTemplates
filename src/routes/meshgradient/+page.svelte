@@ -16,7 +16,7 @@
 
 	const usageSnippet = `<script>
   import MeshGradient from '$lib/components/MeshGradient.svelte';
-<\/script>
+</${'script'}>
 
 <div class="hero">
   <MeshGradient palette="cosmic" blobCount={6} blur={110} opacity={0.85} />

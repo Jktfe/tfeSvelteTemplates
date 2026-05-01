@@ -7,7 +7,7 @@
 
 	const usageSnippet = `<script>
   import Cardwall from '$lib/components/Cardwall/Cardwall.svelte';
-<\/script>
+</${'script'}>
 
 <Cardwall density="default" tilesPerRow={8} />
 <Cardwall density="sparse" tilesPerRow={6} />

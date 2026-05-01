@@ -19,7 +19,7 @@
 
 	const usageSnippet = `<script>
   import AnimatedBeam from '$lib/components/AnimatedBeam.svelte';
-<\/script>
+</${'script'}>
 
 <AnimatedBeam
   nodes={[

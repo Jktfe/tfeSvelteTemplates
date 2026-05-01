@@ -10,7 +10,7 @@
 
 	const usageSnippet = `<script>
   import NeonSign from '$lib/components/NeonSign.svelte';
-<\/script>
+</${'script'}>
 
 <NeonSign value="OPEN" colour="pink" size="lg" intensity={1.4} />
 <NeonSign value="NO VACANCY" colour="red" broken={[0, 1]} flicker="broken" />`;

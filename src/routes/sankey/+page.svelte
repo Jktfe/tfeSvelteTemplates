@@ -18,7 +18,7 @@
 
 	const usageSnippet = `<script>
   import ExpandableSankey from '$lib/components/ExpandableSankey.svelte';
-<\/script>
+</${'script'}>
 
 <ExpandableSankey
   nodes={data.sankeyData.nodes}

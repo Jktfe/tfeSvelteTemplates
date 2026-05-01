@@ -4,6 +4,7 @@
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 
 	const shell = catalogShellPropsForSlug('/skeletonloader')!;
+	const skeletonRows = [0, 1, 2];
 
 	let loading = $state(true);
 
@@ -81,7 +82,7 @@
 				</div>
 				<div class="sk-table" aria-busy={loading}>
 					{#if loading}
-						{#each Array(3) as _, i (i)}
+						{#each skeletonRows as row (row)}
 							<div class="sk-tr">
 								<SkeletonLoader shape="circle" width="40px" height="40px" animation="shimmer" />
 								<div class="sk-col">

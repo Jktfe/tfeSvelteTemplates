@@ -52,7 +52,7 @@
       ]}
     ]
   };
-<\/script>
+</${'script'}>
 
 <Sunburst
   {data}

@@ -33,7 +33,7 @@
 
 	const usageSnippet = `<script>
   import MagicCard from '$lib/components/MagicCard.svelte';
-<\/script>
+</${'script'}>
 
 <MagicCard gradientColor="#146ef5" gradientOpacity={0.15}>
   <article class="card">
