@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-label="GSAP suite preview">
+  <rect width="960" height="720" fill="#0f172a"/>
+  <circle cx="210" cy="150" r="140" fill="#2563eb" opacity=".28"/>
+  <circle cx="730" cy="210" r="180" fill="#db2777" opacity=".2"/>
+  <circle cx="520" cy="560" r="220" fill="#0891b2" opacity=".18"/>
+  <g transform="translate(170 175)">
+    <rect x="0" y="0" width="620" height="370" rx="34" fill="#f8fafc"/>
+    <path d="M70 250 C180 90 300 350 430 150 S590 210 600 85" fill="none" stroke="#22c55e" stroke-width="12" stroke-linecap="round"/>
+    <g font-family="Inter, Arial, sans-serif" fill="#111827">
+      <text x="70" y="105" font-size="68" font-weight="800">GSAP</text>
+      <text x="70" y="158" font-size="38" font-weight="700" fill="#2563eb">Svelte motion suite</text>
+    </g>
+    <g transform="translate(92 240)">
+      <rect x="0" y="0" width="98" height="126" rx="18" fill="#dbeafe" transform="rotate(-12)"/>
+      <rect x="132" y="-18" width="98" height="126" rx="18" fill="#fce7f3" transform="rotate(2)"/>
+      <rect x="264" y="0" width="98" height="126" rx="18" fill="#ccfbf1" transform="rotate(13)"/>
+      <rect x="396" y="-8" width="98" height="126" rx="18" fill="#ffedd5" transform="rotate(22)"/>
+    </g>
+  </g>
+</svg>
