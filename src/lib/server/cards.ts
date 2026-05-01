@@ -22,6 +22,13 @@
 import { neon } from '@neondatabase/serverless';
 import type { Card, CardRow } from '$lib/types';
 import { FALLBACK_CARDS } from '$lib/constants';
+import {
+	fromDatabase,
+	fromDatabaseError,
+	fromFallback,
+	getConfiguredDatabaseUrl,
+	type DataSourceResult
+} from './dataSource';
 
 /**
  * Loads card data from the Neon database
@@ -40,16 +47,17 @@ import { FALLBACK_CARDS } from '$lib/constants';
  * ```
  */
 export async function loadCardsFromDatabase(): Promise<Card[]> {
-	try {
-		// Get database connection string from environment variable
-		const databaseUrl = process.env.DATABASE_URL;
+	const result = await loadCardsWithSource();
+	return result.data;
+}
 
-		// If DATABASE_URL is not configured, return fallback cards
-		// This allows the app to work without a database connection
+export async function loadCardsWithSource(): Promise<DataSourceResult<Card[]>> {
+	try {
+		const databaseUrl = getConfiguredDatabaseUrl();
+
 		if (!databaseUrl) {
-			// NOTE: In production, replace with proper logging service
-			console.warn('DATABASE_URL not configured, using fallback data');
-			return FALLBACK_CARDS;
+			console.warn('DATABASE_URL not configured, using demo fixture card data');
+			return fromFallback(FALLBACK_CARDS);
 		}
 
 		// Create Neon SQL client
@@ -77,15 +85,14 @@ export async function loadCardsFromDatabase(): Promise<Card[]> {
 			image: row.image_url
 		}));
 
-		return formattedCards;
+		return fromDatabase(formattedCards);
 	} catch (err) {
 		// Log error but don't crash - use fallback data instead
 		// This ensures the app remains functional even if database is unavailable
 		// NOTE: In production, replace with proper error tracking (e.g., Sentry)
 		console.error('Error loading cards from database:', err);
 
-		// Return fallback cards so the demo still works
-		return FALLBACK_CARDS;
+		return fromDatabaseError(FALLBACK_CARDS, err);
 	}
 }
 
@@ -102,7 +109,7 @@ export async function loadCardsFromDatabase(): Promise<Card[]> {
  * ```
  */
 export function createDatabaseConnection() {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error(

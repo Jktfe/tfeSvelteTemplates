@@ -55,6 +55,7 @@
 	// [CR] Type imports and scroll lock utility for mobile interactions
 	import type { CardStackMotionFlipProps } from '$lib/types';
 	import { lockScroll } from '$lib/scrollLock';
+	import { tick } from 'svelte';
 
 	// [CR] Props with sensible defaults for card deck appearance and behaviour
 	// [NTL] These are all the settings you can tweak - card sizes, animation speeds, etc.
@@ -90,6 +91,9 @@
 
 	// [CR] Scroll lock cleanup - coordinated with other components via utility
 	let unlockScroll: (() => void) | null = null;
+	let deckElement = $state<HTMLDivElement | null>(null);
+	let animationRun = 0;
+	let activeTimers: ReturnType<typeof setTimeout>[] = [];
 
 	// Derived values for drag preview
 	let dragDeltaX = $derived(isDragging ? touchCurrentX - touchStartX : 0);
@@ -245,6 +249,22 @@
 		}
 	}
 
+	function wait(ms: number): Promise<void> {
+		return new Promise((resolve) => {
+			const timer = setTimeout(() => {
+				activeTimers = activeTimers.filter((activeTimer) => activeTimer !== timer);
+				resolve();
+			}, ms);
+			activeTimers = [...activeTimers, timer];
+		});
+	}
+
+	function clearAnimationTimers() {
+		animationRun += 1;
+		for (const timer of activeTimers) clearTimeout(timer);
+		activeTimers = [];
+	}
+
 	/**
 	 * Handle pointer down (works for both mouse and touch)
 	 * Only responds to the top card
@@ -309,16 +329,16 @@
 		if (absDeltaX > absDeltaY) {
 			// Horizontal swipe
 			if (deltaX > 0) {
-				rollCard('rolling-right');
+				void rollCard('rolling-right');
 			} else {
-				rollCard('rolling-left');
+				void rollCard('rolling-left');
 			}
 		} else {
 			// Vertical swipe
 			if (deltaY > 0) {
-				rollCard('rolling-down');
+				void rollCard('rolling-down');
 			} else {
-				rollCard('rolling-up');
+				void rollCard('rolling-up');
 			}
 		}
 	}
@@ -326,30 +346,42 @@
 	/**
 	 * Trigger card roll animation in specified direction
 	 */
-	function rollCard(direction: 'rolling-left' | 'rolling-right' | 'rolling-up' | 'rolling-down') {
+	async function rollCard(direction: 'rolling-left' | 'rolling-right' | 'rolling-up' | 'rolling-down') {
+		if (currentState !== 'idle' || cardOrder.length === 0) return;
+
+		clearAnimationTimers();
+		const runId = animationRun;
+		const shouldRestoreFocus =
+			typeof document !== 'undefined' &&
+			deckElement !== null &&
+			deckElement.contains(document.activeElement);
+
 		// Mark top card as animating
 		animatingCardIndex = cardOrder[0];
 		currentState = direction;
 
-		// After roll completes, reposition to back
 		const actualRollDuration = prefersReducedMotion ? 150 : rollDuration;
-		setTimeout(() => {
-			currentState = 'repositioning';
+		await wait(actualRollDuration);
+		if (runId !== animationRun) return;
 
-			// Reorder cards: move top to back
-			cardOrder = [...cardOrder.slice(1), cardOrder[0]];
+		currentState = 'repositioning';
+		cardOrder = [...cardOrder.slice(1), cardOrder[0]];
 
-			// Immediately transition to entering state
-			setTimeout(() => {
-				currentState = 'entering';
+		await wait(16);
+		if (runId !== animationRun) return;
 
-				// After fade-in completes, return to idle
-				setTimeout(() => {
-					currentState = 'idle';
-					animatingCardIndex = null;
-				}, enterDuration);
-			}, 16); // One frame delay for reposition
-		}, actualRollDuration);
+		currentState = 'entering';
+
+		await wait(enterDuration);
+		if (runId !== animationRun) return;
+
+		currentState = 'idle';
+		animatingCardIndex = null;
+
+		if (shouldRestoreFocus) {
+			await tick();
+			deckElement?.querySelector<HTMLElement>('.card-wrapper.top-card')?.focus();
+		}
 	}
 
 	/**
@@ -361,44 +393,36 @@
 		switch (event.key) {
 			case 'ArrowLeft':
 				event.preventDefault();
-				rollCard('rolling-left');
+				void rollCard('rolling-left');
 				break;
 			case 'ArrowRight':
 				event.preventDefault();
-				rollCard('rolling-right');
+				void rollCard('rolling-right');
 				break;
 			case 'ArrowUp':
 				event.preventDefault();
-				rollCard('rolling-up');
+				void rollCard('rolling-up');
 				break;
 			case 'ArrowDown':
 				event.preventDefault();
-				rollCard('rolling-down');
+				void rollCard('rolling-down');
 				break;
 		}
 	}
 
-	// Set up keyboard listener via $effect (primary)
-	$effect(() => {
-		if (typeof window !== 'undefined') {
-			window.addEventListener('keydown', handleKeydown);
-			return () => window.removeEventListener('keydown', handleKeydown);
-		}
-	});
-
 	/**
-	 * Svelte action to ensure keyboard listener is attached via DOM manipulation
-	 * This provides a fallback if ClerkProvider breaks $effect reactivity
+	 * Scope arrow-key deck navigation to focus inside the deck.
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	function ensureKeyboardListener(_node: HTMLElement) {
-		// Add listener immediately via DOM manipulation as a fallback
-		const existingHandler = handleKeydown;
-		window.addEventListener('keydown', existingHandler);
+	function scopeKeyboardNavigation(node: HTMLElement) {
+		function onKeydown(event: KeyboardEvent) {
+			if (!node.contains(document.activeElement)) return;
+			handleKeydown(event);
+		}
 
+		node.addEventListener('keydown', onKeydown);
 		return {
 			destroy() {
-				window.removeEventListener('keydown', existingHandler);
+				node.removeEventListener('keydown', onKeydown);
 			}
 		};
 	}
@@ -406,6 +430,7 @@
 	// Cleanup: ensure body scroll is restored if component unmounts during interaction
 	$effect(() => {
 		return () => {
+			clearAnimationTimers();
 			unlockBodyScroll();
 		};
 	});
@@ -413,11 +438,12 @@
 </script>
 
 <div
+	bind:this={deckElement}
 	class="card-deck"
 	role="region"
 	aria-label="3D rolling card deck"
 	style="width: {cardWidth}px; height: {cardHeight}px;"
-	use:ensureKeyboardListener
+	use:scopeKeyboardNavigation
 >
 	{#each cardOrder as cardIndex, displayIndex (cardIndex)}
 		{@const card = cards[cardIndex]}
@@ -430,6 +456,7 @@
 			role="button"
 			tabindex={isTopCard ? 0 : -1}
 			aria-label="Card {displayIndex + 1} of {cards.length}"
+			aria-keyshortcuts="ArrowLeft ArrowRight ArrowUp ArrowDown"
 			onpointerdown={(e) => handlePointerDown(e, displayIndex)}
 			onpointermove={handlePointerMove}
 			onpointerup={handlePointerUp}
@@ -497,7 +524,11 @@
 	.card-content {
 		width: 100%;
 		height: 100%;
-		background: white;
+		background: linear-gradient(
+			145deg,
+			var(--motion-flip-card-bg, #ffffff),
+			var(--motion-flip-card-bg-2, #f1f5f9)
+		);
 		border-radius: 12px;
 		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 		overflow: hidden;
@@ -544,9 +575,12 @@
 			will-change: auto;
 		}
 	}
+
+	@media (prefers-color-scheme: dark) {
+		.card-content {
+			--motion-flip-card-bg: #111827;
+			--motion-flip-card-bg-2: #020617;
+			box-shadow: 0 18px 45px rgba(0, 0, 0, 0.42);
+		}
+	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

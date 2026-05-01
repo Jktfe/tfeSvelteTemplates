@@ -29,7 +29,9 @@ import type {
 	BentoItem,
 	CommandPaletteItem,
 	FloatingDockItem,
-	ToastData
+	ToastData,
+	InteractiveCardsProject,
+	InteractiveCardsTestimonial
 } from './types';
 
 /**
@@ -2732,5 +2734,167 @@ export const FALLBACK_TOAST_ITEMS: ToastData[] = [
 		severity: 'error',
 		duration: 10000,
 		dismissible: true
+	}
+];
+
+// =============================================================================
+// INTERACTIVE CARDS FALLBACK DATA
+// =============================================================================
+
+const INTERACTIVE_CARDS_CDN =
+	'https://pub-dc2abe5caae44240a6d1913566a75e0f.r2.dev/picasso-ecommerce';
+
+/**
+ * Fallback project list for the InteractiveCards component.
+ *
+ * Uses the public Cloudflare R2 "picasso-ecommerce" bucket from the reference spec.
+ */
+export const FALLBACK_INTERACTIVE_PROJECTS: InteractiveCardsProject[] = [
+	{
+		id: 0,
+		title: 'Ember Study No. 1',
+		artist: 'Isla Moreno',
+		medium: 'Oil on washi paper',
+		description:
+			'A smouldering composition of raw sienna and quiet blues, painted in the hush before dawn.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-1.jpg`,
+		accent: '#2B5B8A',
+		badgeLabel: 'Iconic',
+		badgeColor: '#2B5B8A',
+		price: '$295',
+		sizes: ['18x24"', '24x36"', '30x40"'],
+		materials: ['Washi Paper', 'Canvas', 'Framed'],
+		edition: 'Museum Edition - 100 prints',
+		testimonial: 'It completely changed the feel of our reading room.',
+		testimonialAuthor: '- Sarah, New York'
+	},
+	{
+		id: 1,
+		title: 'Goldleaf Harbour',
+		artist: 'Kenji Aoyama',
+		medium: 'Gouache and gold leaf',
+		description:
+			'Flecks of gold catch the afternoon light against a harbour rendered in muted teals.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-2.jpg`,
+		accent: '#C4882E',
+		badgeLabel: 'Best Seller',
+		badgeColor: '#C4882E',
+		price: '$340',
+		sizes: ['16x20"', '24x30"', '36x48"'],
+		materials: ['Gold Leaf', 'Canvas', 'Framed'],
+		edition: 'Open Edition',
+		testimonial: 'The gold leaf looks alive depending on the time of day.',
+		testimonialAuthor: '- Marcus, Kyoto'
+	},
+	{
+		id: 2,
+		title: 'Midnight Orchard',
+		artist: 'Priya Naravan',
+		medium: 'Acrylic on linen',
+		description:
+			'Inky indigo branches arc across a bone-white sky, half-remembered and dreamlike.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-3.jpg`,
+		accent: '#3A5BA0',
+		badgeLabel: 'Staff Pick',
+		badgeColor: '#3A5BA0',
+		price: '$260',
+		sizes: ['12x16"', '20x28"', '30x42"'],
+		materials: ['Linen', 'Canvas', 'Framed'],
+		edition: 'Signed Edition - 75 prints',
+		testimonial: 'Calming and strange in the best way.',
+		testimonialAuthor: '- Noa, Tel Aviv'
+	},
+	{
+		id: 3,
+		title: 'Slow River',
+		artist: 'Oren Bekele',
+		medium: 'Watercolour on cotton',
+		description:
+			'Three washes of cobalt describe a river without ever drawing its edges.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-4.jpg`,
+		accent: '#5B7FA5',
+		badgeLabel: 'Signed',
+		badgeColor: '#5B7FA5',
+		price: '$215',
+		sizes: ['11x14"', '18x24"', '24x36"'],
+		materials: ['Cotton Paper', 'Matted', 'Framed'],
+		edition: 'Signed Edition - 50 prints',
+		testimonial: 'Hangs in my studio. It keeps me honest about what painting can do.',
+		testimonialAuthor: '- Luis, Mexico City'
+	},
+	{
+		id: 4,
+		title: 'Fern Cathedral',
+		artist: 'Anya Whitlock',
+		medium: 'Egg tempera on panel',
+		description:
+			'A forest floor rendered with the patience of a miniaturist and stained-glass green.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-5.jpg`,
+		accent: '#6B8F5E',
+		badgeLabel: 'New',
+		badgeColor: '#6B8F5E',
+		price: '$310',
+		sizes: ['14x18"', '22x28"', '28x36"'],
+		materials: ['Wood Panel', 'Canvas', 'Framed'],
+		edition: 'Museum Edition - 100 prints',
+		testimonial: 'Photos do not do it justice. It glows.',
+		testimonialAuthor: '- Priya, London'
+	},
+	{
+		id: 5,
+		title: 'Kiln Song',
+		artist: 'Tomas Ferreira',
+		medium: 'Mixed media on board',
+		description:
+			'Ochre and cinnabar applied with a palette knife, then scorched at the edges.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-6.jpg`,
+		accent: '#C4652E',
+		badgeLabel: 'Trending',
+		badgeColor: '#C4652E',
+		price: '$285',
+		sizes: ['16x20"', '24x30"', '32x40"'],
+		materials: ['Wood Panel', 'Canvas', 'Framed'],
+		edition: 'Open Edition',
+		testimonial: 'Warm, grounded, and a little defiant.',
+		testimonialAuthor: '- Elena, Lisbon'
+	},
+	{
+		id: 6,
+		title: 'Violet Observatory',
+		artist: 'Amara Qureshi',
+		medium: 'Pastel on charcoal paper',
+		description:
+			'A twilight study of a rural observatory catching the last violet of dusk.',
+		image: `${INTERACTIVE_CARDS_CDN}/paint-7.jpg`,
+		accent: '#8B6DAF',
+		badgeLabel: 'Exclusive',
+		badgeColor: '#8B6DAF',
+		price: '$355',
+		sizes: ['18x24"', '24x36"', '36x48"'],
+		materials: ['Charcoal Paper', 'Matted', 'Framed'],
+		edition: 'Museum Edition - 100 prints',
+		testimonial: 'The colour palette is unlike anything else in my collection.',
+		testimonialAuthor: '- Amara, Karachi'
+	}
+];
+
+export const FALLBACK_INTERACTIVE_TESTIMONIALS: InteractiveCardsTestimonial[] = [
+	{
+		author: 'Elena Navarro',
+		title: 'Interior Designer - Lisbon',
+		photo: 'https://images.unsplash.com/photo-1560329072-17f59dcd30a4?w=200&h=200&fit=crop',
+		quote: 'These prints hold the room together. Clients always ask where I source them.'
+	},
+	{
+		author: 'Tomas Ferreira',
+		title: 'Gallery Owner - Sao Paulo',
+		photo: 'https://images.unsplash.com/photo-1584307833174-a3bbb76ab367?w=200&h=200&fit=crop',
+		quote: 'Museum-quality reproduction. Our collectors can barely tell the difference.'
+	},
+	{
+		author: 'Amara Qureshi',
+		title: 'Architect - Karachi',
+		photo: 'https://images.unsplash.com/photo-1610431205421-739e027cc0ce?w=200&h=200&fit=crop',
+		quote: 'A tiny canvas with an outsized presence. I kept reaching for it.'
 	}
 ];

@@ -1,0 +1,42 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">TopologyColorGrid preview</title>
+  <desc id="desc">A dark 3D topology plane with layered color cards.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#05070a"/>
+      <stop offset="0.58" stop-color="#020617"/>
+      <stop offset="1" stop-color="#1c1917"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="28" stdDeviation="22" flood-color="#000000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)"/>
+  <g opacity="0.18" stroke="#94a3b8" stroke-width="1" fill="none" transform="translate(180 260) skewY(-18) scale(1.05 .68)">
+    <path d="M0 0H860M0 80H860M0 160H860M0 240H860M0 320H860"/>
+    <path d="M0 0V330M86 0V330M172 0V330M258 0V330M344 0V330M430 0V330M516 0V330M602 0V330M688 0V330M774 0V330M860 0V330"/>
+  </g>
+  <g transform="translate(70 82)">
+    <circle cx="24" cy="24" r="24" fill="#c2410c"/>
+    <ellipse cx="24" cy="18" rx="13" ry="5" fill="none" stroke="#fff" stroke-width="2"/>
+    <ellipse cx="24" cy="24" rx="13" ry="5" fill="none" stroke="#fff" stroke-width="2"/>
+    <ellipse cx="24" cy="30" rx="13" ry="5" fill="none" stroke="#fff" stroke-width="2"/>
+    <text x="68" y="20" fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="700">Chromatic Substrate Topology</text>
+    <text x="68" y="48" fill="#71717a" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3">SPATIAL Z-INDEX MAPPING</text>
+  </g>
+  <g filter="url(#shadow)" transform="translate(215 350) rotate(-18)">
+    <rect x="0" y="210" width="260" height="145" rx="18" fill="#1f2937"/>
+    <rect x="155" y="80" width="250" height="130" rx="18" fill="#f5f5f4"/>
+    <rect x="20" y="20" width="220" height="135" rx="18" fill="#065f46"/>
+    <rect x="330" y="205" width="350" height="170" rx="20" fill="#c2410c"/>
+    <rect x="500" y="35" width="360" height="135" rx="18" fill="#fbbf24"/>
+    <rect x="680" y="210" width="235" height="150" rx="18" fill="#fecdd3"/>
+    <rect x="835" y="300" width="240" height="160" rx="18" fill="#7f1d1d"/>
+  </g>
+  <g transform="translate(573 535) rotate(-18)" font-family="Inter, Arial, sans-serif">
+    <text fill="#fff" font-size="16" font-weight="800">CORE 01</text>
+    <text y="76" fill="#fff" font-size="38" font-weight="900">CINDER</text>
+    <text y="116" fill="#fff" font-size="38" font-weight="900">TILE</text>
+    <text y="150" fill="#fff" font-size="17" font-weight="700">#C2410C</text>
+  </g>
+</svg>

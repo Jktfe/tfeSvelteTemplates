@@ -1725,6 +1725,18 @@ Keep useful technical comments, warnings, known limitations, and audit trails â€
 
 If a future audit needs to know whether a component was reviewed and by whom, the answer lives in git log + the Obsidian vault, not in the source. This keeps copy-paste portability clean for the OSS-template promise.
 
+**No JSDoc-style block comments inside Svelte HTML docblocks.**
+The `<!-- @component -->` docblock at the top of a `.svelte` file is parsed by Svelte's component documentation extractor. Any JSDoc-style block comment nested inside it, including ones inside fenced code examples, can silently corrupt the default-export descriptor. `bun run build` can still pass; the failure may surface only in `svelte-check`, and it reports as `Module X has no default export` against consumer files, not the broken source file.
+
+Mechanical rules for authoring docblocks:
+
+- **In fenced code examples inside the docblock**: introduce CSS or JS examples with prose intros rather than inline block comments. If a code example would normally include a comment, lift the comment into the prose above the fence.
+- **In docblock prose**: never write the literal block-comment token, even inside backticks. Refer to the syntax as "block comments" or "JSDoc-style comments" in plain English.
+- **Single-line `//` comments are fine** because they do not trigger the JSDoc parser.
+- **HTML comments inside the docblock are also fine**, though Svelte may strip them when extracting docs.
+
+When you encounter `Module X has no default export` errors against consumer files where `bun run build` passes cleanly, check the docblock of the imported component for nested block-comment markers first.
+
 ### Component Quality Checklist
 
 Before a component is considered "gold standard":
