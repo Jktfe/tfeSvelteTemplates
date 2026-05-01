@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+
+	const shell = catalogShellPropsForSlug('/breadcrumbs')!;
 
 	const shortTrail = [
 		{ label: 'Home', href: '/' },
@@ -31,88 +35,130 @@
 		{ label: 'Down jackets', href: '/men/outerwear/down' },
 		{ label: 'Patagonia Down Sweater Hoody — Black' }
 	];
+
+	const codeExplanation =
+		'Breadcrumbs render as a real nav > ol > li tree. Separators are aria-hidden so screen readers only hear the labels; the final crumb gets aria-current="page". When maxVisible is hit, the middle crumbs are replaced by an ellipsis token while the first and last crumbs survive — the "where I started" and "where I am" anchors that matter most to the user.';
 </script>
 
 <svelte:head>
-	<title>Breadcrumbs | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-4xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">Breadcrumbs</h1>
-			<p class="text-xl text-muted-foreground">
-				Hierarchical path navigation with smart truncation, ARIA-correct semantics, and customisable separators.
-			</p>
-		</header>
-
-		<section class="bg-white rounded-2xl p-12 border border-neutral-200 shadow-xl space-y-12">
-			<div class="space-y-3">
-				<h3 class="text-sm font-medium text-neutral-500">Short trail — default separator</h3>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'A11y', 'Zero-deps', 'Semantic HTML']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="bc-demo">
+			<div class="bc-row">
+				<h4>Short trail · default separator</h4>
 				<Breadcrumbs items={shortTrail} />
 			</div>
-
-			<div class="space-y-3 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Four levels — chevron separator</h3>
+			<div class="bc-row">
+				<h4>Four levels · chevron separator</h4>
 				<Breadcrumbs items={fullTrail} separator="›" />
 			</div>
-
-			<div class="space-y-3 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Long trail — full path (7 levels)</h3>
+			<div class="bc-row">
+				<h4>Long trail · full path (7 levels)</h4>
 				<Breadcrumbs items={longTrail} separator="/" />
-				<p class="text-xs text-neutral-500">
-					Long names get truncated to 18ch with ellipsis to keep the row tidy.
-				</p>
+				<p class="bc-note">Long names truncate to 18ch with ellipsis to keep the row tidy.</p>
 			</div>
-
-			<div class="space-y-3 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Long trail — collapsed (maxVisible=4)</h3>
+			<div class="bc-row">
+				<h4>Long trail · collapsed (maxVisible=4)</h4>
 				<Breadcrumbs items={longTrail} separator="/" maxVisible={4} />
-				<p class="text-xs text-neutral-500">
-					First + … + last (maxVisible − 2). Always preserves where you started and where you are.
-				</p>
+				<p class="bc-note">First + … + last (maxVisible − 2). Always preserves the anchors.</p>
 			</div>
-
-			<div class="space-y-3 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">E-commerce — arrow separator</h3>
+			<div class="bc-row">
+				<h4>E-commerce · arrow separator</h4>
 				<Breadcrumbs items={ecommerceTrail} separator="→" />
-				<p class="text-xs text-neutral-500">
-					Useful for category pages where users want to step back up the tree.
-				</p>
 			</div>
-
-			<div class="space-y-3 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Custom aria-label</h3>
+			<div class="bc-row">
+				<h4>Custom aria-label</h4>
 				<Breadcrumbs items={fullTrail} ariaLabel="You are here" />
-				<p class="text-xs text-neutral-500">
-					i18n-friendly — the wrapper nav reads "You are here" to assistive tech.
-				</p>
+				<p class="bc-note">i18n-friendly — assistive tech reads "You are here".</p>
 			</div>
-		</section>
+		</div>
+	{/snippet}
 
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Semantic <code>nav</code> &gt; <code>ol</code> &gt; <code>li</code> structure</li>
-					<li><code>aria-current="page"</code> on the current crumb</li>
-					<li>Separators are <code>aria-hidden</code> — never read aloud</li>
-					<li>Customisable separator string (any glyph or short text)</li>
-					<li>Smart truncation via <code>maxVisible</code> — keeps first &amp; last</li>
-					<li>i18n-friendly <code>ariaLabel</code></li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-				</ul>
-			</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>items</code></td>
+					<td><code>Crumb[]</code></td>
+					<td>required</td>
+					<td>Array of <code>{`{ label, href? }`}</code> — last item is treated as current page.</td>
+				</tr>
+				<tr>
+					<td><code>separator</code></td>
+					<td><code>string</code></td>
+					<td><code>'/'</code></td>
+					<td>Character or short string drawn between crumbs.</td>
+				</tr>
+				<tr>
+					<td><code>maxVisible</code></td>
+					<td><code>number</code></td>
+					<td><code>0</code></td>
+					<td>0 = show all; otherwise collapses middle items to an ellipsis.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Breadcrumb'</code></td>
+					<td>Accessible name on the wrapping <code>nav</code>.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Extra CSS class on the wrapper.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">When to use</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Admin dashboards with deep object hierarchies</li>
-					<li>E-commerce category drilldowns</li>
-					<li>Documentation sites with section/sub-section/page nesting</li>
-					<li>File-system-style applications</li>
-				</ul>
-			</div>
-		</section>
-	</div>
-</div>
+<style>
+	.bc-demo {
+		display: grid;
+		gap: 22px;
+		padding: 24px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+	}
+	.bc-row {
+		display: grid;
+		gap: 8px;
+		padding-bottom: 22px;
+		border-bottom: 1px solid var(--border);
+	}
+	.bc-row:last-child {
+		padding-bottom: 0;
+		border-bottom: none;
+	}
+	.bc-row h4 {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		font-weight: 500;
+	}
+	.bc-note {
+		margin: 4px 0 0;
+		font-size: 12px;
+		color: var(--fg-3);
+	}
+</style>

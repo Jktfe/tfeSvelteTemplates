@@ -1,6 +1,10 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import TickerTape from '$lib/components/TickerTape.svelte';
 	import type { TickerItem } from '$lib/components/TickerTape.svelte';
+
+	const shell = catalogShellPropsForSlug('/tickertape')!;
 
 	const stocks: TickerItem[] = [
 		{ label: 'AAPL', value: '$187.42', delta: 1.24, href: '#aapl' },
@@ -47,252 +51,99 @@
 </script>
 
 <svelte:head>
-	<title>TickerTape — TFE Svelte Templates</title>
+	<title>TickerTape — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Horizontal infinite-scroll display of structured data points — Bloomberg / airport-info energy as a portable Svelte 5 primitive."
+	/>
 </svelte:head>
 
-<main class="page">
-	<header class="hero">
-		<span class="badge">Helpful UX</span>
-		<h1>📈 TickerTape</h1>
-		<p>
-			A horizontal infinite-scroll display of <strong>structured</strong> data points. Each item
-			is a tuple of <code>{`{label, value, delta, trend}`}</code> rather than arbitrary content
-			— Bloomberg / airport-info-board energy, but as a portable Svelte 5 primitive.
-			Pure CSS keyframe scroll, hover-to-pause, four variants, zero dependencies.
-		</p>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Marquee', 'Theme-aware', 'A11y']}
+	codeExplanation="TickerTape doubles its content and runs a single CSS keyframe scroll. Trend chevrons are inferred from the delta sign or set explicitly. Pause-on-hover is animation-play-state, so there is zero JS handler in the steady state. prefers-reduced-motion: reduce stops the animation but leaves the strip readable as a static row."
+>
+	{#snippet demo()}
+		<div class="tt-demo">
+			<div class="tt-block">
+				<div class="tt-head">
+					<h3>Finance · stock prices with deltas</h3>
+					<p>Trend chevrons inferred from the delta sign. Tabular numerals keep the alignment crisp as the strip scrolls.</p>
+				</div>
+				<TickerTape items={stocks} variant="finance" speed={70} aria-label="Live stock prices" />
+			</div>
 
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Finance — stock prices with deltas</h2>
-			<p>
-				The flagship demo: 10 stock tickers with signed percent deltas. Trend chevrons
-				inferred from delta sign — green ▲ up, red ▼ down. Tabular numerals keep the
-				alignment crisp as the strip scrolls.
-			</p>
+			<div class="tt-block">
+				<div class="tt-head">
+					<h3>Sports · scoreboard with explicit trends</h3>
+					<p>0-delta draws still register as flat thanks to explicit trend per item.</p>
+				</div>
+				<TickerTape items={scores} variant="sports" speed={55} aria-label="Live rugby scores" />
+			</div>
+
+			<div class="tt-block">
+				<div class="tt-head">
+					<h3>Status · system health feed</h3>
+					<p>Categorical states drive the trend explicitly without numeric deltas.</p>
+				</div>
+				<TickerTape items={status} variant="default" speed={45} aria-label="System status" />
+			</div>
+
+			<div class="tt-block">
+				<div class="tt-head">
+					<h3>Minimal · light dashboard strip</h3>
+					<p>Hairline-bordered, transparent background — quiet enough for a hero embed.</p>
+				</div>
+				<TickerTape items={minimal} variant="minimal" speed={50} aria-label="Key metrics" />
+			</div>
+
+			<div class="tt-block">
+				<div class="tt-head">
+					<h3>Direction · right-to-left, faster</h3>
+					<p>direction="right" with a 120 px/s scroll for variety alongside another row.</p>
+				</div>
+				<TickerTape items={stocks} variant="finance" direction="right" speed={120} />
+			</div>
 		</div>
-		<TickerTape items={stocks} variant="finance" speed={70} aria-label="Live stock prices" />
-		<pre class="code">{`<TickerTape items={stocks} variant="finance" speed={70} />`}</pre>
-	</section>
+	{/snippet}
 
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Sports — scoreboard with explicit trends</h2>
-			<p>
-				Live rugby scores. <code>trend</code> is set explicitly per item (so 0-delta
-				draws still register as flat rather than blank). The sports variant uses
-				deeper green/teal palette and bolder weight to read at distance.
-			</p>
-		</div>
-		<TickerTape items={scores} variant="sports" speed={55} aria-label="Live rugby scores" />
-		<pre class="code">{`<TickerTape items={scores} variant="sports" speed={55} />`}</pre>
-	</section>
-
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Status — system health feed</h2>
-			<p>
-				Default variant on a status page. Categorical states (Operational / Degraded
-				/ Restored) drive the trend explicitly without numeric deltas — chevron
-				appears, percent string does not.
-			</p>
-		</div>
-		<TickerTape items={status} variant="default" speed={45} aria-label="System status" />
-		<pre class="code">{`<TickerTape items={status} variant="default" speed={45} />`}</pre>
-	</section>
-
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Minimal — light-mode metrics strip</h2>
-			<p>
-				The <code>minimal</code> variant is hairline-bordered, transparent-background,
-				designed for embedding inside a light-mode dashboard hero. Same data
-				grammar — just quieter typography and lighter chrome.
-			</p>
-		</div>
-		<TickerTape items={minimal} variant="minimal" speed={50} aria-label="Key metrics" />
-		<pre class="code">{`<TickerTape items={minimal} variant="minimal" speed={50} />`}</pre>
-	</section>
-
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Direction — right-to-left, faster</h2>
-			<p>
-				Scroll direction reversed via <code>direction="right"</code>; speed bumped to
-				120 px/s. Useful when the ticker sits next to RTL text or when you want
-				visual variety alongside another left-scrolling row.
-			</p>
-		</div>
-		<TickerTape items={stocks} variant="finance" direction="right" speed={120} />
-		<pre class="code">{`<TickerTape items={stocks} variant="finance" direction="right" speed={120} />`}</pre>
-	</section>
-
-	<section class="features">
-		<h2>Features</h2>
-		<ul>
-			<li>
-				4 named variants — <code>default</code>, <code>finance</code>,
-				<code>sports</code>, <code>minimal</code> — each with its own colour
-				grammar and typography weight.
-			</li>
-			<li>
-				Trend inferred from <code>delta</code> sign or set explicitly via
-				<code>trend</code>. Chevrons: green ▲ up, red ▼ down, grey ▬ flat.
-			</li>
-			<li>
-				Pure CSS keyframe scroll — single GPU compositor effect. Pause-on-hover
-				via <code>animation-play-state</code>, zero JS handler.
-			</li>
-			<li>
-				Configurable speed (px/s, clamped 1–1000) and direction (left / right).
-				Edge fades via <code>mask-image</code> so items slide in/out softly.
-			</li>
-			<li>
-				Optional <code>href</code> per item wraps it as a focus-visible link.
-			</li>
-			<li>
-				<code>prefers-reduced-motion: reduce</code> → animation off, strip stays
-				readable as a static row.
-			</li>
-			<li>Zero external dependencies. Pure helpers exported for testing.</li>
-		</ul>
-	</section>
-
-	<section class="usage">
-		<h2>Usage</h2>
-		<p class="usage__intro">
-			Import the component, hand it an array of <code>TickerItem</code> tuples, pick a
-			variant. That's the whole API.
-		</p>
-		<pre class="code">{`<!-- Default mono variant -->
-<TickerTape items={prices} />
-
-<!-- Finance variant, faster, no pause-on-hover -->
-<TickerTape
-  items={prices}
-  variant="finance"
-  speed={120}
-  pauseOnHover={false} />
-
-<!-- Custom separator, right-to-left -->
-<TickerTape
-  items={prices}
-  variant="minimal"
-  direction="right"
-  separator="·" />`}</pre>
-		<p class="usage__intro">
-			See <code>src/lib/components/TickerTape.md</code> for the full <code>TickerItem</code>
-			shape, helper exports, accessibility notes and recipes.
-		</p>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr><td><code>items</code></td><td><code>TickerItem[]</code></td><td>required</td><td>Tuples of {`{ label, value, delta?, trend?, href? }`}.</td></tr>
+				<tr><td><code>variant</code></td><td><code>"default" | "finance" | "sports" | "minimal"</code></td><td><code>"default"</code></td><td>Colour palette and weight preset.</td></tr>
+				<tr><td><code>speed</code></td><td><code>number</code></td><td><code>60</code></td><td>Scroll speed in px/s, clamped 1–1000.</td></tr>
+				<tr><td><code>direction</code></td><td><code>"left" | "right"</code></td><td><code>"left"</code></td><td>Scroll direction.</td></tr>
+				<tr><td><code>pauseOnHover</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Pauses via animation-play-state.</td></tr>
+				<tr><td><code>separator</code></td><td><code>string</code></td><td><code>"·"</code></td><td>Glyph between items.</td></tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 1100px;
-		margin: 0 auto;
-		padding: 2.5rem 1.5rem 4rem;
+	.tt-demo {
+		display: grid;
+		gap: 2rem;
 	}
-
-	.hero {
-		margin-bottom: 3rem;
+	.tt-block {
+		display: grid;
+		gap: 0.75rem;
 	}
-
-	.badge {
-		display: inline-block;
-		background: #ecfeff;
-		color: #0e7490;
-		font-size: 0.75rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		padding: 0.25rem 0.625rem;
-		border-radius: 999px;
-		margin-bottom: 0.75rem;
+	.tt-head h3 {
+		margin: 0 0 0.25rem;
+		font-size: 1.05rem;
 		font-weight: 600;
+		color: var(--fg-1);
 	}
-
-	.hero h1 {
-		font-size: 2.5rem;
-		margin: 0 0 1rem;
-	}
-
-	.hero p {
-		font-size: 1.0625rem;
-		color: #475569;
-		line-height: 1.65;
+	.tt-head p {
 		margin: 0;
-		max-width: 720px;
-	}
-
-	.demo {
-		margin-bottom: 3rem;
-	}
-
-	.demo__head {
-		margin-bottom: 1rem;
-	}
-
-	.demo__head h2 {
-		font-size: 1.375rem;
-		margin: 0 0 0.5rem;
-	}
-
-	.demo__head p {
-		color: #64748b;
-		margin: 0;
-		line-height: 1.55;
-		max-width: 720px;
-	}
-
-	code {
-		background: #f1f5f9;
-		padding: 0.1rem 0.4rem;
-		border-radius: 4px;
-		font-size: 0.85em;
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-	}
-
-	.code {
-		background: #0f172a;
-		color: #e2e8f0;
-		padding: 1rem 1.25rem;
-		border-radius: 8px;
-		font-size: 0.8125rem;
-		font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-		overflow-x: auto;
-		margin: 1rem 0 0;
+		font-size: 0.9rem;
+		color: var(--fg-2);
 		line-height: 1.5;
-	}
-
-	.features,
-	.usage {
-		margin-top: 3.5rem;
-	}
-
-	.features h2,
-	.usage h2 {
-		font-size: 1.5rem;
-		margin: 0 0 1rem;
-	}
-
-	.features ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-	}
-
-	.features li {
-		padding: 0.625rem 0 0.625rem 1.5rem;
-		position: relative;
-		color: #334155;
-		line-height: 1.55;
-		border-bottom: 1px solid #f1f5f9;
-	}
-
-	.features li::before {
-		content: '▸';
-		position: absolute;
-		left: 0;
-		color: #06b6d4;
+		max-width: 70ch;
 	}
 </style>

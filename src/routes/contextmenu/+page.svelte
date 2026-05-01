@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import ContextMenu, { type ContextMenuItem } from '$lib/components/ContextMenu.svelte';
+
+	const shell = catalogShellPropsForSlug('/contextmenu')!;
 
 	let lastSelected = $state<string | null>(null);
 	let selectionLog = $state<Array<{ id: string; at: string }>>([]);
@@ -33,245 +37,177 @@
 		{ type: 'divider' },
 		{ id: 'permadelete', label: 'Delete Permanently', danger: true }
 	];
+
+	const codeExplanation =
+		'ContextMenu intercepts the contextmenu event on its trigger and renders the menu only while open, so when closed there is zero DOM cost beyond the wrapper. Right-click opens at the click point; Shift+F10 and the dedicated menu key open anchored to the trigger. ↑/↓ navigate (skipping dividers and disabled items), Home/End jump to the ends, Enter activates, Esc closes — full WAI-ARIA menu pattern. clampToViewport flips the menu after mount when it would overflow, with an 8px safety padding.';
 </script>
 
 <svelte:head>
-	<title>ContextMenu · TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<main class="page">
-	<header class="hero">
-		<h1>ContextMenu</h1>
-		<p>
-			Right-click / long-press menu primitive. Wraps any trigger; right-click suppresses the
-			native browser menu and opens a custom one at the click position. Items are passed
-			declaratively as a prop array — the consumer never has to wire keyboard navigation,
-			viewport clamping, or focus management themselves. Pointer + keyboard parity from line one.
-			<code>prefers-reduced-motion</code> skips the entrance animation; the action contract is
-			preserved.
-		</p>
-	</header>
-
-	<section class="demo">
-		<h2>1. Right-click a file row</h2>
-		<p class="caption">
-			Eight items, two dividers, one disabled (<code>Export</code>), one danger (<code
-				>Move to Trash</code
-			>). Right-click on the row, or focus it and press <kbd>Shift</kbd>+<kbd>F10</kbd>. Use
-			<kbd>↑</kbd>/<kbd>↓</kbd> to navigate, <kbd>Enter</kbd> to select, <kbd>Esc</kbd> to close.
-		</p>
-		<div class="surface">
-			<ContextMenu items={fileItems} onSelect={record} ariaLabel="File actions">
-				<div class="file-row">
-					<span class="file-icon">📄</span>
-					<span class="file-name">Quarterly-Report.pdf</span>
-					<span class="file-meta">2.4 MB · Modified 2 days ago</span>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Keyboard', 'A11y', 'Pointer', 'WAI-ARIA']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="ctx-demo">
+			<section>
+				<h3>Right-click a file row</h3>
+				<p class="note">
+					Right-click on the row, or focus it and press <kbd>Shift</kbd>+<kbd>F10</kbd>. Use
+					<kbd>↑</kbd>/<kbd>↓</kbd> to navigate, <kbd>Enter</kbd> to select, <kbd>Esc</kbd> to close.
+				</p>
+				<div class="surface">
+					<ContextMenu items={fileItems} onSelect={record} ariaLabel="File actions">
+						<div class="file-row">
+							<span class="file-icon">📄</span>
+							<span class="file-name">Quarterly-Report.pdf</span>
+							<span class="file-meta">2.4 MB · 2 days ago</span>
+						</div>
+					</ContextMenu>
 				</div>
-			</ContextMenu>
-		</div>
-	</section>
+			</section>
 
-	<section class="demo">
-		<h2>2. Minimal — three items, no dividers</h2>
-		<p class="caption">
-			The simplest possible menu. Useful for inline content where users only need the basic
-			edit-clipboard actions. No shortcuts, no danger, no dividers.
-		</p>
-		<div class="surface">
-			<ContextMenu items={minimalItems} onSelect={record} ariaLabel="Edit actions">
-				<div class="text-block">
-					Right-click anywhere in this paragraph to open a minimal three-item menu. The default
-					browser menu is suppressed so you only see the custom one — no double-menu collision.
+			<section>
+				<h3>Minimal menu</h3>
+				<p class="note">Three items, no dividers, no shortcuts.</p>
+				<div class="surface">
+					<ContextMenu items={minimalItems} onSelect={record} ariaLabel="Edit actions">
+						<div class="text-block">
+							Right-click anywhere in this paragraph to open a minimal three-item menu. The default
+							browser menu is suppressed so you only see the custom one.
+						</div>
+					</ContextMenu>
 				</div>
-			</ContextMenu>
-		</div>
-	</section>
+			</section>
 
-	<section class="demo">
-		<h2>3. Danger styling — red destructive items</h2>
-		<p class="caption">
-			Items with <code>danger: true</code> render in red so destructive choices read at a glance.
-			Pair with <code>HoldToConfirm</code> for the actual commit gesture.
-		</p>
-		<div class="surface">
-			<ContextMenu items={dangerItems} onSelect={record} ariaLabel="Trash actions">
-				<div class="trash-row">
-					<span class="file-icon">🗑️</span>
-					<span class="file-name">old-design-draft.fig</span>
-					<span class="file-meta">Trashed 5 days ago</span>
+			<section>
+				<h3>Danger styling</h3>
+				<p class="note">
+					Items with <code>danger: true</code> render in red so destructive choices read at a glance.
+				</p>
+				<div class="surface">
+					<ContextMenu items={dangerItems} onSelect={record} ariaLabel="Trash actions">
+						<div class="trash-row">
+							<span class="file-icon">🗑️</span>
+							<span class="file-name">old-design-draft.fig</span>
+							<span class="file-meta">Trashed 5 days ago</span>
+						</div>
+					</ContextMenu>
 				</div>
-			</ContextMenu>
-		</div>
-	</section>
+			</section>
 
-	<section class="demo">
-		<h2>4. Disabled trigger</h2>
-		<p class="caption">
-			With <code>disabled</code> the trigger ignores right-click and keyboard activators;
-			<code>aria-disabled</code> reflects the state. Use this while a parent action is in flight.
-		</p>
-		<div class="surface">
-			<ContextMenu items={minimalItems} onSelect={record} disabled>
-				<div class="text-block disabled-block">
-					This trigger is disabled — right-click does nothing.
-				</div>
-			</ContextMenu>
-		</div>
-	</section>
-
-	<section class="readout">
-		{#if lastSelected}
-			<span>
-				Last selected: <code>{lastSelected}</code>
-			</span>
-		{:else}
-			<span>Right-click any of the targets above to start.</span>
-		{/if}
-		{#if selectionLog.length > 0}
-			<ul class="log">
-				{#each selectionLog as entry (entry.at + entry.id)}
-					<li>
-						<code>{entry.id}</code>
-						<span class="log-time">@ {entry.at}</span>
-					</li>
-				{/each}
-			</ul>
-		{/if}
-	</section>
-
-	<section class="meta">
-		<div class="meta-grid">
-			<div class="meta-card">
-				<h3>Pointer + keyboard parity</h3>
-				<p>
-					Right-click opens at the click point. <kbd>Shift</kbd>+<kbd>F10</kbd> and the dedicated
-					<kbd>ContextMenu</kbd> key open anchored to the trigger's bottom-left. <kbd>↑</kbd>/<kbd
-						>↓</kbd
-					>
-					navigate (skipping dividers and disabled), <kbd>Home</kbd>/<kbd>End</kbd> jump to the first /
-					last enabled item, <kbd>Enter</kbd>/<kbd>Space</kbd> activate, <kbd>Esc</kbd>/<kbd>Tab</kbd
-					>
-					close. No 2-step click fakery — the keyboard contract matches WAI-ARIA's menu pattern.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Auto-positioning</h3>
-				<p>
-					<code>clampToViewport</code> flips the menu when it would overflow the right or bottom edge,
-					with an 8 px safety padding so the menu never sits flush against the viewport edge. The flip
-					happens after the menu mounts and measures, so the helper sees real dimensions, not a guess.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Native menu suppression</h3>
-				<p>
-					<code>event.preventDefault()</code> on the trigger's <code>contextmenu</code> event so the
-					page never shows two menus at once. The default browser menu still works on the rest of the
-					page — only the wrapped target is intercepted.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Declarative items</h3>
-				<p>
-					Items are a single prop array of <code>{'{ id, label, shortcut?, disabled?, danger? }'}</code
-					>
-					or <code>{'{ type: "divider" }'}</code>. <code>normalizeItems</code> strips invalid entries,
-					dedupes by id, and coerces optional fields to safe defaults — so untrusted input from a
-					feature flag or remote config can't crash the menu.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Reduced-motion bypass</h3>
-				<p>
-					<code>prefers-reduced-motion: reduce</code> skips the entrance animation. The contract —
-					open, navigate, select, close — is preserved; only the visual transition is removed.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Mount-on-open</h3>
-				<p>
-					The menu is only mounted while open, so when closed there is zero DOM cost beyond the
-					trigger wrapper. No <code>requestAnimationFrame</code>, no <code>ResizeObserver</code>.
-					Position is computed once on open and held until close.
-				</p>
+			<div class="readout">
+				{#if lastSelected}
+					<span>Last selected: <code>{lastSelected}</code></span>
+				{:else}
+					<span>Right-click any of the targets above to start.</span>
+				{/if}
+				{#if selectionLog.length > 0}
+					<ul class="log">
+						{#each selectionLog as entry (entry.at + entry.id)}
+							<li>
+								<code>{entry.id}</code>
+								<span class="log-time">@ {entry.at}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</div>
 		</div>
-	</section>
-</main>
+	{/snippet}
+
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>items</code></td>
+					<td><code>ContextMenuItem[]</code></td>
+					<td>—</td>
+					<td>Required. Either <code>{'{ id, label, shortcut?, disabled?, danger? }'}</code> or <code>{'{ type: "divider" }'}</code>.</td>
+				</tr>
+				<tr>
+					<td><code>onSelect</code></td>
+					<td><code>(id) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when an item is activated.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Context menu'</code></td>
+					<td>Menu label for assistive tech.</td>
+				</tr>
+				<tr>
+					<td><code>disabled</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Ignore right-click and keyboard activators on the trigger.</td>
+				</tr>
+				<tr>
+					<td><code>children</code></td>
+					<td><code>Snippet</code></td>
+					<td>—</td>
+					<td>The trigger element(s) to wrap.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 1100px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem 6rem;
-		color: #e6e6e6;
+	.ctx-demo {
+		display: grid;
+		gap: 2rem;
 	}
 
-	.hero {
-		margin-bottom: 3rem;
+	.ctx-demo h3 {
+		font-size: 0.95rem;
+		margin: 0 0 0.45rem;
+		color: var(--fg-1);
 	}
 
-	.hero h1 {
-		font-size: clamp(2.5rem, 5vw, 4rem);
-		margin: 0 0 0.5rem;
-		background: linear-gradient(135deg, #ffffff, #c9c9d1, #6d6d7a);
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		font-weight: 800;
-		letter-spacing: -0.02em;
+	.note {
+		margin: 0 0 0.85rem;
+		color: var(--fg-2);
+		font-size: 0.88rem;
+		line-height: 1.55;
 	}
 
-	.hero p {
-		font-size: 1.125rem;
-		line-height: 1.6;
-		max-width: 720px;
-		color: #a8a8b8;
+	.note code,
+	.readout code {
+		background: var(--surface-2, var(--surface));
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.25rem;
+		font-size: 0.875em;
 	}
 
-	.hero code,
-	.caption code,
-	.meta-card code {
-		background: #1a1a2e;
-		padding: 0.1em 0.35em;
-		border-radius: 4px;
-		font-size: 0.9em;
-		color: #c9c9d1;
-	}
-
-	kbd {
+	.note kbd {
 		font-family: 'Fira Code', monospace;
-		background: #1a1a2e;
-		border: 1px solid #2a2a3e;
+		background: var(--surface-2, var(--surface));
+		border: 1px solid var(--border);
 		border-bottom-width: 2px;
 		padding: 0.1em 0.45em;
 		border-radius: 4px;
 		font-size: 0.85em;
-		color: #c9c9d1;
-	}
-
-	.demo {
-		margin-bottom: 3rem;
-	}
-
-	.demo h2 {
-		font-size: 1.5rem;
-		margin: 0 0 0.5rem;
-		color: #fff;
-	}
-
-	.caption {
-		color: #8c8c9c;
-		font-size: 0.95rem;
-		margin: 0 0 1.5rem;
-		line-height: 1.6;
 	}
 
 	.surface {
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
+		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 12px;
-		padding: 1.5rem;
+		padding: 1.25rem;
 		display: flex;
 		justify-content: center;
 	}
@@ -282,64 +218,51 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.75rem 1rem;
-		background: #1a1a2e;
+		background: var(--surface-2, var(--surface));
+		border: 1px solid var(--border);
 		border-radius: 8px;
-		min-width: 360px;
+		min-width: 320px;
 		cursor: context-menu;
 	}
 
 	.file-icon {
-		font-size: 1.5rem;
+		font-size: 1.4rem;
 	}
 
 	.file-name {
-		flex: 0 0 auto;
-		color: #e6e6e6;
 		font-weight: 500;
+		color: var(--fg-1);
 	}
 
 	.file-meta {
-		flex: 1 1 auto;
+		flex: 1;
 		text-align: right;
-		color: #8c8c9c;
+		color: var(--fg-2);
 		font-size: 0.85rem;
 	}
 
 	.text-block {
 		max-width: 520px;
 		padding: 1rem 1.25rem;
-		background: #1a1a2e;
+		background: var(--surface-2, var(--surface));
+		border: 1px solid var(--border);
 		border-radius: 8px;
-		color: #c9c9d1;
-		line-height: 1.6;
+		color: var(--fg-1);
+		line-height: 1.55;
 		font-size: 0.95rem;
 		cursor: context-menu;
 	}
 
-	.disabled-block {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
 	.readout {
-		margin: 0 0 4rem;
-		padding: 1.25rem 1.5rem;
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
+		padding: 1rem 1.25rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 12px;
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 0.6rem;
 		font-size: 0.9rem;
-		color: #a8a8b8;
-	}
-
-	.readout code {
-		background: #1a1a2e;
-		padding: 0.1em 0.45em;
-		border-radius: 4px;
-		color: #38bdf8;
-		font-family: 'Fira Code', monospace;
+		color: var(--fg-2);
 	}
 
 	.log {
@@ -348,44 +271,12 @@
 		padding: 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 0.3rem;
 	}
 
 	.log-time {
-		color: #6d6d7a;
+		color: var(--fg-2);
 		font-size: 0.85em;
 		margin-left: 0.5rem;
-	}
-
-	.meta {
-		margin-top: 4rem;
-		border-top: 1px solid #1f1f3a;
-		padding-top: 3rem;
-	}
-
-	.meta-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.meta-card {
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
-		border-radius: 12px;
-		padding: 1.25rem;
-	}
-
-	.meta-card h3 {
-		font-size: 1rem;
-		margin: 0 0 0.5rem;
-		color: #c9c9d1;
-	}
-
-	.meta-card p {
-		margin: 0;
-		font-size: 0.875rem;
-		line-height: 1.6;
-		color: #a8a8b8;
 	}
 </style>

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import StreamShowcase from '$lib/components/StreamShowcase/StreamShowcase.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import type { Playlist } from '$lib/components/StreamShowcase/types';
+
+	const shell = catalogShellPropsForSlug('/streamshowcase')!;
 
 	let lastSelected = $state<Playlist | null>(null);
 	let active = $state(5);
@@ -8,198 +12,178 @@
 	function handleSelect(p: Playlist) {
 		lastSelected = p;
 	}
+
+	const usageSnippet = `<script>
+  import StreamShowcase from '$lib/components/StreamShowcase/StreamShowcase.svelte';
+
+  let active = $state(5);
+  function handleSelect(p) {
+    console.log('selected', p.slug);
+  }
+<\/script>
+
+<StreamShowcase bind:active onSelect={handleSelect} />`;
+
+	const codeExplanation =
+		'StreamShowcase pairs a brush-script hero with a 10-card fan carousel. Side cards splay around a pivot below the deck; click a side card to bring it to centre, drag horizontally to spin, or use Arrow / Home / End / Enter for keyboard control. No external assets — card art is pure CSS gradients with color-mix tints.';
 </script>
 
 <svelte:head>
-	<title>StreamShowcase · Svelte 5 Templates</title>
+	<title>StreamShowcase — TFE / Svelte Templates</title>
 	<meta
 		name="description"
-		content="Editorial streaming-platform shelf with brush-script hero and 10-card fan carousel. Click, drag or use arrow keys."
+		content="Editorial streaming-platform shelf with brush-script hero and 10-card fan carousel."
 	/>
 </svelte:head>
 
-<main class="page">
-	<header class="intro">
-		<a class="back" href="/">← All components</a>
-		<h1>StreamShowcase</h1>
-		<p class="lede">
-			A statement-piece editorial section combining a brush-script hero with a 10-card fan carousel
-			that splays cards around a shared pivot below the deck. Click a side card to bring it to
-			centre. Drag horizontally to spin the fan. Arrow keys, Home / End, Enter all wired.
-		</p>
-	</header>
-
-	<StreamShowcase bind:active onSelect={handleSelect} class="showcase-frame" />
-
-	<section class="meta">
-		<div class="meta-card">
-			<h2>State</h2>
-			<dl>
-				<dt>Active card index</dt>
-				<dd><code>{active}</code></dd>
-				<dt>Last selected playlist</dt>
-				<dd>
-					{#if lastSelected}
-						<code>{lastSelected.slug}</code> — {lastSelected.title}
-					{:else}
-						<em>None yet — press Enter on the centre card</em>
-					{/if}
-				</dd>
-			</dl>
+<ComponentPageShell
+	{...shell.props}
+	{usageSnippet}
+	{codeExplanation}
+	tags={['Svelte 5', 'Carousel', 'Drag', 'Keyboard', 'Asset-free']}
+>
+	{#snippet demo()}
+		<div class="ss-shell">
+			<StreamShowcase bind:active onSelect={handleSelect} class="ss-frame" />
 		</div>
 
-		<div class="meta-card">
-			<h2>Try it</h2>
-			<ul>
-				<li><kbd>←</kbd> / <kbd>→</kbd> — browse</li>
-				<li><kbd>Home</kbd> / <kbd>End</kbd> — jump to first / last</li>
-				<li><kbd>Enter</kbd> on centre — select (fires <code>onSelect</code>)</li>
-				<li>Click side card — bring to centre</li>
-				<li>Drag horizontally — spin the fan, snap on release</li>
-			</ul>
+		<div class="ss-meta">
+			<div class="ss-meta__card">
+				<h3>State</h3>
+				<dl>
+					<dt>Active card index</dt>
+					<dd><code>{active}</code></dd>
+					<dt>Last selected playlist</dt>
+					<dd>
+						{#if lastSelected}
+							<code>{lastSelected.slug}</code> — {lastSelected.title}
+						{:else}
+							<em>None yet — press Enter on the centre card</em>
+						{/if}
+					</dd>
+				</dl>
+			</div>
+			<div class="ss-meta__card">
+				<h3>Try it</h3>
+				<ul>
+					<li><kbd>←</kbd> / <kbd>→</kbd> — browse</li>
+					<li><kbd>Home</kbd> / <kbd>End</kbd> — jump to first / last</li>
+					<li><kbd>Enter</kbd> on centre — fires <code>onSelect</code></li>
+					<li>Click side card — bring to centre</li>
+					<li>Drag horizontally — spin and snap</li>
+				</ul>
+			</div>
 		</div>
+	{/snippet}
 
-		<div class="meta-card">
-			<h2>M1 scope</h2>
-			<p>
-				This is milestone 1: hero + carousel + interactions only. The FLIP modal, inline YouTube
-				playback, and <code>?playlist=slug</code> URL sync are scoped for M2 / M3.
-			</p>
-		</div>
-
-		<div class="meta-card">
-			<h2>Asset-free</h2>
-			<p>
-				No external images, no GSAP, no font CDN. Card art is pure CSS gradients with
-				<code>color-mix()</code> tints. The brush-script title falls back through
-				<code>'Caveat Brush' → 'Caveat' → cursive</code>; install
-				<code>@fontsource/caveat-brush</code> in your app for crisp rendering.
-			</p>
-		</div>
-
-		<div class="meta-card">
-			<h2>Reduced motion</h2>
-			<p>
-				When <code>prefers-reduced-motion: reduce</code> is set: letter entrance is skipped, card
-				deal-out is skipped, and drag-to-rotate is disabled. Click and keyboard navigation continue
-				to work — just without the animated transitions between states.
-			</p>
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>active</code></td>
+					<td><code>number</code></td>
+					<td><code>5</code></td>
+					<td>Bindable — index of the centred card.</td>
+				</tr>
+				<tr>
+					<td><code>onSelect</code></td>
+					<td><code>(p: Playlist) =&gt; void</code></td>
+					<td><code>undefined</code></td>
+					<td>Fires when the centre card is activated (Enter or click).</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Pass-through class for the outer frame.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		min-height: 100vh;
-		background: #fff;
-		color: #0f172a;
+	.ss-shell {
+		margin: -8px;
 	}
-
-	.intro {
-		max-width: 900px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem 2rem;
-	}
-	.back {
-		display: inline-block;
-		margin-bottom: 1.25rem;
-		font-size: 0.85rem;
-		color: #475569;
-		text-decoration: none;
-	}
-	.back:hover {
-		color: #0f172a;
-	}
-	.intro h1 {
-		margin: 0 0 0.5rem;
-		font-size: 2rem;
-		font-weight: 700;
-	}
-	.lede {
-		margin: 0;
-		color: #475569;
-		line-height: 1.6;
-		max-width: 60ch;
-	}
-
-	:global(.showcase-frame) {
-		border-radius: 1.25rem;
-		margin: 0 1.5rem;
-		max-width: calc(1400px - 3rem);
-		margin-left: auto;
-		margin-right: auto;
+	:global(.ss-frame) {
+		border-radius: var(--r-2);
+		overflow: hidden;
 		box-shadow:
 			0 50px 100px -40px rgba(15, 23, 42, 0.25),
 			0 4px 12px -2px rgba(15, 23, 42, 0.08);
-		overflow: hidden;
 	}
-
-	.meta {
+	.ss-meta {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 1rem;
-		max-width: 1100px;
-		margin: 3rem auto 4rem;
-		padding: 0 1.5rem;
+		gap: 12px;
+		margin-top: 20px;
 	}
-
-	.meta-card {
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.75rem;
-		padding: 1.25rem 1.5rem;
+	.ss-meta__card {
+		display: grid;
+		gap: 8px;
+		padding: 16px 18px;
+		border-radius: var(--r-2);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--fg-1);
 	}
-	.meta-card h2 {
-		margin: 0 0 0.75rem;
-		font-size: 0.95rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
-	}
-	.meta-card p,
-	.meta-card li,
-	.meta-card dt,
-	.meta-card dd {
-		font-size: 0.875rem;
-		line-height: 1.55;
-		color: #334155;
-	}
-	.meta-card ul {
-		list-style: none;
-		padding: 0;
+	.ss-meta__card h3 {
 		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 14px;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
 	}
-	.meta-card dl {
+	.ss-meta__card dl {
 		margin: 0;
 		display: grid;
 		grid-template-columns: max-content 1fr;
-		gap: 0.5rem 1rem;
+		gap: 4px 12px;
 	}
-	.meta-card dt {
-		color: #64748b;
-		font-weight: 500;
+	.ss-meta__card dt {
+		color: var(--fg-3);
+		font-size: 13px;
 	}
-	.meta-card dd {
+	.ss-meta__card dd {
 		margin: 0;
+		color: var(--fg-2);
+		font-size: 13px;
 	}
-	.meta-card code {
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.8125rem;
-		background: #fff;
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.25rem;
-		border: 1px solid #e2e8f0;
+	.ss-meta__card ul {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 6px;
+		color: var(--fg-2);
+		font-size: 13px;
 	}
-	.meta-card kbd {
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.75rem;
-		background: #fff;
-		padding: 0.1rem 0.4rem;
-		margin: 0 0.1rem;
-		border: 1px solid #cbd5e1;
+	.ss-meta__card kbd {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		background: var(--surface-2);
+		padding: 1px 6px;
+		margin: 0 2px;
+		border: 1px solid var(--border-strong);
 		border-bottom-width: 2px;
-		border-radius: 0.25rem;
+		border-radius: var(--r-1);
+		color: var(--fg-1);
+	}
+	.ss-meta__card code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 6px;
+		border-radius: var(--r-1);
 	}
 </style>

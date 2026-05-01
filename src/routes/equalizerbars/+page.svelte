@@ -1,409 +1,229 @@
+<!--
+	EqualizerBars Demo Page (TFE shell)
+-->
+
 <script lang="ts">
 	import EqualizerBars from '$lib/components/EqualizerBars.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/equalizerbars')!;
+
+	const usageSnippet = `<script>
+  import EqualizerBars from '$lib/components/EqualizerBars.svelte';
+<\/script>
+
+<EqualizerBars variant="equalizer" bars={16} height={96} color="#38bdf8" />`;
+
+	const codeExplanation =
+		'EqualizerBars draws N vertical bars and animates each with a CSS keyframe at a phase-shifted negative animation-delay. The visible wave is an illusion built from N independent CSS clocks — no JS clock, no rAF. Variants swap the keyframe shape (sine, peak-biased, binary, double-spike). Inactive mode freezes the bars at deterministic seeded heights for SSR-stable empty states.';
 </script>
 
 <svelte:head>
-	<title>EqualizerBars · TFE Svelte Templates</title>
+	<title>EqualizerBars — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Compact 'things are alive' indicator. Four variants, four sizes, fully decorative."
+	/>
 </svelte:head>
 
-<main class="page">
-	<header class="hero">
-		<h1>EqualizerBars</h1>
-		<p>
-			A compact "things are alive" indicator. N vertical bars oscillating in concert via phased CSS
-			keyframes — looks like an audio spectrum analyser frozen in motion. Decorative only; pure
-			CSS; <code>transform: scaleY()</code> on the GPU. Each bar shares one keyframe but starts at a
-			different point via negative <code>animation-delay</code>, so the wave is an illusion built
-			from N independent CSS clocks.
-		</p>
-	</header>
-
-	<section class="demo">
-		<h2>1. The four variants</h2>
-		<p class="caption">
-			Each variant is a distinct rhythm — not a colour swap. Same speed, same bar count, different
-			keyframe.
-		</p>
-		<div class="variant-grid">
-			<div class="variant-card">
-				<div class="variant-vis"><EqualizerBars variant="equalizer" bars={16} height={96} color="#38bdf8" /></div>
-				<h3>equalizer</h3>
-				<p>Smooth sine, ease-in-out alternate. Classic music-app meter.</p>
-			</div>
-			<div class="variant-card">
-				<div class="variant-vis"><EqualizerBars variant="spectrum" bars={16} height={96} color="#a78bfa" /></div>
-				<h3>spectrum</h3>
-				<p>Peak-biased FFT shape. Cubic bezier easing.</p>
-			</div>
-			<div class="variant-card">
-				<div class="variant-vis"><EqualizerBars variant="pulse" bars={16} height={96} color="#10b981" /></div>
-				<h3>pulse</h3>
-				<p>Binary high/low via <code>steps(2)</code>. Heartbeat-monitor cadence.</p>
-			</div>
-			<div class="variant-card">
-				<div class="variant-vis"><EqualizerBars variant="heartbeat" bars={16} height={96} color="#ff3a6e" /></div>
-				<h3>heartbeat</h3>
-				<p>Sparse double-spike with long tail. EKG / vitals.</p>
-			</div>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>2. Streaming-now badge — small + currentColor</h2>
-		<p class="caption">
-			Tucked next to a title; <code>color="auto"</code> picks up <code>currentColor</code> from the
-			parent. The indicator says "live" without competing with the headline.
-		</p>
-		<div class="badge-row">
-			<div class="badge">
-				<span class="badge-dot" style="color: #10b981;">
-					<EqualizerBars variant="pulse" bars={4} height={16} speed={1.4} color="auto" />
-				</span>
-				<span>LIVE — Operations dashboard</span>
-			</div>
-			<div class="badge">
-				<span class="badge-dot" style="color: #38bdf8;">
-					<EqualizerBars variant="equalizer" bars={5} height={16} speed={1.6} color="auto" />
-				</span>
-				<span>Agent thinking</span>
-			</div>
-			<div class="badge">
-				<span class="badge-dot" style="color: #ff3a6e;">
-					<EqualizerBars variant="heartbeat" bars={4} height={16} speed={1.2} color="auto" />
-				</span>
-				<span>Patient monitor — bay 4</span>
-			</div>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>3. Speed sweep — same variant, different cadence</h2>
-		<p class="caption">
-			<code>speed</code> is clamped to <code>[0.25, 4]</code>. The cycle duration scales inversely
-			— at <code>4×</code> the meter is twitchy; at <code>0.25×</code> it's almost meditative.
-		</p>
-		<div class="speed-grid">
-			<div class="speed-card">
-				<EqualizerBars variant="spectrum" bars={20} height={80} speed={0.25} color="#94a3b8" />
-				<h3>0.25×</h3>
-				<p>4.8s cycle — meditative</p>
-			</div>
-			<div class="speed-card">
-				<EqualizerBars variant="spectrum" bars={20} height={80} speed={1} color="#a78bfa" />
-				<h3>1× (default)</h3>
-				<p>1.2s cycle</p>
-			</div>
-			<div class="speed-card">
-				<EqualizerBars variant="spectrum" bars={20} height={80} speed={4} color="#f472b6" />
-				<h3>4×</h3>
-				<p>0.3s cycle — twitchy</p>
-			</div>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>4. Inactive state — frozen silhouette</h2>
-		<p class="caption">
-			With <code>active={false}</code> the bars freeze at deterministic seeded heights. Same
-			<code>seed</code> always produces the same silhouette — SSR-stable. Use this for "ready when
-			you are" empty states.
-		</p>
-		<div class="speed-grid">
-			<div class="speed-card">
-				<EqualizerBars active={false} bars={24} height={80} seed={1} color="#64748b" />
-				<h3>seed = 1</h3>
-				<p>Frozen, deterministic</p>
-			</div>
-			<div class="speed-card">
-				<EqualizerBars active={false} bars={24} height={80} seed={42} color="#64748b" />
-				<h3>seed = 42</h3>
-				<p>Different silhouette</p>
-			</div>
-			<div class="speed-card">
-				<EqualizerBars active={false} bars={24} height={80} seed={1337} color="#64748b" />
-				<h3>seed = 1337</h3>
-				<p>Different again</p>
-			</div>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>5. Density sweep — 4 bars to 48 bars</h2>
-		<p class="caption">
-			Bar count clamped to <code>[1, 64]</code>. Stagger-step (9% of base duration) is small enough
-			that no two adjacent bars phase-lock even at <code>bars=64</code>.
-		</p>
-		<div class="density-stack">
-			<div class="density-row">
-				<span class="density-label">4</span>
-				<EqualizerBars variant="equalizer" bars={4} height={48} color="#38bdf8" />
-			</div>
-			<div class="density-row">
-				<span class="density-label">12</span>
-				<EqualizerBars variant="equalizer" bars={12} height={48} color="#38bdf8" />
-			</div>
-			<div class="density-row">
-				<span class="density-label">24</span>
-				<EqualizerBars variant="equalizer" bars={24} height={48} color="#38bdf8" />
-			</div>
-			<div class="density-row">
-				<span class="density-label">48</span>
-				<EqualizerBars variant="equalizer" bars={48} height={48} color="#38bdf8" />
-			</div>
-		</div>
-	</section>
-
-	<section class="meta">
-		<div class="meta-grid">
-			<div class="meta-card">
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'CSS-only', 'Decorative', 'Reduced-motion safe']}
+	{usageSnippet}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="eq-demo">
+			<section class="eq-section">
 				<h3>Four variants</h3>
-				<p>
-					<code>equalizer</code> / <code>spectrum</code> / <code>pulse</code> /
-					<code>heartbeat</code>. Each is a distinct keyframe shape — peak-biased, binary,
-					double-spike, smooth sine.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Phase-stagger illusion</h3>
-				<p>
-					Negative <code>animation-delay</code> per bar. N independent CSS clocks rendering as one
-					travelling wave with zero JS.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Pure CSS</h3>
-				<p>
-					Zero <code>requestAnimationFrame</code>, zero canvas, zero <code>ResizeObserver</code>.
-					GPU-composited <code>transform: scaleY()</code>.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Seeded inactive state</h3>
-				<p>
-					<code>seededHeights(count, seed)</code> uses a mulberry32-derived LCG. Same input →
-					same output. SSR-stable.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Reduced-motion safe</h3>
-				<p>
-					JS probe in <code>onMount</code> + CSS <code>@media</code> fallback. Bars freeze at
-					seeded silhouette — the indicator still reads, just without motion.
-				</p>
-			</div>
-			<div class="meta-card">
-				<h3>Decorative-only</h3>
-				<p>
-					<code>role="img"</code> + configurable <code>aria-label</code>. Bars are
-					<code>aria-hidden</code>. No focus, no value, no real audio.
-				</p>
-			</div>
+				<div class="eq-grid">
+					<div class="eq-card">
+						<div class="eq-vis"><EqualizerBars variant="equalizer" bars={16} height={96} color="#38bdf8" /></div>
+						<h4>equalizer</h4>
+						<p>Smooth sine — classic music meter.</p>
+					</div>
+					<div class="eq-card">
+						<div class="eq-vis"><EqualizerBars variant="spectrum" bars={16} height={96} color="#a78bfa" /></div>
+						<h4>spectrum</h4>
+						<p>Peak-biased FFT shape.</p>
+					</div>
+					<div class="eq-card">
+						<div class="eq-vis"><EqualizerBars variant="pulse" bars={16} height={96} color="#10b981" /></div>
+						<h4>pulse</h4>
+						<p>Binary high/low — heartbeat cadence.</p>
+					</div>
+					<div class="eq-card">
+						<div class="eq-vis"><EqualizerBars variant="heartbeat" bars={16} height={96} color="#ff3a6e" /></div>
+						<h4>heartbeat</h4>
+						<p>Sparse double-spike with long tail.</p>
+					</div>
+				</div>
+			</section>
+
+			<section class="eq-section">
+				<h3>Live status badges</h3>
+				<div class="eq-badges">
+					<div class="eq-badge">
+						<span style="color: #10b981; display: inline-flex;">
+							<EqualizerBars variant="pulse" bars={4} height={16} speed={1.4} color="auto" />
+						</span>
+						<span>LIVE — Operations dashboard</span>
+					</div>
+					<div class="eq-badge">
+						<span style="color: #38bdf8; display: inline-flex;">
+							<EqualizerBars variant="equalizer" bars={5} height={16} speed={1.6} color="auto" />
+						</span>
+						<span>Agent thinking</span>
+					</div>
+				</div>
+			</section>
+
+			<section class="eq-section">
+				<h3>Inactive — seeded silhouette</h3>
+				<div class="eq-grid">
+					<div class="eq-card">
+						<EqualizerBars active={false} bars={24} height={80} seed={1} color="#64748b" />
+						<h4>seed = 1</h4>
+					</div>
+					<div class="eq-card">
+						<EqualizerBars active={false} bars={24} height={80} seed={42} color="#64748b" />
+						<h4>seed = 42</h4>
+					</div>
+					<div class="eq-card">
+						<EqualizerBars active={false} bars={24} height={80} seed={1337} color="#64748b" />
+						<h4>seed = 1337</h4>
+					</div>
+				</div>
+			</section>
 		</div>
-	</section>
-</main>
+	{/snippet}
+
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>variant</code></td>
+					<td><code>'equalizer' | 'spectrum' | 'pulse' | 'heartbeat'</code></td>
+					<td><code>'equalizer'</code></td>
+					<td>Keyframe shape — not just a colour swap.</td>
+				</tr>
+				<tr>
+					<td><code>bars</code></td>
+					<td><code>number</code></td>
+					<td><code>16</code></td>
+					<td>Bar count. Clamped to <code>[1, 64]</code>.</td>
+				</tr>
+				<tr>
+					<td><code>height</code></td>
+					<td><code>number</code></td>
+					<td><code>96</code></td>
+					<td>Container height in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>color</code></td>
+					<td><code>string</code></td>
+					<td><code>'currentColor'</code></td>
+					<td>Bar fill colour. Use <code>'auto'</code> for currentColor inheritance.</td>
+				</tr>
+				<tr>
+					<td><code>speed</code></td>
+					<td><code>number</code></td>
+					<td><code>1</code></td>
+					<td>Cycle multiplier. Clamped to <code>[0.25, 4]</code>.</td>
+				</tr>
+				<tr>
+					<td><code>active</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>When false, freezes the bars at <code>seed</code>-based heights.</td>
+				</tr>
+				<tr>
+					<td><code>seed</code></td>
+					<td><code>number</code></td>
+					<td><code>1</code></td>
+					<td>Deterministic silhouette seed for the inactive state.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 1100px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem 6rem;
-		color: #e6e6e6;
+	.eq-demo {
+		display: grid;
+		gap: 24px;
 	}
-
-	.hero {
-		margin-bottom: 3rem;
+	.eq-section {
+		display: grid;
+		gap: 10px;
 	}
-
-	.hero h1 {
-		font-size: clamp(2.5rem, 5vw, 4rem);
-		margin: 0 0 0.5rem;
-		background: linear-gradient(135deg, #ffffff, #c9c9d1, #6d6d7a);
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		font-weight: 800;
-		letter-spacing: -0.02em;
+	.eq-section h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	.hero p {
-		font-size: 1.125rem;
-		line-height: 1.6;
-		max-width: 720px;
-		color: #a8a8b8;
-	}
-
-	.hero code,
-	.caption code,
-	.meta-card code,
-	.variant-card code {
-		background: #1a1a2e;
-		padding: 0.1em 0.35em;
-		border-radius: 4px;
-		font-size: 0.9em;
-		color: #c9c9d1;
-	}
-
-	.demo {
-		margin-bottom: 4rem;
-	}
-
-	.demo h2 {
-		font-size: 1.5rem;
-		margin: 0 0 0.5rem;
-		color: #fff;
-	}
-
-	.caption {
-		color: #8c8c9c;
-		font-size: 0.95rem;
-		margin: 0 0 1.5rem;
-		line-height: 1.6;
-	}
-
-	.variant-grid {
+	.eq-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1rem;
+		gap: 12px;
 	}
-
-	.variant-card {
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
+	.eq-card {
+		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 12px;
-		padding: 1.5rem;
+		padding: 18px;
 		text-align: center;
 	}
-
-	.variant-vis {
+	.eq-vis {
 		display: flex;
 		justify-content: center;
 		align-items: flex-end;
 		min-height: 100px;
-		margin-bottom: 1rem;
+		margin-bottom: 12px;
 	}
-
-	.variant-card h3 {
-		margin: 0 0 0.25rem;
-		font-family: 'Fira Code', monospace;
-		font-size: 0.95rem;
-		color: #c9c9d1;
+	.eq-card h4 {
+		margin: 0 0 4px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--fg-1);
 	}
-
-	.variant-card p {
+	.eq-card p {
 		margin: 0;
-		font-size: 0.85rem;
-		color: #8c8c9c;
+		font-size: 13px;
+		color: var(--fg-2);
 		line-height: 1.5;
 	}
 
-	.badge-row {
+	.eq-badges {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 10px;
 	}
-
-	.badge {
+	.eq-badge {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.6rem;
-		padding: 0.6rem 0.9rem;
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
+		gap: 10px;
+		padding: 10px 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 999px;
-		font-size: 0.95rem;
-		color: #e6e6e6;
+		font-size: 14px;
+		color: var(--fg-1);
 		width: fit-content;
-	}
-
-	.badge-dot {
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.speed-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1rem;
-	}
-
-	.speed-card {
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
-		border-radius: 12px;
-		padding: 1.5rem;
-		text-align: center;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.75rem;
-	}
-
-	.speed-card h3 {
-		margin: 0;
-		font-family: 'Fira Code', monospace;
-		font-size: 1rem;
-		color: #c9c9d1;
-	}
-
-	.speed-card p {
-		margin: 0;
-		font-size: 0.85rem;
-		color: #8c8c9c;
-	}
-
-	.density-stack {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
-		border-radius: 12px;
-		padding: 1.5rem 2rem;
-	}
-
-	.density-row {
-		display: grid;
-		grid-template-columns: 4ch 1fr;
-		align-items: center;
-		gap: 1.25rem;
-	}
-
-	.density-label {
-		font-family: 'Fira Code', monospace;
-		font-size: 0.9rem;
-		color: #6d6d7a;
-		text-align: right;
-	}
-
-	.meta {
-		margin-top: 5rem;
-		border-top: 1px solid #1f1f3a;
-		padding-top: 3rem;
-	}
-
-	.meta-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.meta-card {
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
-		border-radius: 12px;
-		padding: 1.25rem;
-	}
-
-	.meta-card h3 {
-		font-size: 1rem;
-		margin: 0 0 0.5rem;
-		color: #c9c9d1;
-	}
-
-	.meta-card p {
-		margin: 0;
-		font-size: 0.875rem;
-		line-height: 1.6;
-		color: #a8a8b8;
 	}
 </style>

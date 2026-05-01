@@ -639,6 +639,92 @@ export function themeSupportLabel(themeSupport: ComponentCatalogItem['themeSuppo
 	return themeSupport === 'dual' ? 'Light and dark mode' : 'Light mode';
 }
 
+/**
+ * Derive the bulk of `<ComponentPageShell />` props from a catalog entry.
+ *
+ * Demo pages should spread the result, then add what only they know about
+ * (tags, codeExplanation, sometimes a richer usage snippet, custom resources).
+ *
+ *   <ComponentPageShell
+ *     {...shellPropsFromCatalog(category, item)}
+ *     tags={['Svelte 5', 'Hover']}
+ *     codeExplanation="..."
+ *   >
+ *     {#snippet demo()}…{/snippet}
+ *     {#snippet api()}…{/snippet}
+ *   </ComponentPageShell>
+ *
+ * Returns Pick<…> rather than the whole shell prop type so we don't import
+ * a Svelte component into a plain TS module (which would force the catalog
+ * to compile against the Svelte runtime).
+ */
+export interface CatalogShellProps {
+	name: string;
+	category: string;
+	description: string;
+	source: string;
+	demoPath: string;
+	dependencies: string[];
+	usageSnippet?: string;
+	agentSteps: string[];
+	install: string;
+	resources: { label: string; href: string }[];
+	codeFileName: string;
+}
+
+const REPO_BLOB = 'https://github.com/Jktfe/tfeSvelteTemplates/blob/main/';
+
+export function shellPropsFromCatalog(
+	category: ComponentCatalogCategory,
+	item: ComponentCatalogItem
+): CatalogShellProps {
+	const sourceFile = item.source.split('/').pop() ?? item.source;
+	const docsLabel = item.docs.split('/').pop() ?? item.docs;
+
+	const resources: { label: string; href: string }[] = [
+		{ label: `Source · ${sourceFile}`, href: REPO_BLOB + item.source }
+	];
+	for (const file of item.relatedFiles.slice(0, 2)) {
+		const label = file.split('/').pop() ?? file;
+		resources.push({ label, href: REPO_BLOB + file });
+	}
+	resources.push({ label: `Docs · ${docsLabel}`, href: REPO_BLOB + item.docs });
+
+	return {
+		name: item.name,
+		category: category.name,
+		description: item.description,
+		source: item.source,
+		demoPath: item.demo,
+		dependencies: item.dependencies.length
+			? item.dependencies
+			: ['Svelte 5+', 'Zero external dependencies'],
+		usageSnippet: item.usage,
+		agentSteps: item.agentHint ? [item.agentHint] : [],
+		install: `cp ${item.source} ./src/lib/components/`,
+		resources,
+		codeFileName: sourceFile
+	};
+}
+
+/**
+ * Convenience for migrated demo pages: pass the slug, get back the matching
+ * (category, item) pair plus the shell-prop bundle in one go.
+ *
+ *   const { props, item, category } = catalogShellPropsForSlug('/magiccard');
+ */
+export function catalogShellPropsForSlug(href: string):
+	| { props: CatalogShellProps; item: ComponentCatalogItem; category: ComponentCatalogCategory }
+	| undefined {
+	const entry = getCatalogEntryByHref(href);
+	if (!entry) return undefined;
+	return {
+		props: shellPropsFromCatalog(entry.category, entry.item),
+		item: entry.item,
+		category: entry.category
+	};
+}
+
 export const iconColors: Record<string, { bg: string; text: string }> = {
 	'☰': { bg: '#dbeafe', text: '#1d4ed8' },
 	'⚡': { bg: '#fef3c7', text: '#d97706' },

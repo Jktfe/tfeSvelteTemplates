@@ -1,5 +1,9 @@
 <script lang="ts">
 	import TopologyColorGrid, { type TopologySwatch } from '$lib/components/TopologyColorGrid.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/topologycolorgrid')!;
 
 	const signalSwatches: TopologySwatch[] = [
 		{ id: 'ink', name: 'Ink Mesh', hex: '#0f172a', label: 'Node A1' },
@@ -10,104 +14,110 @@
 		{ id: 'clay', name: 'Clay Memory', hex: '#fecaca', label: 'Node E3' },
 		{ id: 'wine', name: 'Wine Gate', hex: '#7f1d1d', label: 'Node F6' }
 	];
+
+	const usageSnippet = `<script>
+  import TopologyColorGrid, {
+    type TopologySwatch
+  } from '$lib/components/TopologyColorGrid.svelte';
+
+  const swatches: TopologySwatch[] = [
+    { id: 'ink', name: 'Ink Mesh', hex: '#0f172a', label: 'Node A1' },
+    { id: 'flame', name: 'Flame Route', hex: '#ea580c', label: 'Core 01' }
+  ];
+<\/script>
+
+<TopologyColorGrid {swatches} />`;
+
+	const codeExplanation =
+		'TopologyColorGrid mounts a Three.js wireframe plane on a client-side canvas and uses GSAP to choreograph a staggered card reveal. The Three.js renderer, geometry, material, and the GSAP context are all torn down in onMount’s cleanup return, so unmount disposes the WebGL resources cleanly. The component owns the canvas; do not duplicate the renderer in a parent. WebGL is feature-detected before mount, so the cards still render if the GPU path is unavailable.';
 </script>
 
 <svelte:head>
-	<title>TopologyColorGrid | TFE Svelte Templates</title>
+	<title>TopologyColorGrid — TFE / Svelte Templates</title>
 	<meta
 		name="description"
-		content="A full-bleed Svelte 5 template for a Three.js and GSAP powered 3D colour topology grid."
+		content="Three.js + GSAP colour topology grid. Wireframe plane backdrop, staggered card reveal, swatches presented as accessible buttons."
 	/>
 </svelte:head>
 
-<main class="page">
-	<TopologyColorGrid swatches={signalSwatches} />
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Three.js', 'GSAP', 'Client-only']}
+	{usageSnippet}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<!-- Dark stage is deliberate demo content — Three.js wireframes only read on dark.
+		     The component owns the WebGL renderer and disposes everything on unmount. -->
+		<div class="tcg-stage">
+			<TopologyColorGrid swatches={signalSwatches} />
+		</div>
+	{/snippet}
 
-	<section class="detail">
-		<div>
-			<p class="eyebrow">Template Notes</p>
-			<h2>Layered swatches on a live topology plane</h2>
-		</div>
-		<div class="notes">
-			<article>
-				<h3>Three.js Wireframe</h3>
-				<p>Background geometry is client-only, animated, and disposed on unmount.</p>
-			</article>
-			<article>
-				<h3>Depth Controls</h3>
-				<p>Cards can sit in a stacked z-plane or flatten for a calmer presentation.</p>
-			</article>
-			<article>
-				<h3>Accessible Cards</h3>
-				<p>Every swatch is a real button with focus states, labels, and readable colour text.</p>
-			</article>
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>swatches</code></td>
+					<td><code>TopologySwatch[]</code></td>
+					<td>built-in palette</td>
+					<td>Array of <code>{'{ id, name, hex, label }'}</code> swatches.</td>
+				</tr>
+				<tr>
+					<td><code>title</code></td>
+					<td><code>string</code></td>
+					<td><code>'Chromatic Substrate Topology'</code></td>
+					<td>Heading copy above the grid.</td>
+				</tr>
+				<tr>
+					<td><code>subtitle</code></td>
+					<td><code>string</code></td>
+					<td><code>'Spatial Z-Index Mapping'</code></td>
+					<td>Eyebrow line above the title.</td>
+				</tr>
+				<tr>
+					<td><code>extruded</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Stack swatches in a z-plane (false flattens the layout).</td>
+				</tr>
+				<tr>
+					<td><code>interactive</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Whether swatches respond to hover/focus.</td>
+				</tr>
+				<tr>
+					<td><code>theme</code></td>
+					<td><code>'light' | 'dark'</code></td>
+					<td><code>'light'</code></td>
+					<td>Initial card theme.</td>
+				</tr>
+				<tr>
+					<td><code>showThemeToggle</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Show the inline light/dark toggle.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		min-height: 100vh;
+	/* Dark stage is deliberate demo content — the Three.js wireframe needs a dark backdrop. */
+	.tcg-stage {
 		background: #020617;
-		color: #f8fafc;
-	}
-
-	.detail {
-		width: min(1120px, calc(100% - 2rem));
-		margin: 0 auto;
-		padding: clamp(2.5rem, 6vw, 5rem) 0;
-		display: grid;
-		grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-		gap: 2rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.75rem;
-		color: #fbbf24;
-		font-size: 0.78rem;
-		font-weight: 850;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	h2,
-	h3,
-	p {
-		margin: 0;
-	}
-
-	h2 {
-		font-size: clamp(1.8rem, 4vw, 3.4rem);
-		line-height: 1.02;
-		letter-spacing: 0;
-	}
-
-	.notes {
-		display: grid;
-		gap: 0.75rem;
-	}
-
-	.notes article {
-		padding: 1rem;
-		border: 1px solid rgba(148, 163, 184, 0.22);
-		border-radius: 8px;
-		background: rgba(15, 23, 42, 0.72);
-	}
-
-	.notes h3 {
-		font-size: 1rem;
-		line-height: 1.2;
-	}
-
-	.notes p {
-		margin-top: 0.4rem;
-		color: #cbd5e1;
-		line-height: 1.55;
-	}
-
-	@media (max-width: 760px) {
-		.detail {
-			grid-template-columns: 1fr;
-		}
+		border-radius: var(--r-2);
+		overflow: hidden;
+		border: 1px solid var(--border);
 	}
 </style>

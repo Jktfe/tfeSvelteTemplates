@@ -1,5 +1,13 @@
+<!--
+	MagnetGrid Demo Page (TFE shell)
+-->
+
 <script lang="ts">
 	import MagnetGrid from '$lib/components/MagnetGrid.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/magnetgrid')!;
 
 	const icons = ['★', '◆', '◯', '▲', '✦', '◈', '✧', '◉'];
 	const emojis = ['🪐', '✨', '🌙', '☄️', '🌟', '💫', '🌠'];
@@ -11,277 +19,242 @@
 	let livePolicy = $state<'attract' | 'repel'>('attract');
 	let liveCellSize = $state(40);
 	let liveGap = $state(0);
+
+	const usageSnippet = `<script>
+  import MagnetGrid from '$lib/components/MagnetGrid.svelte';
+<\/script>
+
+<MagnetGrid cols={20} rows={12} cellSize={28} radius={150} strength={20} />`;
+
+	const codeExplanation =
+		'MagnetGrid renders a fixed grid of cells and applies a per-cell translate based on the cursor distance, with quadratic falloff to zero at the radius edge. Each cell is a separate composited layer, so the GPU runs the displacement; CSS handles the smoothing. Switch policy to "repel" and the cells flee instead of chasing.';
 </script>
 
 <svelte:head>
-	<title>MagnetGrid — TFE Svelte Templates</title>
+	<title>MagnetGrid — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Cursor-driven displacement field. Cells attract or repel from the pointer with smooth falloff."
+	/>
 </svelte:head>
 
-<main class="page">
-	<header class="hero">
-		<div class="hero__lede">
-			<span class="badge">Helpful UX</span>
-			<h1>🧲 MagnetGrid</h1>
-			<p>
-				A cursor-driven displacement field. Every cell in a grid shifts toward
-				(or away from) the pointer with a smooth quadratic falloff — like iron
-				filings under a roving magnet. Pure CSS transforms, no rAF, no canvas;
-				the GPU composites every offset on its own layer.
-			</p>
-		</div>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Cursor', 'Snippets', 'GPU-composited']}
+	{usageSnippet}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="mg-demo">
+			<section class="mg-section">
+				<h3>Default dot field</h3>
+				<div class="mg-stage mg-stage--dark">
+					<MagnetGrid cols={20} rows={12} cellSize={28} radius={150} strength={20} />
+				</div>
+			</section>
 
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Default dot field</h2>
-			<p>
-				Move your cursor across the grid. Each dot pulls toward the pointer,
-				with influence falling off smoothly to zero at the radius edge.
-			</p>
-		</div>
-		<div class="demo__stage demo__stage--dark">
-			<MagnetGrid cols={20} rows={12} cellSize={28} radius={150} strength={20} />
-		</div>
-	</section>
+			<section class="mg-section">
+				<h3>Icon grid — custom snippet content</h3>
+				<div class="mg-stage mg-stage--icon">
+					<MagnetGrid cols={12} rows={7} cellSize={40} radius={180} strength={26}>
+						{#snippet cell(row: number, col: number)}
+							<span class="mg-icon">{icons[(row + col) % icons.length]}</span>
+						{/snippet}
+					</MagnetGrid>
+				</div>
+			</section>
 
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Icon grid — custom snippet content</h2>
-			<p>
-				Pass a <code>cell</code> snippet and you control what each square
-				renders. Here every cell holds a Unicode glyph that warps with the
-				rest of the field.
-			</p>
-		</div>
-		<div class="demo__stage demo__stage--icon">
-			<MagnetGrid cols={12} rows={7} cellSize={40} radius={180} strength={26}>
-				{#snippet cell(row: number, col: number)}
-					<span class="icon">{icons[(row + col) % icons.length]}</span>
-				{/snippet}
-			</MagnetGrid>
-		</div>
-	</section>
+			<section class="mg-section">
+				<h3>Repel mode</h3>
+				<div class="mg-stage mg-stage--repel">
+					<MagnetGrid
+						cols={16}
+						rows={10}
+						cellSize={32}
+						radius={170}
+						strength={28}
+						policy="repel"
+					/>
+				</div>
+			</section>
 
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Repel mode — cursor pushes cells away</h2>
-			<p>
-				<code>policy="repel"</code> inverts the displacement direction. Cells
-				flee the cursor instead of chasing it — an "anti-magnet" backdrop.
-			</p>
+			<section class="mg-section">
+				<h3>Live controls</h3>
+				<div class="mg-controls">
+					<label>Cols <strong>{liveCols}</strong>
+						<input type="range" min="3" max="20" step="1" bind:value={liveCols} />
+					</label>
+					<label>Rows <strong>{liveRows}</strong>
+						<input type="range" min="3" max="14" step="1" bind:value={liveRows} />
+					</label>
+					<label>Radius <strong>{liveRadius}px</strong>
+						<input type="range" min="40" max="280" step="10" bind:value={liveRadius} />
+					</label>
+					<label>Strength <strong>{liveStrength}px</strong>
+						<input type="range" min="0" max="60" step="2" bind:value={liveStrength} />
+					</label>
+					<label>Cell size <strong>{liveCellSize}px</strong>
+						<input type="range" min="16" max="64" step="2" bind:value={liveCellSize} />
+					</label>
+					<label>Gap <strong>{liveGap}px</strong>
+						<input type="range" min="0" max="20" step="2" bind:value={liveGap} />
+					</label>
+					<label>Policy
+						<select bind:value={livePolicy}>
+							<option value="attract">Attract</option>
+							<option value="repel">Repel</option>
+						</select>
+					</label>
+				</div>
+				<div class="mg-stage mg-stage--emoji">
+					<MagnetGrid
+						cols={liveCols}
+						rows={liveRows}
+						radius={liveRadius}
+						strength={liveStrength}
+						policy={livePolicy}
+						cellSize={liveCellSize}
+						gap={liveGap}
+					>
+						{#snippet cell(row: number, col: number)}
+							<span class="mg-emoji">{emojis[(row * 7 + col * 3) % emojis.length]}</span>
+						{/snippet}
+					</MagnetGrid>
+				</div>
+			</section>
 		</div>
-		<div class="demo__stage demo__stage--repel">
-			<MagnetGrid
-				cols={16}
-				rows={10}
-				cellSize={32}
-				radius={170}
-				strength={28}
-				policy="repel"
-			/>
-		</div>
-	</section>
+	{/snippet}
 
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Emoji grid — wider gap, bigger cells</h2>
-			<p>Cell content can be anything. Increase <code>gap</code> for breathing room.</p>
-		</div>
-		<div class="demo__stage demo__stage--emoji">
-			<MagnetGrid cols={8} rows={5} cellSize={48} gap={8} radius={170} strength={22}>
-				{#snippet cell(row: number, col: number)}
-					<span class="emoji">{emojis[(row * 7 + col * 3) % emojis.length]}</span>
-				{/snippet}
-			</MagnetGrid>
-		</div>
-	</section>
-
-	<section class="demo">
-		<div class="demo__head">
-			<h2>Live controls</h2>
-			<p>Adjust grid dimensions, influence radius, strength, and policy in real time.</p>
-		</div>
-		<div class="controls">
-			<label>
-				Cols: <strong>{liveCols}</strong>
-				<input type="range" min="3" max="20" step="1" bind:value={liveCols} />
-			</label>
-			<label>
-				Rows: <strong>{liveRows}</strong>
-				<input type="range" min="3" max="14" step="1" bind:value={liveRows} />
-			</label>
-			<label>
-				Radius: <strong>{liveRadius}px</strong>
-				<input type="range" min="40" max="280" step="10" bind:value={liveRadius} />
-			</label>
-			<label>
-				Strength: <strong>{liveStrength}px</strong>
-				<input type="range" min="0" max="60" step="2" bind:value={liveStrength} />
-			</label>
-			<label>
-				Cell size: <strong>{liveCellSize}px</strong>
-				<input type="range" min="16" max="64" step="2" bind:value={liveCellSize} />
-			</label>
-			<label>
-				Gap: <strong>{liveGap}px</strong>
-				<input type="range" min="0" max="20" step="2" bind:value={liveGap} />
-			</label>
-			<label>
-				Policy:
-				<select bind:value={livePolicy}>
-					<option value="attract">Attract</option>
-					<option value="repel">Repel</option>
-				</select>
-			</label>
-		</div>
-		<div class="demo__stage demo__stage--live">
-			<MagnetGrid
-				cols={liveCols}
-				rows={liveRows}
-				radius={liveRadius}
-				strength={liveStrength}
-				policy={livePolicy}
-				cellSize={liveCellSize}
-				gap={liveGap}
-			/>
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>cols</code> / <code>rows</code></td>
+					<td><code>number</code></td>
+					<td>—</td>
+					<td>Grid dimensions.</td>
+				</tr>
+				<tr>
+					<td><code>cellSize</code></td>
+					<td><code>number</code></td>
+					<td><code>32</code></td>
+					<td>Cell size in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>gap</code></td>
+					<td><code>number</code></td>
+					<td><code>0</code></td>
+					<td>Gap between cells in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>radius</code></td>
+					<td><code>number</code></td>
+					<td><code>150</code></td>
+					<td>Cursor influence radius.</td>
+				</tr>
+				<tr>
+					<td><code>strength</code></td>
+					<td><code>number</code></td>
+					<td><code>20</code></td>
+					<td>Maximum per-cell displacement in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>policy</code></td>
+					<td><code>'attract' | 'repel'</code></td>
+					<td><code>'attract'</code></td>
+					<td>Toggle cells chasing or fleeing the cursor.</td>
+				</tr>
+				<tr>
+					<td><code>cell</code> snippet</td>
+					<td><code>(row, col) =&gt; …</code></td>
+					<td>—</td>
+					<td>Custom content rendered inside each cell.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 1100px;
-		margin: 0 auto;
-		padding: 2.5rem 1.5rem 4rem;
+	.mg-demo {
+		display: grid;
+		gap: 24px;
 	}
-
-	.hero {
-		margin-bottom: 3rem;
+	.mg-section {
+		display: grid;
+		gap: 10px;
 	}
-
-	.hero__lede {
-		max-width: 820px;
-	}
-
-	.badge {
-		display: inline-block;
-		background: #ede9fe;
-		color: #5b21b6;
-		font-size: 0.75rem;
-		letter-spacing: 0.05em;
+	.mg-section h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
 		text-transform: uppercase;
-		padding: 0.25rem 0.625rem;
-		border-radius: 999px;
-		margin-bottom: 0.75rem;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	h1 {
-		font-size: 2.5rem;
-		margin: 0 0 1rem;
-	}
-
-	.hero p {
-		font-size: 1.125rem;
-		color: #475569;
-		line-height: 1.6;
-		margin: 0;
-	}
-
-	.demo {
-		margin-bottom: 4rem;
-	}
-
-	.demo__head {
-		margin-bottom: 1.5rem;
-	}
-
-	.demo__head h2 {
-		font-size: 1.5rem;
-		margin: 0 0 0.5rem;
-	}
-
-	.demo__head p {
-		color: #64748b;
-		margin: 0;
-		line-height: 1.5;
-	}
-
-	.demo__head code {
-		background: #f1f5f9;
-		padding: 0.1rem 0.4rem;
-		border-radius: 4px;
-		font-size: 0.85em;
-	}
-
-	.demo__stage {
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
-		border-radius: 16px;
-		padding: 2.5rem 1rem;
+	.mg-stage {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		min-height: 360px;
+		padding: 32px 16px;
+		border-radius: 12px;
+		background: var(--surface);
+		border: 1px solid var(--border);
 	}
-
-	.demo__stage--dark {
+	.mg-stage--dark {
 		background: radial-gradient(circle at 50% 50%, #1e1b4b, #020617);
 		color: #fbbf24;
 	}
-
-	.demo__stage--icon {
+	.mg-stage--icon {
 		background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
 		color: #c4b5fd;
 		min-height: 420px;
 	}
-
-	.demo__stage--repel {
+	.mg-stage--repel {
 		background: radial-gradient(circle at 50% 50%, #4c1d95, #0c0a09);
 		color: #f9a8d4;
 	}
-
-	.demo__stage--emoji {
+	.mg-stage--emoji {
 		background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
 		color: #1f2937;
-		min-height: 380px;
+		min-height: 460px;
 	}
-
-	.demo__stage--live {
-		background: linear-gradient(135deg, #0c0a09 0%, #1c1917 100%);
-		color: #67e8f9;
-		min-height: 480px;
-	}
-
-	.icon {
-		font-size: 1.4rem;
+	.mg-icon {
+		font-size: 22px;
 		opacity: 0.85;
 	}
-
-	.emoji {
-		font-size: 1.6rem;
+	.mg-emoji {
+		font-size: 24px;
 	}
 
-	.controls {
+	.mg-controls {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1rem;
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 12px;
+		padding: 18px;
 		border-radius: 12px;
-		padding: 1.25rem;
-		margin-bottom: 1.5rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
 	}
-
-	.controls label {
+	.mg-controls label {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-		font-size: 0.875rem;
-		color: #334155;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--fg-2);
 	}
-
-	.controls input[type='range'],
-	.controls select {
+	.mg-controls input[type='range'],
+	.mg-controls select {
 		width: 100%;
 	}
 </style>

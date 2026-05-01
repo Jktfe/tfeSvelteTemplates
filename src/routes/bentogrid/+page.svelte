@@ -1,9 +1,11 @@
 <script lang="ts">
 	import BentoGrid from '$lib/components/BentoGrid.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import type { BentoItem } from '$lib/types';
-	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 
-	// Demo data for the Bento Grid showcase
+	const shell = catalogShellPropsForSlug('/bentogrid')!;
+
 	const demoItems: BentoItem[] = [
 		{
 			id: 1,
@@ -61,7 +63,6 @@
 		}
 	];
 
-	// Gallery style bento
 	const galleryItems: BentoItem[] = [
 		{
 			id: 'g1',
@@ -85,66 +86,101 @@
 			rowSpan: 1
 		}
 	];
+
+	const usageSnippet = `<script>
+  import BentoGrid from '$lib/components/BentoGrid.svelte';
+  import type { BentoItem } from '$lib/types';
+
+  const items: BentoItem[] = [
+    { id: 1, title: 'Core Engine', icon: '🚀', colSpan: 2, rowSpan: 2 },
+    { id: 2, title: 'Zero Deps', icon: '📦' },
+    // ...
+  ];
+<\/script>
+
+<BentoGrid {items} cols={3} gap={24} />`;
+
+	const codeExplanation =
+		'BentoGrid is a CSS-grid layout primitive: each item declares its colSpan and rowSpan, the grid auto-flows the rest. Pair it with image-only items for a gallery, or icon + description items for a feature wall.';
 </script>
 
 <svelte:head>
-	<title>Bento Grid | Svelte Templates</title>
-	<meta name="description" content="Responsive Bento-box style grid component for Svelte 5" />
+	<title>Bento Grid — TFE / Svelte Templates</title>
+	<meta name="description" content="Responsive Bento-box style grid component for Svelte 5." />
 </svelte:head>
 
-<div class="container mx-auto px-4 py-8">
-	<div class="mb-12">
-		<h1 class="text-4xl font-bold tracking-tight mb-4">Bento Grid</h1>
-		<p class="text-xl text-slate-600 dark:text-slate-400 mb-6">
-			A flexible, responsive grid system inspired by "Bento box" designs.
-		</p>
-		<DatabaseStatus usingDatabase={false} />
-	</div>
-
-	<!-- Feature Showcase -->
-	<section class="mb-20">
-		<h2 class="text-2xl font-semibold mb-8">Feature Showcase</h2>
-		<BentoGrid items={demoItems} cols={3} gap={24} />
-	</section>
-
-	<!-- Image Gallery Style -->
-	<section class="mb-20">
-		<h2 class="text-2xl font-semibold mb-8">Visual Gallery Style</h2>
-		<p class="text-slate-600 dark:text-slate-400 mb-8 max-w-2xl">
-			Bento grids are excellent for visual portfolios. Each tile can feature high-quality imagery with text overlays.
-		</p>
-		<BentoGrid items={galleryItems} cols={3} gap={16} itemClass="!justify-center text-center" />
-	</section>
-
-	<!-- Usage Info -->
-	<section class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
-		<h2 class="text-2xl font-semibold mb-4">Why use a Bento Grid?</h2>
-		<div class="grid md:grid-cols-3 gap-8">
-			<div>
-				<h3 class="font-bold mb-2">Visual Hierarchy</h3>
-				<p class="text-slate-600 dark:text-slate-400">
-					Varying tile sizes naturally guide the user's eye to the most important content.
-				</p>
-			</div>
-			<div>
-				<h3 class="font-bold mb-2">High Density</h3>
-				<p class="text-slate-600 dark:text-slate-400">
-					Pack a lot of information into a compact space without feeling cluttered.
-				</p>
-			</div>
-			<div>
-				<h3 class="font-bold mb-2">Refined Aesthetic</h3>
-				<p class="text-slate-600 dark:text-slate-400">
-					A modern, clean look that works perfectly for landing pages and dashboards.
-				</p>
-			</div>
+<ComponentPageShell
+	{...shell.props}
+	{usageSnippet}
+	{codeExplanation}
+	tags={['Svelte 5', 'CSS Grid', 'Responsive', 'Layout']}
+>
+	{#snippet demo()}
+		<div class="bg-section">
+			<h3>Feature showcase</h3>
+			<BentoGrid items={demoItems} cols={3} gap={24} />
 		</div>
-	</section>
-</div>
+		<div class="bg-section">
+			<h3>Visual gallery</h3>
+			<BentoGrid items={galleryItems} cols={3} gap={16} itemClass="!justify-center text-center" />
+		</div>
+	{/snippet}
+
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>items</code></td>
+					<td><code>BentoItem[]</code></td>
+					<td><code>[]</code></td>
+					<td>Items to render. Each can declare title, description, icon, image, colSpan and rowSpan.</td>
+				</tr>
+				<tr>
+					<td><code>cols</code></td>
+					<td><code>number</code></td>
+					<td><code>3</code></td>
+					<td>Number of columns in the grid.</td>
+				</tr>
+				<tr>
+					<td><code>gap</code></td>
+					<td><code>number</code></td>
+					<td><code>16</code></td>
+					<td>Gap between cells in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>itemClass</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Additional class applied to every item.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	/* Custom demo page styles */
-	.container {
-		max-width: 1200px;
+	.bg-section {
+		display: grid;
+		gap: 12px;
+	}
+	.bg-section + .bg-section {
+		margin-top: 24px;
+	}
+	.bg-section h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
 </style>

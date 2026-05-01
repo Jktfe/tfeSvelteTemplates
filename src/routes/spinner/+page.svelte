@@ -1,348 +1,223 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import Spinner from '$lib/components/Spinner.svelte';
 
-	// Live "Submit" demo — a button that flips into loading state for 1.5s.
-	let submitState = $state<'idle' | 'loading' | 'success'>('idle');
+	const shell = catalogShellPropsForSlug('/spinner')!;
 
+	let submitState = $state<'idle' | 'loading' | 'success'>('idle');
 	function fakeSubmit() {
 		if (submitState !== 'idle') return;
 		submitState = 'loading';
 		setTimeout(() => {
 			submitState = 'success';
-			setTimeout(() => {
-				submitState = 'idle';
-			}, 1200);
+			setTimeout(() => (submitState = 'idle'), 1200);
 		}, 1500);
 	}
 
-	// Live full-page overlay demo — toggle on for 2s.
 	let overlayVisible = $state(false);
 	function showOverlay() {
 		overlayVisible = true;
-		setTimeout(() => {
-			overlayVisible = false;
-		}, 2200);
+		setTimeout(() => (overlayVisible = false), 2200);
 	}
 </script>
 
 <svelte:head>
-	<title>Spinner · TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="page">
-	<header class="page-header">
-		<h1>🌀 Spinner</h1>
-		<p>
-			Indeterminate loading indicator with four visual variants. Pure CSS keyframes, zero
-			dependencies, inherits text colour by default, and respects
-			<code>prefers-reduced-motion</code>. Use it whenever you want to signal "something is
-			happening" but don't yet know how long it will take.
-		</p>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Loading', 'CSS-only', 'Theme-aware']}
+	codeExplanation="Spinner ships four pure-CSS variants — ring, dots, bars, and pulse — driven by @keyframes only. By default it inherits currentColor, so dropping it inside any coloured parent just works. The optional label prop renders a visible caption and is reused as aria-label so screen readers don't double-announce. role='status' + aria-live='polite' tells assistive tech to mention the change without interrupting. Under prefers-reduced-motion the animation softens to a calm fade."
+>
+	{#snippet demo()}
+		<div class="sp-stack">
+			<section class="sp-card">
+				<h3 class="sp-h3">Variants</h3>
+				<div class="sp-grid">
+					<div class="sp-cell"><Spinner variant="ring" size="lg" /><span class="sp-cap">ring</span></div>
+					<div class="sp-cell"><Spinner variant="dots" size="lg" /><span class="sp-cap">dots</span></div>
+					<div class="sp-cell"><Spinner variant="bars" size="lg" /><span class="sp-cap">bars</span></div>
+					<div class="sp-cell"><Spinner variant="pulse" size="lg" /><span class="sp-cap">pulse</span></div>
+				</div>
+			</section>
 
-	<section class="demo">
-		<h2>Variants</h2>
-		<p class="demo-note">
-			Pick the visual that fits your product's tone. <code>ring</code> is the universal default;
-			<code>dots</code> feels friendlier; <code>bars</code> hints at audio / processing;
-			<code>pulse</code> is calm and ambient.
-		</p>
-		<div class="variants-grid">
-			<div class="variant-cell">
-				<Spinner variant="ring" size="lg" />
-				<span class="variant-name">ring</span>
-			</div>
-			<div class="variant-cell">
-				<Spinner variant="dots" size="lg" />
-				<span class="variant-name">dots</span>
-			</div>
-			<div class="variant-cell">
-				<Spinner variant="bars" size="lg" />
-				<span class="variant-name">bars</span>
-			</div>
-			<div class="variant-cell">
-				<Spinner variant="pulse" size="lg" />
-				<span class="variant-name">pulse</span>
-			</div>
+			<section class="sp-card">
+				<h3 class="sp-h3">Sizes &amp; labels</h3>
+				<div class="sp-row">
+					<Spinner size="sm" />
+					<Spinner size="md" />
+					<Spinner size="lg" />
+				</div>
+				<div class="sp-row sp-row--col">
+					<Spinner label="Loading data" />
+					<Spinner variant="dots" label="Saving changes" />
+					<Spinner variant="bars" label="Processing audio" />
+				</div>
+			</section>
+
+			<section class="sp-card">
+				<h3 class="sp-h3">Custom colour</h3>
+				<div class="sp-row">
+					<Spinner size="lg" color="#10b981" />
+					<Spinner size="lg" color="#3b82f6" variant="dots" />
+					<Spinner size="lg" color="#f59e0b" variant="bars" />
+					<Spinner size="lg" color="#ef4444" variant="pulse" />
+				</div>
+			</section>
+
+			<section class="sp-card">
+				<h3 class="sp-h3">Inside a button</h3>
+				<button
+					class="sp-submit"
+					class:loading={submitState === 'loading'}
+					class:success={submitState === 'success'}
+					disabled={submitState !== 'idle'}
+					onclick={fakeSubmit}
+				>
+					{#if submitState === 'loading'}
+						<Spinner size="sm" /> <span>Submitting…</span>
+					{:else if submitState === 'success'}
+						<span>✓ Saved</span>
+					{:else}
+						<span>Submit form</span>
+					{/if}
+				</button>
+
+				<button class="sp-ghost" onclick={showOverlay}>Show full-page overlay (2.2s)</button>
+				{#if overlayVisible}
+					<div class="sp-overlay" role="presentation">
+						<Spinner variant="ring" size="lg" label="Loading dashboard" />
+					</div>
+				{/if}
+			</section>
 		</div>
-	</section>
+	{/snippet}
 
-	<section class="demo">
-		<h2>Sizes</h2>
-		<p class="demo-note">
-			Three sizes — <code>sm</code> (16px), <code>md</code> (24px, default),
-			<code>lg</code> (36px). Sized in <code>em</code> so the optional label scales with them.
-		</p>
-		<div class="row">
-			<Spinner size="sm" />
-			<Spinner size="md" />
-			<Spinner size="lg" />
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>With label</h2>
-		<p class="demo-note">
-			Pass <code>label</code> to render a visible caption. The same string is used for
-			<code>aria-label</code> so screen readers don't announce twice.
-		</p>
-		<div class="row stack">
-			<Spinner label="Loading data" />
-			<Spinner variant="dots" label="Saving changes" />
-			<Spinner variant="bars" label="Processing audio" />
-			<Spinner variant="pulse" label="Listening for updates" />
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Custom colour</h2>
-		<p class="demo-note">
-			By default the spinner inherits its parent's <code>currentColor</code>. Pass
-			<code>color</code> to override.
-		</p>
-		<div class="row">
-			<Spinner size="lg" color="#10b981" />
-			<Spinner size="lg" color="#3b82f6" variant="dots" />
-			<Spinner size="lg" color="#f59e0b" variant="bars" />
-			<Spinner size="lg" color="#ef4444" variant="pulse" />
-		</div>
-		<p class="demo-note">
-			…or just style the parent's text colour, no <code>color</code> prop needed:
-		</p>
-		<div class="row">
-			<span class="purple">
-				<Spinner size="lg" />
-			</span>
-			<span class="cyan">
-				<Spinner size="lg" variant="dots" />
-			</span>
-			<span class="rose">
-				<Spinner size="lg" variant="bars" />
-			</span>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Inside a button</h2>
-		<p class="demo-note">
-			The classic "submitting" pattern. Click the button — it shows a small spinner alongside the
-			text for 1.5s, then flips to a success state for 1.2s.
-		</p>
-		<button
-			class="submit-btn"
-			class:loading={submitState === 'loading'}
-			class:success={submitState === 'success'}
-			disabled={submitState !== 'idle'}
-			onclick={fakeSubmit}
-		>
-			{#if submitState === 'loading'}
-				<Spinner size="sm" />
-				<span>Submitting…</span>
-			{:else if submitState === 'success'}
-				<span>✓ Saved</span>
-			{:else}
-				<span>Submit form</span>
-			{/if}
-		</button>
-	</section>
-
-	<section class="demo">
-		<h2>Full-page overlay</h2>
-		<p class="demo-note">
-			Centre a large spinner over a translucent backdrop while a slow operation runs. Click the
-			button to trigger a 2.2s overlay.
-		</p>
-		<button class="ghost-btn" onclick={showOverlay}>Show overlay</button>
-		{#if overlayVisible}
-			<div class="overlay" role="presentation">
-				<Spinner variant="ring" size="lg" label="Loading dashboard" />
-			</div>
-		{/if}
-	</section>
-
-	<section class="features">
-		<h2>Features</h2>
-		<ul>
-			<li>✅ Four variants — ring / dots / bars / pulse</li>
-			<li>✅ Three sizes — sm / md / lg</li>
-			<li>✅ Inherits <code>currentColor</code> by default</li>
-			<li>✅ Custom colour via <code>color</code> prop (forwarded as CSS custom property)</li>
-			<li>✅ Optional visible <code>label</code> (also exposed to AT)</li>
-			<li>✅ <code>role="status"</code> + <code>aria-live="polite"</code></li>
-			<li>✅ Honours <code>prefers-reduced-motion</code> with a calm fade fallback</li>
-			<li>✅ Pure CSS <code>@keyframes</code> — no JS animation loop</li>
-			<li>✅ Zero dependencies, fully copy-paste portable</li>
-		</ul>
-	</section>
-
-	<section class="usage">
-		<h2>Usage</h2>
-		<pre><code>{`<script lang="ts">
-  import Spinner from '$lib/components/Spinner.svelte';
-</`+`script>
-
-<!-- Default (ring, md, inherits currentColor) -->
-<Spinner />
-
-<!-- Inside a button while submitting -->
-<button class="loading" disabled>
-  <Spinner size="sm" />
-  Submitting…
-</button>
-
-<!-- Centred page-level loading -->
-<Spinner size="lg" variant="dots" label="Loading data" />
-
-<!-- Custom colour -->
-<Spinner color="#10b981" />`}</code></pre>
-	</section>
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>variant</code></td>
+					<td><code>"ring" | "dots" | "bars" | "pulse"</code></td>
+					<td><code>"ring"</code></td>
+					<td>Visual style of the spinner animation.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>"sm" | "md" | "lg"</code></td>
+					<td><code>"md"</code></td>
+					<td>16px / 24px / 36px. Sized in em so labels scale too.</td>
+				</tr>
+				<tr>
+					<td><code>color</code></td>
+					<td><code>string</code></td>
+					<td><code>currentColor</code></td>
+					<td>Override the inherited colour with any CSS colour.</td>
+				</tr>
+				<tr>
+					<td><code>label</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Visible caption rendered alongside the spinner.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td>derived from label</td>
+					<td>Accessible name when label is empty.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>""</code></td>
+					<td>Extra class names forwarded to the root.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 64rem;
-		margin: 0 auto;
-		padding: 2rem 1rem 4rem;
-	}
-
-	.page-header {
-		margin-bottom: 2.5rem;
-		text-align: center;
-	}
-
-	.page-header h1 {
-		font-size: 2.25rem;
-		margin: 0 0 0.5rem;
-	}
-
-	.page-header p {
-		color: #4b5563;
-		max-width: 42rem;
-		margin: 0 auto;
-		line-height: 1.6;
-	}
-
-	.demo {
-		margin-bottom: 3rem;
-	}
-
-	.demo h2,
-	.features h2,
-	.usage h2 {
-		font-size: 1.25rem;
-		margin: 0 0 0.5rem;
-		color: #111827;
-	}
-
-	.demo-note {
-		color: #6b7280;
-		font-size: 0.95rem;
-		margin: 0 0 1.25rem;
-		max-width: 42rem;
-	}
-
-	.demo-note code,
-	.features code {
-		background: #f3f4f6;
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.25rem;
-		font-size: 0.875em;
-	}
-
-	.variants-grid {
+	.sp-stack { display: grid; gap: 16px; }
+	.sp-card {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
-		gap: 1.25rem;
+		gap: 12px;
+		padding: 18px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		background: var(--surface);
 	}
-
-	.variant-cell {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 1.5rem 1rem;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
-		border-radius: 0.5rem;
-		color: #4f46e5;
+	.sp-h3 {
+		margin: 0;
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
 	}
-
-	.variant-name {
-		font-size: 0.875rem;
-		color: #6b7280;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	.sp-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+		gap: 14px;
 	}
-
-	.row {
+	.sp-cell {
+		display: grid;
+		justify-items: center;
+		gap: 8px;
+		padding: 18px 12px;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		color: var(--accent);
+	}
+	.sp-cap {
+		font: 12px var(--font-mono);
+		color: var(--fg-3);
+	}
+	.sp-row {
 		display: flex;
 		flex-wrap: wrap;
+		gap: 18px;
 		align-items: center;
-		gap: 1.5rem;
-		margin-bottom: 1rem;
 	}
-
-	.row.stack {
+	.sp-row--col {
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 0.75rem;
+		gap: 10px;
 	}
-
-	.purple {
-		color: #8b5cf6;
-	}
-	.cyan {
-		color: #06b6d4;
-	}
-	.rose {
-		color: #f43f5e;
-	}
-
-	.submit-btn {
+	.sp-submit {
+		align-self: start;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1.25rem;
-		background: #4f46e5;
-		color: #ffffff;
-		border: none;
-		border-radius: 0.5rem;
-		font-size: 0.95rem;
-		font-weight: 500;
+		gap: 8px;
+		padding: 10px 18px;
+		background: var(--accent);
+		color: #fff;
+		border: 0;
+		border-radius: var(--r-2);
+		font: 500 14px var(--font-sans);
 		cursor: pointer;
-		transition: background 150ms ease;
 		min-width: 11rem;
 		justify-content: center;
 	}
-
-	.submit-btn:hover:not(:disabled) {
-		background: #4338ca;
-	}
-
-	.submit-btn:disabled {
-		cursor: progress;
-		opacity: 0.85;
-	}
-
-	.submit-btn.success {
-		background: #059669;
-	}
-
-	.ghost-btn {
-		padding: 0.625rem 1.25rem;
-		background: #ffffff;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 0.95rem;
-		font-weight: 500;
-		color: #374151;
+	.sp-submit:disabled { cursor: progress; opacity: 0.85; }
+	.sp-submit.success { background: #059669; }
+	.sp-ghost {
+		align-self: start;
+		padding: 8px 14px;
+		background: var(--surface-2);
+		color: var(--fg-1);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		font: 500 13px var(--font-sans);
 		cursor: pointer;
 	}
-
-	.ghost-btn:hover {
-		background: #f3f4f6;
-	}
-
-	.overlay {
+	.sp-overlay {
 		position: fixed;
 		inset: 0;
 		background: rgba(15, 23, 42, 0.55);
@@ -350,30 +225,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #ffffff;
+		color: #fff;
 		z-index: 100;
-	}
-
-	.features ul {
-		list-style: none;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-		gap: 0.5rem 1.25rem;
-		color: #374151;
-	}
-
-	.features li {
-		line-height: 1.6;
-	}
-
-	.usage pre {
-		background: #0f172a;
-		color: #e2e8f0;
-		padding: 1rem 1.25rem;
-		border-radius: 0.5rem;
-		overflow-x: auto;
-		font-size: 0.875rem;
-		line-height: 1.5;
 	}
 </style>

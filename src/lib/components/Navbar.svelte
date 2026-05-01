@@ -77,7 +77,9 @@
 		menuItems = [],           // [NTL] Legacy flat list (for backwards compatibility)
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		currentPageTitle = 'Home', // [NTL] Shows which page you're on
-		logoIcon = '⚡',          // [NTL] The emoji/icon next to the logo
+		logoIcon = '⚡',          // [NTL] The emoji/icon next to the logo (used when logoSrc is empty)
+		logoSrc = '',             // [NTL] Optional image (e.g. an SVG logo) shown instead of the emoji
+		logoAlt = '',             // [NTL] Alt text for logoSrc (falls back to logoText)
 		logoText = 'Svelte Templates', // [NTL] The text in the logo
 		logoHref = '/',           // [NTL] Where clicking the logo takes you
 		isAuthConfigured = false, // [NTL] Whether authentication is enabled
@@ -271,7 +273,11 @@
 			</button>
 
 			<a href={logoHref} class="navbar-logo">
-				<span class="navbar-logo-icon" aria-hidden="true">{logoIcon}</span>
+				{#if logoSrc}
+					<img class="navbar-logo-img" src={logoSrc} alt={logoAlt || logoText} width="28" height="28" />
+				{:else}
+					<span class="navbar-logo-icon" aria-hidden="true">{logoIcon}</span>
+				{/if}
 				<span class="navbar-logo-text">{logoText}</span>
 			</a>
 		</div>
@@ -523,7 +529,7 @@
 	}
 
 	.hamburger-button:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: 2px;
 	}
 
@@ -568,7 +574,7 @@
 	}
 
 	.navbar-logo:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: 4px;
 		border-radius: 4px;
 	}
@@ -576,6 +582,13 @@
 	.navbar-logo-icon {
 		font-size: 1.375rem;
 		line-height: 1;
+	}
+
+	.navbar-logo-img {
+		width: 28px;
+		height: 28px;
+		display: block;
+		flex-shrink: 0;
 	}
 
 	.navbar-logo-text {
@@ -616,7 +629,7 @@
 	}
 
 	.github-button:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: 2px;
 	}
 
@@ -632,7 +645,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0.5rem 1rem;
-		background-color: #007aff;
+		background-color: var(--accent, #004695);
 		color: white;
 		text-decoration: none;
 		border: none;
@@ -651,7 +664,7 @@
 
 	.auth-button:focus,
 	.auth-buttons button:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: 2px;
 	}
 
@@ -978,29 +991,43 @@
 	}
 
 	.panel-menu-link:hover {
-		background-color: rgba(0, 122, 255, 0.05);
-		color: #007aff;
+		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
+		color: var(--accent, #004695);
 	}
 
 	.panel-menu-link:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: -2px;
-		background-color: rgba(0, 122, 255, 0.05);
+		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
 	}
 
 	.panel-menu-link.active {
-		color: #007aff;
+		color: var(--accent, #004695);
 		font-weight: 600;
-		background-color: rgba(0, 122, 255, 0.08);
-		border-left-color: #007aff;
+		background-color: color-mix(in srgb, var(--accent, #004695) 10%, transparent);
+		border-left-color: var(--accent, #004695);
 	}
 
+	/*
+	 * TFE editorial style: hide emoji icons in the slide-out menu and
+	 * replace them with monospace markers driven by CSS counters. Keeps
+	 * the data shape intact while honouring the "no emoji" voice.
+	 */
 	.panel-menu-icon {
-		font-size: 1.375rem;
-		line-height: 1;
-		width: 1.5rem;
-		text-align: center;
+		font-size: 0;
+		line-height: 0;
+		width: 1.25rem;
 		flex-shrink: 0;
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+	.panel-menu-icon::before {
+		content: '·';
+		font:
+			500 18px/1 var(--font-mono, 'IBM Plex Mono', 'JetBrains Mono', monospace);
+		color: var(--fg-3, #777e85);
 	}
 
 	.panel-menu-label {
@@ -1011,7 +1038,7 @@
 	.panel-menu-indicator {
 		width: 0.375rem;
 		height: 0.375rem;
-		background-color: #007aff;
+		background-color: var(--accent, #004695);
 		border-radius: 50%;
 		margin-left: auto;
 		flex-shrink: 0;
@@ -1056,12 +1083,12 @@
 	}
 
 	.panel-category-header:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: -2px;
 	}
 
 	.panel-category-header.has-active {
-		color: #007aff;
+		color: var(--accent, #004695);
 	}
 
 	/* Single-item category link (like Home) */
@@ -1078,26 +1105,41 @@
 	}
 
 	.panel-category-link:hover {
-		background-color: rgba(0, 122, 255, 0.05);
-		color: #007aff;
+		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
+		color: var(--accent, #004695);
 	}
 
 	.panel-category-link:focus {
-		outline: 2px solid #007aff;
+		outline: 2px solid var(--accent, #004695);
 		outline-offset: -2px;
 	}
 
 	.panel-category-link.active {
-		color: #007aff;
-		background-color: rgba(0, 122, 255, 0.08);
+		color: var(--accent, #004695);
+		background-color: color-mix(in srgb, var(--accent, #004695) 10%, transparent);
 	}
 
+	/* TFE editorial: numbered category markers replace the emoji */
+	.panel-categories {
+		counter-reset: panel-cat;
+	}
 	.panel-category-icon {
-		font-size: 1.125rem;
-		line-height: 1;
-		width: 1.25rem;
-		text-align: center;
+		font-size: 0;
+		line-height: 0;
+		width: 1.75rem;
 		flex-shrink: 0;
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-start;
+	}
+	.panel-category-icon::before {
+		counter-increment: panel-cat;
+		content: counter(panel-cat, decimal-leading-zero);
+		font:
+			500 11px/1 var(--font-mono, 'IBM Plex Mono', 'JetBrains Mono', monospace);
+		letter-spacing: 0.1em;
+		color: var(--accent, #004695);
 	}
 
 	.panel-category-name {
@@ -1145,21 +1187,20 @@
 	}
 
 	:global(.panel-category-items .panel-menu-link:hover) {
-		background-color: rgba(0, 122, 255, 0.05);
-		color: #007aff;
+		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
+		color: var(--accent, #004695);
 	}
 
 	:global(.panel-category-items .panel-menu-link.active) {
-		color: #007aff;
+		color: var(--accent, #004695);
 		font-weight: 600;
-		background-color: rgba(0, 122, 255, 0.08);
+		background-color: color-mix(in srgb, var(--accent, #004695) 10%, transparent);
 	}
 
 	:global(.panel-category-items .panel-menu-icon) {
-		font-size: 1rem;
-		width: 1.25rem;
-		line-height: 1;
-		text-align: center;
+		font-size: 0;
+		width: 1rem;
+		line-height: 0;
 		flex-shrink: 0;
 	}
 
@@ -1171,7 +1212,7 @@
 	:global(.panel-category-items .panel-menu-indicator) {
 		width: 0.375rem;
 		height: 0.375rem;
-		background-color: #007aff;
+		background-color: var(--accent, #004695);
 		border-radius: 50%;
 		margin-left: auto;
 		flex-shrink: 0;

@@ -1,160 +1,213 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import BadgePill from '$lib/components/BadgePill.svelte';
 
+	const shell = catalogShellPropsForSlug('/badgepill')!;
+
 	let tags = $state(['Frontend', 'TypeScript', 'Svelte', 'Accessibility']);
-	function removeTag(tag: string) {
-		tags = tags.filter((t) => t !== tag);
-	}
-	function resetTags() {
-		tags = ['Frontend', 'TypeScript', 'Svelte', 'Accessibility'];
-	}
+	function removeTag(tag: string) { tags = tags.filter((t) => t !== tag); }
+	function resetTags() { tags = ['Frontend', 'TypeScript', 'Svelte', 'Accessibility']; }
 
 	const tones = ['neutral', 'info', 'success', 'warning', 'danger', 'brand'] as const;
 	const variants = ['soft', 'solid', 'outline'] as const;
 </script>
 
 <svelte:head>
-	<title>BadgePill | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-4xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">BadgePill</h1>
-			<p class="text-xl text-muted-foreground">
-				A compact rounded pill with 3 variants × 6 tones × 3 sizes — 54 ready-made looks from one component.
-			</p>
-		</header>
-
-		<!-- Variant × Tone matrix -->
-		<section class="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm space-y-8">
-			<h2 class="text-2xl font-semibold">Variant × Tone matrix</h2>
-
-			{#each variants as variant (variant)}
-				<div class="space-y-3">
-					<h3 class="text-sm font-medium text-neutral-500 uppercase tracking-wide">
-						{variant}
-					</h3>
-					<div class="flex flex-wrap gap-2">
-						{#each tones as tone (tone)}
-							<BadgePill label={tone} {tone} {variant} />
-						{/each}
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Status', 'Tags', 'Theme-aware']}
+	codeExplanation="BadgePill is one component, fifty-four looks: three variants (soft / solid / outline), six semantic tones (neutral / info / success / warning / danger / brand), and three sizes. Pass dot for a leading status indicator, dismissible for a × button. Children can be a snippet for richer content (icons, bold sub-strings, counters). All colour combinations meet WCAG AA contrast and the dismiss button is fully keyboard accessible."
+>
+	{#snippet demo()}
+		<div class="bp-stack">
+			<section class="bp-card">
+				<h3 class="bp-h3">Variant × Tone matrix</h3>
+				{#each variants as variant (variant)}
+					<div class="bp-row">
+						<span class="bp-row-label">{variant}</span>
+						<div class="bp-row-pills">
+							{#each tones as tone (tone)}
+								<BadgePill label={tone} {tone} {variant} />
+							{/each}
+						</div>
 					</div>
-				</div>
-			{/each}
-		</section>
-
-		<!-- Sizes -->
-		<section class="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm space-y-4">
-			<h2 class="text-2xl font-semibold">Sizes</h2>
-			<div class="flex items-center gap-3 flex-wrap">
-				<BadgePill label="Small" tone="info" size="sm" />
-				<BadgePill label="Medium (default)" tone="info" size="md" />
-				<BadgePill label="Large" tone="info" size="lg" />
-			</div>
-		</section>
-
-		<!-- Status dots -->
-		<section class="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm space-y-4">
-			<h2 class="text-2xl font-semibold">Status indicators (with dot)</h2>
-			<div class="flex flex-wrap gap-2">
-				<BadgePill label="Active" tone="success" dot />
-				<BadgePill label="Pending" tone="warning" dot />
-				<BadgePill label="Failed" tone="danger" dot />
-				<BadgePill label="Draft" tone="neutral" dot />
-				<BadgePill label="Beta" tone="brand" dot variant="solid" />
-				<BadgePill label="Reviewing" tone="info" dot variant="outline" />
-			</div>
-		</section>
-
-		<!-- Dismissible tags -->
-		<section class="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm space-y-4">
-			<h2 class="text-2xl font-semibold">Dismissible tag picker</h2>
-			<p class="text-sm text-neutral-500">
-				Click the × on any pill to remove it. The state is local to this page.
-			</p>
-			<div class="flex flex-wrap gap-2 min-h-[2rem]">
-				{#each tags as tag (tag)}
-					<BadgePill
-						label={tag}
-						tone="info"
-						dismissible
-						onDismiss={() => removeTag(tag)}
-					/>
 				{/each}
-				{#if tags.length === 0}
-					<span class="text-sm text-neutral-400 italic">All tags dismissed.</span>
-				{/if}
-			</div>
-			<button
-				type="button"
-				onclick={resetTags}
-				class="text-sm font-medium text-blue-600 hover:underline"
-			>
-				Reset tags
-			</button>
-		</section>
+			</section>
 
-		<!-- Real-world example: PR row -->
-		<section class="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm space-y-4">
-			<h2 class="text-2xl font-semibold">In context: pull request row</h2>
-			<div class="border border-neutral-200 rounded-lg p-4 flex items-center gap-3 flex-wrap">
-				<span class="font-medium text-neutral-900">#1247</span>
-				<span class="text-neutral-700">feat: add BadgePill component to library</span>
-				<BadgePill label="ready" tone="success" dot size="sm" />
-				<BadgePill label="frontend" tone="info" variant="outline" size="sm" />
-				<BadgePill label="needs-review" tone="warning" size="sm" />
-				<BadgePill label="+12 / -3" tone="neutral" variant="outline" size="sm" />
-			</div>
-		</section>
+			<section class="bp-card">
+				<h3 class="bp-h3">Sizes</h3>
+				<div class="bp-row-pills">
+					<BadgePill label="Small" tone="info" size="sm" />
+					<BadgePill label="Medium (default)" tone="info" size="md" />
+					<BadgePill label="Large" tone="info" size="lg" />
+				</div>
+			</section>
 
-		<!-- Custom snippet content -->
-		<section class="bg-white rounded-2xl p-8 border border-neutral-200 shadow-sm space-y-4">
-			<h2 class="text-2xl font-semibold">Custom snippet content</h2>
-			<p class="text-sm text-neutral-500">
-				Pass children as a snippet for more than just plain text.
-			</p>
-			<div class="flex flex-wrap gap-2">
-				<BadgePill tone="brand" variant="solid">
-					✨ <strong>Pro</strong>
-				</BadgePill>
-				<BadgePill tone="success">
-					<strong>3</strong>&nbsp;passing
-				</BadgePill>
-				<BadgePill tone="danger">
-					<strong>1</strong>&nbsp;failing
-				</BadgePill>
-			</div>
-		</section>
+			<section class="bp-card">
+				<h3 class="bp-h3">Status indicators</h3>
+				<div class="bp-row-pills">
+					<BadgePill label="Active" tone="success" dot />
+					<BadgePill label="Pending" tone="warning" dot />
+					<BadgePill label="Failed" tone="danger" dot />
+					<BadgePill label="Draft" tone="neutral" dot />
+					<BadgePill label="Beta" tone="brand" dot variant="solid" />
+					<BadgePill label="Reviewing" tone="info" dot variant="outline" />
+				</div>
+			</section>
 
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Three variants (solid / soft / outline)</li>
-					<li>Six tones with semantic meaning</li>
-					<li>Three sizes (sm / md / lg)</li>
-					<li>Optional leading status dot</li>
-					<li>Optional dismiss <code>×</code> button</li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-				</ul>
-			</div>
+			<section class="bp-card">
+				<h3 class="bp-h3">Dismissible tag picker</h3>
+				<div class="bp-row-pills">
+					{#each tags as tag (tag)}
+						<BadgePill label={tag} tone="info" dismissible onDismiss={() => removeTag(tag)} />
+					{/each}
+					{#if tags.length === 0}
+						<span class="bp-empty">All tags dismissed.</span>
+					{/if}
+				</div>
+				<button class="bp-reset" type="button" onclick={resetTags}>Reset tags</button>
+			</section>
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre class="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
-  import BadgePill from '$lib/components/BadgePill.svelte';
-</${''}script>
+			<section class="bp-card">
+				<h3 class="bp-h3">In context · pull request row</h3>
+				<div class="bp-pr">
+					<span class="bp-pr-num">#1247</span>
+					<span class="bp-pr-title">feat: add BadgePill component to library</span>
+					<BadgePill label="ready" tone="success" dot size="sm" />
+					<BadgePill label="frontend" tone="info" variant="outline" size="sm" />
+					<BadgePill label="needs-review" tone="warning" size="sm" />
+					<BadgePill label="+12 / -3" tone="neutral" variant="outline" size="sm" />
+				</div>
+			</section>
+		</div>
+	{/snippet}
 
-<BadgePill label="Active" tone="success" dot />
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>label</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Pill text — required if you don't pass a children snippet.</td>
+				</tr>
+				<tr>
+					<td><code>tone</code></td>
+					<td><code>"neutral" | "info" | "success" | "warning" | "danger" | "brand"</code></td>
+					<td><code>"neutral"</code></td>
+					<td>Semantic colour family.</td>
+				</tr>
+				<tr>
+					<td><code>variant</code></td>
+					<td><code>"soft" | "solid" | "outline"</code></td>
+					<td><code>"soft"</code></td>
+					<td>Fill style.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>"sm" | "md" | "lg"</code></td>
+					<td><code>"md"</code></td>
+					<td>Padding and font scale.</td>
+				</tr>
+				<tr>
+					<td><code>dot</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Render a leading status dot in the tone colour.</td>
+				</tr>
+				<tr>
+					<td><code>dismissible</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Render a trailing × button.</td>
+				</tr>
+				<tr>
+					<td><code>onDismiss</code></td>
+					<td><code>() =&gt; void</code></td>
+					<td>—</td>
+					<td>Callback fired when × is pressed.</td>
+				</tr>
+				<tr>
+					<td><code>children</code></td>
+					<td><code>Snippet</code></td>
+					<td>—</td>
+					<td>Custom inner content (overrides label).</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>""</code></td>
+					<td>Extra class names forwarded to the root.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-<BadgePill
-  label="Frontend"
-  tone="info"
-  dismissible
-  onDismiss={() => removeTag('frontend')}
-/>`}</code></pre>
-			</div>
-		</section>
-	</div>
-</div>
+<style>
+	.bp-stack { display: grid; gap: 16px; }
+	.bp-card {
+		display: grid;
+		gap: 12px;
+		padding: 18px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		background: var(--surface);
+	}
+	.bp-h3 {
+		margin: 0;
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.bp-row {
+		display: grid;
+		gap: 6px;
+	}
+	.bp-row-label {
+		font: 500 11px var(--font-mono);
+		text-transform: uppercase;
+		color: var(--fg-3);
+		letter-spacing: 0.08em;
+	}
+	.bp-row-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+		align-items: center;
+	}
+	.bp-empty {
+		font: italic 13px var(--font-sans);
+		color: var(--fg-3);
+	}
+	.bp-reset {
+		justify-self: start;
+		padding: 0;
+		background: transparent;
+		border: 0;
+		color: var(--accent);
+		font: 500 13px var(--font-sans);
+		cursor: pointer;
+	}
+	.bp-reset:hover { text-decoration: underline; }
+	.bp-pr {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 10px;
+		align-items: center;
+		padding: 12px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+	}
+	.bp-pr-num { font: 600 13px var(--font-mono); color: var(--fg-1); }
+	.bp-pr-title { font-size: 13px; color: var(--fg-2); }
+</style>

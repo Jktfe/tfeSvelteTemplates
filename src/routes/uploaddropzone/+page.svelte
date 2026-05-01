@@ -1,54 +1,24 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { SvelteMap } from 'svelte/reactivity';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import UploadDropzone from '$lib/components/UploadDropzone.svelte';
-	import type {
-		UploadDropzoneItem,
-		UploadDropzoneRejection
-	} from '$lib/types';
+	import type { UploadDropzoneItem, UploadDropzoneRejection } from '$lib/types';
+
+	const shell = catalogShellPropsForSlug('/uploaddropzone')!;
 
 	let liveFiles = $state<UploadDropzoneItem[]>([]);
 	let rejectedFiles = $state<UploadDropzoneRejection[]>([]);
 	let activityLog = $state<string[]>(['Ready for files']);
 	const timers = new SvelteMap<string, ReturnType<typeof setInterval>>();
 
-	const showcaseFiles: UploadDropzoneItem[] = [
-		{
-			id: 'brand-guidelines',
-			name: 'brand-guidelines.pdf',
-			size: 2_420_000,
-			type: 'application/pdf',
-			status: 'success',
-			progress: 100
-		},
-		{
-			id: 'hero-image',
-			name: 'campaign-hero.png',
-			size: 4_870_000,
-			type: 'image/png',
-			status: 'uploading',
-			progress: 68
-		},
-		{
-			id: 'source-video',
-			name: 'source-video.mov',
-			size: 15_800_000,
-			type: 'video/quicktime',
-			status: 'error',
-			progress: 0,
-			error: 'Transcode failed'
-		}
-	];
-
 	function handleFilesAdded(items: UploadDropzoneItem[]) {
 		rejectedFiles = [];
 		const uploading = items.map((item) => ({ ...item, status: 'uploading' as const, progress: 8 }));
 		liveFiles = [...liveFiles, ...uploading];
 		addLog(`${items.length} ${items.length === 1 ? 'file' : 'files'} accepted`);
-
-		for (const item of uploading) {
-			startProgress(item.id);
-		}
+		for (const item of uploading) startProgress(item.id);
 	}
 
 	function handleRejected(rejections: UploadDropzoneRejection[]) {
@@ -64,7 +34,9 @@
 
 	function handleRetry(item: UploadDropzoneItem) {
 		liveFiles = liveFiles.map((current) =>
-			current.id === item.id ? { ...current, status: 'uploading', progress: 12, error: undefined } : current
+			current.id === item.id
+				? { ...current, status: 'uploading', progress: 12, error: undefined }
+				: current
 		);
 		startProgress(item.id);
 		addLog(`Retry started for ${item.name}`);
@@ -106,262 +78,175 @@
 	}
 
 	onDestroy(() => {
-		for (const timer of timers.values()) {
-			clearInterval(timer);
-		}
+		for (const timer of timers.values()) clearInterval(timer);
 		timers.clear();
 	});
+
+	const codeExplanation =
+		'UploadDropzone keeps file state outside the network: it accepts drag/drop, paste, and browse, validates type/size/count, and emits typed callbacks (onFilesAdded, onFilesRejected, onRemove, onRetry) so your code owns the actual upload. The component renders preview rows with progress, success, and error states which the parent drives by feeding back UploadDropzoneItem updates.';
 </script>
 
 <svelte:head>
-	<title>UploadDropzone Component | TFE Svelte Templates</title>
-	<meta
-		name="description"
-		content="Accessible drag-and-drop file upload surface with validation, previews, progress states, and retry/remove actions."
-	/>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="page-shell">
-	<section class="intro">
-		<div>
-			<p class="eyebrow">Forms & CRUD</p>
-			<h1>UploadDropzone</h1>
-			<p>
-				A production-ready upload surface with drag-and-drop, paste support, validation,
-				previews, and clear file-state rows. It stays backend-agnostic and emits typed hooks
-				for your upload workflow.
-			</p>
-		</div>
-		<div class="intro-stats" aria-label="Component capabilities">
-			<div>
-				<strong>0</strong>
-				<span>runtime deps</span>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Drag & drop', 'Paste', 'A11y', 'Validation']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="upload-demo">
+			<div class="demo-main">
+				<UploadDropzone
+					files={liveFiles}
+					accept="image/*,.pdf"
+					maxFiles={5}
+					maxSize={5 * 1024 * 1024}
+					title="Upload campaign assets"
+					description="Drop, paste, or browse. Images and PDFs only."
+					onFilesAdded={handleFilesAdded}
+					onFilesRejected={handleRejected}
+					onRemove={handleRemove}
+					onRetry={handleRetry}
+				/>
 			</div>
-			<div>
-				<strong>3</strong>
-				<span>input paths</span>
-			</div>
-			<div>
-				<strong>4</strong>
-				<span>row states</span>
-			</div>
-		</div>
-	</section>
 
-	<section class="workspace">
-		<div class="main-panel">
-			<h2>Live Upload Surface</h2>
-			<p>
-				Drop images or PDFs, paste from the clipboard while focused, or browse manually.
-				This demo simulates upload progress in the parent component.
-			</p>
-			<UploadDropzone
-				files={liveFiles}
-				accept="image/*,.pdf"
-				maxFiles={5}
-				maxSize={5 * 1024 * 1024}
-				title="Upload campaign assets"
-				description="Accepts images and PDF documents. Paste screenshots directly from your clipboard."
-				onFilesAdded={handleFilesAdded}
-				onFilesRejected={handleRejected}
-				onRemove={handleRemove}
-				onRetry={handleRetry}
-			/>
-		</div>
-
-		<aside class="side-panel">
-			<section>
-				<h2>Activity</h2>
-				<ul class="activity-list">
-					{#each activityLog as item, i (i)}
-						<li>{item}</li>
-					{/each}
-				</ul>
-			</section>
-
-			{#if rejectedFiles.length}
-				<section class="rejections">
-					<h2>Rejected Files</h2>
-					<ul>
-						{#each rejectedFiles as rejection, i (i)}
-							<li>
-								<strong>{rejection.file.name}</strong>
-								<span>{rejection.message}</span>
-							</li>
+			<aside class="demo-side">
+				<section>
+					<h3>Activity</h3>
+					<ul class="activity-list">
+						{#each activityLog as item, i (i)}
+							<li>{item}</li>
 						{/each}
 					</ul>
 				</section>
-			{/if}
-		</aside>
-	</section>
 
-	<section class="example-grid">
-		<div class="example-panel">
-			<h2>Preloaded States</h2>
-			<p>Rows can be initialised from parent data to show success, progress, and retry states.</p>
-			<UploadDropzone
-				files={showcaseFiles}
-				accept="image/*,.pdf,video/*"
-				maxFiles={6}
-				maxSize={20 * 1024 * 1024}
-				title="Project files"
-				description="A controlled list can mirror server-backed upload status."
-			/>
+				{#if rejectedFiles.length}
+					<section class="rejections">
+						<h3>Rejected</h3>
+						<ul>
+							{#each rejectedFiles as rejection, i (i)}
+								<li>
+									<strong>{rejection.file.name}</strong>
+									<span>{rejection.message}</span>
+								</li>
+							{/each}
+						</ul>
+					</section>
+				{/if}
+			</aside>
 		</div>
+	{/snippet}
 
-		<div class="example-panel">
-			<h2>Validation Profile</h2>
-			<div class="rules">
-				<div>
-					<span>Types</span>
-					<strong>image/*, .pdf</strong>
-				</div>
-				<div>
-					<span>Max size</span>
-					<strong>5 MB</strong>
-				</div>
-				<div>
-					<span>Max files</span>
-					<strong>5</strong>
-				</div>
-				<div>
-					<span>Inputs</span>
-					<strong>Drop, paste, browse</strong>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	<section class="code-panel">
-		<h2>Usage</h2>
-		<pre><code>{`<UploadDropzone
-  accept="image/*,.pdf"
-  maxFiles={5}
-  maxSize={5 * 1024 * 1024}
-  onFilesAdded={(items) => startUpload(items)}
-  onFilesRejected={(rejections) => showErrors(rejections)}
-/>`}</code></pre>
-	</section>
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>files</code></td>
+					<td><code>UploadDropzoneItem[]</code></td>
+					<td>—</td>
+					<td>Optional controlled list. Omit to let the dropzone manage its own state.</td>
+				</tr>
+				<tr>
+					<td><code>accept</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>MIME types and extensions the input will allow (e.g. <code>image/*,.pdf</code>).</td>
+				</tr>
+				<tr>
+					<td><code>multiple</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Allow selecting more than one file at a time.</td>
+				</tr>
+				<tr>
+					<td><code>maxFiles</code></td>
+					<td><code>number</code></td>
+					<td><code>8</code></td>
+					<td>Cap the total number of files in the list.</td>
+				</tr>
+				<tr>
+					<td><code>maxSize</code></td>
+					<td><code>number</code></td>
+					<td><code>10 * 1024 * 1024</code></td>
+					<td>Per-file size limit in bytes.</td>
+				</tr>
+				<tr>
+					<td><code>disabled</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Block all input paths.</td>
+				</tr>
+				<tr>
+					<td><code>title</code> / <code>description</code></td>
+					<td><code>string</code></td>
+					<td>Sensible defaults</td>
+					<td>Headline and helper copy shown in the dropzone.</td>
+				</tr>
+				<tr>
+					<td><code>onFilesAdded</code></td>
+					<td><code>(items) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when valid files are added.</td>
+				</tr>
+				<tr>
+					<td><code>onFilesRejected</code></td>
+					<td><code>(rejections) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when files fail validation, with reasons.</td>
+				</tr>
+				<tr>
+					<td><code>onRemove</code> / <code>onRetry</code></td>
+					<td><code>(item) =&gt; void</code></td>
+					<td>—</td>
+					<td>Row actions surfaced for each file.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page-shell {
-		width: min(1180px, calc(100vw - 2rem));
-		margin: 0 auto;
-		padding: 3rem 0 4rem;
-		color: #172033;
-	}
-
-	.intro {
+	.upload-demo {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 2rem;
-		align-items: end;
-		margin-bottom: 2rem;
-	}
-
-	.eyebrow {
-		margin: 0 0 0.6rem;
-		color: #2563eb;
-		font-size: 0.78rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-	}
-
-	h1,
-	h2,
-	p {
-		margin: 0;
-	}
-
-	h1 {
-		font-size: clamp(2.2rem, 1.8rem + 2vw, 4rem);
-		line-height: 0.98;
-		letter-spacing: 0;
-		color: #0f172a;
-	}
-
-	.intro p {
-		max-width: 48rem;
-		margin-top: 1rem;
-		color: #546179;
-		font-size: 1.04rem;
-		line-height: 1.65;
-	}
-
-	.intro-stats {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(6rem, 1fr));
-		gap: 0.6rem;
-	}
-
-	.intro-stats div,
-	.side-panel,
-	.example-panel,
-	.code-panel {
-		border: 1px solid rgba(148, 163, 184, 0.2);
-		border-radius: 8px;
-		background: rgba(255, 255, 255, 0.86);
-		box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
-	}
-
-	.intro-stats div {
-		display: grid;
-		gap: 0.25rem;
-		padding: 0.9rem;
-	}
-
-	.intro-stats strong {
-		color: #0f172a;
-		font-size: 1.45rem;
-		line-height: 1;
-	}
-
-	.intro-stats span {
-		color: #64748b;
-		font-size: 0.82rem;
-		font-weight: 650;
-	}
-
-	.workspace {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.34fr);
+		grid-template-columns: minmax(0, 1fr) minmax(15rem, 0.4fr);
 		gap: 1rem;
 		align-items: start;
 	}
 
-	.main-panel {
+	.demo-main {
 		min-width: 0;
 	}
 
-	.main-panel h2,
-	.side-panel h2,
-	.example-panel h2,
-	.code-panel h2 {
-		margin-bottom: 0.55rem;
-		color: #0f172a;
-		font-size: 1.05rem;
-		letter-spacing: 0;
-	}
-
-	.main-panel > p,
-	.example-panel > p {
-		margin-bottom: 1rem;
-		color: #64748b;
-		line-height: 1.55;
-	}
-
-	.side-panel {
+	.demo-side {
 		display: grid;
 		gap: 1rem;
 		padding: 1rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+	}
+
+	.demo-side h3 {
+		margin: 0 0 0.5rem;
+		font-size: 0.95rem;
+		color: var(--fg-1);
 	}
 
 	.activity-list,
 	.rejections ul {
 		display: grid;
-		gap: 0.55rem;
+		gap: 0.5rem;
 		padding: 0;
 		margin: 0;
 		list-style: none;
@@ -369,11 +254,11 @@
 
 	.activity-list li,
 	.rejections li {
-		padding: 0.62rem 0.7rem;
+		padding: 0.55rem 0.7rem;
 		border-radius: 8px;
-		background: #f8fafc;
-		color: #475569;
-		font-size: 0.9rem;
+		background: var(--surface-2, var(--surface));
+		color: var(--fg-2);
+		font-size: 0.88rem;
 	}
 
 	.rejections li {
@@ -384,94 +269,12 @@
 	}
 
 	.rejections span {
-		font-size: 0.82rem;
+		font-size: 0.8rem;
 	}
 
-	.example-grid {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.42fr);
-		gap: 1rem;
-		margin-top: 2rem;
-	}
-
-	.example-panel,
-	.code-panel {
-		padding: 1.1rem;
-	}
-
-	.rules {
-		display: grid;
-		gap: 0.7rem;
-	}
-
-	.rules div {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: 0.75rem 0;
-		border-bottom: 1px solid rgba(148, 163, 184, 0.18);
-	}
-
-	.rules div:last-child {
-		border-bottom: 0;
-	}
-
-	.rules span {
-		color: #64748b;
-	}
-
-	.rules strong {
-		color: #0f172a;
-		font-size: 0.92rem;
-		text-align: right;
-	}
-
-	.code-panel {
-		margin-top: 1rem;
-	}
-
-	pre {
-		overflow-x: auto;
-		margin: 0;
-		padding: 1rem;
-		border-radius: 8px;
-		background: #111827;
-		color: #e5e7eb;
-		font-size: 0.92rem;
-		line-height: 1.6;
-	}
-
-	@media (max-width: 900px) {
-		.intro,
-		.workspace,
-		.example-grid {
+	@media (max-width: 760px) {
+		.upload-demo {
 			grid-template-columns: 1fr;
-		}
-
-		.intro-stats {
-			grid-template-columns: repeat(3, 1fr);
-		}
-	}
-
-	@media (max-width: 560px) {
-		.page-shell {
-			width: min(100vw - 1rem, 1180px);
-			padding-top: 1.25rem;
-		}
-
-		.intro-stats {
-			grid-template-columns: 1fr;
-		}
-
-		.rules div {
-			align-items: flex-start;
-			flex-direction: column;
-			gap: 0.2rem;
-		}
-
-		.rules strong {
-			text-align: left;
 		}
 	}
 </style>

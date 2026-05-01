@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import Stepper from '$lib/components/Stepper.svelte';
+
+	const shell = catalogShellPropsForSlug('/stepper')!;
 
 	const checkout = ['Cart', 'Shipping', 'Payment', 'Review'];
 	const onboarding = ['Account', 'Verify email', 'Profile', 'Preferences', 'Done'];
@@ -12,89 +16,58 @@
 	function prev() {
 		step = Math.max(0, step - 1);
 	}
+
+	const codeExplanation =
+		'Stepper derives done / current / pending states from a single currentStep index, so parent state stays trivially small. The checkmark on completed steps is inline SVG (no icon font) and the orientation prop simply swaps the connector axis between row and column. With clickable enabled, completed and current steps become buttons that call onSelect, while pending steps stay locked so users can\'t skip ahead.';
 </script>
 
 <svelte:head>
-	<title>Stepper | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-5xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">Stepper</h1>
-			<p class="text-xl text-muted-foreground">
-				Multi-step progress indicator. Done / current / pending states with optional click-to-jump.
-			</p>
-		</header>
-
-		<!-- Read-only horizontal -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Read-only horizontal</h2>
-			<p class="text-sm text-neutral-500">
-				A static view of the user's progress. Done steps show a tick; current shows its number.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6">
-				<Stepper steps={checkout} currentStep={2} />
-			</div>
-		</section>
-
-		<!-- Live interactive -->
-		<section class="space-y-3">
-			<div class="flex items-center justify-between">
-				<h2 class="text-2xl font-semibold">Interactive (clickable + buttons)</h2>
-				<div class="flex gap-2">
-					<button
-						onclick={prev}
-						disabled={step === 0}
-						class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-40"
-					>
-						← Back
-					</button>
-					<button
-						onclick={next}
-						disabled={step === checkout.length - 1}
-						class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
-					>
-						{step === checkout.length - 1 ? 'Submit' : 'Next →'}
-					</button>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Progress', 'A11y', 'Wizards']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="stepper-demo">
+			<section>
+				<h3>Read-only horizontal</h3>
+				<div class="frame">
+					<Stepper steps={checkout} currentStep={2} />
 				</div>
-			</div>
-			<p class="text-sm text-neutral-500">
-				Click any completed step to go back. Pending steps stay locked.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6">
-				<Stepper
-					steps={checkout}
-					currentStep={step}
-					clickable
-					onSelect={(i) => (step = i)}
-				/>
-			</div>
-			<p class="text-xs text-neutral-500">
-				Current step index: <code>{step}</code> ({checkout[step]})
-			</p>
-		</section>
+			</section>
 
-		<!-- Vertical orientation -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Vertical orientation</h2>
-			<p class="text-sm text-neutral-500">
-				Better for sidebars, narrow viewports, or longer flows. Connectors switch axis automatically.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 max-w-sm">
-				<Stepper steps={onboarding} currentStep={2} orientation="vertical" />
-			</div>
-		</section>
+			<section>
+				<div class="row-between">
+					<h3>Interactive (clickable + buttons)</h3>
+					<div class="actions">
+						<button onclick={prev} disabled={step === 0} class="btn-ghost">← Back</button>
+						<button onclick={next} disabled={step === checkout.length - 1} class="btn-primary">
+							{step === checkout.length - 1 ? 'Submit' : 'Next →'}
+						</button>
+					</div>
+				</div>
+				<div class="frame">
+					<Stepper steps={checkout} currentStep={step} clickable onSelect={(i) => (step = i)} />
+				</div>
+				<p class="note">
+					Current step index: <code>{step}</code> ({checkout[step]})
+				</p>
+			</section>
 
-		<!-- Custom palette -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Custom palettes</h2>
-			<p class="text-sm text-neutral-500">
-				Use brand colours by passing <code>activeColor</code>, <code>doneColor</code>, and
-				<code>pendingColor</code>.
-			</p>
-			<div class="grid md:grid-cols-2 gap-4">
-				<div class="bg-white border border-neutral-200 rounded-xl p-6">
+			<section>
+				<h3>Vertical orientation</h3>
+				<div class="frame frame-narrow">
+					<Stepper steps={onboarding} currentStep={2} orientation="vertical" />
+				</div>
+			</section>
+
+			<section>
+				<h3>Custom palette</h3>
+				<div class="frame">
 					<Stepper
 						steps={['Plan', 'Build', 'Ship']}
 						currentStep={1}
@@ -103,49 +76,125 @@
 						pendingColor="#e9d5ff"
 					/>
 				</div>
-				<div class="bg-neutral-900 rounded-xl p-6 text-neutral-100">
-					<Stepper
-						steps={['Plan', 'Build', 'Ship']}
-						currentStep={2}
-						activeColor="#fbbf24"
-						doneColor="#22c55e"
-						pendingColor="#475569"
-					/>
-				</div>
-			</div>
-		</section>
+			</section>
+		</div>
+	{/snippet}
 
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Done / current / pending states auto-derived from <code>currentStep</code></li>
-					<li>Horizontal and vertical orientations</li>
-					<li>Optional <code>clickable</code> with <code>onSelect</code> callback</li>
-					<li>Pending steps locked even when clickable</li>
-					<li><code>role="list"</code> and <code>aria-current="step"</code> for screen readers</li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-					<li>Zero dependencies — CSS + inline SVG checkmark</li>
-				</ul>
-			</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>steps</code></td>
+					<td><code>string[]</code></td>
+					<td><code>[]</code></td>
+					<td>Required. Step labels in order.</td>
+				</tr>
+				<tr>
+					<td><code>currentStep</code></td>
+					<td><code>number</code></td>
+					<td><code>0</code></td>
+					<td>Index of the active step (zero-based).</td>
+				</tr>
+				<tr>
+					<td><code>orientation</code></td>
+					<td><code>'horizontal' | 'vertical'</code></td>
+					<td><code>'horizontal'</code></td>
+					<td>Layout direction.</td>
+				</tr>
+				<tr>
+					<td><code>clickable</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Allow jumping back to completed steps.</td>
+				</tr>
+				<tr>
+					<td><code>onSelect</code></td>
+					<td><code>(index) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when a clickable step is activated.</td>
+				</tr>
+				<tr>
+					<td><code>activeColor</code> / <code>doneColor</code> / <code>pendingColor</code></td>
+					<td><code>string</code></td>
+					<td>Brand defaults</td>
+					<td>Custom palette per state.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre
-					class="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
-  import Stepper from '$lib/components/Stepper.svelte';
+<style>
+	.stepper-demo {
+		display: grid;
+		gap: 2rem;
+	}
 
-  let step = $state(1);
-  const steps = ['Cart', 'Shipping', 'Payment', 'Review'];
-</${''}script>
+	.stepper-demo h3 {
+		font-size: 0.95rem;
+		margin: 0 0 0.6rem;
+		color: var(--fg-1);
+	}
 
-<Stepper
-  {steps}
-  currentStep={step}
-  clickable
-  onSelect={(i) => step = i}
-/>`}</code></pre>
-			</div>
-		</section>
-	</div>
-</div>
+	.frame {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 0.75rem;
+		padding: 1.25rem;
+	}
+
+	.frame-narrow {
+		max-width: 22rem;
+	}
+
+	.row-between {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 0.6rem;
+	}
+
+	.actions {
+		display: flex;
+		gap: 0.5rem;
+	}
+
+	.btn-ghost,
+	.btn-primary {
+		padding: 0.4rem 0.85rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		border-radius: 0.4rem;
+		cursor: pointer;
+		border: 1px solid var(--border);
+		background: var(--surface);
+		color: var(--fg-1);
+	}
+
+	.btn-primary {
+		border: none;
+		background: var(--brand, #146ef5);
+		color: #fff;
+	}
+
+	.btn-ghost:disabled,
+	.btn-primary:disabled {
+		opacity: 0.4;
+		cursor: not-allowed;
+	}
+
+	.note {
+		margin: 0.5rem 0 0;
+		font-size: 0.85rem;
+		color: var(--fg-2);
+	}
+</style>

@@ -1,171 +1,236 @@
+<!--
+	============================================================
+	PortfolioPhotographer Demo Page (TFE shell)
+	============================================================
+
+	Migrated onto ComponentPageShell. The editorial hero, lens
+	wireframe, drifting photo reel, and Halton-scatter dots all
+	stay intact — only the surrounding scaffold is shared with
+	the rest of the catalogue.
+-->
+
 <script lang="ts">
 	import PortfolioPhotographer from '$lib/components/PortfolioPhotographer/PortfolioPhotographer.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/portfolio-photographer')!;
+
+	const usageSnippet = `<script>
+  import PortfolioPhotographer from
+    '$lib/components/PortfolioPhotographer/PortfolioPhotographer.svelte';
+  import { SAMPLE_PHOTOS } from
+    '$lib/components/PortfolioPhotographer/photos';
+<\/script>
+
+<PortfolioPhotographer
+  photos={SAMPLE_PHOTOS}
+  name="Aria Lindqvist"
+  tagline="photographs of light, distance, and quiet rooms"
+  years="2018 — 2026"
+  theme="dark"
+/>`;
+
+	const codeExplanation =
+		'PortfolioPhotographer composes a wireframe lens SVG, a marquee-style photo reel, a Halton low-discrepancy dot scatter, and a serif display name into one editorial hero. Each photo tile is a three-stop CSS gradient (asset-free fallback) — pass real images through the photos prop to swap in your own work. The reel auto-pauses on hover/focus and respects prefers-reduced-motion.';
 </script>
 
 <svelte:head>
-	<title>PortfolioPhotographer · Svelte 5 Templates</title>
+	<title>PortfolioPhotographer — TFE / Svelte Templates</title>
 	<meta
 		name="description"
-		content="Editorial photographer-portfolio hero with wireframe lens, drifting photo reel, and Halton-scatter focal dots. Asset-free CSS gradients."
+		content="Editorial photographer-portfolio hero for Svelte 5: wireframe lens, drifting photo reel, Halton-scatter focal dots. Asset-free CSS gradients."
 	/>
 </svelte:head>
 
-<main class="page">
-	<header class="intro">
-		<a class="back" href="/">← All components</a>
-		<h1>PortfolioPhotographer</h1>
-		<p class="lede">
-			A statement-piece editorial section for a photographer landing page. Wireframe lens
-			background, horizontally drifting reel of CSS-gradient photo tiles, Halton-sequence focal
-			scatter, and serif display name. Hover or focus the reel to pause the drift.
-		</p>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	{usageSnippet}
+	{codeExplanation}
+	tags={['Svelte 5', 'Editorial', 'Marquee', 'Halton scatter', 'Reduced motion']}
+>
+	{#snippet demo()}
+		<div class="pp-demo">
+			<div class="pp-demo__frame pp-demo__frame--dark">
+				<PortfolioPhotographer theme="dark" class="pp-demo__hero" />
+			</div>
 
-	<PortfolioPhotographer class="portfolio-frame" />
+			<div class="pp-demo__frame pp-demo__frame--light">
+				<PortfolioPhotographer
+					theme="light"
+					name="Mira Holm"
+					tagline="quiet portraits, slow streets"
+					years="2020 — 2026"
+					class="pp-demo__hero"
+				/>
+			</div>
 
-	<section class="meta">
-		<div class="meta-card">
-			<h2>Try it</h2>
-			<ul>
-				<li>Hover the reel — drift pauses</li>
-				<li>Tab into a tile — drift pauses + tile lifts</li>
-				<li>Toggle <code>prefers-reduced-motion</code> — drift, lens spin, dot pulse stop</li>
-			</ul>
+			<div class="pp-demo__notes">
+				<div class="pp-demo__note">
+					<h3>Try it</h3>
+					<ul>
+						<li>Hover the reel — the drift pauses</li>
+						<li>Tab into a tile — drift pauses and the tile lifts</li>
+						<li>
+							Toggle <code>prefers-reduced-motion</code> — drift, lens spin and dot pulse stop
+						</li>
+					</ul>
+				</div>
+				<div class="pp-demo__note">
+					<h3>Asset-free by default</h3>
+					<p>
+						No external images, no Unsplash, no GSAP. Each tile is a three-stop CSS gradient with an
+						accent vignette. Pass real <code>src</code> values through the
+						<code>photos</code> prop to swap in your own work.
+					</p>
+				</div>
+				<div class="pp-demo__note">
+					<h3>Halton scatter</h3>
+					<p>
+						The 24 dots use the <code>halton(i, 2)</code> / <code>halton(i, 3)</code>
+						low-discrepancy sequence biased toward the centre — scattered, not random; no clumping,
+						no grid feel.
+					</p>
+				</div>
+			</div>
 		</div>
+	{/snippet}
 
-		<div class="meta-card">
-			<h2>M1 scope</h2>
-			<p>
-				This is milestone 1: hero + reel + scatter only. The lightbox modal, real-image swap-in via
-				<code>Photo.src</code>, cursor 3D tilt, and <code>?photo=id</code> URL sync are scoped for
-				M2 / M3.
-			</p>
-		</div>
-
-		<div class="meta-card">
-			<h2>Asset-free</h2>
-			<p>
-				No external images, no Unsplash, no GSAP. Each photo tile is a three-stop CSS gradient with
-				an accent vignette. M2 will swap in real images via the <code>Photo.src</code> field, but
-				the gradient stays as a perfect-quality fallback.
-			</p>
-		</div>
-
-		<div class="meta-card">
-			<h2>Halton scatter</h2>
-			<p>
-				The 24 dots use the <code>halton(i, 2)</code> /
-				<code>halton(i, 3)</code> low-discrepancy sequence then bias toward the centre. That gives
-				a more "scattered" look than uniform random — no clumping, no grid feel.
-			</p>
-		</div>
-
-		<div class="meta-card">
-			<h2>Reduced motion</h2>
-			<p>
-				When <code>prefers-reduced-motion: reduce</code> is set: the reel drift, lens rotation, dot
-				pulse, and eyebrow pulse all stop. Layout is unchanged so the editorial composition still
-				reads as intended.
-			</p>
-		</div>
-
-		<div class="meta-card">
-			<h2>Custom photos</h2>
-			<p>
-				Pass your own <code>photos</code> array to override the sample set. M2 adds a real
-				<code>src</code> field — until then, gradient stops drive the look.
-			</p>
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>photos</code></td>
+					<td><code>Photo[]</code></td>
+					<td><code>SAMPLE_PHOTOS</code></td>
+					<td>
+						Array of photo descriptors (id, gradient stops, optional <code>src</code>). Each
+						descriptor renders as one tile in the drifting reel.
+					</td>
+				</tr>
+				<tr>
+					<td><code>name</code></td>
+					<td><code>string</code></td>
+					<td><code>'Aria Lindqvist'</code></td>
+					<td>Photographer name rendered as the editorial <code>&lt;h1&gt;</code>.</td>
+				</tr>
+				<tr>
+					<td><code>tagline</code></td>
+					<td><code>string</code></td>
+					<td><code>'photographs of light, distance, …'</code></td>
+					<td>Subtitle line beneath the name.</td>
+				</tr>
+				<tr>
+					<td><code>years</code></td>
+					<td><code>string</code></td>
+					<td><code>'2018 — 2026'</code></td>
+					<td>Date range shown in the eyebrow.</td>
+				</tr>
+				<tr>
+					<td><code>dotCount</code></td>
+					<td><code>number</code></td>
+					<td><code>24</code></td>
+					<td>Number of Halton-scatter focal dots in the background.</td>
+				</tr>
+				<tr>
+					<td><code>duration</code></td>
+					<td><code>number</code></td>
+					<td><code>36</code></td>
+					<td>Seconds per full reel-drift cycle.</td>
+				</tr>
+				<tr>
+					<td><code>theme</code></td>
+					<td><code>'light' | 'dark'</code></td>
+					<td><code>'dark'</code></td>
+					<td>Editorial palette — warm dark or paper light.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Extra classes on the outer <code>&lt;section&gt;</code>.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		min-height: 100vh;
-		background: #fff;
-		color: #0f172a;
-	}
-
-	.intro {
-		max-width: 900px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem 2rem;
-	}
-	.back {
-		display: inline-block;
-		margin-bottom: 1.25rem;
-		font-size: 0.85rem;
-		color: #475569;
-		text-decoration: none;
-	}
-	.back:hover {
-		color: #0f172a;
-	}
-	.intro h1 {
-		margin: 0 0 0.5rem;
-		font-size: 2rem;
-		font-weight: 700;
-	}
-	.lede {
-		margin: 0;
-		color: #475569;
-		line-height: 1.6;
-		max-width: 60ch;
-	}
-
-	:global(.portfolio-frame) {
-		border-radius: 1.25rem;
-		margin: 0 1.5rem;
-		max-width: calc(1400px - 3rem);
-		margin-left: auto;
-		margin-right: auto;
-		box-shadow:
-			0 50px 100px -40px rgba(15, 23, 42, 0.25),
-			0 4px 12px -2px rgba(15, 23, 42, 0.08);
-		overflow: hidden;
-	}
-
-	.meta {
+	.pp-demo {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 1rem;
-		max-width: 1100px;
-		margin: 3rem auto 4rem;
-		padding: 0 1.5rem;
+		gap: 24px;
 	}
 
-	.meta-card {
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.75rem;
-		padding: 1.25rem 1.5rem;
+	.pp-demo__frame {
+		position: relative;
+		border-radius: var(--r-2);
+		overflow: hidden;
+		border: 1px solid var(--border);
+		box-shadow:
+			0 30px 60px -30px rgba(15, 23, 42, 0.25),
+			0 4px 12px -2px rgba(15, 23, 42, 0.08);
 	}
-	.meta-card h2 {
-		margin: 0 0 0.75rem;
-		font-size: 0.95rem;
-		font-weight: 600;
+	.pp-demo__frame--dark {
+		background: #0c0a09;
+	}
+	.pp-demo__frame--light {
+		background: #fafaf9;
+	}
+
+	/* The component is min-height: 100vh by default — clamp it so two
+	   themed frames fit comfortably on one page. */
+	:global(.pp-demo__hero) {
+		min-height: clamp(420px, 60vh, 640px) !important;
+	}
+
+	.pp-demo__notes {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 12px;
+	}
+	.pp-demo__note {
+		padding: 16px 18px;
+		border-radius: var(--r-2);
+		background: var(--surface);
+		border: 1px solid var(--border);
+	}
+	.pp-demo__note h3 {
+		margin: 0 0 8px;
+		font-family: var(--font-display);
+		font-size: 14px;
+		font-weight: 500;
 		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		color: var(--fg-1);
 	}
-	.meta-card p,
-	.meta-card li {
-		font-size: 0.875rem;
+	.pp-demo__note p,
+	.pp-demo__note li {
+		margin: 0;
+		font-size: 13px;
 		line-height: 1.55;
-		color: #334155;
+		color: var(--fg-2);
 	}
-	.meta-card ul {
+	.pp-demo__note ul {
 		list-style: none;
 		padding: 0;
-		margin: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 0.4rem;
+		display: grid;
+		gap: 4px;
 	}
-	.meta-card code {
+	.pp-demo__note code {
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.8125rem;
-		background: #fff;
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.25rem;
-		border: 1px solid #e2e8f0;
+		font-size: 12px;
+		padding: 1px 5px;
+		border-radius: 4px;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		color: var(--fg-1);
 	}
 </style>

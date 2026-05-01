@@ -1,285 +1,244 @@
+<!--
+	PixelTrail Demo Page (TFE shell)
+-->
+
 <script lang="ts">
 	import PixelTrail from '$lib/components/PixelTrail.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/pixeltrail')!;
+
+	const usageSnippet = `<script>
+  import PixelTrail from '$lib/components/PixelTrail.svelte';
+<\/script>
+
+<PixelTrail size="medium" palette="cyber-cyan" trailLength={20}>
+  <div class="hero">…</div>
+</PixelTrail>`;
+
+	const codeExplanation =
+		'PixelTrail wraps any region and spawns a small <span> at the cursor every few pixels of travel. Each span has a CSS keyframe animation that fades, scales, and drifts before the per-pixel setTimeout removes it. Distance throttling keeps trail density consistent at any cursor speed; reduced-motion users see the underlying region untouched.';
 </script>
 
 <svelte:head>
-	<title>PixelTrail · TFE Svelte Templates</title>
+	<title>PixelTrail — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Cursor-tracked decaying pixel trail with three sizes and three palettes."
+	/>
 </svelte:head>
 
-<main class="page">
-	<header class="hero">
-		<h1>PixelTrail</h1>
-		<p>
-			Cursor-tracked decaying pixel trail. Mousemove spawns small <code>&lt;span&gt;</code>s that fade
-			+ scale + drift on a CSS keyframe and self-clean on a per-pixel <code>setTimeout</code>. Distance-throttled
-			spawn keeps trail density consistent at any cursor speed. Pure CSS — no rAF, no resize observer.
-		</p>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Cursor', 'CSS-only', 'Reduced-motion safe']}
+	{usageSnippet}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="pt-demo">
+			<section class="pt-section">
+				<h3>1. Mono-white hero crackle</h3>
+				<PixelTrail size="medium" palette="mono-white" trailLength={20}>
+					<div class="pt-stage pt-stage--hero">
+						<div class="pt-content">
+							<div class="pt-eyebrow">A NICE TERMINAL</div>
+							<h4 class="pt-title">Move the cursor.</h4>
+							<p class="pt-sub">Pixels follow you, then fade.</p>
+						</div>
+					</div>
+				</PixelTrail>
+			</section>
 
-	<section class="demo">
-		<h2>1. Hero crackle — mono-white on dark canvas</h2>
-		<p class="caption">
-			Hover anywhere on the panel. The default <strong>medium</strong> size with <strong>mono-white</strong>
-			palette gives the cleanest editorial trail — pairs well with dark hero canvases.
-		</p>
-		<PixelTrail size="medium" palette="mono-white" trailLength={20}>
-			<div class="stage stage-hero">
-				<div class="hero-content">
-					<div class="hero-eyebrow">A NICE TERMINAL</div>
-					<h3 class="hero-title">Move the cursor.</h3>
-					<p class="hero-sub">Pixels follow you, then fade.</p>
-				</div>
-			</div>
-		</PixelTrail>
-	</section>
-
-	<section class="demo">
-		<h2>2. Cyber-cyan terminal panel</h2>
-		<p class="caption">
-			<strong>cyber-cyan</strong> palette + <strong>small</strong> size with a 32-pixel cap gives a
-			dense neon trail. Sci-fi UI panels and console hero blocks lean on this combo.
-		</p>
-		<PixelTrail size="small" palette="cyber-cyan" trailLength={32} duration={900}>
-			<div class="stage stage-cyber">
-				<pre class="terminal">
+			<section class="pt-section">
+				<h3>2. Cyber-cyan terminal</h3>
+				<PixelTrail size="small" palette="cyber-cyan" trailLength={32} duration={900}>
+					<div class="pt-stage pt-stage--cyber">
+						<pre class="pt-terminal">
 $ ant deploy --target=mainnet
 ✓ build:    16.4s
 ✓ tests:    1.9s   1877/1877
 ✓ lint:     0.6s   0 errors
 ✓ release:  v2.4.0
 </pre>
-			</div>
-		</PixelTrail>
-	</section>
+					</div>
+				</PixelTrail>
+			</section>
 
-	<section class="demo">
-		<h2>3. Sunset-warm marketing strip</h2>
-		<p class="caption">
-			<strong>sunset-warm</strong> palette cycles yellow → orange → pink as you drag. Pair
-			<strong>large</strong> size + a longer duration for a luxurious, elastic trail.
-		</p>
-		<PixelTrail size="large" palette="sunset-warm" trailLength={16} duration={1100}>
-			<div class="stage stage-warm">
-				<div class="warm-content">
-					<div class="warm-tag">SUMMER · 26</div>
-					<h3 class="warm-title">Glide through golden hour.</h3>
-				</div>
-			</div>
-		</PixelTrail>
-	</section>
+			<section class="pt-section">
+				<h3>3. Sunset-warm marketing strip</h3>
+				<PixelTrail size="large" palette="sunset-warm" trailLength={16} duration={1100}>
+					<div class="pt-stage pt-stage--warm">
+						<div class="pt-content">
+							<div class="pt-tag">SUMMER · 26</div>
+							<h4 class="pt-title pt-title--warm">Glide through golden hour.</h4>
+						</div>
+					</div>
+				</PixelTrail>
+			</section>
 
-	<section class="demo">
-		<h2>4. Three sizes, side-by-side</h2>
-		<p class="caption">
-			Same palette, different grain. <strong>Small</strong> is densely-stippled;
-			<strong>medium</strong> is the editorial default; <strong>large</strong> reads chunky and
-			arcade.
-		</p>
-		<div class="grid">
-			<PixelTrail size="small" palette="cyber-cyan" trailLength={20}>
-				<div class="card-stage">
-					<h3>Small</h3>
-					<p>4px pixels<br />6px throttle<br />densely stippled</p>
+			<section class="pt-section">
+				<h3>4. Three sizes side-by-side</h3>
+				<div class="pt-grid">
+					<PixelTrail size="small" palette="cyber-cyan" trailLength={20}>
+						<div class="pt-card">
+							<h4>Small</h4>
+							<p>4px pixels<br />6px throttle<br />densely stippled</p>
+						</div>
+					</PixelTrail>
+					<PixelTrail size="medium" palette="cyber-cyan" trailLength={20}>
+						<div class="pt-card">
+							<h4>Medium</h4>
+							<p>8px pixels<br />10px throttle<br />editorial default</p>
+						</div>
+					</PixelTrail>
+					<PixelTrail size="large" palette="cyber-cyan" trailLength={20}>
+						<div class="pt-card">
+							<h4>Large</h4>
+							<p>16px pixels<br />18px throttle<br />arcade chunky</p>
+						</div>
+					</PixelTrail>
 				</div>
-			</PixelTrail>
-			<PixelTrail size="medium" palette="cyber-cyan" trailLength={20}>
-				<div class="card-stage">
-					<h3>Medium</h3>
-					<p>8px pixels<br />10px throttle<br />editorial default</p>
-				</div>
-			</PixelTrail>
-			<PixelTrail size="large" palette="cyber-cyan" trailLength={20}>
-				<div class="card-stage">
-					<h3>Large</h3>
-					<p>16px pixels<br />18px throttle<br />arcade chunky</p>
-				</div>
-			</PixelTrail>
+			</section>
 		</div>
-	</section>
+	{/snippet}
 
-	<section class="meta">
-		<div class="meta-grid">
-			<div class="meta-card">
-				<h3>Three sizes</h3>
-				<p><code>small</code> / <code>medium</code> / <code>large</code> — bundle pixel size + spawn-distance threshold so density and grain scale together.</p>
-			</div>
-			<div class="meta-card">
-				<h3>Three palettes</h3>
-				<p><code>mono-white</code>, <code>cyber-cyan</code>, <code>sunset-warm</code>. Each cycles a 3-colour set with a coordinated halo.</p>
-			</div>
-			<div class="meta-card">
-				<h3>Distance-throttled</h3>
-				<p>One pixel per ~<code>throttlePx</code> units of cursor travel. Slow drags don't pile pixels; fast flicks don't leave gaps.</p>
-			</div>
-			<div class="meta-card">
-				<h3>Self-cleaning</h3>
-				<p>Each pixel registers its own <code>setTimeout</code>; no global cleanup loop. FIFO eviction caps the live count at <code>trailLength</code>.</p>
-			</div>
-			<div class="meta-card">
-				<h3>Pure CSS animation</h3>
-				<p>Single <code>@keyframes</code> drives fade + scale + drift. No <code>requestAnimationFrame</code>, no resize observer, no per-frame JS.</p>
-			</div>
-			<div class="meta-card">
-				<h3>Reduced-motion safe</h3>
-				<p>Under <code>prefers-reduced-motion: reduce</code>, the move handler short-circuits before allocating; CSS hides any stray pixel as belt-and-braces.</p>
-			</div>
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>'small' | 'medium' | 'large'</code></td>
+					<td><code>'medium'</code></td>
+					<td>Bundles pixel size + throttle distance.</td>
+				</tr>
+				<tr>
+					<td><code>palette</code></td>
+					<td><code>'mono-white' | 'cyber-cyan' | 'sunset-warm'</code></td>
+					<td><code>'mono-white'</code></td>
+					<td>Three-colour cycling palette.</td>
+				</tr>
+				<tr>
+					<td><code>trailLength</code></td>
+					<td><code>number</code></td>
+					<td><code>20</code></td>
+					<td>Maximum live pixels (FIFO eviction).</td>
+				</tr>
+				<tr>
+					<td><code>duration</code></td>
+					<td><code>number</code></td>
+					<td><code>800</code></td>
+					<td>Per-pixel lifetime in milliseconds.</td>
+				</tr>
+				<tr>
+					<td><code>throttlePx</code></td>
+					<td><code>number</code></td>
+					<td>(size-derived)</td>
+					<td>Cursor distance between spawns.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 1100px;
-		margin: 0 auto;
-		padding: 3rem 1.5rem 6rem;
-		color: #e6e6e6;
+	.pt-demo {
+		display: grid;
+		gap: 24px;
 	}
-
-	.hero {
-		margin-bottom: 3rem;
+	.pt-section {
+		display: grid;
+		gap: 10px;
 	}
-
-	.hero h1 {
-		font-size: clamp(2.5rem, 5vw, 4rem);
-		margin: 0 0 0.5rem;
-		background: linear-gradient(135deg, #ffffff, #00bfff, #ff3d6e);
-		-webkit-background-clip: text;
-		background-clip: text;
-		color: transparent;
-		font-weight: 800;
-		letter-spacing: -0.02em;
+	.pt-section h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	.hero p {
-		font-size: 1.125rem;
-		line-height: 1.6;
-		max-width: 720px;
-		color: #a8a8b8;
-	}
-
-	.hero code {
-		background: #1a1a2e;
-		padding: 0.1em 0.35em;
-		border-radius: 4px;
-		font-size: 0.9em;
-		color: #00bfff;
-	}
-
-	.demo {
-		margin-bottom: 4rem;
-	}
-
-	.demo h2 {
-		font-size: 1.5rem;
-		margin: 0 0 0.5rem;
-		color: #fff;
-	}
-
-	.caption {
-		color: #8c8c9c;
-		font-size: 0.95rem;
-		margin: 0 0 1.5rem;
-		line-height: 1.6;
-	}
-
-	.caption strong {
-		color: #00bfff;
-		font-weight: 600;
-	}
-
-	.stage {
-		background: #0a0a14;
-		border: 1px solid #1f1f3a;
-		border-radius: 16px;
-		padding: 4rem 2rem;
-		min-height: 280px;
+	.pt-stage {
+		border-radius: 14px;
+		padding: 64px 32px;
+		min-height: 220px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		overflow: hidden;
+		border: 1px solid var(--border);
 	}
-
-	.stage-hero {
+	.pt-stage--hero {
 		background: radial-gradient(circle at 30% 50%, #181830, #0a0a14 70%);
 	}
-
-	.hero-content {
-		text-align: center;
-		font-family: 'Inter', system-ui, sans-serif;
-		pointer-events: none;
-	}
-
-	.hero-eyebrow {
-		font-size: 0.75rem;
-		letter-spacing: 0.3em;
-		color: #6c6c8c;
-		margin-bottom: 0.75rem;
-	}
-
-	.hero-title {
-		font-size: clamp(2rem, 4vw, 3rem);
-		margin: 0;
-		color: #ffffff;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-
-	.hero-sub {
-		margin: 0.5rem 0 0;
-		color: #a8a8b8;
-		font-size: 1rem;
-	}
-
-	.stage-cyber {
+	.pt-stage--cyber {
 		background: linear-gradient(135deg, #051d2e, #02101c);
 		font-family: 'Fira Code', ui-monospace, monospace;
 	}
-
-	.terminal {
+	.pt-stage--warm {
+		background: linear-gradient(135deg, #2a1a00, #4a0a2a);
+	}
+	.pt-content {
+		text-align: center;
+		pointer-events: none;
+	}
+	.pt-eyebrow {
+		font-size: 11px;
+		letter-spacing: 0.3em;
+		color: #6c6c8c;
+		margin-bottom: 10px;
+	}
+	.pt-title {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: clamp(28px, 4vw, 44px);
 		margin: 0;
-		font-size: 0.95rem;
+		color: #ffffff;
+		text-transform: uppercase;
+		letter-spacing: 0.01em;
+	}
+	.pt-title--warm {
+		color: #ffea00;
+	}
+	.pt-sub {
+		margin: 8px 0 0;
+		color: #a8a8b8;
+		font-size: 14px;
+	}
+	.pt-tag {
+		font-size: 11px;
+		letter-spacing: 0.3em;
+		color: #ffb87a;
+		margin-bottom: 10px;
+	}
+	.pt-terminal {
+		margin: 0;
+		font-size: 14px;
 		color: #8ce4ff;
 		line-height: 1.6;
 		text-align: left;
 		text-shadow: 0 0 8px rgba(0, 191, 255, 0.4);
 		pointer-events: none;
 	}
-
-	.stage-warm {
-		background: linear-gradient(135deg, #2a1a00, #4a0a2a);
-	}
-
-	.warm-content {
-		text-align: center;
-		pointer-events: none;
-	}
-
-	.warm-tag {
-		font-size: 0.75rem;
-		letter-spacing: 0.3em;
-		color: #ffb87a;
-		margin-bottom: 0.75rem;
-	}
-
-	.warm-title {
-		margin: 0;
-		font-size: clamp(2rem, 4vw, 2.75rem);
-		color: #ffea00;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-	}
-
-	.grid {
+	.pt-grid {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1.5rem;
+		gap: 16px;
 	}
-
-	.card-stage {
+	.pt-card {
 		background: #0a0a14;
 		border: 1px solid #1f1f3a;
-		border-radius: 16px;
-		padding: 2.5rem 1.5rem;
+		border-radius: 14px;
+		padding: 32px 16px;
 		min-height: 200px;
 		text-align: center;
 		display: flex;
@@ -288,58 +247,16 @@ $ ant deploy --target=mainnet
 		justify-content: center;
 		pointer-events: none;
 	}
-
-	.card-stage h3 {
-		margin: 0 0 0.75rem;
+	.pt-card h4 {
+		margin: 0 0 10px;
 		color: #00bfff;
-		font-size: 1.25rem;
+		font-size: 18px;
 	}
-
-	.card-stage p {
+	.pt-card p {
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: 13px;
 		line-height: 1.6;
 		color: #8c8c9c;
 		font-family: 'Fira Code', monospace;
-	}
-
-	.meta {
-		margin-top: 5rem;
-		border-top: 1px solid #1f1f3a;
-		padding-top: 3rem;
-	}
-
-	.meta-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.meta-card {
-		background: #0d0d1a;
-		border: 1px solid #1f1f3a;
-		border-radius: 12px;
-		padding: 1.25rem;
-	}
-
-	.meta-card h3 {
-		font-size: 1rem;
-		margin: 0 0 0.5rem;
-		color: #00bfff;
-	}
-
-	.meta-card p {
-		margin: 0;
-		font-size: 0.875rem;
-		line-height: 1.6;
-		color: #a8a8b8;
-	}
-
-	.meta-card code {
-		background: #1a1a2e;
-		padding: 0.1em 0.35em;
-		border-radius: 4px;
-		font-size: 0.9em;
-		color: #00f0ff;
 	}
 </style>

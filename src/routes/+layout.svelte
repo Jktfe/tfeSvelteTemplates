@@ -2,6 +2,7 @@
 	import '../app.css';
 	import AgentPromptCopy from '$lib/components/AgentPromptCopy.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
+	import TfeFooter from '$lib/components/TfeFooter.svelte';
 	import {
 		buildMenuCategories,
 		getCatalogEntryByHref,
@@ -45,6 +46,9 @@
 		{currentPageTitle}
 		{isAuthConfigured}
 		{authUser}
+		logoSrc="/tfe/tfe-logo-blue.svg"
+		logoAlt="TFE"
+		logoText="TFE / Templates"
 		githubUrl="https://github.com/Jktfe/tfeSvelteTemplates"
 	/>
 
@@ -66,15 +70,7 @@
 		{/if}
 	</main>
 
-	<footer class="footer">
-		<div class="container">
-			<p class="footer-text">
-				Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
-				<a href="https://kit.svelte.dev" target="_blank" rel="noopener">SvelteKit</a> •
-				<a href="https://www.typescriptlang.org" target="_blank" rel="noopener">TypeScript</a>
-			</p>
-		</div>
-	</footer>
+	<TfeFooter />
 </div>
 
 <style>
@@ -82,33 +78,31 @@
 		box-sizing: border-box;
 	}
 
+	/*
+	 * NOTE: Use `overflow-x: clip` not `hidden` so we don't create a
+	 * scroll container on body — that would break `position: sticky`
+	 * on the Navbar.
+	 */
 	:global(html) {
-		overflow-x: hidden;
+		overflow-x: clip;
 	}
 
 	:global(body) {
 		margin: 0;
 		padding: 0;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-			sans-serif;
+		font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif);
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
-		background-color: #ffffff;
-		color: #1a202c;
+		background-color: var(--bg, #ffffff);
+		color: var(--fg, #1a202c);
 		line-height: 1.6;
-		overflow-x: hidden;
+		overflow-x: clip;
 	}
 
 	.app {
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
-	}
-
-	.container {
-		max-width: 1280px;
-		margin: 0 auto;
-		padding: 0 2rem;
 	}
 
 	.main {
@@ -133,36 +127,7 @@
 		min-width: 0;
 	}
 
-	.footer {
-		background-color: #f7fafc;
-		border-top: 1px solid #e2e8f0;
-		padding: 2rem 0;
-		margin-top: 4rem;
-	}
-
-	.footer-text {
-		text-align: center;
-		color: #718096;
-		font-size: 0.9rem;
-		margin: 0;
-	}
-
-	.footer-text a {
-		color: #146ef5;
-		text-decoration: none;
-		transition: color 0.2s ease;
-	}
-
-	.footer-text a:hover {
-		color: #0c5dd6;
-		text-decoration: underline;
-	}
-
 	@media (max-width: 768px) {
-		.container {
-			padding: 0 1rem;
-		}
-
 		.main :global(table) {
 			display: block;
 			overflow-x: auto;
@@ -170,27 +135,5 @@
 		}
 	}
 
-	@media (prefers-color-scheme: dark) {
-		:global(body) {
-			background-color: #0f172a;
-			color: #f8fafc;
-		}
-
-		.footer {
-			background-color: #111827;
-			border-top-color: rgba(226, 232, 240, 0.12);
-		}
-
-		.footer-text {
-			color: #94a3b8;
-		}
-
-		.footer-text a {
-			color: #60a5fa;
-		}
-
-		.footer-text a:hover {
-			color: #93c5fd;
-		}
-	}
+	/* Body already pulls var(--bg)/var(--fg) — those tokens flip under prefers-color-scheme: dark. */
 </style>
