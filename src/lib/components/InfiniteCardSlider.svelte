@@ -98,6 +98,11 @@
 		class: className = ''
 	}: Props = $props();
 
+	// Capturing the pointer on pointerdown retargets the synthesised click to
+	// the stage, swallowing navigation on inner <a href> cards. We defer
+	// capture until movement passes this threshold so taps still navigate.
+	const DRAG_THRESHOLD_PX = 6;
+
 	let selectedIndex = $state(0);
 	let dragOffsetPx = $state(0);
 	let dragging = $state(false);
@@ -105,6 +110,7 @@
 	let gsapInstance: Gsap | null = null;
 	let pointerDownX = 0;
 	let pointerId: number | null = null;
+	let pointerCaptured = false;
 
 	const N = $derived(items.length);
 	const stride = $derived(cardWidth + gap);
@@ -168,25 +174,36 @@
 
 	function onPointerDown(event: PointerEvent) {
 		if (N <= 1) return;
-		dragging = true;
 		pointerDownX = event.clientX;
 		pointerId = event.pointerId;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		dragging = false;
+		pointerCaptured = false;
 	}
 
 	function onPointerMove(event: PointerEvent) {
-		if (!dragging || event.pointerId !== pointerId) return;
-		dragOffsetPx = event.clientX - pointerDownX;
-		applyTransforms(false);
+		if (event.pointerId !== pointerId) return;
+		const dx = event.clientX - pointerDownX;
+		if (!pointerCaptured && Math.abs(dx) >= DRAG_THRESHOLD_PX) {
+			pointerCaptured = true;
+			dragging = true;
+			(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		}
+		if (dragging) {
+			dragOffsetPx = dx;
+			applyTransforms(false);
+		}
 	}
 
 	function endDrag(event: PointerEvent) {
-		if (!dragging || event.pointerId !== pointerId) return;
+		if (event.pointerId !== pointerId) return;
+		if (pointerCaptured) {
+			(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
+			const steps = Math.round(-dragOffsetPx / stride);
+			dragOffsetPx = 0;
+			select(selectedIndex + steps);
+		}
 		dragging = false;
-		(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
-		const steps = Math.round(-dragOffsetPx / stride);
-		dragOffsetPx = 0;
-		select(selectedIndex + steps);
+		pointerCaptured = false;
 		pointerId = null;
 	}
 
