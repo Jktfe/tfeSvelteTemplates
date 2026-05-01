@@ -276,19 +276,27 @@
 		background: transparent;
 		font-family: var(--font-sans, var(--gsap-font-sans));
 	}
+	/*
+	 * Muted compact copy button — quiet by default so it doesn't
+	 * compete with the actual content (component name, demo, code).
+	 * Only the hover state hints at the brand accent.
+	 */
 	.agent-prompt__copy--compact {
 		justify-self: stretch;
 		width: 100%;
 		justify-content: center;
 		padding: 8px 12px;
 		font-size: 12px;
+		font-weight: 500;
 		border-radius: var(--r-2, 4px);
-		background: var(--accent, var(--gsap-accent));
-		color: #fff;
-		border-color: transparent;
+		background: transparent;
+		color: var(--fg-2, #4a5158);
+		border: 1px solid var(--border-strong, #cfcfcf);
 	}
 	.agent-prompt__copy--compact:hover {
-		background: var(--accent-strong, var(--gsap-accent-hover));
+		background: var(--surface-2, #f6f6f6);
+		color: var(--fg-1, #111315);
+		border-color: var(--fg-3, #777e85);
 		transform: none;
 		box-shadow: none;
 	}
@@ -307,13 +315,24 @@
 		font-size: 12px;
 		padding: 12px 14px;
 		max-height: 280px;
+		/* Muted Firefox scrollbar */
+		scrollbar-color: var(--border-strong, #cfcfcf) transparent;
+	}
+	.agent-prompt--compact .agent-prompt__body::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
 	}
 	.agent-prompt--compact .agent-prompt__body::-webkit-scrollbar-track {
-		background: var(--surface-2, #f6f6f6);
+		background: transparent;
 	}
 	.agent-prompt--compact .agent-prompt__body::-webkit-scrollbar-thumb {
-		border-color: var(--surface-2, #f6f6f6);
-		background: color-mix(in srgb, var(--accent, var(--gsap-accent)), transparent 40%);
+		border: 2px solid transparent;
+		background-clip: padding-box;
+		background-color: var(--border-strong, #cfcfcf);
+		border-radius: 999px;
+	}
+	.agent-prompt--compact .agent-prompt__body::-webkit-scrollbar-thumb:hover {
+		background-color: var(--fg-3, #777e85);
 	}
 
 	.agent-prompt__header {
