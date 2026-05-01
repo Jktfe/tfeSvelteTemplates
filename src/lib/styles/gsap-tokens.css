@@ -1,0 +1,180 @@
+/* ============================================================
+ * GSAP Suite — Visual Tokens
+ * ============================================================
+ * Shared design tokens for the 11 Dave Vault GSAP concepts so
+ * they read as one family even though each page has its own art
+ * direction. Import from any component or route via:
+ *
+ *   import '$lib/styles/gsap-tokens.css';
+ *
+ * Tokens are scoped under :root so any component can use them.
+ * Components must NOT hard-code these colours — always reference
+ * the variable so a future palette change is one edit.
+ * ============================================================ */
+
+:root {
+	/* ----- Surface palette (warm-neutral, premium-editorial) ----- */
+	--gsap-surface-0: #fafaf7;          /* page background, light */
+	--gsap-surface-1: #f3f1ea;          /* card surface, light */
+	--gsap-surface-2: #e8e4d8;          /* divider, hover, light */
+	--gsap-surface-ink: #0c0d10;        /* page background, dark */
+	--gsap-surface-ink-1: #161820;      /* card surface, dark */
+	--gsap-surface-ink-2: #232734;      /* divider, hover, dark */
+
+	/* ----- Foreground / text ----- */
+	--gsap-fg-strong: #0a0b0f;
+	--gsap-fg: #1f2330;
+	--gsap-fg-muted: #5b6273;
+	--gsap-fg-subtle: #8d93a1;
+	--gsap-fg-on-ink: #f5f3ec;
+	--gsap-fg-on-ink-muted: #a8adb9;
+
+	/* ----- Accent / highlight ----- */
+	--gsap-accent: #ff6a3d;             /* primary GSAP-suite accent (warm coral) */
+	--gsap-accent-hover: #ff8a64;
+	--gsap-accent-ink: #0a0b0f;
+	--gsap-accent-soft: rgba(255, 106, 61, 0.12);
+	--gsap-accent-glow: rgba(255, 106, 61, 0.28);
+
+	/* ----- Secondary accents (used sparingly per concept) ----- */
+	--gsap-mint: #4dd4ac;
+	--gsap-sky: #5eb3ff;
+	--gsap-indigo: #6c5ce7;
+	--gsap-amber: #f1b14a;
+	--gsap-rose: #ee6c8a;
+
+	/* ----- Borders / lines ----- */
+	--gsap-border: rgba(12, 13, 16, 0.10);
+	--gsap-border-strong: rgba(12, 13, 16, 0.18);
+	--gsap-border-on-ink: rgba(245, 243, 236, 0.10);
+	--gsap-border-strong-on-ink: rgba(245, 243, 236, 0.22);
+
+	/* ----- Radii (8px family) ----- */
+	--gsap-radius-xs: 4px;
+	--gsap-radius-sm: 8px;
+	--gsap-radius-md: 14px;
+	--gsap-radius-lg: 22px;
+	--gsap-radius-xl: 32px;
+	--gsap-radius-pill: 999px;
+
+	/* ----- Spacing (4/8 step) ----- */
+	--gsap-space-1: 4px;
+	--gsap-space-2: 8px;
+	--gsap-space-3: 12px;
+	--gsap-space-4: 16px;
+	--gsap-space-5: 20px;
+	--gsap-space-6: 24px;
+	--gsap-space-8: 32px;
+	--gsap-space-10: 40px;
+	--gsap-space-12: 48px;
+	--gsap-space-16: 64px;
+
+	/* ----- Type scale ----- */
+	--gsap-font-sans:
+		'Inter', 'Geist', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+	--gsap-font-display:
+		'Playfair Display', 'Iowan Old Style', 'Apple Garamond', Georgia, 'Times New Roman', serif;
+	--gsap-font-mono:
+		'JetBrains Mono', 'Geist Mono', 'SF Mono', 'Menlo', 'Monaco', 'Courier New', monospace;
+
+	--gsap-text-xs: 0.78rem;            /* eyebrow, captions */
+	--gsap-text-sm: 0.875rem;           /* meta, ui */
+	--gsap-text-base: 1rem;             /* body */
+	--gsap-text-md: 1.125rem;           /* lede */
+	--gsap-text-lg: 1.375rem;           /* section copy */
+	--gsap-text-xl: 1.875rem;           /* h3 */
+	--gsap-text-2xl: 2.625rem;          /* h2 */
+	--gsap-text-3xl: clamp(2.75rem, 6vw, 4.75rem);   /* hero h1 */
+	--gsap-text-display: clamp(3.5rem, 11vw, 9.5rem); /* edge-of-screen display */
+
+	/* ----- Shadow / elevation ----- */
+	--gsap-shadow-1: 0 1px 2px rgba(12, 13, 16, 0.08), 0 1px 1px rgba(12, 13, 16, 0.04);
+	--gsap-shadow-2: 0 8px 24px rgba(12, 13, 16, 0.10);
+	--gsap-shadow-3: 0 24px 60px rgba(12, 13, 16, 0.16);
+	--gsap-shadow-glow: 0 0 0 1px var(--gsap-accent-soft), 0 12px 36px var(--gsap-accent-glow);
+
+	/* ----- Easings (string form for gsap, plus CSS cubic-beziers) ----- */
+	--gsap-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--gsap-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+	--gsap-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+	/* ----- Motion durations ----- */
+	--gsap-duration-instant: 80ms;
+	--gsap-duration-fast: 200ms;
+	--gsap-duration-base: 320ms;
+	--gsap-duration-slow: 560ms;
+	--gsap-duration-stage: 900ms;
+
+	/* ----- Layout ----- */
+	--gsap-suite-max: 1200px;
+	--gsap-section-gutter: clamp(1rem, 4vw, 3rem);
+	--gsap-section-gap: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+/* ============================================================
+ * Dark mode token flip
+ * ============================================================
+ * Two families of tokens behave differently under dark mode:
+ *
+ *  THEME-AWARE (flip under prefers-color-scheme: dark):
+ *    --gsap-surface-0/1/2      page + card + divider backgrounds
+ *    --gsap-fg-strong/fg/      headings + body + meta text
+ *    --gsap-fg-muted/-subtle
+ *    --gsap-border/-strong     hairlines and outlines
+ *    --gsap-shadow-1/2/3       softer shadows on dark
+ *
+ *  EXPLICIT-INK (stay constant in BOTH modes):
+ *    --gsap-surface-ink/-1/-2  always-dark hero/footer art-direction
+ *    --gsap-fg-on-ink/-muted   text intended for those dark sections
+ *
+ *  ACCENTS (stay constant — coral works on both schemes).
+ *
+ * This means components that reference theme-aware tokens (most do)
+ * inherit dark mode automatically. Components that need to stay dark
+ * regardless of system theme reference the -ink variants explicitly.
+ * Either-mode designs use the theme-aware family; art-directed-dark
+ * blocks (intentional ink) opt in via the -ink family.
+ * ============================================================ */
+@media (prefers-color-scheme: dark) {
+	:root {
+		/* Theme-aware surfaces flip to ink-equivalents */
+		--gsap-surface-0: #0c0d10;          /* page background */
+		--gsap-surface-1: #161820;          /* card surface */
+		--gsap-surface-2: #232734;          /* divider, hover */
+
+		/* Theme-aware foreground flips to light tints */
+		--gsap-fg-strong: #f5f3ec;
+		--gsap-fg: #e3e1d8;
+		--gsap-fg-muted: #a8adb9;
+		--gsap-fg-subtle: #6f7381;
+
+		/* Theme-aware borders flip to on-ink tints */
+		--gsap-border: rgba(245, 243, 236, 0.10);
+		--gsap-border-strong: rgba(245, 243, 236, 0.22);
+
+		/* Accent soft/glow stay coral-tinted but slightly bumped on dark */
+		--gsap-accent-soft: rgba(255, 106, 61, 0.16);
+		--gsap-accent-glow: rgba(255, 106, 61, 0.36);
+
+		/* Shadows softer on dark */
+		--gsap-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.45), 0 1px 1px rgba(0, 0, 0, 0.30);
+		--gsap-shadow-2: 0 8px 24px rgba(0, 0, 0, 0.40);
+		--gsap-shadow-3: 0 24px 60px rgba(0, 0, 0, 0.55);
+	}
+}
+
+/* String-named easings exposed for gsap so components can pull from
+ * a single source. Used like: gsap.to(el, { ease: 'gsapSuite.out', ... })
+ * after registering via CustomEase if/when needed. For now they exist
+ * as documentation strings; CSS animations should reference the
+ * --gsap-ease-* cubic-beziers above. */
+
+/* Reduced-motion safety net: any element marked with [data-gsap-motion]
+ * that hasn't been individually scripted will collapse its visibility
+ * and translate transforms when the user prefers reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+	[data-gsap-motion] {
+		animation: none !important;
+		transition: none !important;
+	}
+}

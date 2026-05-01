@@ -329,7 +329,11 @@
 				</div>
 			{:else}
 				<!-- Demo mode indicator when Clerk is not configured -->
-				<div class="auth-demo-badge" title="Configure Clerk to enable authentication">
+				<div
+					class="auth-demo-badge"
+					title="Configure Clerk to enable authentication"
+					aria-label="Authentication demo mode"
+				>
 					<span class="demo-icon">🔓</span>
 					<span class="demo-text">Demo Mode</span>
 				</div>
@@ -501,7 +505,8 @@
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		flex-shrink: 0;
+		flex: 1 1 auto;
+		min-width: 0;
 	}
 
 	.hamburger-button {
@@ -556,6 +561,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.625rem;
+		min-width: 0;
 		text-decoration: none;
 		color: #000000;
 		font-weight: 600;
@@ -581,6 +587,8 @@
 
 	.navbar-logo-text {
 		line-height: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	/* ============================================
@@ -592,7 +600,8 @@
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.75rem;
-		flex: 1;
+		flex: 0 1 auto;
+		min-width: 0;
 	}
 
 	/* GitHub button styling */
@@ -670,6 +679,113 @@
 
 	.demo-text {
 		white-space: nowrap;
+	}
+
+	@media (max-width: 420px) {
+		.navbar-inner {
+			gap: 0.625rem;
+		}
+
+		.navbar-left {
+			gap: 0.5rem;
+		}
+
+		.navbar-logo {
+			gap: 0.5rem;
+		}
+
+		.auth-demo-badge {
+			padding: 0.375rem;
+		}
+
+		.demo-text {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.navbar {
+			background-color: rgba(15, 23, 42, 0.94);
+			border-bottom-color: rgba(148, 163, 184, 0.2);
+			box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+		}
+
+		.navbar-logo,
+		.github-button {
+			color: #f8fafc;
+		}
+
+		.hamburger-line {
+			background-color: #f8fafc;
+		}
+
+		.hamburger-button:hover,
+		.github-button:hover {
+			background-color: rgba(148, 163, 184, 0.16);
+			color: #ffffff;
+		}
+
+		.auth-demo-badge {
+			background-color: #111827;
+			border-color: #334155;
+			color: #cbd5e1;
+		}
+
+		.panel {
+			background-color: #0f172a;
+			box-shadow: 2px 0 18px rgba(0, 0, 0, 0.38);
+		}
+
+		.panel-category {
+			border-bottom-color: rgba(148, 163, 184, 0.14);
+		}
+
+		.panel-menu-link,
+		.panel-category-header,
+		.panel-category-link,
+		:global(.panel-category-items .panel-menu-link) {
+			color: #e2e8f0;
+		}
+
+		.panel-menu-link:hover,
+		.panel-menu-link:focus,
+		.panel-category-header:hover,
+		.panel-category-link:hover,
+		.panel-category-link:focus,
+		:global(.panel-category-items .panel-menu-link:hover) {
+			background-color: rgba(96, 165, 250, 0.14);
+			color: #93c5fd;
+		}
+
+		.panel-menu-link.active,
+		.panel-category-header.has-active,
+		.panel-category-link.active,
+		:global(.panel-category-items .panel-menu-link.active) {
+			background-color: rgba(96, 165, 250, 0.18);
+			color: #bfdbfe;
+			border-left-color: #60a5fa;
+		}
+
+		.panel-category-chevron {
+			color: #94a3b8;
+		}
+
+		:global(.panel-category-items) {
+			background-color: rgba(15, 23, 42, 0.72);
+		}
+
+		.panel-menu-indicator,
+		:global(.panel-category-items .panel-menu-indicator) {
+			background-color: #60a5fa;
+		}
 	}
 
 	/* ============================================
