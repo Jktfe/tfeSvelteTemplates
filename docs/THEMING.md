@@ -97,12 +97,12 @@ The rule held identically across **greenfield, extension, migration, and additiv
 
 Token APIs have one big advantage over hardcoded values: **consumers retheme without forking the component**. The cascade does the work.
 
-### Scope 1 — global override (`:root`)
+### Scope 1 — global override
 
-Override the token everywhere in the app.
+Override the token across the entire app.
 
 ```css
-:root {
+body .kbd-shortcut {
   /* Warm beige kbd caps across the whole app */
   --kbd-bg-top:    #fef3c7;
   --kbd-bg-bottom: #fde68a;
@@ -111,7 +111,9 @@ Override the token everywhere in the app.
 }
 ```
 
-This sets the value once. The component's inline light defaults still cascade for tokens you don't override. Flip block in the component still fires under dark unless you override there too — see scope 3.
+This sets the value for every `.kbd-shortcut` instance in the app. The `body` combinator gives the selector higher specificity than the component's own `.kbd-shortcut { ... }` defaults, so your override wins. The flip block in the component still fires under dark unless you override there too — see scope 3.
+
+> **Why not `:root { --kbd-* }`?** The defaults are declared on `.kbd-shortcut` itself, and a CSS variable declared on an element shadows the same variable inherited from any ancestor — including `:root` and `body { --kbd-* }` (without the descendant combinator). The descendant combinator `body .kbd-shortcut` bypasses this by giving the rule higher specificity than the inline default, not by relying on inheritance. The same caveat applies to every component in this library that follows the inline-default convention (`Tooltip`, `Slider`, `RatingStars`, `KbdShortcut`, `Breadcrumbs`, …).
 
 ### Scope 2 — ancestor scope
 
