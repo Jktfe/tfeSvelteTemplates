@@ -7,6 +7,9 @@
 
 <script lang="ts">
 	import CardStack from '$lib/components/CardStack.svelte';
+	import ComponentDirectory, {
+		shouldUseComponentDirectory
+	} from '$lib/components/ComponentDirectory.svelte';
 	import type { Card } from '$lib/types';
 
 	// ============================================================
@@ -19,6 +22,8 @@
 		icon: string;
 		description: string;
 		screenshot: string; // Path to screenshot image
+		themeSupport?: 'light' | 'dual';
+		source?: string;
 	}
 
 	interface Category {
@@ -453,6 +458,15 @@
 					icon: '💻',
 					description: 'Token-coloured source-code display with five visual variants (plain, lined, titled, diff, terminal), three sizes, and a copy button — backed by an in-house ~5 KB tokenizer instead of a 200 KB highlighter library. Six languages recognised out of the box: ts, js, svelte, json, bash, plain. Pass language="…" to override the heuristic detector. Variants — plain (no chrome, hover-revealed floating copy button), lined (line-number gutter, ideal for tutorials), titled (header bar with title / fileName, language tag and copy button — looks like a code-editor tab), diff (recognises +/-/space prefixes, marker column, whole-row green/red tinting), terminal (dark green-on-black palette, traffic-light dots, $ prompt before each line, fixed look ignores theme prop). Optional highlight="1,3-5,8" tints specific lines. wrap toggles soft-wrap vs scroll. theme=\'light\'|\'dark\'. Copy button is a real <button> with aria-live="polite" status, feature-detected via navigator.clipboard so older / insecure-context browsers never see a feature that wouldn\'t work. {@html} render path is XSS-safe — every byte runs through escapeHtml() before injection. Region wrapper is <div role="region"> with configurable aria-label. Line numbers and diff markers are aria-hidden so screen readers read the code only. prefers-reduced-motion: reduce shortens the copy-feedback window and removes hover transitions. Pure helpers exported from the module-script (parseLineRange, formatLineNumber, countLines, supportsClipboardAPI, isReducedMotion, pickVariant, pickSize) plus tokenize, detectLanguage, escapeHtml from $lib/tokenize. Single linear tokenizer pass per render, output cached via $derived. Suitable for snippets up to a few thousand LOC. Pairs naturally with ScrollProgressBar and ReadingTOC for long-form documentation flows.',
 					screenshot: screenshotPath('CodeBlockShot.png')
+				},
+				{
+					name: 'GSAP Suite',
+					href: '/gsap-suite',
+					icon: '🎞️',
+					description: 'Reusable GSAP primitives for Svelte sequencing, text, canvas, deck, and Flip-powered grid motion, each with copy-for-your-agent install prompts.',
+					screenshot: screenshotPath('GsapSuiteShot.svg'),
+					themeSupport: 'dual',
+					source: 'src/lib/components/GsapSplitTextHero.svelte'
 				}
 			]
 		},
@@ -903,7 +917,8 @@
 		'🖱️': { bg: '#0d0d1a', text: '#a78bfa' },
 		'📖': { bg: '#fef3c7', text: '#92400e' },
 		'🎉': { bg: '#1a0a2e', text: '#fde047' },
-		'💻': { bg: '#0d1117', text: '#79c0ff' }
+		'💻': { bg: '#0d1117', text: '#79c0ff' },
+		'🎞️': { bg: '#fff1eb', text: '#ff6a3d' }
 	};
 
 	// Convert components to Card format with screenshots
@@ -969,6 +984,7 @@
 
 			<div class="hero-ctas">
 				<a href="#components" class="cta-primary">Browse {totalComponents} Components</a>
+				<a href="/gsap-suite" class="cta-gsap">Explore GSAP Suite</a>
 				<a
 					href="https://github.com/Jktfe/tfeSvelteTemplates"
 					target="_blank"
@@ -990,6 +1006,18 @@
 			</p>
 		</section>
 
+		<section class="gsap-suite-callout" aria-labelledby="gsap-suite-callout-title">
+			<div>
+				<p class="callout-kicker">GSAP suite</p>
+				<h2 id="gsap-suite-callout-title">Animation primitives built for copy-and-ship agents</h2>
+				<p>
+					SplitText heroes, reveal wrappers, kinetic canvas fields, fan decks, and the new Flip grid
+					are grouped on one route with provenance chips and copy-for-your-agent prompts.
+				</p>
+			</div>
+			<a href="/gsap-suite" class="callout-link">Open /gsap-suite</a>
+		</section>
+
 		<!-- Category Stacks - Single Column -->
 		<section id="components" class="categories-section">
 			<h2 class="section-title">Component Categories</h2>
@@ -1006,13 +1034,20 @@
 							{category.name}
 							<span class="category-count">{category.components.length}</span>
 						</h3>
-						<div class="category-stack">
-							<CardStack
-								cards={toCards(category.components)}
-								cardWidth={272}
-								cardHeight={336}
+						{#if shouldUseComponentDirectory(category.components.length)}
+							<ComponentDirectory
+								components={category.components}
+								categoryName={category.name}
 							/>
-						</div>
+						{:else}
+							<div class="category-stack">
+								<CardStack
+									cards={toCards(category.components)}
+									cardWidth={272}
+									cardHeight={336}
+								/>
+							</div>
+						{/if}
 					</div>
 				{/each}
 			</div>
@@ -1150,6 +1185,25 @@
 		box-shadow: 0 4px 20px rgba(20, 110, 245, 0.4);
 	}
 
+	.cta-gsap {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.875rem 1.5rem;
+		background: #0c0d10;
+		color: #f8fafc;
+		font-weight: 700;
+		font-size: 1rem;
+		text-decoration: none;
+		border: 2px solid #0c0d10;
+		border-radius: 8px;
+		transition: all 0.2s ease;
+	}
+
+	.cta-gsap:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 20px rgba(255, 106, 61, 0.28);
+	}
+
 	.cta-secondary {
 		display: inline-flex;
 		align-items: center;
@@ -1174,6 +1228,73 @@
 		font-size: 0.95rem;
 		color: #718096;
 		margin: 0;
+	}
+
+	.gsap-suite-callout {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 1.5rem;
+		margin: -2rem 0 4rem;
+		padding: 1.5rem;
+		border: 1px solid rgba(255, 106, 61, 0.34);
+		border-radius: 8px;
+		background:
+			linear-gradient(135deg, rgba(255, 106, 61, 0.11), rgba(94, 179, 255, 0.1)),
+			#ffffff;
+		box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+	}
+
+	.callout-kicker,
+	.gsap-suite-callout h2,
+	.gsap-suite-callout p {
+		margin: 0;
+	}
+
+	.callout-kicker {
+		color: #d94e24;
+		font-size: 0.78rem;
+		font-weight: 850;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.gsap-suite-callout h2 {
+		margin-top: 0.35rem;
+		color: #111827;
+		font-size: clamp(1.35rem, 3vw, 2rem);
+		line-height: 1.12;
+	}
+
+	.gsap-suite-callout p:not(.callout-kicker) {
+		max-width: 66ch;
+		margin-top: 0.65rem;
+		color: #4b5563;
+		line-height: 1.55;
+	}
+
+	.callout-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.75rem;
+		padding: 0.7rem 1rem;
+		border-radius: 8px;
+		background: #ff6a3d;
+		color: #0c0d10;
+		font-weight: 800;
+		text-decoration: none;
+		white-space: nowrap;
+		transition:
+			transform 0.2s ease,
+			box-shadow 0.2s ease;
+	}
+
+	.callout-link:hover,
+	.callout-link:focus-visible {
+		transform: translateY(-2px);
+		box-shadow: 0 12px 26px rgba(255, 106, 61, 0.32);
+		outline: none;
 	}
 
 	/* Section Titles */
@@ -1246,6 +1367,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		overflow: hidden;
 	}
 
 	/* Quick Start */
@@ -1370,10 +1492,21 @@
 		}
 
 		.cta-primary,
+		.cta-gsap,
 		.cta-secondary {
 			width: 100%;
 			max-width: 280px;
 			justify-content: center;
+		}
+
+		.gsap-suite-callout {
+			grid-template-columns: 1fr;
+			margin: -2rem 0 3rem;
+			padding: 1.25rem;
+		}
+
+		.callout-link {
+			width: 100%;
 		}
 
 		.section-title {
@@ -1414,6 +1547,30 @@
 		.feature {
 			flex: 0 0 calc(50% - 0.5rem);
 			justify-content: center;
+		}
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.gsap-suite-callout {
+			border-color: rgba(255, 106, 61, 0.42);
+			background:
+				linear-gradient(135deg, rgba(255, 106, 61, 0.16), rgba(94, 179, 255, 0.12)),
+				#111827;
+			box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
+		}
+
+		.gsap-suite-callout h2 {
+			color: #f8fafc;
+		}
+
+		.gsap-suite-callout p:not(.callout-kicker) {
+			color: #cbd5e1;
+		}
+
+		.cta-gsap {
+			background: #f8fafc;
+			color: #0c0d10;
+			border-color: #f8fafc;
 		}
 	}
 </style>
