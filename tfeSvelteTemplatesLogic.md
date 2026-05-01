@@ -341,8 +341,9 @@ ELSE
 
 **Environment Variables**:
 - `DATABASE_URL` - Neon connection string (optional)
-- `PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk auth (optional)
-- `CLERK_SECRET_KEY` - Clerk auth (optional)
+- `BETTER_AUTH_SECRET` - Better Auth session signing secret
+- `BETTER_AUTH_URL` - Public app origin for Better Auth callbacks/cookies
+- `PUBLIC_DEMO_AUTH` - Optional OSS demo-login switch
 
 **Build command**: `bun run build`
 **Output**: `.vercel/output/`

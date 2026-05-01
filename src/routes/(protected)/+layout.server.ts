@@ -13,21 +13,16 @@
  * @module routes/(protected)/+layout.server
  */
 
-import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
+import { isDemoUser, requireAuth } from '$lib/server/auth';
+import { toAuthUser } from '$lib/server/betterAuth';
 
-export const load: LayoutServerLoad = async ({ locals, url }) => {
-	// Get auth state from Clerk middleware
-	const auth = locals.auth();
+export const load: LayoutServerLoad = async (event) => {
+	const userId = requireAuth(event);
 
-	// If not authenticated, redirect to sign-in with return URL
-	if (!auth?.userId) {
-		const returnUrl = encodeURIComponent(url.pathname + url.search);
-		throw redirect(303, `/auth/sign-in?redirect_url=${returnUrl}`);
-	}
-
-	// User is authenticated, return their ID
 	return {
-		userId: auth.userId
+		userId,
+		authUser: toAuthUser(event.locals.user),
+		isDemoUser: isDemoUser(event)
 	};
 };

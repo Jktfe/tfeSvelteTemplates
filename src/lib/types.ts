@@ -299,8 +299,10 @@ export interface NavbarProps {
 	logoIcon?: string;
 	logoText?: string;
 	logoHref?: string;
-	/** Whether Clerk authentication is configured (shows demo badge if false) */
-	isClerkConfigured?: boolean;
+	/** Whether Better Auth is configured and can serve auth requests */
+	isAuthConfigured?: boolean;
+	/** Current authenticated user, when available from the root layout */
+	authUser?: AuthUser | null;
 	/** GitHub repository URL - shows GitHub icon button when provided */
 	githubUrl?: string;
 }
@@ -986,14 +988,21 @@ export interface SpeedDialProps {
 }
 
 // ==================================================
-// AUTHENTICATION TYPES (Clerk Integration)
+// AUTHENTICATION TYPES
 // ==================================================
+
+export interface AuthUser {
+	id: string;
+	name?: string | null;
+	email?: string | null;
+	image?: string | null;
+}
 
 /**
  * Props for AuthStatus component
  * Displays authentication configuration status
  *
- * @property isConfigured - Whether Clerk authentication is configured
+ * @property isConfigured - Whether Better Auth is configured
  * @property class - Additional CSS classes for styling
  */
 export interface AuthStatusProps {

@@ -112,12 +112,11 @@ test.describe('Home Page - Content Rendering', () => {
 		await expect(steps).toHaveCount(3);
 	});
 
-	test('displays the integrations section with Clerk Auth card', async ({ page }) => {
+	test('displays the integrations section with Better Auth card', async ({ page }) => {
 		const integrationCards = page.locator('.integration-card');
 		await expect(integrationCards).toHaveCount(1);
 
-		// Check it's the Clerk Auth card
-		await expect(integrationCards.first()).toContainText('Clerk Auth');
+		await expect(integrationCards.first()).toContainText('Better Auth');
 	});
 });
 

@@ -2,7 +2,7 @@
 
 ## What It Does
 
-AuthStatus displays a visual badge showing whether Clerk authentication is configured and active. It follows the same design pattern as DatabaseStatus for consistency, using colour-coded pills with emoji icons to indicate the auth state at a glance.
+AuthStatus displays a visual badge showing whether Better Auth is configured and active. It follows the same design pattern as DatabaseStatus for consistency, using colour-coded pills with emoji icons to indicate the auth state at a glance.
 
 **Think of it like:** A status light on your dashboard that shows "green = auth enabled" or "grey = running in demo mode".
 
@@ -24,7 +24,7 @@ AuthStatus displays a visual badge showing whether Clerk authentication is confi
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `isConfigured` | `boolean` | required | Whether Clerk authentication keys are configured |
+| `isConfigured` | `boolean` | required | Whether Better Auth is configured |
 | `class` | `string` | `''` | Additional CSS classes for styling |
 
 ---
@@ -48,9 +48,13 @@ AuthStatus displays a visual badge showing whether Clerk authentication is confi
 
 ```typescript
 // src/routes/+layout.server.ts
+import { isBetterAuthConfigured } from '$lib/server/betterAuth';
+
 export const load = async ({ locals }) => {
-  const isConfigured = !!locals.auth();
-  return { isConfigured };
+  return {
+    isConfigured: isBetterAuthConfigured(),
+    userId: locals.user?.id
+  };
 };
 ```
 
@@ -88,13 +92,13 @@ export const load = async ({ locals }) => {
 - **Icon**: 🔐 (locked padlock)
 - **Colour**: Green background with dark green text
 - **Label**: "Auth Enabled"
-- **Tooltip**: "Clerk authentication is configured and active"
+- **Tooltip**: "Better Auth is configured and active"
 
 ### Demo Mode (Not Configured)
 - **Icon**: 🔓 (unlocked padlock)
 - **Colour**: Grey background with grey text
-- **Label**: "Auth Demo Mode"
-- **Tooltip**: "Running without Clerk keys - configure in .env"
+- **Label**: "Auth Offline"
+- **Tooltip**: "Set DATABASE_URL and BETTER_AUTH_SECRET to enable authentication"
 
 ---
 
@@ -138,20 +142,19 @@ box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
 ## Integration Pattern
 
-AuthStatus is designed to work with the Clerk authentication system:
+AuthStatus is designed to work with Better Auth:
 
 ```svelte
-<!-- 1. Configure Clerk in hooks.server.ts -->
+<!-- 1. Configure Better Auth in hooks.server.ts -->
 <!-- 2. Check auth status in layout server -->
 <!-- 3. Pass status to client components -->
 
 <!-- +layout.server.ts -->
 <script lang="ts">
   export const load = async ({ locals }) => {
-    const auth = locals.auth();
     return {
-      isConfigured: !!process.env.PUBLIC_CLERK_PUBLISHABLE_KEY,
-      userId: auth?.userId
+      isConfigured: Boolean(process.env.DATABASE_URL && process.env.BETTER_AUTH_SECRET),
+      userId: locals.user?.id
     };
   };
 </script>

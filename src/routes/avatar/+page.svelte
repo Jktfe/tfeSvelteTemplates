@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Avatar from '$lib/components/Avatar.svelte';
 
-	// eslint-disable-next-line svelte/prefer-writable-derived -- broken is a mutable toggle, not derived
 	let broken = $state(false);
 	let liveSrc = $derived(
 		broken ? 'https://broken.example/nope.png' : 'https://i.pravatar.cc/150?img=12'

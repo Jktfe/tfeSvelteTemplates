@@ -1,21 +1,20 @@
-/**
- * Auth Demo Page Server Load
- *
- * Checks whether Clerk authentication is configured and provides
- * this information to the client for conditional UI rendering.
- *
- * @module routes/auth/+page.server
- */
-
 import type { PageServerLoad } from './$types';
-import { env } from '$env/dynamic/public';
+import { env as publicEnv } from '$env/dynamic/public';
+import { isBetterAuthConfigured, toAuthUser } from '$lib/server/betterAuth';
 
-export const load: PageServerLoad = async () => {
-	// Check if Clerk is configured by verifying the publishable key exists
-	// Using dynamic env to avoid build errors when the key is not set
-	const isConfigured = !!env.PUBLIC_CLERK_PUBLISHABLE_KEY;
+const getDemoCredentials = () => {
+	if (publicEnv.PUBLIC_DEMO_AUTH !== 'true') return null;
 
 	return {
-		isConfigured
+		email: publicEnv.PUBLIC_DEMO_USER_EMAIL || 'tester@test.com',
+		password: publicEnv.PUBLIC_DEMO_USER_PASSWORD || 'test1'
+	};
+};
+
+export const load: PageServerLoad = async ({ locals }) => {
+	return {
+		isConfigured: isBetterAuthConfigured(),
+		authUser: toAuthUser(locals.user),
+		demoCredentials: getDemoCredentials()
 	};
 };

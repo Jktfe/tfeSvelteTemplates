@@ -1,33 +1,9 @@
-<!--
-	Protected Dashboard Page
-
-	A simple demonstration of a protected route. This page is only
-	accessible to authenticated users. Unauthenticated visitors
-	are automatically redirected to the sign-in page.
-
-	Features:
-	- Protected route example
-	- Displays user information
-	- Quick links to other protected pages
-	- Shows authentication status
-
-	@component
--->
 <script lang="ts">
-	import { SignedIn, UserButton } from 'svelte-clerk';
-	import { useClerkContext } from 'svelte-clerk/client';
-
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { data } = $props();
 
-	// Access Clerk context for user information
-	// Note: Do not destructure to maintain reactivity
-	const ctx = useClerkContext();
-
-	// Derive user info from context
-	const user = $derived(ctx.user);
-	const firstName = $derived(user?.firstName ?? 'User');
-	const email = $derived(user?.primaryEmailAddress?.emailAddress ?? '');
+	const user = $derived(data.authUser);
+	const displayName = $derived(user?.name || user?.email || 'User');
+	const isDemoUser = $derived(data.isDemoUser ?? false);
 </script>
 
 <svelte:head>
@@ -37,77 +13,71 @@
 
 <div class="page-container">
 	<header class="page-header">
-		<h1 class="page-title">📊 Dashboard</h1>
+		<h1 class="page-title">Dashboard</h1>
 		<p class="page-description">
-			Welcome to your protected dashboard! This page demonstrates a route that requires
-			authentication.
+			This route is protected by Better Auth on the server before the page renders.
 		</p>
-		<div class="protected-badge">
-			<span class="badge-icon">🔒</span>
-			<span>Protected Route</span>
-		</div>
-	</header>
-
-	<SignedIn>
-		<!-- Welcome Card -->
-		<section class="dashboard-section">
-			<div class="welcome-card">
-				<div class="welcome-content">
-					<h2>Welcome back, {firstName}! 👋</h2>
-					<p>You're signed in as <strong>{email}</strong></p>
+			<div class="protected-badge">
+				<span class="badge-icon">🔒</span>
+				<span>Protected Route</span>
+			</div>
+			{#if isDemoUser}
+				<div class="demo-badge">
+					<span class="badge-icon">🔐</span>
+					<span>Read-only Demo</span>
 				</div>
-				<UserButton />
-			</div>
-		</section>
+			{/if}
+		</header>
 
-		<!-- Quick Actions -->
-		<section class="dashboard-section">
-			<h2 class="section-title">Quick Actions</h2>
-			<div class="actions-grid">
-				<a href="/profile" class="action-card">
-					<span class="action-icon">👤</span>
-					<div class="action-info">
-						<h3>Your Profile</h3>
-						<p>Manage your account settings and preferences</p>
-					</div>
-				</a>
-				<a href="/auth" class="action-card">
-					<span class="action-icon">🔐</span>
-					<div class="action-info">
-						<h3>Auth Demo</h3>
-						<p>Explore authentication components and features</p>
-					</div>
-				</a>
-				<a href="/" class="action-card">
-					<span class="action-icon">🏠</span>
-					<div class="action-info">
-						<h3>Home</h3>
-						<p>Return to the main component showcase</p>
-					</div>
-				</a>
+	<section class="dashboard-section">
+		<div class="welcome-card">
+			<div class="avatar" aria-hidden="true">{displayName[0]}</div>
+			<div class="welcome-content">
+				<h2>Welcome back, {displayName}</h2>
+				{#if user?.email}
+					<p>{user.email}</p>
+				{/if}
 			</div>
-		</section>
+		</div>
+	</section>
 
-		<!-- Info Card -->
-		<section class="dashboard-section">
-			<div class="info-card">
-				<h3>🛡️ How This Works</h3>
-				<p>
-					This page is protected using a <code>(protected)</code> route group with a
-					<code>+layout.server.ts</code> file that checks authentication status. If you weren't signed
-					in, you would have been redirected to the sign-in page.
-				</p>
-				<pre class="code-block">// src/routes/(protected)/+layout.server.ts
-export const load = async ({'{'} locals, url }) => {'{'}
-  const auth = locals.auth();
-  if (!auth?.userId) {'{'}
-    throw redirect(303, `/auth/sign-in?redirect_url=${'{'}url.pathname}`);
-  }
-  return {'{'} userId: auth.userId };
-}</pre>
-			</div>
-		</section>
-	</SignedIn>
+	<section class="dashboard-section">
+		<h2 class="section-title">Quick Actions</h2>
+		<div class="actions-grid">
+			<a href="/profile" class="action-card">
+				<span class="action-icon">👤</span>
+				<div class="action-info">
+					<h3>Your Profile</h3>
+					<p>View account details and session actions.</p>
+				</div>
+			</a>
+			<a href="/auth" class="action-card">
+				<span class="action-icon">🔐</span>
+				<div class="action-info">
+					<h3>Auth Overview</h3>
+					<p>Review the Better Auth integration.</p>
+				</div>
+			</a>
+			<a href="/" class="action-card">
+				<span class="action-icon">🏠</span>
+				<div class="action-info">
+					<h3>Home</h3>
+					<p>Return to the component catalogue.</p>
+				</div>
+			</a>
+		</div>
+	</section>
+
+	<section class="dashboard-section">
+		<div class="info-card">
+			<h3>How This Works</h3>
+			<p>
+				The <code>(protected)</code> route group calls <code>requireAuth(event)</code> in
+				<code>+layout.server.ts</code>. Unauthenticated requests redirect to
+				<code>/auth/sign-in</code> with a return URL.
+			</p>
+		</div>
+	</section>
 </div>
 
 <style>
@@ -126,158 +96,167 @@ export const load = async ({'{'} locals, url }) => {'{'}
 		font-size: 2.5rem;
 		font-weight: 700;
 		margin: 0 0 0.5rem;
-		color: #1a202c;
+		color: #111827;
 	}
 
 	.page-description {
 		font-size: 1.125rem;
-		color: #4a5568;
+		color: #4b5563;
 		margin: 0 0 1rem;
 	}
 
-	.protected-badge {
-		display: inline-flex;
+		.protected-badge {
+			display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background: #fed7d7;
-		color: #c53030;
+		background: #fee2e2;
+		color: #991b1b;
 		border-radius: 9999px;
 		font-size: 0.875rem;
-		font-weight: 600;
-	}
+			font-weight: 700;
+		}
 
-	.badge-icon {
-		font-size: 1rem;
-	}
+		.demo-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			margin-left: 0.5rem;
+			padding: 0.5rem 1rem;
+			background: #dbeafe;
+			color: #1e40af;
+			border-radius: 9999px;
+			font-size: 0.875rem;
+			font-weight: 700;
+		}
 
 	.dashboard-section {
 		margin-bottom: 2rem;
 	}
 
-	.section-title {
-		font-size: 1.25rem;
-		font-weight: 600;
-		margin: 0 0 1rem;
-		color: #1a202c;
+	.welcome-card,
+	.info-card,
+	.action-card {
+		background: #ffffff;
+		border: 1px solid #e5e7eb;
+		border-radius: 0.75rem;
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 	}
 
-	/* Welcome Card */
 	.welcome-card {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		padding: 2rem;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		border-radius: 1rem;
-		color: white;
+		gap: 1rem;
+		padding: 1.5rem;
 	}
 
-	.welcome-content h2 {
-		margin: 0 0 0.5rem;
-		font-size: 1.5rem;
+	.avatar {
+		display: grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 9999px;
+		background: #111827;
+		color: #ffffff;
+		font-weight: 800;
+		text-transform: uppercase;
 	}
 
-	.welcome-content p {
+	.welcome-content h2,
+	.welcome-content p,
+	.action-info h3,
+	.action-info p {
 		margin: 0;
-		opacity: 0.9;
 	}
 
-	/* Actions Grid */
+	.welcome-content p,
+	.action-info p,
+	.info-card p {
+		color: #4b5563;
+	}
+
+	.section-title {
+		font-size: 1.25rem;
+		font-weight: 700;
+		margin: 0 0 1rem;
+		color: #111827;
+	}
+
 	.actions-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 		gap: 1rem;
 	}
 
 	.action-card {
 		display: flex;
-		align-items: center;
 		gap: 1rem;
-		padding: 1.5rem;
-		background: #ffffff;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.75rem;
-		text-decoration: none;
+		padding: 1.25rem;
 		color: inherit;
-		transition: all 0.2s ease;
-	}
-
-	.action-card:hover {
-		border-color: #007aff;
-		box-shadow: 0 4px 12px rgba(0, 122, 255, 0.15);
-		transform: translateY(-2px);
+		text-decoration: none;
 	}
 
 	.action-icon {
-		font-size: 2rem;
+		font-size: 1.5rem;
 	}
 
-	.action-info h3 {
-		margin: 0 0 0.25rem;
-		font-size: 1rem;
-		font-weight: 600;
-	}
-
-	.action-info p {
-		margin: 0;
-		font-size: 0.875rem;
-		color: #4a5568;
-	}
-
-	/* Info Card */
 	.info-card {
 		padding: 1.5rem;
-		background: #ebf8ff;
-		border: 1px solid #bee3f8;
-		border-radius: 0.75rem;
 	}
 
-	.info-card h3 {
-		margin: 0 0 0.75rem;
-		font-size: 1.125rem;
-		color: #2b6cb0;
-	}
-
-	.info-card p {
-		margin: 0 0 1rem;
-		color: #2c5282;
-		line-height: 1.6;
-	}
-
-	.info-card code {
-		background: rgba(0, 0, 0, 0.1);
-		padding: 0.125rem 0.375rem;
+	code {
+		padding: 0.125rem 0.25rem;
 		border-radius: 0.25rem;
-		font-size: 0.875rem;
+		background: #f3f4f6;
 	}
 
-	.code-block {
-		background: #1a202c;
-		color: #e2e8f0;
-		padding: 1rem;
-		border-radius: 0.5rem;
-		font-family: 'Fira Code', 'Monaco', monospace;
-		font-size: 0.8rem;
-		overflow-x: auto;
-		white-space: pre;
-		margin: 0;
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
+	@media (max-width: 640px) {
 		.page-container {
 			padding: 1rem;
 		}
 
 		.page-title {
-			font-size: 1.75rem;
+			font-size: 2rem;
 		}
 
 		.welcome-card {
+			align-items: flex-start;
 			flex-direction: column;
-			text-align: center;
-			gap: 1rem;
+		}
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.page-title,
+		.section-title,
+		.welcome-content h2,
+		.action-info h3,
+		.info-card h3 {
+			color: #f8fafc;
+		}
+
+		.page-description,
+		.welcome-content p,
+		.action-info p,
+		.info-card p {
+			color: #cbd5e1;
+		}
+
+		.welcome-card,
+		.info-card,
+		.action-card {
+			background: #111827;
+			border-color: #334155;
+			box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+		}
+
+		.avatar {
+			background: #e2e8f0;
+			color: #0f172a;
+		}
+
+		code {
+			background: #1e293b;
+			color: #bfdbfe;
 		}
 	}
 </style>

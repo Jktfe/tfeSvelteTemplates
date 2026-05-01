@@ -1,5 +1,5 @@
 /**
- * Server-side Authentication Utilities
+ * Server-side authentication utilities
  *
  * This module provides helper functions for authentication checks in
  * server-side code (load functions, API endpoints, actions).
@@ -16,6 +16,7 @@
 
 import { redirect, error } from '@sveltejs/kit';
 import type { RequestEvent } from '@sveltejs/kit';
+import { env as publicEnv } from '$env/dynamic/public';
 
 /**
  * Result of an authentication check
@@ -48,8 +49,7 @@ export interface AuthResult {
  * ```
  */
 export function requireAuth(event: RequestEvent, redirectUrl = '/auth/sign-in'): string {
-	const auth = event.locals.auth();
-	const userId = auth?.userId;
+	const userId = event.locals.user?.id;
 
 	if (!userId) {
 		const returnUrl = encodeURIComponent(event.url.pathname + event.url.search);
@@ -80,12 +80,21 @@ export function requireAuth(event: RequestEvent, redirectUrl = '/auth/sign-in'):
  * ```
  */
 export function checkAuth(event: RequestEvent): AuthResult {
-	const auth = event.locals.auth();
-
 	return {
-		authenticated: !!auth?.userId,
-		userId: auth?.userId ?? null
+		authenticated: !!event.locals.user?.id,
+		userId: event.locals.user?.id ?? null
 	};
+}
+
+const getDemoUserEmail = (): string =>
+	(publicEnv.PUBLIC_DEMO_USER_EMAIL || 'tester@test.com').toLowerCase();
+
+const isPublicDemoAuthEnabled = (): boolean => publicEnv.PUBLIC_DEMO_AUTH === 'true';
+
+export function isDemoUser(event: RequestEvent): boolean {
+	const email = event.locals.user?.email?.toLowerCase();
+
+	return isPublicDemoAuthEnabled() && email === getDemoUserEmail();
 }
 
 /**
@@ -109,12 +118,17 @@ export function checkAuth(event: RequestEvent): AuthResult {
  * ```
  */
 export function requireAuthAPI(event: RequestEvent): string {
-	const auth = event.locals.auth();
-	const userId = auth?.userId;
+	const userId = event.locals.user?.id;
 
 	if (!userId) {
 		throw error(401, {
 			message: 'Authentication required'
+		});
+	}
+
+	if (isDemoUser(event)) {
+		throw error(403, {
+			message: 'The public demo account is read-only'
 		});
 	}
 
@@ -130,8 +144,7 @@ export function requireAuthAPI(event: RequestEvent): string {
  * @returns Session ID if authenticated, null otherwise
  */
 export function getSessionId(event: RequestEvent): string | null {
-	const auth = event.locals.auth();
-	return auth?.sessionId ?? null;
+	return event.locals.session?.id ?? null;
 }
 
 /**
@@ -160,10 +173,9 @@ export function hasClaim(
 	claim: string,
 	value?: string | number | boolean
 ): boolean {
-	const auth = event.locals.auth();
-	const claims = auth?.sessionClaims as Record<string, unknown> | undefined;
+	const user = event.locals.user as Record<string, unknown> | null;
 
-	if (!claims || !(claim in claims)) {
+	if (!user || !(claim in user)) {
 		return false;
 	}
 
@@ -171,5 +183,5 @@ export function hasClaim(
 		return true;
 	}
 
-	return claims[claim] === value;
+	return user[claim] === value;
 }

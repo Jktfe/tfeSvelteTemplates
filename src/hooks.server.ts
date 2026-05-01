@@ -1,56 +1,29 @@
-/**
- * SvelteKit Server Hooks for Clerk Authentication
- *
- * This file integrates Clerk authentication with SvelteKit's request handling.
- * The withClerkHandler middleware runs on every request to:
- * - Validate session tokens from cookies
- * - Attach auth state to request locals
- * - Handle authentication state for SSR
- *
- * If Clerk environment variables are not configured, authentication features
- * are disabled but the app continues to function normally (graceful fallback).
- *
- * @see https://svelte-clerk.netlify.app/
- * @module hooks.server
- */
-
-import { withClerkHandler } from 'svelte-clerk/server';
+import { building } from '$app/environment';
 import type { Handle } from '@sveltejs/kit';
-import { env } from '$env/dynamic/public';
-import { env as privateEnv } from '$env/dynamic/private';
+import { svelteKitHandler } from 'better-auth/svelte-kit';
+import { auth, isBetterAuthConfigured } from '$lib/server/betterAuth';
 
-/**
- * Check if Clerk is properly configured
- * Both publishable key and secret key are required for Clerk to function
- */
-const isClerkConfigured = (): boolean => {
-	return !!(env.PUBLIC_CLERK_PUBLISHABLE_KEY && privateEnv.CLERK_SECRET_KEY);
-};
+export const handle: Handle = async ({ event, resolve }) => {
+	event.locals.session = null;
+	event.locals.user = null;
 
-/**
- * Fallback handler when Clerk is not configured
- * Provides a mock auth() function that returns null for all auth checks
- */
-const fallbackHandler: Handle = async ({ event, resolve }) => {
-	// Provide a mock auth function that returns null (unauthenticated)
-	// Type assertion needed because svelte-clerk expects SessionAuthObject
-	// but we return null when Clerk is not configured (graceful fallback)
-	event.locals.auth = (() => null) as unknown as typeof event.locals.auth;
-	return resolve(event);
-};
-
-/**
- * SvelteKit handle hook with conditional Clerk authentication
- * - If Clerk keys are configured: Uses full Clerk authentication
- * - If Clerk keys are missing: Falls back to demo mode (no auth)
- */
-export const handle: Handle = async (input) => {
-	if (isClerkConfigured()) {
-		// Use Clerk authentication when properly configured
-		const clerkHandler = withClerkHandler();
-		return clerkHandler(input);
+	if (!isBetterAuthConfigured()) {
+		return resolve(event);
 	}
 
-	// Fallback to demo mode when Clerk is not configured
-	return fallbackHandler(input);
+	const session = await auth.api
+		.getSession({
+			headers: event.request.headers
+		})
+		.catch((error) => {
+			console.error('[Auth] Failed to load Better Auth session:', error);
+			return null;
+		});
+
+	if (session) {
+		event.locals.session = session.session;
+		event.locals.user = session.user;
+	}
+
+	return svelteKitHandler({ event, resolve, auth, building });
 };

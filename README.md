@@ -116,9 +116,9 @@ Animated navigation menu with staggered entrance animations and active state hig
 5. **Open your browser:**
    Navigate to `http://localhost:5173`
 
-## 🗄️ Database Setup (Optional)
+## 🗄️ Database Setup
 
-The demo includes Neon database integration for all components, but everything works with fallback data if no database is configured.
+The component demos now label whether data came from the database, static fixtures, or a database error path. Authentication and write flows require a real Postgres connection.
 
 ### Setting up Neon Database:
 
@@ -127,15 +127,31 @@ The demo includes Neon database integration for all components, but everything w
 3. Copy your connection string
 4. Run the database schemas in your Neon SQL Editor:
    ```bash
-   # First, run database/schema.sql (CardStack data)
-   # Then, run database/schema_v2.sql (Marquee, ExpandingCard, LinkImageHover data)
+   # Auth tables
+   database/schema_better_auth.sql
+
+   # Component demo tables
+   database/schema.sql
+   database/schema_v2.sql
    ```
 5. Add connection string to `.env`:
    ```
    DATABASE_URL=your_connection_string_here
+   BETTER_AUTH_SECRET=your_long_random_secret
+   BETTER_AUTH_URL=http://localhost:5173
    ```
 
-**Note:** If you don't set up a database, the app will use fallback data automatically. Each page displays a status indicator showing whether it's using database or fallback data.
+Auth pages show "Auth Offline" until `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` are configured.
+
+For local OSS demos, you can seed an explicit demo login after the auth schema exists:
+
+```bash
+bun run seed:demo-user
+```
+
+That creates `tester@test.com` with password `test1`. The seed is manual-only and refuses to run with `NODE_ENV=production` unless explicitly overridden.
+
+For the hosted OSS demo, set `PUBLIC_DEMO_AUTH=true` after seeding the demo database. That exposes a "Try demo" login on the sign-in page. The public demo account is treated as read-only for mutating API routes until user-owned demo data is in place.
 
 ## 📁 Project Structure
 
@@ -155,7 +171,7 @@ tfeSvelteTemplates/
 │   │   │   ├── expandingCards.ts
 │   │   │   └── linkPreviews.ts
 │   │   ├── types.ts             # TypeScript interfaces
-│   │   ├── constants.ts         # Fallback data
+│   │   ├── constants.ts         # Demo fixture data
 │   │   └── utils.ts             # Helper functions
 │   ├── routes/
 │   │   ├── api/cards/
@@ -295,7 +311,7 @@ For issues or questions:
 - Verify `DATABASE_URL` is set in `.env`
 - Check Neon database is running
 - Review server console for error messages
-- App will use fallback data if database unavailable
+- Verify `database/schema_better_auth.sql` has been run before using auth
 
 ### Build Errors
 - Run `bun install` to ensure dependencies are up-to-date

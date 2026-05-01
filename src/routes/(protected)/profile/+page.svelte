@@ -1,33 +1,18 @@
-<!--
-	Protected Profile Page
-
-	User profile management page using Clerk's UserProfile component.
-	This page is protected and only accessible to authenticated users.
-
-	Features:
-	- Full Clerk UserProfile component
-	- Account management (email, password, 2FA)
-	- Connected accounts management
-	- Session management
-	- Protected route example
-
-	@component
--->
 <script lang="ts">
-	import { SignedIn, UserProfile, UserButton } from 'svelte-clerk';
-	import { useClerkContext } from 'svelte-clerk/client';
+	import { goto, invalidateAll } from '$app/navigation';
+	import { authClient } from '$lib/auth-client';
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	let { data } = $props();
 
-	// Access Clerk context for user information
-	const ctx = useClerkContext();
-	const user = $derived(ctx.user);
-	const fullName = $derived(
-		user?.firstName && user?.lastName
-			? `${user.firstName} ${user.lastName}`
-			: user?.firstName ?? 'User'
-	);
+	const user = $derived(data.authUser);
+	const displayName = $derived(user?.name || user?.email || 'User');
+	const isDemoUser = $derived(data.isDemoUser ?? false);
+
+	async function signOut() {
+		await authClient.signOut();
+		await invalidateAll();
+		await goto('/auth/sign-in');
+	}
 </script>
 
 <svelte:head>
@@ -39,55 +24,52 @@
 	<header class="page-header">
 		<div class="header-content">
 			<div class="header-text">
-				<h1 class="page-title">👤 Your Profile</h1>
-				<p class="page-description">
-					Manage your account settings, security preferences, and connected accounts.
-				</p>
+				<h1 class="page-title">Your Profile</h1>
+				<p class="page-description">Account details from the active Better Auth session.</p>
 			</div>
-			<div class="protected-badge">
-				<span class="badge-icon">🔒</span>
-				<span>Protected Route</span>
-			</div>
-		</div>
-	</header>
-
-	<SignedIn>
-		<!-- User Info Summary -->
-		<section class="profile-section">
-			<div class="user-summary">
-				<div class="user-info">
-					<h2>Welcome, {fullName}</h2>
-					<p>Use the panel below to manage your account settings.</p>
+				<div class="protected-badge">
+					<span class="badge-icon">🔒</span>
+					<span>Protected Route</span>
 				</div>
-				<UserButton />
+				{#if isDemoUser}
+					<div class="demo-badge">
+						<span class="badge-icon">🔐</span>
+						<span>Read-only Demo</span>
+					</div>
+				{/if}
 			</div>
-		</section>
+		</header>
 
-		<!-- UserProfile Component -->
-		<section class="profile-section">
-			<div class="profile-wrapper">
-				<UserProfile />
+	<section class="profile-section">
+		<div class="user-summary">
+			<div class="avatar" aria-hidden="true">{displayName[0]}</div>
+			<div class="user-info">
+				<h2>{displayName}</h2>
+				{#if user?.email}
+					<p>{user.email}</p>
+				{/if}
+				<p class="user-id">User ID: {user?.id}</p>
 			</div>
-		</section>
+			<button type="button" onclick={signOut}>Sign out</button>
+		</div>
+	</section>
 
-		<!-- Navigation -->
-		<section class="profile-section">
-			<div class="nav-links">
-				<a href="/dashboard" class="nav-link">
-					<span class="nav-icon">📊</span>
-					<span>Back to Dashboard</span>
-				</a>
-				<a href="/auth" class="nav-link">
-					<span class="nav-icon">🔐</span>
-					<span>Auth Demo</span>
-				</a>
-				<a href="/" class="nav-link">
-					<span class="nav-icon">🏠</span>
-					<span>Home</span>
-				</a>
-			</div>
-		</section>
-	</SignedIn>
+	<section class="profile-section">
+		<div class="nav-links">
+			<a href="/dashboard" class="nav-link">
+				<span class="nav-icon">📊</span>
+				<span>Back to Dashboard</span>
+			</a>
+			<a href="/auth" class="nav-link">
+				<span class="nav-icon">🔐</span>
+				<span>Auth Overview</span>
+			</a>
+			<a href="/" class="nav-link">
+				<span class="nav-icon">🏠</span>
+				<span>Home</span>
+			</a>
+		</div>
+	</section>
 </div>
 
 <style>
@@ -109,79 +91,102 @@
 		flex-wrap: wrap;
 	}
 
-	.header-text {
-		flex: 1;
-		min-width: 250px;
-	}
-
 	.page-title {
 		font-size: 2rem;
 		font-weight: 700;
 		margin: 0 0 0.5rem;
-		color: #1a202c;
+		color: #111827;
 	}
 
 	.page-description {
 		font-size: 1rem;
-		color: #4a5568;
+		color: #4b5563;
 		margin: 0;
 	}
 
-	.protected-badge {
-		display: inline-flex;
+		.protected-badge {
+			display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background: #fed7d7;
-		color: #c53030;
+		background: #fee2e2;
+		color: #991b1b;
 		border-radius: 9999px;
 		font-size: 0.875rem;
-		font-weight: 600;
-		flex-shrink: 0;
-	}
+		font-weight: 700;
+			flex-shrink: 0;
+		}
 
-	.badge-icon {
-		font-size: 1rem;
-	}
+		.demo-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.5rem 1rem;
+			background: #dbeafe;
+			color: #1e40af;
+			border-radius: 9999px;
+			font-size: 0.875rem;
+			font-weight: 700;
+			flex-shrink: 0;
+		}
 
 	.profile-section {
 		margin-bottom: 2rem;
 	}
 
-	/* User Summary */
 	.user-summary {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		gap: 1rem;
 		padding: 1.5rem;
-		background: #f7fafc;
-		border: 1px solid #e2e8f0;
+		background: #ffffff;
+		border: 1px solid #e5e7eb;
 		border-radius: 0.75rem;
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 	}
 
-	.user-info h2 {
-		margin: 0 0 0.25rem;
-		font-size: 1.25rem;
-		font-weight: 600;
+	.avatar {
+		display: grid;
+		place-items: center;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 9999px;
+		background: #111827;
+		color: #ffffff;
+		font-weight: 800;
+		text-transform: uppercase;
+	}
+
+	.user-info {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.user-info h2,
+	.user-info p {
+		margin: 0;
 	}
 
 	.user-info p {
-		margin: 0;
-		color: #4a5568;
-		font-size: 0.875rem;
+		color: #4b5563;
 	}
 
-	/* Profile Wrapper */
-	.profile-wrapper {
-		display: flex;
-		justify-content: center;
-		padding: 2rem;
+	.user-id {
+		font-size: 0.8125rem;
+		word-break: break-all;
+	}
+
+	button {
+		padding: 0.625rem 1rem;
+		border: 1px solid #d1d5db;
+		border-radius: 0.5rem;
 		background: #ffffff;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.75rem;
+		color: #374151;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
 	}
 
-	/* Navigation Links */
 	.nav-links {
 		display: flex;
 		gap: 1rem;
@@ -192,52 +197,63 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
-		padding: 0.75rem 1.25rem;
-		background: #f7fafc;
-		border: 1px solid #e2e8f0;
+		padding: 0.75rem 1rem;
+		background: #ffffff;
+		border: 1px solid #e5e7eb;
 		border-radius: 0.5rem;
+		color: #111827;
 		text-decoration: none;
-		color: #4a5568;
-		font-weight: 500;
-		transition: all 0.2s ease;
+		font-weight: 700;
 	}
 
-	.nav-link:hover {
-		background: #edf2f7;
-		border-color: #cbd5e0;
-		color: #1a202c;
-	}
-
-	.nav-icon {
-		font-size: 1.125rem;
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
+	@media (max-width: 640px) {
 		.page-container {
 			padding: 1rem;
 		}
 
-		.header-content {
-			flex-direction: column;
-		}
-
-		.page-title {
-			font-size: 1.5rem;
-		}
-
 		.user-summary {
+			align-items: flex-start;
 			flex-direction: column;
-			text-align: center;
-			gap: 1rem;
 		}
 
-		.profile-wrapper {
-			padding: 1rem;
+		button,
+		.nav-link {
+			width: 100%;
+			justify-content: center;
+		}
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.page-title,
+		.user-info h2 {
+			color: #f8fafc;
 		}
 
-		.nav-links {
-			flex-direction: column;
+		.page-description,
+		.user-info p {
+			color: #cbd5e1;
+		}
+
+		.user-summary,
+		.nav-link {
+			background: #111827;
+			border-color: #334155;
+			box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05);
+		}
+
+		.avatar {
+			background: #e2e8f0;
+			color: #0f172a;
+		}
+
+		button,
+		.nav-link {
+			color: #e2e8f0;
+		}
+
+		button {
+			background: #0f172a;
+			border-color: #334155;
 		}
 	}
 </style>
