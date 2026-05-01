@@ -1,0 +1,225 @@
+/* ============================================================
+   TFE — There For Everything
+   House design tokens — colour, type, motion.
+   Imported globally via app.css.
+   ============================================================ */
+
+:root {
+	/* ---------- Brand blue (sampled from official logo: #004695) ---------- */
+	--tfe-blue: #004695;
+	--tfe-blue-50: #eaf0f9;
+	--tfe-blue-100: #c8d6ec;
+	--tfe-blue-200: #94adda;
+	--tfe-blue-300: #5b82c4;
+	--tfe-blue-400: #2861ae;
+	--tfe-blue-500: #004695;
+	--tfe-blue-600: #003b7e;
+	--tfe-blue-700: #002f66;
+	--tfe-blue-800: #00224a;
+	--tfe-blue-900: #00152e;
+
+	/* ---------- Neutrals (warm-cool grey) ---------- */
+	--tfe-ink: #111315;
+	--tfe-graphite: #2b2f33;
+	--tfe-slate: #4a5158;
+	--tfe-stone: #777e85;
+	--tfe-mist: #b8bdc1;
+	--tfe-paper: #ffffff;
+	--tfe-canvas: #ffffff;
+	--tfe-rule: #e8e8e8;
+
+	/* ---------- Accents (sparing) ---------- */
+	--tfe-rust: #b3502c;
+	--tfe-clay: #d8a382;
+	--tfe-moss: #6e7d4e;
+
+	/* ---------- Semantic — light theme ---------- */
+	--bg: var(--tfe-paper);
+	--surface: var(--tfe-canvas);
+	--surface-2: #f6f6f6;
+
+	--fg: var(--tfe-ink);
+	--fg-1: var(--tfe-ink);
+	--fg-2: var(--tfe-slate);
+	--fg-3: var(--tfe-stone);
+	--fg-on-dark: #f6f5f1;
+	--fg-on-blue: #ffffff;
+
+	--border: var(--tfe-rule);
+	--border-strong: #cfcfcf;
+	--divider: #f0f0f0;
+
+	--accent: var(--tfe-blue);
+	--accent-strong: var(--tfe-blue-700);
+	--accent-warm: var(--tfe-rust);
+
+	--link: var(--tfe-blue);
+	--link-hover: var(--tfe-blue-700);
+
+	--focus-ring: 0 0 0 3px rgba(0, 70, 149, 0.3);
+
+	/* ---------- Typography families ---------- */
+	--font-display: 'Anton', 'Oswald', 'Bebas Neue', 'Helvetica Neue Condensed', sans-serif;
+	--font-sans: 'IBM Plex Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	--font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Menlo', monospace;
+	--font-serif: 'Source Serif Pro', Georgia, 'Times New Roman', serif;
+
+	/* ---------- Type scale ---------- */
+	--fs-12: 0.75rem;
+	--fs-13: 0.8125rem;
+	--fs-14: 0.875rem;
+	--fs-15: 0.9375rem;
+	--fs-16: 1rem;
+	--fs-18: 1.125rem;
+	--fs-20: 1.25rem;
+	--fs-24: 1.5rem;
+	--fs-30: 1.875rem;
+	--fs-36: 2.25rem;
+	--fs-48: 3rem;
+	--fs-64: 4rem;
+	--fs-80: 5rem;
+	--fs-112: 7rem;
+
+	/* ---------- Weights / line-heights / tracking ---------- */
+	--fw-light: 300;
+	--fw-regular: 400;
+	--fw-medium: 500;
+	--fw-semibold: 600;
+	--fw-bold: 700;
+	--lh-tight: 1.05;
+	--lh-snug: 1.2;
+	--lh-normal: 1.45;
+	--lh-loose: 1.65;
+	--tracking-tight: -0.01em;
+	--tracking-normal: 0;
+	--tracking-wide: 0.04em;
+	--tracking-display: 0.02em;
+	--tracking-caps: 0.12em;
+
+	/* ---------- Spacing (4px base) ---------- */
+	--sp-0: 0;
+	--sp-1: 4px;
+	--sp-2: 8px;
+	--sp-3: 12px;
+	--sp-4: 16px;
+	--sp-5: 20px;
+	--sp-6: 24px;
+	--sp-8: 32px;
+	--sp-10: 40px;
+	--sp-12: 48px;
+	--sp-16: 64px;
+	--sp-20: 80px;
+	--sp-24: 96px;
+	--sp-32: 128px;
+
+	/* ---------- Radii — restrained ---------- */
+	--r-0: 0px;
+	--r-1: 2px;
+	--r-2: 4px;
+	--r-3: 8px;
+	--r-pill: 999px;
+
+	/* ---------- Borders ---------- */
+	--bw-hair: 1px;
+	--bw-rule: 2px;
+
+	/* ---------- Shadows — minimal ---------- */
+	--shadow-0: none;
+	--shadow-1: 0 1px 0 rgba(17, 19, 21, 0.06);
+	--shadow-2:
+		0 1px 2px rgba(17, 19, 21, 0.06), 0 4px 12px rgba(17, 19, 21, 0.05);
+	--shadow-3:
+		0 6px 24px rgba(17, 19, 21, 0.08), 0 1px 2px rgba(17, 19, 21, 0.06);
+
+	/* ---------- Motion ---------- */
+	--ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+	--ease-in: cubic-bezier(0.6, 0, 0.8, 0.3);
+	--ease-std: cubic-bezier(0.4, 0, 0.2, 1);
+	--dur-fast: 120ms;
+	--dur-base: 200ms;
+	--dur-slow: 360ms;
+
+	/* ---------- Layout ---------- */
+	--container: 1320px;
+	--gutter: var(--sp-6);
+}
+
+/* ---------- Dark-scheme overrides ---------- */
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: var(--tfe-ink);
+		--surface: #18191c;
+		--surface-2: #1f2125;
+		--fg: #f6f5f1;
+		--fg-1: #f6f5f1;
+		--fg-2: #c8cbcd;
+		--fg-3: #8a8e92;
+		--border: #2a2d31;
+		--border-strong: #3a3e43;
+		--divider: #25282c;
+		--accent: var(--tfe-blue-300);
+		--accent-strong: var(--tfe-blue-200);
+		--link: var(--tfe-blue-200);
+		--link-hover: #ffffff;
+		--shadow-2:
+			0 1px 2px rgba(0, 0, 0, 0.45), 0 4px 12px rgba(0, 0, 0, 0.35);
+		--shadow-3:
+			0 6px 24px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.45);
+	}
+}
+
+/* ---------- Manual override classes if user toggles ---------- */
+[data-theme='dark'] {
+	--bg: var(--tfe-ink);
+	--surface: #18191c;
+	--surface-2: #1f2125;
+	--fg: #f6f5f1;
+	--fg-1: #f6f5f1;
+	--fg-2: #c8cbcd;
+	--fg-3: #8a8e92;
+	--border: #2a2d31;
+	--border-strong: #3a3e43;
+	--divider: #25282c;
+	--accent: var(--tfe-blue-300);
+	--accent-strong: var(--tfe-blue-200);
+	--link: var(--tfe-blue-200);
+	--link-hover: #ffffff;
+}
+
+[data-theme='light'] {
+	--bg: var(--tfe-paper);
+	--surface: var(--tfe-canvas);
+	--surface-2: #f6f6f6;
+	--fg: var(--tfe-ink);
+	--fg-1: var(--tfe-ink);
+	--fg-2: var(--tfe-slate);
+	--fg-3: var(--tfe-stone);
+	--border: var(--tfe-rule);
+	--border-strong: #cfcfcf;
+	--divider: #f0f0f0;
+	--accent: var(--tfe-blue);
+	--accent-strong: var(--tfe-blue-700);
+	--link: var(--tfe-blue);
+	--link-hover: var(--tfe-blue-700);
+}
+
+/* ---------- Tweak overrides driven by data attributes on <html> ---------- */
+[data-tfe-accent='rust'] {
+	--accent: var(--tfe-rust);
+	--accent-strong: #8a3d20;
+	--link: var(--tfe-rust);
+	--link-hover: #8a3d20;
+	--tfe-blue: var(--tfe-rust);
+	--tfe-blue-300: var(--tfe-clay);
+	--tfe-blue-700: #8a3d20;
+}
+
+[data-tfe-accent='moss'] {
+	--accent: var(--tfe-moss);
+	--accent-strong: #525d3a;
+	--link: var(--tfe-moss);
+	--link-hover: #525d3a;
+	--tfe-blue: var(--tfe-moss);
+	--tfe-blue-300: #a8b88a;
+	--tfe-blue-700: #525d3a;
+}

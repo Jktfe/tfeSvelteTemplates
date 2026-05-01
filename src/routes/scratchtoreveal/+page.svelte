@@ -1,20 +1,9 @@
 <script lang="ts">
-	/**
-	 * ScratchToReveal Demo Page
-	 *
-	 * This page demonstrates the ScratchToReveal component with multiple examples:
-	 * - Basic text reveal with progress bar
-	 * - Image texture (lottery card style)
-	 * - Coupon code reveal (promotional use case)
-	 * - Custom styling variations
-	 * - Features grid
-	 * - Props reference
-	 * - Use cases
-	 *
-	 * Serves as both a functional demo and documentation for developers.
-	 */
-
 	import ScratchToReveal from '$lib/components/ScratchToReveal.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/scratchtoreveal')!;
 
 	let copiedCouponCode = $state(false);
 
@@ -23,883 +12,367 @@
 		copiedCouponCode = true;
 		setTimeout(() => (copiedCouponCode = false), 2000);
 	}
-</script>
 
-<svelte:head>
-	<title>ScratchToReveal Component | TFE Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive scratch-off component revealing hidden content with HTML5 Canvas and zero dependencies"
-	/>
-</svelte:head>
+	const usageSnippet = `<script>
+  import ScratchToReveal from '$lib/components/ScratchToReveal.svelte';
+<\/script>
 
-<div class="page-container">
-	<!-- Page Header -->
-	<header class="page-header">
-		<h1 class="page-title">🎫 ScratchToReveal Component</h1>
-		<p class="page-description">
-			Create interactive scratch-off experiences revealing hidden content underneath. Perfect for
-			gamification, marketing promotions, interactive content, and educational applications. Built
-			with HTML5 Canvas and pure native implementation for zero dependencies.
-		</p>
-	</header>
-
-	<!-- Basic Text Reveal Example -->
-	<section class="demo-section">
-		<h2 class="section-title">Basic Text Reveal</h2>
-		<p class="section-description">
-			Simple scratch surface with text overlay and progress bar. Auto-reveals at 70% threshold.
-			Demonstrates core functionality with minimal configuration.
-		</p>
-		<div class="demo-container">
-			<ScratchToReveal
-				scratchText="Scratch Here!"
-				showProgress={true}
-				revealThreshold={70}
-				width={400}
-				height={300}
-			>
-				<div class="prize-content">
-					<div class="prize-emoji">🎉</div>
-					<h3 class="prize-title">Congratulations!</h3>
-					<p class="prize-text">You've revealed the hidden message!</p>
-				</div>
-			</ScratchToReveal>
-		</div>
-		<div class="code-example">
-			<pre><code>{`<ScratchToReveal
+<ScratchToReveal
   scratchText="Scratch Here!"
   showProgress={true}
   revealThreshold={70}
   width={400}
   height={300}
 >
-  <div class="prize-content">
+  <div class="prize">
     <h3>Congratulations!</h3>
-    <p>You've revealed the hidden message!</p>
+    <p>You've revealed the hidden message.</p>
   </div>
-</ScratchToReveal>`}</code></pre>
-		</div>
-	</section>
+</ScratchToReveal>`;
 
-	<!-- Image Texture Example -->
-	<section class="demo-section">
-		<h2 class="section-title">Lottery Card Style</h2>
-		<p class="section-description">
-			Custom scratch surface with lottery ticket appearance. Shows how gamified experiences can be
-			created with visual textures. Uses a solid grey surface to simulate metallic coating.
-		</p>
-		<div class="demo-container">
-			<ScratchToReveal
-				scratchText="🎰 SCRATCH TO WIN 🎰"
-				scratchColor="#c0c0c0"
-				scratchTextColor="#333333"
-				scratchTextSize="20px"
-				brushSize={50}
-				width={400}
-				height={300}
-			>
-				<div class="lottery-content">
-					<div class="lottery-header">🎊 WINNER! 🎊</div>
-					<div class="lottery-prize">£50</div>
-					<div class="lottery-subtext">Prize Money</div>
-				</div>
-			</ScratchToReveal>
-		</div>
-		<div class="code-example">
-			<pre><code>{`<ScratchToReveal
-  scratchText="🎰 SCRATCH TO WIN 🎰"
-  scratchColor="#c0c0c0"
-  scratchTextColor="#333333"
-  brushSize={50}
-  width={400}
-  height={300}
+	const codeExplanation =
+		'ScratchToReveal layers an HTML5 canvas above a Svelte snippet. Pointer events sample alpha pixels each frame to track scratched percentage; when it crosses revealThreshold the canvas fades out. Pointer/touch/pen all share a single pointer-event path so mobile is first-class.';
+</script>
+
+<svelte:head>
+	<title>ScratchToReveal — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Interactive scratch-off component revealing hidden content with HTML5 Canvas and zero dependencies."
+	/>
+</svelte:head>
+
+<ComponentPageShell
+	{...shell.props}
+	{usageSnippet}
+	{codeExplanation}
+	tags={['Svelte 5', 'Canvas', 'Pointer events', 'Touch', 'Zero deps']}
 >
-  <div class="lottery-content">
-    <div class="lottery-header">🎊 WINNER! 🎊</div>
-    <div class="lottery-prize">£50</div>
-  </div>
-</ScratchToReveal>`}</code></pre>
-		</div>
-	</section>
-
-	<!-- Coupon Code Reveal -->
-	<section class="demo-section">
-		<h2 class="section-title">Promotional Coupon Code</h2>
-		<p class="section-description">
-			Marketing use case with coupon code reveal and copy functionality. Demonstrates custom
-			revealed content with interactive elements.
-		</p>
-		<div class="demo-container">
-			<ScratchToReveal
-				scratchText="SCRATCH FOR DISCOUNT!"
-				scratchColor="#ff6b6b"
-				scratchTextColor="#ffffff"
-				scratchTextSize="18px"
-				width={400}
-				height={300}
-			>
-				<div class="coupon-content">
-					<div class="coupon-badge">50% OFF</div>
-					<div class="coupon-code">SAVE50</div>
-					<p class="coupon-text">Limited Time Offer</p>
-					<button class="copy-button" onclick={copyCouponCode}>
-						{copiedCouponCode ? '✓ Copied!' : 'Copy Code'}
-					</button>
+	{#snippet demo()}
+		<div class="str-grid">
+			<div class="str-card">
+				<h3>Basic text reveal</h3>
+				<p>Auto-reveals at 70% scratched, with progress bar.</p>
+				<div class="str-stage">
+					<ScratchToReveal
+						scratchText="Scratch Here!"
+						showProgress={true}
+						revealThreshold={70}
+						width={400}
+						height={300}
+					>
+						<div class="str-prize">
+							<div class="str-prize__emoji">🎉</div>
+							<h4>Congratulations!</h4>
+							<p>You've revealed the hidden message!</p>
+						</div>
+					</ScratchToReveal>
 				</div>
-			</ScratchToReveal>
-		</div>
-		<div class="code-example">
-			<pre><code>{`<ScratchToReveal
-  scratchText="SCRATCH FOR DISCOUNT!"
-  scratchColor="#ff6b6b"
-  scratchTextColor="#ffffff"
-  width={400}
-  height={300}
->
-  <div class="coupon-content">
-    <div class="coupon-badge">50% OFF</div>
-    <div class="coupon-code">SAVE50</div>
-    <button onclick={copyCouponCode}>Copy Code</button>
-  </div>
-</ScratchToReveal>`}</code></pre>
-		</div>
-	</section>
-
-	<!-- Custom Styling Examples -->
-	<section class="demo-section">
-		<h2 class="section-title">Customization Options</h2>
-		<p class="section-description">
-			Customise colours, brush sizes, shapes, and behaviors to match your design system.
-		</p>
-
-		<div class="customization-grid">
-			<!-- Large Brush -->
-			<div class="custom-demo">
-				<h3 class="custom-title">Large Brush (60px)</h3>
-				<ScratchToReveal scratchText="Easy Mode!" brushSize={60} width={280} height={200}>
-					<div class="simple-content">
-						<p style="font-size: 2rem;">🌟</p>
-						<p style="font-weight: 600;">Revealed!</p>
-					</div>
-				</ScratchToReveal>
 			</div>
 
-			<!-- Square Brush -->
-			<div class="custom-demo">
-				<h3 class="custom-title">Square Brush</h3>
-				<ScratchToReveal
-					scratchText="Pixelated"
-					brushShape="square"
-					brushSize={40}
-					width={280}
-					height={200}
-				>
-					<div class="simple-content">
-						<p style="font-size: 2rem;">⬛</p>
-						<p style="font-weight: 600;">Blocky!</p>
-					</div>
-				</ScratchToReveal>
+			<div class="str-card">
+				<h3>Lottery card</h3>
+				<p>Solid grey surface, large brush, custom text.</p>
+				<div class="str-stage">
+					<ScratchToReveal
+						scratchText="🎰 SCRATCH TO WIN 🎰"
+						scratchColor="#c0c0c0"
+						scratchTextColor="#333333"
+						scratchTextSize="20px"
+						brushSize={50}
+						width={400}
+						height={300}
+					>
+						<div class="str-lottery">
+							<div class="str-lottery__header">🎊 WINNER! 🎊</div>
+							<div class="str-lottery__prize">£50</div>
+							<div class="str-lottery__sub">Prize Money</div>
+						</div>
+					</ScratchToReveal>
+				</div>
 			</div>
 
-			<!-- Custom Colors -->
-			<div class="custom-demo">
-				<h3 class="custom-title">Custom Colors</h3>
-				<ScratchToReveal
-					scratchColor="#8b5cf6"
-					scratchText="Purple!"
-					scratchTextColor="#ffffff"
-					width={280}
-					height={200}
-				>
-					<div class="simple-content">
-						<p style="font-size: 2rem;">💜</p>
-						<p style="font-weight: 600;">Violet</p>
-					</div>
-				</ScratchToReveal>
+			<div class="str-card">
+				<h3>Coupon code</h3>
+				<p>Marketing reveal with copy interaction.</p>
+				<div class="str-stage">
+					<ScratchToReveal
+						scratchText="SCRATCH FOR DISCOUNT!"
+						scratchColor="#ff6b6b"
+						scratchTextColor="#ffffff"
+						scratchTextSize="18px"
+						width={400}
+						height={300}
+					>
+						<div class="str-coupon">
+							<div class="str-coupon__badge">50% OFF</div>
+							<div class="str-coupon__code">SAVE50</div>
+							<p class="str-coupon__text">Limited Time Offer</p>
+							<button class="str-copy" onclick={copyCouponCode}>
+								{copiedCouponCode ? '✓ Copied!' : 'Copy Code'}
+							</button>
+						</div>
+					</ScratchToReveal>
+				</div>
 			</div>
 
-			<!-- Manual Reveal -->
-			<div class="custom-demo">
-				<h3 class="custom-title">Manual Reveal</h3>
-				<ScratchToReveal
-					scratchText="No Auto!"
-					autoReveal={false}
-					showProgress={true}
-					width={280}
-					height={200}
-				>
-					<div class="simple-content">
-						<p style="font-size: 2rem;">⏸️</p>
-						<p style="font-weight: 600;">Manual</p>
-					</div>
-				</ScratchToReveal>
-			</div>
-		</div>
-	</section>
-
-	<!-- Features Grid -->
-	<section class="features-section">
-		<h2 class="section-title">Component Features</h2>
-		<div class="features-grid">
-			<div class="feature-card">
-				<div class="feature-icon">🎨</div>
-				<h3 class="feature-title">Fully Customisable</h3>
-				<p class="feature-text">
-					Configure colours, textures, text, brush size, and behaviours via props. Supports both
-					solid colours and image textures for scratch surfaces.
-				</p>
-			</div>
-
-			<div class="feature-card">
-				<div class="feature-icon">⚡</div>
-				<h3 class="feature-title">60fps Performance</h3>
-				<p class="feature-text">
-					RAF-based drawing with pixel sampling provides smooth scratching at 60fps even on mobile
-					devices. Optimised for low CPU usage.
-				</p>
-			</div>
-
-			<div class="feature-card">
-				<div class="feature-icon">📱</div>
-				<h3 class="feature-title">Touch Optimised</h3>
-				<p class="feature-text">
-					Unified pointer events work with mouse, touch, and pen input. Touch-action CSS prevents
-					page scrolling during scratch interaction.
-				</p>
-			</div>
-
-			<div class="feature-card">
-				<div class="feature-icon">🔌</div>
-				<h3 class="feature-title">Zero Dependencies</h3>
-				<p class="feature-text">
-					Pure HTML5 Canvas implementation with no external libraries. Fully self-contained and
-					copy-paste ready to any project.
-				</p>
-			</div>
-
-			<div class="feature-card">
-				<div class="feature-icon">♿</div>
-				<h3 class="feature-title">Accessible</h3>
-				<p class="feature-text">
-					Keyboard shortcuts (Space/Enter to skip, 'r' to reset), ARIA labels, live regions for
-					screen readers, and skip button for non-mouse users.
-				</p>
-			</div>
-
-			<div class="feature-card">
-				<div class="feature-icon">🎯</div>
-				<h3 class="feature-title">TypeScript Ready</h3>
-				<p class="feature-text">
-					Fully typed props with comprehensive interfaces. Svelte 5 snippets for revealed content
-					with type safety.
-				</p>
+			<div class="str-card">
+				<h3>Customisation</h3>
+				<p>Brush shape, brush size, manual reveal.</p>
+				<div class="str-mini-grid">
+					<ScratchToReveal scratchText="Easy Mode!" brushSize={60} width={220} height={160}>
+						<div class="str-mini">
+							<p style="font-size: 1.5rem;">🌟</p>
+							<p>Revealed!</p>
+						</div>
+					</ScratchToReveal>
+					<ScratchToReveal
+						scratchText="Pixelated"
+						brushShape="square"
+						brushSize={40}
+						width={220}
+						height={160}
+					>
+						<div class="str-mini">
+							<p style="font-size: 1.5rem;">⬛</p>
+							<p>Blocky!</p>
+						</div>
+					</ScratchToReveal>
+					<ScratchToReveal
+						scratchColor="#8b5cf6"
+						scratchText="Purple!"
+						scratchTextColor="#ffffff"
+						width={220}
+						height={160}
+					>
+						<div class="str-mini">
+							<p style="font-size: 1.5rem;">💜</p>
+							<p>Violet</p>
+						</div>
+					</ScratchToReveal>
+					<ScratchToReveal
+						scratchText="No Auto!"
+						autoReveal={false}
+						showProgress={true}
+						width={220}
+						height={160}
+					>
+						<div class="str-mini">
+							<p style="font-size: 1.5rem;">⏸️</p>
+							<p>Manual</p>
+						</div>
+					</ScratchToReveal>
+				</div>
 			</div>
 		</div>
-	</section>
+	{/snippet}
 
-	<!-- Props Reference -->
-	<section class="props-section">
-		<h2 class="section-title">Props Reference</h2>
-		<div class="props-table-wrapper">
-			<table class="props-table">
-				<thead>
-					<tr>
-						<th>Prop</th>
-						<th>Type</th>
-						<th>Default</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td><code>scratchColor</code></td>
-						<td>string</td>
-						<td>'#999999'</td>
-						<td>Scratch surface colour</td>
-					</tr>
-					<tr>
-						<td><code>scratchImage</code></td>
-						<td>string</td>
-						<td>undefined</td>
-						<td>Optional texture image URL for scratch surface</td>
-					</tr>
-					<tr>
-						<td><code>scratchText</code></td>
-						<td>string</td>
-						<td>undefined</td>
-						<td>Overlay text on scratch surface</td>
-					</tr>
-					<tr>
-						<td><code>scratchTextColor</code></td>
-						<td>string</td>
-						<td>'#ffffff'</td>
-						<td>Colour of overlay text</td>
-					</tr>
-					<tr>
-						<td><code>scratchTextSize</code></td>
-						<td>string</td>
-						<td>'24px'</td>
-						<td>Font size of overlay text</td>
-					</tr>
-					<tr>
-						<td><code>revealThreshold</code></td>
-						<td>number</td>
-						<td>70</td>
-						<td>Percentage scratched to trigger auto-reveal (0-100)</td>
-					</tr>
-					<tr>
-						<td><code>autoReveal</code></td>
-						<td>boolean</td>
-						<td>true</td>
-						<td>Automatically reveal when threshold reached</td>
-					</tr>
-					<tr>
-						<td><code>brushSize</code></td>
-						<td>number</td>
-						<td>40</td>
-						<td>Size of scratch brush in pixels</td>
-					</tr>
-					<tr>
-						<td><code>brushShape</code></td>
-						<td>'circle' | 'square'</td>
-						<td>'circle'</td>
-						<td>Shape of scratch brush</td>
-					</tr>
-					<tr>
-						<td><code>width</code></td>
-						<td>number | 'auto'</td>
-						<td>'auto'</td>
-						<td>Canvas width in pixels or 'auto' to match content</td>
-					</tr>
-					<tr>
-						<td><code>height</code></td>
-						<td>number | 'auto'</td>
-						<td>'auto'</td>
-						<td>Canvas height in pixels or 'auto' to match content</td>
-					</tr>
-					<tr>
-						<td><code>showProgress</code></td>
-						<td>boolean</td>
-						<td>false</td>
-						<td>Show progress bar indicator</td>
-					</tr>
-					<tr>
-						<td><code>progressColor</code></td>
-						<td>string</td>
-						<td>'#3b82f6'</td>
-						<td>Colour of progress bar</td>
-					</tr>
-					<tr>
-						<td><code>allowReset</code></td>
-						<td>boolean</td>
-						<td>true</td>
-						<td>Show reset button after reveal</td>
-					</tr>
-					<tr>
-						<td><code>resetButtonText</code></td>
-						<td>string</td>
-						<td>'Reset'</td>
-						<td>Text for reset button</td>
-					</tr>
-					<tr>
-						<td><code>skipText</code></td>
-						<td>string</td>
-						<td>'Skip'</td>
-						<td>Text for skip button</td>
-					</tr>
-					<tr>
-						<td><code>onReveal</code></td>
-						<td>() => void</td>
-						<td>undefined</td>
-						<td>Callback fired when content is fully revealed</td>
-					</tr>
-					<tr>
-						<td><code>onProgress</code></td>
-						<td>(percentage) => void</td>
-						<td>undefined</td>
-						<td>Callback fired with scratch percentage (0-100)</td>
-					</tr>
-					<tr>
-						<td><code>disabled</code></td>
-						<td>boolean</td>
-						<td>false</td>
-						<td>Disable scratching interaction</td>
-					</tr>
-					<tr>
-						<td><code>class</code></td>
-						<td>string</td>
-						<td>''</td>
-						<td>Additional CSS classes for container</td>
-					</tr>
-					<tr>
-						<td><code>children</code></td>
-						<td>Snippet</td>
-						<td>undefined</td>
-						<td>Svelte 5 snippet for revealed content</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</section>
-
-	<!-- Use Cases -->
-	<section class="use-cases-section">
-		<h2 class="section-title">Use Cases</h2>
-		<div class="use-cases-grid">
-			<div class="use-case">
-				<div class="use-case-icon">🎮</div>
-				<h3 class="use-case-title">Gamification</h3>
-				<p class="use-case-text">
-					Lottery cards, scratch prizes, mystery reveals, and interactive games that engage users
-					through tactile interaction.
-				</p>
-			</div>
-			<div class="use-case">
-				<div class="use-case-icon">🎁</div>
-				<h3 class="use-case-title">Marketing</h3>
-				<p class="use-case-text">
-					Coupon codes, promotional offers, discount reveals, and flash sales that create excitement
-					and increase conversion rates.
-				</p>
-			</div>
-			<div class="use-case">
-				<div class="use-case-icon">✨</div>
-				<h3 class="use-case-title">Interactive Content</h3>
-				<p class="use-case-text">
-					Hidden messages, easter eggs, progressive disclosure, and surprise content that keeps users
-					engaged and exploring.
-				</p>
-			</div>
-			<div class="use-case">
-				<div class="use-case-icon">📚</div>
-				<h3 class="use-case-title">Education</h3>
-				<p class="use-case-text">
-					Quiz answers, learning reveals, memory games, and interactive lessons that make education
-					fun and engaging.
-				</p>
-			</div>
-		</div>
-	</section>
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>scratchColor</code></td>
+					<td><code>string</code></td>
+					<td><code>'#999999'</code></td>
+					<td>Scratch surface colour.</td>
+				</tr>
+				<tr>
+					<td><code>scratchImage</code></td>
+					<td><code>string</code></td>
+					<td><code>undefined</code></td>
+					<td>Optional texture image URL for the surface.</td>
+				</tr>
+				<tr>
+					<td><code>scratchText</code></td>
+					<td><code>string</code></td>
+					<td><code>undefined</code></td>
+					<td>Overlay text drawn on the surface.</td>
+				</tr>
+				<tr>
+					<td><code>brushSize</code></td>
+					<td><code>number</code></td>
+					<td><code>40</code></td>
+					<td>Scratch brush radius in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>brushShape</code></td>
+					<td><code>'circle' | 'square'</code></td>
+					<td><code>'circle'</code></td>
+					<td>Brush shape.</td>
+				</tr>
+				<tr>
+					<td><code>revealThreshold</code></td>
+					<td><code>number</code></td>
+					<td><code>70</code></td>
+					<td>Percentage scratched before auto-reveal.</td>
+				</tr>
+				<tr>
+					<td><code>autoReveal</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Automatically clear the canvas at the threshold.</td>
+				</tr>
+				<tr>
+					<td><code>showProgress</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Show a progress bar.</td>
+				</tr>
+				<tr>
+					<td><code>onReveal</code></td>
+					<td><code>() =&gt; void</code></td>
+					<td><code>undefined</code></td>
+					<td>Callback fired once when revealed.</td>
+				</tr>
+				<tr>
+					<td><code>onProgress</code></td>
+					<td><code>(p: number) =&gt; void</code></td>
+					<td><code>undefined</code></td>
+					<td>Callback fired with scratch percentage (0–100).</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	/* Page Container */
-	.page-container {
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: 3rem 2rem;
-	}
-
-	/* Page Header */
-	.page-header {
-		text-align: center;
-		margin-bottom: 4rem;
-	}
-
-	.page-title {
-		font-size: 3rem;
-		font-weight: 800;
-		color: #111827;
-		margin: 0 0 1rem 0;
-		line-height: 1.2;
-	}
-
-	.page-description {
-		font-size: 1.125rem;
-		color: #6b7280;
-		line-height: 1.75;
-		margin: 0;
-		max-width: 800px;
-		margin-left: auto;
-		margin-right: auto;
-	}
-
-	/* Demo Sections */
-	.demo-section {
-		margin-bottom: 4rem;
-	}
-
-	.section-title {
-		font-size: 2rem;
-		font-weight: 700;
-		color: #111827;
-		margin: 0 0 0.75rem 0;
-	}
-
-	.section-description {
-		font-size: 1rem;
-		color: #6b7280;
-		line-height: 1.75;
-		margin: 0 0 2rem 0;
-		max-width: 800px;
-	}
-
-	.demo-container {
-		background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-		border-radius: 16px;
-		padding: 3rem 2rem;
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		min-height: 400px;
-		margin-bottom: 1.5rem;
-	}
-
-	/* Code Examples */
-	.code-example {
-		background-color: #1f2937;
-		border-radius: 8px;
-		padding: 1.5rem;
-		overflow-x: auto;
-	}
-
-	.code-example pre {
-		margin: 0;
-		font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
-		font-size: 0.875rem;
-		line-height: 1.7;
-	}
-
-	.code-example code {
-		color: #e5e7eb;
-	}
-
-	/* Customization Grid */
-	.customization-grid {
+	.str-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 2rem;
-		margin-top: 2rem;
+		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		gap: 16px;
 	}
-
-	.custom-demo {
+	.str-card {
+		display: grid;
+		gap: 8px;
+		padding: 18px;
+		border-radius: var(--r-2);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--fg-1);
+	}
+	.str-card h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 16px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+	}
+	.str-card p {
+		margin: 0;
+		color: var(--fg-2);
+		font-size: 13px;
+		line-height: 1.5;
+	}
+	.str-stage {
+		display: grid;
+		place-items: center;
+		padding: 24px;
+		border-radius: var(--r-2);
+		background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+	}
+	.str-mini-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 12px;
+		padding: 16px;
+		border-radius: var(--r-2);
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		border-radius: 16px;
-		padding: 2rem 1.5rem;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		min-height: 300px;
 	}
 
-	.custom-title {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: white;
-		margin: 0 0 1.5rem 0;
+	.str-prize,
+	.str-lottery,
+	.str-coupon,
+	.str-mini {
 		text-align: center;
-	}
-
-	/* Prize Content Styles */
-	.prize-content {
-		text-align: center;
-		padding: 2rem;
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-		border-radius: 12px;
-		color: white;
 		width: 100%;
 		height: 100%;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
+		padding: 1rem;
+		border-radius: 12px;
+		color: white;
 	}
-
-	.prize-emoji {
-		font-size: 4rem;
-		margin-bottom: 1rem;
+	.str-prize {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	}
-
-	.prize-title {
-		font-size: 2rem;
-		font-weight: 700;
-		margin: 0 0 0.5rem 0;
+	.str-prize__emoji {
+		font-size: 3rem;
+		margin-bottom: 0.5rem;
 	}
-
-	.prize-text {
-		font-size: 1.125rem;
+	.str-prize h4 {
+		font-size: 1.5rem;
+		margin: 0 0 0.5rem;
+	}
+	.str-prize p {
 		margin: 0;
 		opacity: 0.9;
 	}
 
-	/* Lottery Content Styles */
-	.lottery-content {
-		text-align: center;
-		padding: 2rem;
+	.str-lottery {
 		background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-		border-radius: 12px;
-		color: white;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
 	}
-
-	.lottery-header {
-		font-size: 1.5rem;
+	.str-lottery__header {
+		font-size: 1.25rem;
 		font-weight: 700;
-		margin-bottom: 1rem;
+		margin-bottom: 0.5rem;
 	}
-
-	.lottery-prize {
-		font-size: 4rem;
+	.str-lottery__prize {
+		font-size: 3rem;
 		font-weight: 900;
-		margin: 0.5rem 0;
 	}
 
-	.lottery-subtext {
-		font-size: 1.125rem;
-		opacity: 0.9;
-	}
-
-	/* Coupon Content Styles */
-	.coupon-content {
-		text-align: center;
-		padding: 2rem;
+	.str-coupon {
 		background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-		border-radius: 12px;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
 	}
-
-	.coupon-badge {
-		background-color: rgba(255, 255, 255, 0.3);
+	.str-coupon__badge {
+		background: rgba(255, 255, 255, 0.3);
 		border: 2px solid white;
 		border-radius: 50px;
-		padding: 0.5rem 1.5rem;
-		font-size: 1.5rem;
+		padding: 0.4rem 1.25rem;
 		font-weight: 800;
-		color: white;
-		margin-bottom: 1rem;
+		margin-bottom: 0.5rem;
 	}
-
-	.coupon-code {
-		font-size: 3rem;
+	.str-coupon__code {
+		font-size: 2.25rem;
 		font-weight: 900;
-		color: white;
 		letter-spacing: 0.1em;
-		margin: 1rem 0;
 		font-family: 'Courier New', monospace;
+		margin: 0.25rem 0;
 	}
-
-	.coupon-text {
-		font-size: 1.125rem;
-		color: white;
-		margin: 0.5rem 0 1.5rem 0;
+	.str-coupon__text {
+		margin: 0.25rem 0 0.75rem;
 	}
-
-	.copy-button {
-		background-color: white;
+	.str-copy {
+		background: white;
 		color: #fa709a;
 		border: none;
 		border-radius: 8px;
-		padding: 0.75rem 2rem;
-		font-size: 1rem;
+		padding: 0.6rem 1.5rem;
 		font-weight: 600;
 		cursor: pointer;
-		transition: all 0.2s;
 	}
-
-	.copy-button:hover {
-		transform: translateY(-2px);
+	.str-copy:hover {
+		transform: translateY(-1px);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
-	.copy-button:active {
-		transform: translateY(0);
-	}
-
-	/* Simple Content Styles */
-	.simple-content {
-		text-align: center;
-		padding: 2rem;
+	.str-mini {
 		background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
-		border-radius: 12px;
-		width: 100%;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
+		color: #1f2937;
 	}
-
-	/* Features Grid */
-	.features-section {
-		margin-bottom: 4rem;
-	}
-
-	.features-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 2rem;
-		margin-top: 2rem;
-	}
-
-	.feature-card {
-		background-color: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 12px;
-		padding: 2rem;
-		text-align: center;
-		transition: all 0.2s ease-in-out;
-	}
-
-	.feature-card:hover {
-		box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-		transform: translateY(-2px);
-	}
-
-	.feature-icon {
-		font-size: 3rem;
-		margin-bottom: 1rem;
-	}
-
-	.feature-title {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: #111827;
-		margin: 0 0 0.5rem 0;
-	}
-
-	.feature-text {
-		font-size: 0.875rem;
-		color: #6b7280;
-		line-height: 1.6;
+	.str-mini p {
 		margin: 0;
-	}
-
-	/* Props Table */
-	.props-section {
-		margin-bottom: 4rem;
-	}
-
-	.props-table-wrapper {
-		overflow-x: auto;
-		border-radius: 8px;
-		border: 1px solid #e5e7eb;
-	}
-
-	.props-table {
-		width: 100%;
-		border-collapse: collapse;
-		background-color: white;
-	}
-
-	.props-table th {
-		background-color: #f9fafb;
-		padding: 0.75rem 1rem;
-		text-align: left;
-		font-size: 0.875rem;
 		font-weight: 600;
-		color: #374151;
-		border-bottom: 1px solid #e5e7eb;
-	}
-
-	.props-table td {
-		padding: 0.75rem 1rem;
-		font-size: 0.875rem;
-		color: #6b7280;
-		border-bottom: 1px solid #f3f4f6;
-	}
-
-	.props-table code {
-		background-color: #f3f4f6;
-		padding: 0.125rem 0.375rem;
-		border-radius: 4px;
-		font-size: 0.8125rem;
-		color: #111827;
-		font-family: 'Fira Code', 'Monaco', 'Courier New', monospace;
-	}
-
-	.props-table tbody tr:last-child td {
-		border-bottom: none;
-	}
-
-	/* Use Cases */
-	.use-cases-section {
-		margin-bottom: 4rem;
-	}
-
-	.use-cases-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-		gap: 1.5rem;
-	}
-
-	.use-case {
-		background-color: #f9fafb;
-		border-radius: 12px;
-		padding: 2rem;
-		text-align: center;
-	}
-
-	.use-case-icon {
-		font-size: 2.5rem;
-		margin-bottom: 1rem;
-	}
-
-	.use-case-title {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #111827;
-		margin: 0 0 0.5rem 0;
-	}
-
-	.use-case-text {
-		font-size: 0.875rem;
-		color: #6b7280;
-		line-height: 1.6;
-		margin: 0;
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
-		.page-container {
-			padding: 2rem 1rem;
-		}
-
-		.page-title {
-			font-size: 2rem;
-		}
-
-		.section-title {
-			font-size: 1.5rem;
-		}
-
-		.demo-container {
-			padding: 2rem 1rem;
-			min-height: auto;
-		}
-
-		.custom-demo {
-			min-height: auto;
-			padding: 1.5rem 1rem;
-		}
-
-		.customization-grid,
-		.features-grid,
-		.use-cases-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.code-example {
-			font-size: 0.75rem;
-		}
-
-		.prize-emoji,
-		.lottery-prize {
-			font-size: 3rem;
-		}
-
-		.coupon-code {
-			font-size: 2rem;
-		}
 	}
 </style>

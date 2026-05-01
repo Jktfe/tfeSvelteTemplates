@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import Switch from '$lib/components/Switch.svelte';
+
+	const shell = catalogShellPropsForSlug('/switch')!;
 
 	let basicOn = $state(false);
 	let darkMode = $state(false);
@@ -13,155 +17,150 @@
 	let successOn = $state(true);
 	let dangerOn = $state(true);
 
-	let notifications = $state(true);
-	let weeklyDigest = $state(false);
-	let saved = $state<null | 'pending' | 'saved'>(null);
-	const dirty = $derived(saved === null || saved === 'pending');
-
-	function save() {
-		saved = 'pending';
-		setTimeout(() => (saved = 'saved'), 400);
-	}
-
-	function reset() {
-		notifications = true;
-		weeklyDigest = false;
-		saved = null;
-	}
+	const codeExplanation =
+		'Switch is a button with role="switch" and aria-checked, so assistive tech announces it correctly without re-implementing focus or activation. Click or Space toggles the bound checked value; the optional <label for> binding means clicking the label flips the switch too. Sizes and variants are pure CSS classes — no inline styles, no animation libraries.';
 </script>
 
 <svelte:head>
-	<title>Switch | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-4xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">Switch</h1>
-			<p class="text-xl text-muted-foreground">
-				iOS-style boolean toggle with sliding thumb, two-way binding, three sizes, three variants,
-				and accessible <code>role="switch"</code> semantics.
-			</p>
-		</header>
-
-		<section class="bg-white rounded-2xl p-12 border border-neutral-200 shadow-xl space-y-12">
-			<div class="space-y-3">
-				<h3 class="text-sm font-medium text-neutral-500">Basic — uncontrolled toggle</h3>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'A11y', 'Toggle', 'CSS-only']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="switch-demo">
+			<section>
+				<h3>Basic toggle</h3>
 				<Switch bind:checked={basicOn} ariaLabel="Toggle" />
-				<p class="text-xs text-neutral-500">
-					State: <code>{basicOn ? 'on' : 'off'}</code> · No label, falls back to
-					<code>aria-label="Toggle"</code>.
-				</p>
-			</div>
+				<p class="note">State: <code>{basicOn ? 'on' : 'off'}</code></p>
+			</section>
 
-			<div class="space-y-4 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">With label — left and right</h3>
-				<div class="space-y-3">
+			<section>
+				<h3>With label — left or right</h3>
+				<div class="row">
 					<Switch bind:checked={darkMode} label="Dark mode" />
 					<Switch bind:checked={publicProfile} label="Public profile" labelPosition="left" />
 				</div>
-				<p class="text-xs text-neutral-500">
-					Either side of the track. Click on the label flips the switch — it's a real
-					<code>&lt;label for&gt;</code>.
-				</p>
-			</div>
+			</section>
 
-			<div class="space-y-4 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Three sizes</h3>
-				<div class="flex items-center gap-8">
+			<section>
+				<h3>Three sizes</h3>
+				<div class="row">
 					<Switch bind:checked={smOn} size="sm" label="Small" />
 					<Switch bind:checked={mdOn} size="md" label="Medium" />
 					<Switch bind:checked={lgOn} size="lg" label="Large" />
 				</div>
-				<p class="text-xs text-neutral-500">
-					Track widths 32 / 44 / 56 px — match the surrounding text size.
-				</p>
-			</div>
+			</section>
 
-			<div class="space-y-4 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Three variants — on-state colour</h3>
-				<div class="flex items-center gap-8">
-					<Switch bind:checked={defaultOn} label="Default (blue)" variant="default" />
-					<Switch bind:checked={successOn} label="Success (green)" variant="success" />
-					<Switch bind:checked={dangerOn} label="Danger (red)" variant="danger" />
+			<section>
+				<h3>Three variants</h3>
+				<div class="row">
+					<Switch bind:checked={defaultOn} label="Default" variant="default" />
+					<Switch bind:checked={successOn} label="Success" variant="success" />
+					<Switch bind:checked={dangerOn} label="Danger" variant="danger" />
 				</div>
-				<p class="text-xs text-neutral-500">
-					Use <code>success</code> for positive confirmations, <code>danger</code> for destructive flags.
-				</p>
-			</div>
+			</section>
 
-			<div class="space-y-4 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Disabled state</h3>
-				<div class="flex items-center gap-8">
+			<section>
+				<h3>Disabled state</h3>
+				<div class="row">
 					<Switch checked={true} label="Account verified" disabled />
-					<Switch checked={false} label="Beta features (admin only)" disabled />
+					<Switch checked={false} label="Beta features" disabled />
 				</div>
-				<p class="text-xs text-neutral-500">
-					Uses the real <code>disabled</code> attribute — keyboard focus is also blocked.
-				</p>
-			</div>
+			</section>
+		</div>
+	{/snippet}
 
-			<div class="space-y-4 pt-8 border-t border-neutral-200">
-				<h3 class="text-sm font-medium text-neutral-500">Live demo — settings panel</h3>
-				<div class="space-y-3 max-w-md">
-					<Switch bind:checked={notifications} label="Email notifications" onChange={() => (saved = 'pending')} />
-					<Switch bind:checked={weeklyDigest} label="Weekly digest" onChange={() => (saved = 'pending')} />
-				</div>
-				<div class="flex items-center gap-3 pt-2">
-					<button
-						type="button"
-						onclick={save}
-						disabled={!dirty}
-						class="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 disabled:bg-neutral-300 disabled:cursor-not-allowed"
-					>
-						{saved === 'pending' ? 'Saving…' : 'Save'}
-					</button>
-					<button
-						type="button"
-						onclick={reset}
-						class="px-4 py-2 rounded-lg border border-neutral-300 text-sm font-medium hover:bg-neutral-50"
-					>
-						Reset
-					</button>
-					{#if saved === 'saved' && !dirty}
-						<span class="text-xs text-emerald-700">✓ Saved</span>
-					{/if}
-				</div>
-				<p class="text-xs text-neutral-500">
-					Each switch fires <code>onChange</code> to mark the form dirty. Save commits;
-					Reset returns to defaults.
-				</p>
-			</div>
-		</section>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>checked</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Bindable on/off state.</td>
+				</tr>
+				<tr>
+					<td><code>label</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Optional visible label rendered as a real <code>&lt;label for&gt;</code>.</td>
+				</tr>
+				<tr>
+					<td><code>labelPosition</code></td>
+					<td><code>'left' | 'right'</code></td>
+					<td><code>'right'</code></td>
+					<td>Where the label sits relative to the track.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>'sm' | 'md' | 'lg'</code></td>
+					<td><code>'md'</code></td>
+					<td>Track widths 32 / 44 / 56 px.</td>
+				</tr>
+				<tr>
+					<td><code>variant</code></td>
+					<td><code>'default' | 'success' | 'danger'</code></td>
+					<td><code>'default'</code></td>
+					<td>On-state colour token.</td>
+				</tr>
+				<tr>
+					<td><code>disabled</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Real <code>disabled</code> attribute — focus is also blocked.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Required when no visible label is supplied.</td>
+				</tr>
+				<tr>
+					<td><code>onChange</code></td>
+					<td><code>(checked) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires after toggling.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Native <code>role="switch"</code> + <code>aria-checked</code></li>
-					<li>Two-way binding via <code>$bindable</code> (<code>bind:checked</code>)</li>
-					<li>Three sizes — sm / md / lg</li>
-					<li>Three variants — default / success / danger</li>
-					<li>Optional label, left or right of the track</li>
-					<li>Real <code>disabled</code> attribute (not aria-disabled)</li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-				</ul>
-			</div>
+<style>
+	.switch-demo {
+		display: grid;
+		gap: 1.75rem;
+	}
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">When to use</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Binary settings that apply immediately (no Save button)</li>
-					<li>Feature flags, theme selection, notification opt-ins</li>
-					<li>Profile preferences (public / private)</li>
-				</ul>
-				<h2 class="text-2xl font-semibold pt-4">When not to use</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Form fields that need explicit Save → use checkbox</li>
-					<li>More than two options → use SegmentedControl</li>
-					<li>Ordinal values (1–5) → use RatingStars or Slider</li>
-				</ul>
-			</div>
-		</section>
-	</div>
-</div>
+	.switch-demo h3 {
+		font-size: 0.95rem;
+		margin: 0 0 0.6rem;
+		color: var(--fg-1);
+	}
+
+	.note {
+		margin: 0.6rem 0 0;
+		color: var(--fg-2);
+		font-size: 0.85rem;
+	}
+
+	.row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 1.5rem;
+	}
+</style>

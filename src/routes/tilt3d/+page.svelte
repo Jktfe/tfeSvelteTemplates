@@ -1,6 +1,13 @@
+<!--
+	Tilt3D Demo Page (TFE shell)
+-->
+
 <script lang="ts">
 	import Tilt3D from '$lib/components/Tilt3D.svelte';
-	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/tilt3d')!;
 
 	let demoMaxTilt = $state(15);
 	let demoGlareIntensity = $state(0.4);
@@ -16,347 +23,317 @@
 		{ icon: '⚡', title: 'GPU-composited', body: 'Transform writes hit only the compositor thread.' }
 	];
 
-	const usageExample = String.raw`<` + String.raw`script lang="ts">
+	const usageSnippet = `<script>
   import Tilt3D from '$lib/components/Tilt3D.svelte';
-</` + String.raw`script>
+<\/script>
 
 <Tilt3D maxTilt={12} glare={true}>
   <article class="card">…</article>
 </Tilt3D>`;
+
+	const codeExplanation =
+		'Tilt3D wraps any element in a perspective container and rotates it on hover by mapping the cursor offset to two rotation axes. The optional glare layer is a single radial gradient pinned to the cursor. Three reset modes (spring, instant, none) cover the common leave behaviours; reduced-motion users see a flat card.';
 </script>
 
 <svelte:head>
-	<title>Tilt3D | TFE Svelte Templates</title>
+	<title>Tilt3D — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Cursor-driven 3D rotation wrapper with glare highlight and three reset modes."
+	/>
 </svelte:head>
 
-<div class="page-container">
-	<header class="page-header">
-		<h1>Tilt3D</h1>
-		<p class="subtitle">
-			Wrap any element. On hover the wrapped content tilts in 3D toward the cursor —
-			Stripe / Linear / Apple product-page card depth — with an optional glare-sweep
-			that follows the pointer.
-		</p>
-		<DatabaseStatus usingDatabase={false} />
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Hover', 'CSS-only', 'Reduced-motion safe']}
+	{usageSnippet}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="t3-demo">
+			<section class="t3-section">
+				<h3>Pricing card — soft default</h3>
+				<div class="t3-stage">
+					<Tilt3D>
+						<article class="t3-pricing">
+							<div class="t3-tier">Pro</div>
+							<div class="t3-amount">£29<span>/month</span></div>
+							<ul>
+								<li>Unlimited projects</li>
+								<li>Priority support</li>
+								<li>Advanced analytics</li>
+								<li>Team collaboration</li>
+							</ul>
+							<div class="t3-cta">Get started →</div>
+						</article>
+					</Tilt3D>
+				</div>
+			</section>
 
-	<!-- Demo 1: Pricing card -->
-	<section class="demo-section">
-		<h2>Pricing card — soft default</h2>
-		<p class="demo-caption">
-			The default settings: 12-degree max tilt, 1000px perspective, glare on, 1.04 scale.
-		</p>
-		<div class="demo-stage">
-			<Tilt3D>
-				<article class="pricing-card">
-					<div class="pricing-tier">Pro</div>
-					<div class="pricing-amount">£29<span class="pricing-period">/month</span></div>
-					<ul class="pricing-features">
-						<li>Unlimited projects</li>
-						<li>Priority support</li>
-						<li>Advanced analytics</li>
-						<li>Team collaboration</li>
-					</ul>
-					<div class="pricing-cta">Get started →</div>
-				</article>
-			</Tilt3D>
-		</div>
-	</section>
+			<section class="t3-section">
+				<h3>Hero photo — stronger tilt</h3>
+				<div class="t3-stage">
+					<Tilt3D maxTilt={20} perspective={800} glareIntensity={0.5}>
+						<div class="t3-hero">
+							<div class="t3-orb t3-orb--a"></div>
+							<div class="t3-orb t3-orb--b"></div>
+							<div class="t3-orb t3-orb--c"></div>
+							<div class="t3-hero-caption">Hover me</div>
+						</div>
+					</Tilt3D>
+				</div>
+			</section>
 
-	<!-- Demo 2: Hero photo -->
-	<section class="demo-section">
-		<h2>Hero photo — stronger tilt</h2>
-		<p class="demo-caption">
-			A more dramatic 20-degree tilt with shorter perspective and brighter glare,
-			the way Apple's product pages handle hero imagery.
-		</p>
-		<div class="demo-stage">
-			<Tilt3D maxTilt={20} perspective={800} glareIntensity={0.5}>
-				<div class="hero-frame">
-					<div class="hero-gradient">
-						<div class="hero-orb hero-orb--a"></div>
-						<div class="hero-orb hero-orb--b"></div>
-						<div class="hero-orb hero-orb--c"></div>
-						<div class="hero-caption">Hover me</div>
+			<section class="t3-section">
+				<h3>Icon grid — small individual tilts</h3>
+				<div class="t3-icon-grid">
+					{#each features as feature (feature.title)}
+						<Tilt3D maxTilt={8} perspective={1200} scale={1.03} glareIntensity={0.2}>
+							<div class="t3-tile">
+								<div class="t3-tile__emoji">{feature.icon}</div>
+								<div class="t3-tile__title">{feature.title}</div>
+								<div class="t3-tile__body">{feature.body}</div>
+							</div>
+						</Tilt3D>
+					{/each}
+				</div>
+			</section>
+
+			<section class="t3-section">
+				<h3>Reset modes — spring vs instant vs none</h3>
+				<div class="t3-reset">
+					<div class="t3-reset__cell">
+						<span class="t3-reset__label">spring</span>
+						<Tilt3D reset="spring">
+							<div class="t3-reset__card">Eases back to flat</div>
+						</Tilt3D>
+					</div>
+					<div class="t3-reset__cell">
+						<span class="t3-reset__label">instant</span>
+						<Tilt3D reset="instant">
+							<div class="t3-reset__card">Snaps on leave</div>
+						</Tilt3D>
+					</div>
+					<div class="t3-reset__cell">
+						<span class="t3-reset__label">none</span>
+						<Tilt3D reset="none">
+							<div class="t3-reset__card">Stays where left</div>
+						</Tilt3D>
 					</div>
 				</div>
-			</Tilt3D>
-		</div>
-	</section>
+			</section>
 
-	<!-- Demo 3: Icon grid -->
-	<section class="demo-section">
-		<h2>Icon grid — small individual tilts</h2>
-		<p class="demo-caption">
-			A subtle 8-degree tilt per tile gives a static feature grid a lot of life.
-			Each tile is its own Tilt3D instance.
-		</p>
-		<div class="icon-grid">
-			{#each features as feature (feature.title)}
-				<Tilt3D maxTilt={8} perspective={1200} scale={1.03} glareIntensity={0.2}>
-					<div class="icon-tile">
-						<div class="icon-emoji">{feature.icon}</div>
-						<div class="icon-title">{feature.title}</div>
-						<div class="icon-body">{feature.body}</div>
+			<section class="t3-section">
+				<h3>Live controls</h3>
+				<div class="t3-live">
+					<div class="t3-live__stage">
+						<Tilt3D
+							maxTilt={demoMaxTilt}
+							perspective={demoPerspective}
+							glareIntensity={demoGlareIntensity}
+							scale={demoScale}
+						>
+							<div class="t3-live__card">
+								<div class="t3-live__title">Live preview</div>
+								<div class="t3-live__body">Hover and move your cursor.</div>
+							</div>
+						</Tilt3D>
 					</div>
-				</Tilt3D>
-			{/each}
-		</div>
-	</section>
-
-	<!-- Demo 4: Reset modes -->
-	<section class="demo-section">
-		<h2>Reset modes — spring vs instant vs none</h2>
-		<p class="demo-caption">
-			Three different leave behaviours. Spring eases back over ~12 frames,
-			instant snaps to flat in one frame, none keeps the last cursor position.
-		</p>
-		<div class="reset-grid">
-			<div class="reset-cell">
-				<div class="reset-label">spring (default)</div>
-				<Tilt3D reset="spring">
-					<div class="reset-card">Eases back to flat</div>
-				</Tilt3D>
-			</div>
-			<div class="reset-cell">
-				<div class="reset-label">instant</div>
-				<Tilt3D reset="instant">
-					<div class="reset-card">Snaps on leave</div>
-				</Tilt3D>
-			</div>
-			<div class="reset-cell">
-				<div class="reset-label">none</div>
-				<Tilt3D reset="none">
-					<div class="reset-card">Stays where left</div>
-				</Tilt3D>
-			</div>
-		</div>
-	</section>
-
-	<!-- Demo 5: Live controls -->
-	<section class="demo-section">
-		<h2>Live controls — feel the parameters</h2>
-		<p class="demo-caption">
-			Drag the sliders to dial in maxTilt, perspective, glareIntensity, and scale
-			in real-time. Useful for finding the right values for your design.
-		</p>
-		<div class="controls-stage">
-			<div class="controls-card">
-				<Tilt3D
-					maxTilt={demoMaxTilt}
-					perspective={demoPerspective}
-					glareIntensity={demoGlareIntensity}
-					scale={demoScale}
-				>
-					<div class="live-card">
-						<div class="live-card-title">Live preview</div>
-						<div class="live-card-body">Hover and move your cursor.</div>
+					<div class="t3-live__panel">
+						<label>maxTilt <strong>{demoMaxTilt}°</strong>
+							<input type="range" min="0" max="30" step="1" bind:value={demoMaxTilt} />
+						</label>
+						<label>perspective <strong>{demoPerspective}px</strong>
+							<input type="range" min="400" max="2000" step="100" bind:value={demoPerspective} />
+						</label>
+						<label>glareIntensity <strong>{demoGlareIntensity.toFixed(2)}</strong>
+							<input type="range" min="0" max="1" step="0.05" bind:value={demoGlareIntensity} />
+						</label>
+						<label>scale <strong>{demoScale.toFixed(2)}×</strong>
+							<input type="range" min="1" max="1.2" step="0.01" bind:value={demoScale} />
+						</label>
 					</div>
-				</Tilt3D>
-			</div>
-			<div class="controls-panel">
-				<label class="control-row">
-					<span class="control-label">maxTilt</span>
-					<input type="range" min="0" max="30" step="1" bind:value={demoMaxTilt} />
-					<span class="control-value">{demoMaxTilt}°</span>
-				</label>
-				<label class="control-row">
-					<span class="control-label">perspective</span>
-					<input type="range" min="400" max="2000" step="100" bind:value={demoPerspective} />
-					<span class="control-value">{demoPerspective}px</span>
-				</label>
-				<label class="control-row">
-					<span class="control-label">glareIntensity</span>
-					<input type="range" min="0" max="1" step="0.05" bind:value={demoGlareIntensity} />
-					<span class="control-value">{demoGlareIntensity.toFixed(2)}</span>
-				</label>
-				<label class="control-row">
-					<span class="control-label">scale</span>
-					<input type="range" min="1" max="1.2" step="0.01" bind:value={demoScale} />
-					<span class="control-value">{demoScale.toFixed(2)}×</span>
-				</label>
-			</div>
+				</div>
+			</section>
 		</div>
-	</section>
+	{/snippet}
 
-	<!-- Usage -->
-	<section class="demo-section">
-		<h2>Usage</h2>
-		<pre class="code-block"><code>{usageExample}</code></pre>
-	</section>
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>maxTilt</code></td>
+					<td><code>number</code></td>
+					<td><code>12</code></td>
+					<td>Maximum rotation in degrees on each axis.</td>
+				</tr>
+				<tr>
+					<td><code>perspective</code></td>
+					<td><code>number</code></td>
+					<td><code>1000</code></td>
+					<td>CSS perspective distance in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>glare</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Toggle the cursor-following highlight overlay.</td>
+				</tr>
+				<tr>
+					<td><code>glareIntensity</code></td>
+					<td><code>number</code></td>
+					<td><code>0.4</code></td>
+					<td>0–1 strength of the highlight.</td>
+				</tr>
+				<tr>
+					<td><code>scale</code></td>
+					<td><code>number</code></td>
+					<td><code>1.04</code></td>
+					<td>Multiplier applied while hovering.</td>
+				</tr>
+				<tr>
+					<td><code>reset</code></td>
+					<td><code>'spring' | 'instant' | 'none'</code></td>
+					<td><code>'spring'</code></td>
+					<td>Behaviour when the cursor leaves.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page-container {
-		max-width: 1000px;
-		margin: 0 auto;
-		padding: 2rem 1rem 4rem;
+	.t3-demo {
+		display: grid;
+		gap: 24px;
 	}
-
-	.page-header {
-		margin-bottom: 2.5rem;
+	.t3-section {
+		display: grid;
+		gap: 10px;
 	}
-
-	.page-header h1 {
-		font-size: 2rem;
-		font-weight: 700;
-		color: #1e293b;
-		margin: 0 0 0.5rem;
+	.t3-section h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	.subtitle {
-		color: #64748b;
-		font-size: 1.05rem;
-		margin: 0 0 1rem;
-		line-height: 1.5;
-	}
-
-	.demo-section {
-		margin-bottom: 3rem;
-	}
-
-	.demo-section h2 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: #1e293b;
-		margin: 0 0 0.5rem;
-	}
-
-	.demo-caption {
-		color: #64748b;
-		font-size: 0.95rem;
-		margin: 0 0 1.25rem;
-		line-height: 1.5;
-	}
-
-	.demo-stage {
+	.t3-stage {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		padding: 3rem 1rem;
-		background: linear-gradient(135deg, #f0f9ff 0%, #f1f5f9 100%);
-		border-radius: 14px;
-		min-height: 320px;
+		padding: 36px 16px;
+		min-height: 300px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 12px;
 	}
 
-	/* Pricing card */
-	.pricing-card {
+	.t3-pricing {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
+		gap: 10px;
 		width: 280px;
-		padding: 2rem 1.75rem;
-		background: linear-gradient(160deg, #ffffff 0%, #f8fafc 100%);
-		border: 1px solid #e2e8f0;
+		padding: 24px;
+		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 16px;
-		box-shadow: 0 18px 32px -16px rgba(15, 23, 42, 0.18);
 		text-align: left;
 	}
-
-	.pricing-tier {
-		font-size: 0.85rem;
+	.t3-tier {
+		font-size: 12px;
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: #6366f1;
+		color: var(--accent);
 	}
-
-	.pricing-amount {
-		font-size: 2.25rem;
+	.t3-amount {
+		font-size: 32px;
 		font-weight: 700;
-		color: #0f172a;
+		color: var(--fg-1);
 	}
-
-	.pricing-period {
-		font-size: 0.9rem;
+	.t3-amount span {
+		font-size: 14px;
 		font-weight: 400;
-		color: #64748b;
+		color: var(--fg-3);
 	}
-
-	.pricing-features {
+	.t3-pricing ul {
 		list-style: none;
 		padding: 0;
-		margin: 0.25rem 0 0.75rem;
+		margin: 8px 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 6px;
 	}
-
-	.pricing-features li {
-		font-size: 0.9rem;
-		color: #475569;
-		padding-left: 1.25rem;
+	.t3-pricing li {
+		font-size: 13px;
+		color: var(--fg-2);
+		padding-left: 18px;
 		position: relative;
 	}
-
-	.pricing-features li::before {
+	.t3-pricing li::before {
 		content: '✓';
 		position: absolute;
 		left: 0;
 		color: #10b981;
 		font-weight: 700;
 	}
-
-	.pricing-cta {
-		margin-top: 0.5rem;
-		padding: 0.75rem 1rem;
-		background: #6366f1;
-		color: white;
+	.t3-cta {
+		padding: 10px 14px;
+		background: var(--accent);
+		color: var(--accent-on);
 		border-radius: 10px;
 		text-align: center;
 		font-weight: 600;
-		font-size: 0.95rem;
+		font-size: 14px;
 	}
 
-	/* Hero photo */
-	.hero-frame {
+	.t3-hero {
+		position: relative;
 		width: 360px;
 		height: 220px;
 		border-radius: 18px;
 		overflow: hidden;
-		box-shadow: 0 24px 48px -16px rgba(15, 23, 42, 0.32);
-	}
-
-	.hero-gradient {
-		position: relative;
-		width: 100%;
-		height: 100%;
 		background: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #0ea5e9 100%);
-		overflow: hidden;
 	}
-
-	.hero-orb {
+	.t3-orb {
 		position: absolute;
 		border-radius: 50%;
 		filter: blur(20px);
 		opacity: 0.7;
 	}
-
-	.hero-orb--a {
+	.t3-orb--a {
 		width: 160px;
 		height: 160px;
 		background: #f59e0b;
 		top: -40px;
 		right: -30px;
 	}
-
-	.hero-orb--b {
+	.t3-orb--b {
 		width: 120px;
 		height: 120px;
 		background: #ec4899;
 		bottom: -30px;
 		left: 30px;
 	}
-
-	.hero-orb--c {
+	.t3-orb--c {
 		width: 90px;
 		height: 90px;
 		background: #10b981;
 		top: 30%;
 		left: 45%;
 	}
-
-	.hero-caption {
+	.t3-hero-caption {
 		position: absolute;
 		inset: 0;
 		display: flex;
@@ -364,180 +341,135 @@
 		justify-content: center;
 		color: white;
 		font-weight: 700;
-		font-size: 1.25rem;
-		letter-spacing: 0.04em;
-		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+		font-size: 18px;
 	}
 
-	/* Icon grid */
-	.icon-grid {
+	.t3-icon-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-		gap: 1rem;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 12px;
 	}
-
-	.icon-tile {
-		padding: 1.5rem;
-		background: white;
-		border: 1px solid #e2e8f0;
+	.t3-tile {
+		padding: 18px;
+		background: var(--surface);
+		border: 1px solid var(--border);
 		border-radius: 14px;
-		text-align: left;
-		box-shadow: 0 4px 12px -4px rgba(15, 23, 42, 0.08);
 	}
-
-	.icon-emoji {
-		font-size: 1.75rem;
-		margin-bottom: 0.5rem;
+	.t3-tile__emoji {
+		font-size: 22px;
+		margin-bottom: 6px;
 	}
-
-	.icon-title {
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: #0f172a;
-		margin-bottom: 0.25rem;
+	.t3-tile__title {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 14px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
+		margin-bottom: 4px;
 	}
-
-	.icon-body {
-		font-size: 0.85rem;
-		color: #64748b;
+	.t3-tile__body {
+		font-size: 12px;
+		color: var(--fg-2);
 		line-height: 1.4;
 	}
 
-	/* Reset modes */
-	.reset-grid {
+	.t3-reset {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1.5rem;
-		padding: 2rem 1rem;
-		background: #f8fafc;
-		border-radius: 14px;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 16px;
+		padding: 24px 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 12px;
 	}
-
-	.reset-cell {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 0.75rem;
+	.t3-reset__cell {
+		display: grid;
+		justify-items: center;
+		gap: 10px;
 	}
-
-	.reset-label {
-		font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.85rem;
-		color: #6366f1;
-		font-weight: 600;
+	.t3-reset__label {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--fg-3);
 	}
-
-	.reset-card {
+	.t3-reset__card {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		width: 180px;
 		height: 100px;
-		padding: 1rem;
+		padding: 14px;
 		background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
 		color: white;
 		border-radius: 12px;
 		font-weight: 600;
 		text-align: center;
-		font-size: 0.9rem;
+		font-size: 13px;
 	}
 
-	/* Live controls */
-	.controls-stage {
+	.t3-live {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
-		gap: 1.5rem;
-		padding: 2rem 1.5rem;
-		background: linear-gradient(135deg, #f0f9ff 0%, #f1f5f9 100%);
-		border-radius: 14px;
+		gap: 16px;
+		padding: 24px 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 12px;
 		align-items: center;
 	}
-
-	.controls-card {
+	.t3-live__stage {
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		min-height: 240px;
 	}
-
-	.live-card {
+	.t3-live__card {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
 		align-items: center;
 		width: 240px;
 		height: 200px;
-		padding: 1.5rem;
+		padding: 18px;
 		background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
 		color: white;
 		border-radius: 16px;
 		text-align: center;
-		box-shadow: 0 18px 32px -12px rgba(15, 23, 42, 0.4);
 	}
-
-	.live-card-title {
-		font-size: 1.1rem;
+	.t3-live__title {
+		font-size: 16px;
 		font-weight: 700;
-		margin-bottom: 0.5rem;
+		margin-bottom: 6px;
 	}
-
-	.live-card-body {
-		font-size: 0.85rem;
+	.t3-live__body {
+		font-size: 12px;
 		color: #cbd5e1;
 	}
-
-	.controls-panel {
+	.t3-live__panel {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		padding: 1.25rem;
-		background: white;
-		border-radius: 12px;
-		border: 1px solid #e2e8f0;
+		gap: 12px;
+		padding: 16px;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: 10px;
 	}
-
-	.control-row {
-		display: grid;
-		grid-template-columns: 110px 1fr 60px;
-		align-items: center;
-		gap: 0.75rem;
-		font-size: 0.85rem;
+	.t3-live__panel label {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+		font-size: 12px;
+		color: var(--fg-2);
 	}
-
-	.control-label {
-		font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-		color: #475569;
-		font-weight: 600;
-	}
-
-	.control-row input[type='range'] {
+	.t3-live__panel input[type='range'] {
 		width: 100%;
 	}
 
-	.control-value {
-		text-align: right;
-		font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-		color: #6366f1;
-		font-weight: 600;
-	}
-
-	/* Code block */
-	.code-block {
-		padding: 1.25rem;
-		background: #1e293b;
-		color: #e2e8f0;
-		border-radius: 10px;
-		overflow-x: auto;
-		font-size: 0.8rem;
-		line-height: 1.5;
-	}
-
-	.code-block code {
-		font-family: 'SF Mono', SFMono-Regular, Menlo, Consolas, monospace;
-	}
-
 	@media (max-width: 700px) {
-		.controls-stage {
+		.t3-live {
 			grid-template-columns: 1fr;
 		}
 	}

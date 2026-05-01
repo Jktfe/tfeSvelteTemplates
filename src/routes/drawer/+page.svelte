@@ -1,195 +1,173 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import Drawer from '$lib/components/Drawer.svelte';
 
-	// Each demo gets its own `open` state so they can coexist on one page.
-	let basicOpen = $state(false);
+	const shell = catalogShellPropsForSlug('/drawer')!;
 
-	// Edges demo — one drawer per edge, each toggled independently.
+	let basicOpen = $state(false);
 	let leftOpen = $state(false);
 	let rightOpen = $state(false);
 	let topOpen = $state(false);
 	let bottomOpen = $state(false);
-
-	// Custom-size demo — bottom sheet at 70vh.
 	let bottomSheetOpen = $state(false);
-
-	// Form-inside demo — proves focus trap by handing real inputs / buttons
-	// to the user. Tab cycles through the form, Shift+Tab reverses, neither
-	// escapes back to the page.
 	let formOpen = $state(false);
 	let formName = $state('');
 	let formNotes = $state('');
-
-	// Persistent demo — backdrop click + Escape do nothing. The user must use
-	// an explicit Cancel / Save action.
 	let persistentOpen = $state(false);
-
-	// Focus restore demo — open via the button, drawer auto-closes after 1.5s,
-	// focus snaps back to the original trigger.
 	let restoreOpen = $state(false);
+
 	function openRestoreDemo() {
 		restoreOpen = true;
 		setTimeout(() => {
 			restoreOpen = false;
 		}, 1500);
 	}
+
+	const codeExplanation =
+		'Drawer mounts a fixed-position panel that slides from any of four edges. On open it snapshots the active element, locks body scroll, and runs a manual focus trap so Tab and Shift+Tab cycle inside the dialog. On close it restores focus and unlocks scroll. Backdrop click and Escape both dismiss unless persistent is set; reduced-motion swaps the slide for a calm opacity fade.';
 </script>
 
 <svelte:head>
-	<title>Drawer · TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="page">
-	<header class="page-header">
-		<h1>📥 Drawer</h1>
-		<p>
-			Slide-in modal panel from any of the four screen edges. Built-in keyboard focus trap, body
-			scroll lock, focus restore on close, Escape and backdrop dismissal, and a respectful
-			<code>prefers-reduced-motion</code> fallback. Use it for mobile navigation, side-panel
-			filters / settings, and full bottom-sheet forms.
-		</p>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'A11y', 'Focus trap', 'Modal']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="dr-demo">
+			<section class="dr-section">
+				<h4>Basic — right edge</h4>
+				<p>
+					Default 320px panel sliding from the right. Press <kbd>Esc</kbd> or click the backdrop
+					to close — focus snaps back to the trigger.
+				</p>
+				<button type="button" class="dr-btn dr-btn--primary" onclick={() => (basicOpen = true)}>
+					Open right drawer
+				</button>
+			</section>
 
-	<section class="demo">
-		<h2>Basic drawer (right edge)</h2>
-		<p class="demo-note">
-			The default — a 320px panel that slides in from the right. Click the backdrop or press
-			<kbd>Esc</kbd> to dismiss. Watch the focus indicator: when the drawer opens, focus jumps
-			inside; when it closes, focus returns to the button you pressed.
-		</p>
-		<button type="button" class="primary-btn" onclick={() => (basicOpen = true)}>
-			Open right drawer
-		</button>
+			<section class="dr-section">
+				<h4>All four edges</h4>
+				<div class="dr-row">
+					<button type="button" class="dr-btn" onclick={() => (leftOpen = true)}>← Left</button>
+					<button type="button" class="dr-btn" onclick={() => (rightOpen = true)}>Right →</button>
+					<button type="button" class="dr-btn" onclick={() => (topOpen = true)}>↑ Top</button>
+					<button type="button" class="dr-btn" onclick={() => (bottomOpen = true)}>↓ Bottom</button>
+				</div>
+			</section>
+
+			<section class="dr-section">
+				<h4>Custom size — 70vh bottom sheet</h4>
+				<button
+					type="button"
+					class="dr-btn dr-btn--primary"
+					onclick={() => (bottomSheetOpen = true)}
+				>
+					Open bottom sheet
+				</button>
+			</section>
+
+			<section class="dr-section">
+				<h4>With a form (focus-trap proof)</h4>
+				<button type="button" class="dr-btn dr-btn--primary" onclick={() => (formOpen = true)}>
+					Open form drawer
+				</button>
+			</section>
+
+			<section class="dr-section">
+				<h4>Persistent — no Esc / backdrop dismiss</h4>
+				<button
+					type="button"
+					class="dr-btn dr-btn--primary"
+					onclick={() => (persistentOpen = true)}
+				>
+					Open persistent drawer
+				</button>
+			</section>
+
+			<section class="dr-section">
+				<h4>Focus restore on auto-close</h4>
+				<button type="button" class="dr-btn dr-btn--primary" onclick={openRestoreDemo}>
+					Open & auto-close in 1.5s
+				</button>
+			</section>
+		</div>
 
 		<Drawer bind:open={basicOpen} ariaLabel="Basic drawer demo">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>Hello from the drawer</h3>
 				<p>
 					Tab cycles inside this dialog and never escapes back to the page. Background scroll is
-					locked. Press <kbd>Esc</kbd> or click the dimmed backdrop to close.
+					locked. Press <kbd>Esc</kbd> or click the backdrop to close.
 				</p>
-				<button type="button" class="ghost-btn" onclick={() => (basicOpen = false)}>Close</button>
+				<button type="button" class="dr-btn" onclick={() => (basicOpen = false)}>Close</button>
 			</div>
 		</Drawer>
-	</section>
-
-	<section class="demo">
-		<h2>All four edges</h2>
-		<p class="demo-note">
-			Use <code>position</code> to pick which edge the drawer slides from. Each edge has its own
-			translate animation; reduced-motion replaces the slide with a calm opacity fade.
-		</p>
-		<div class="row">
-			<button type="button" class="ghost-btn" onclick={() => (leftOpen = true)}>← Left</button>
-			<button type="button" class="ghost-btn" onclick={() => (rightOpen = true)}>Right →</button>
-			<button type="button" class="ghost-btn" onclick={() => (topOpen = true)}>↑ Top</button>
-			<button type="button" class="ghost-btn" onclick={() => (bottomOpen = true)}>↓ Bottom</button>
-		</div>
 
 		<Drawer bind:open={leftOpen} position="left" ariaLabel="Left drawer">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>Left edge</h3>
 				<p>Common pattern for mobile navigation menus.</p>
-				<button type="button" class="ghost-btn" onclick={() => (leftOpen = false)}>Close</button>
+				<button type="button" class="dr-btn" onclick={() => (leftOpen = false)}>Close</button>
 			</div>
 		</Drawer>
 
 		<Drawer bind:open={rightOpen} position="right" ariaLabel="Right drawer">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>Right edge</h3>
-				<p>Right is the default. Good for filters, details panels, and inspectors.</p>
-				<button type="button" class="ghost-btn" onclick={() => (rightOpen = false)}>Close</button>
+				<p>The default. Good for filters, details panels, and inspectors.</p>
+				<button type="button" class="dr-btn" onclick={() => (rightOpen = false)}>Close</button>
 			</div>
 		</Drawer>
 
 		<Drawer bind:open={topOpen} position="top" ariaLabel="Top drawer">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>Top edge</h3>
 				<p>Useful for site-wide notifications or activity panels.</p>
-				<button type="button" class="ghost-btn" onclick={() => (topOpen = false)}>Close</button>
+				<button type="button" class="dr-btn" onclick={() => (topOpen = false)}>Close</button>
 			</div>
 		</Drawer>
 
 		<Drawer bind:open={bottomOpen} position="bottom" ariaLabel="Bottom drawer">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>Bottom edge</h3>
-				<p>The mobile-first "bottom sheet" pattern. Great for action menus on touch devices.</p>
-				<button type="button" class="ghost-btn" onclick={() => (bottomOpen = false)}>Close</button>
+				<p>The mobile-first "bottom sheet" pattern.</p>
+				<button type="button" class="dr-btn" onclick={() => (bottomOpen = false)}>Close</button>
 			</div>
 		</Drawer>
-	</section>
 
-	<section class="demo">
-		<h2>Custom size — CSS length</h2>
-		<p class="demo-note">
-			<code>size</code> takes a number (interpreted as pixels) <em>or</em> any CSS length string like
-			<code>'70vh'</code> or <code>'24rem'</code>. Below, a bottom sheet at 70% of the viewport
-			height.
-		</p>
-		<button type="button" class="primary-btn" onclick={() => (bottomSheetOpen = true)}>
-			Open 70vh bottom sheet
-		</button>
-
-		<Drawer
-			bind:open={bottomSheetOpen}
-			position="bottom"
-			size="70vh"
-			ariaLabel="Bottom sheet demo"
-		>
-			<div class="drawer-content">
+		<Drawer bind:open={bottomSheetOpen} position="bottom" size="70vh" ariaLabel="Bottom sheet demo">
+			<div class="dr-content">
 				<h3>Tall bottom sheet</h3>
 				<p>
-					The drawer takes 70% of the viewport height. On a small screen this is the typical
-					"bottom sheet" pattern for menus and quick actions.
-				</p>
-				<p>
-					Try Tab — focus stays inside the drawer. Try scrolling the page behind the dimmed
+					70% viewport height. Try Tab — focus stays inside. Try scrolling behind the dimmed
 					backdrop — page scroll is locked.
 				</p>
-				<button type="button" class="ghost-btn" onclick={() => (bottomSheetOpen = false)}>
-					Close
-				</button>
+				<button type="button" class="dr-btn" onclick={() => (bottomSheetOpen = false)}>Close</button>
 			</div>
 		</Drawer>
-	</section>
-
-	<section class="demo">
-		<h2>Drawer with a form (focus trap proof)</h2>
-		<p class="demo-note">
-			This drawer has multiple tabbable elements. Open it, then keep pressing
-			<kbd>Tab</kbd> — focus cycles through the inputs, the buttons, then back to the first input.
-			<kbd>Shift</kbd>+<kbd>Tab</kbd> reverses direction. Focus never leaks to the page behind.
-		</p>
-		<button type="button" class="primary-btn" onclick={() => (formOpen = true)}>
-			Open form drawer
-		</button>
 
 		<Drawer bind:open={formOpen} size={420} ariaLabel="New note form">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>New note</h3>
-				<label class="field">
+				<label class="dr-field">
 					<span>Name</span>
-					<input
-						type="text"
-						bind:value={formName}
-						placeholder="Project Aurora"
-					/>
+					<input type="text" bind:value={formName} placeholder="Project Aurora" />
 				</label>
-				<label class="field">
+				<label class="dr-field">
 					<span>Notes</span>
-					<textarea
-						bind:value={formNotes}
-						rows="4"
-						placeholder="Anything worth remembering…"
-					></textarea>
+					<textarea bind:value={formNotes} rows="4" placeholder="Anything worth remembering…"></textarea>
 				</label>
-				<div class="form-actions">
-					<button type="button" class="ghost-btn" onclick={() => (formOpen = false)}>
-						Cancel
-					</button>
+				<div class="dr-form-actions">
+					<button type="button" class="dr-btn" onclick={() => (formOpen = false)}>Cancel</button>
 					<button
 						type="button"
-						class="primary-btn"
+						class="dr-btn dr-btn--primary"
 						onclick={() => {
 							formOpen = false;
 							formName = '';
@@ -201,281 +179,225 @@
 				</div>
 			</div>
 		</Drawer>
-	</section>
 
-	<section class="demo">
-		<h2>Persistent (no backdrop / Escape dismiss)</h2>
-		<p class="demo-note">
-			Set <code>persistent</code> when the user must explicitly accept or cancel — common for
-			multi-step forms, destructive confirmations, and onboarding. Backdrop click and Escape
-			become no-ops.
-		</p>
-		<button type="button" class="primary-btn" onclick={() => (persistentOpen = true)}>
-			Open persistent drawer
-		</button>
-
-		<Drawer
-			bind:open={persistentOpen}
-			persistent
-			ariaLabel="Persistent confirmation"
-		>
-			<div class="drawer-content">
+		<Drawer bind:open={persistentOpen} persistent ariaLabel="Persistent confirmation">
+			<div class="dr-content">
 				<h3>Sticky drawer</h3>
 				<p>
-					Try clicking the backdrop or pressing <kbd>Esc</kbd> — nothing happens. You must use
-					one of the buttons below to leave.
+					Backdrop and Escape are no-ops. You must use one of the buttons below to leave.
 				</p>
-				<div class="form-actions">
-					<button type="button" class="ghost-btn" onclick={() => (persistentOpen = false)}>
+				<div class="dr-form-actions">
+					<button type="button" class="dr-btn" onclick={() => (persistentOpen = false)}>
 						Cancel
 					</button>
-					<button type="button" class="primary-btn" onclick={() => (persistentOpen = false)}>
+					<button type="button" class="dr-btn dr-btn--primary" onclick={() => (persistentOpen = false)}>
 						Confirm
 					</button>
 				</div>
 			</div>
 		</Drawer>
-	</section>
-
-	<section class="demo">
-		<h2>Focus restore on close</h2>
-		<p class="demo-note">
-			When the drawer closes, focus returns to whatever was focused when it opened — even if the
-			drawer is closed programmatically (not by the user). Click the button below and watch the
-			focus ring snap back to it after 1.5s.
-		</p>
-		<button type="button" class="primary-btn" onclick={openRestoreDemo}>
-			Open & auto-close in 1.5s
-		</button>
 
 		<Drawer bind:open={restoreOpen} ariaLabel="Auto-closing drawer">
-			<div class="drawer-content">
+			<div class="dr-content">
 				<h3>Watch closely…</h3>
 				<p>
-					This drawer will close itself in a moment. When it does, focus jumps back to the
-					button that opened it — which is exactly what assistive tech users expect after a
-					modal layer disappears.
+					This drawer closes itself in a moment. When it does, focus returns to the button that
+					opened it.
 				</p>
 			</div>
 		</Drawer>
-	</section>
+	{/snippet}
 
-	<section class="features">
-		<h2>What you get</h2>
-		<ul>
-			<li>Four edge positions — <code>left / right / top / bottom</code></li>
-			<li>Numeric size (px) or any CSS length string (<code>'70vh'</code>, <code>'24rem'</code>)</li>
-			<li>Backdrop click-to-close (disable with <code>persistent</code>)</li>
-			<li>Escape-to-close (disabled when <code>persistent</code>)</li>
-			<li>Manual focus trap — Tab and Shift+Tab cycle, neither escapes</li>
-			<li>Body scroll lock — preserves prior <code>overflow</code>, restores on close</li>
-			<li>Focus restore — re-focuses the element that opened the drawer</li>
-			<li>CSS slide animation per edge, opacity-fade fallback for reduced motion</li>
-			<li>Two-way <code>bind:open</code> + <code>onClose</code> callback</li>
-			<li>Zero dependencies, fully copy-paste portable</li>
-		</ul>
-	</section>
-
-	<section class="usage">
-		<h2>Usage</h2>
-		<pre><code>{`<script lang="ts">
-  import Drawer from '$lib/components/Drawer.svelte';
-  let drawerOpen = $state(false);
-</`+`script>
-
-<button onclick={() => (drawerOpen = true)}>Settings</button>
-
-<Drawer bind:open={drawerOpen} position="right" size={400} ariaLabel="Settings panel">
-  <h2>Settings</h2>
-  <p>Drawer content goes here.</p>
-  <button onclick={() => (drawerOpen = false)}>Close</button>
-</Drawer>`}</code></pre>
-	</section>
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>open</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Bindable open/closed state.</td>
+				</tr>
+				<tr>
+					<td><code>position</code></td>
+					<td><code>'left' | 'right' | 'top' | 'bottom'</code></td>
+					<td><code>'right'</code></td>
+					<td>Edge the drawer slides from.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>number | string</code></td>
+					<td><code>undefined</code></td>
+					<td>Numeric (px) or any CSS length string (<code>'70vh'</code>).</td>
+				</tr>
+				<tr>
+					<td><code>persistent</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>When true, backdrop click and Escape no longer dismiss.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Drawer'</code></td>
+					<td>Accessible name when no labelled element is provided.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabelledBy</code></td>
+					<td><code>string</code></td>
+					<td><code>undefined</code></td>
+					<td>ID of an element that labels the drawer.</td>
+				</tr>
+				<tr>
+					<td><code>onClose</code></td>
+					<td><code>() =&gt; void</code></td>
+					<td><code>undefined</code></td>
+					<td>Callback fired whenever the drawer closes.</td>
+				</tr>
+				<tr>
+					<td><code>children</code></td>
+					<td><code>Snippet</code></td>
+					<td>—</td>
+					<td>Drawer body content.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Extra CSS class on the panel.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 64rem;
-		margin: 0 auto;
-		padding: 2rem 1rem 4rem;
+	.dr-demo {
+		display: grid;
+		gap: 22px;
 	}
-
-	.page-header {
-		margin-bottom: 2.5rem;
-		text-align: center;
+	.dr-section h4 {
+		margin: 0 0 6px;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	.page-header h1 {
-		font-size: 2.25rem;
-		margin: 0 0 0.5rem;
+	.dr-section p {
+		margin: 0 0 10px;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--fg-2);
 	}
-
-	.page-header p {
-		color: #4b5563;
-		max-width: 42rem;
-		margin: 0 auto;
-		line-height: 1.6;
-	}
-
-	.demo {
-		margin-bottom: 3rem;
-	}
-
-	.demo h2,
-	.features h2,
-	.usage h2 {
-		font-size: 1.25rem;
-		margin: 0 0 0.5rem;
-		color: #111827;
-	}
-
-	.demo-note {
-		color: #6b7280;
-		font-size: 0.95rem;
-		margin: 0 0 1.25rem;
-		max-width: 42rem;
-		line-height: 1.55;
-	}
-
-	.demo-note code,
-	.features code {
-		background: #f3f4f6;
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.25rem;
-		font-size: 0.875em;
-	}
-
-	kbd {
+	.dr-section kbd {
 		display: inline-block;
 		padding: 0.05rem 0.4rem;
 		font-size: 0.8em;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		background: #f3f4f6;
-		border: 1px solid #d1d5db;
+		font-family: var(--font-mono);
+		background: var(--surface-2);
+		border: 1px solid var(--border);
 		border-bottom-width: 2px;
-		border-radius: 0.3rem;
-		color: #374151;
+		border-radius: var(--r-1);
+		color: var(--fg-1);
 	}
-
-	.row {
+	.dr-row {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
+		gap: 10px;
 	}
-
-	.primary-btn {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.625rem 1.25rem;
-		background: #4f46e5;
-		color: #ffffff;
-		border: none;
-		border-radius: 0.5rem;
-		font-size: 0.95rem;
+	.dr-btn {
+		padding: 0.55rem 1.1rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		font-size: 14px;
 		font-weight: 500;
+		color: var(--fg-1);
 		cursor: pointer;
-		transition: background 150ms ease;
+		transition: background var(--dur-fast);
 	}
-
-	.primary-btn:hover {
-		background: #4338ca;
+	.dr-btn:hover {
+		background: var(--surface-2);
 	}
-
-	.ghost-btn {
-		padding: 0.625rem 1.25rem;
-		background: #ffffff;
-		border: 1px solid #d1d5db;
-		border-radius: 0.5rem;
-		font-size: 0.95rem;
-		font-weight: 500;
-		color: #374151;
-		cursor: pointer;
+	.dr-btn--primary {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--fg-on-dark, #ffffff);
 	}
-
-	.ghost-btn:hover {
-		background: #f3f4f6;
+	.dr-btn--primary:hover {
+		background: var(--accent-strong, var(--accent));
 	}
-
-	.drawer-content {
+	.dr-content {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		padding: 1.5rem;
+		gap: 14px;
+		padding: 22px;
 	}
-
-	.drawer-content h3 {
+	.dr-content h3 {
 		margin: 0;
-		font-size: 1.25rem;
-		color: #111827;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 20px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	.drawer-content p {
+	.dr-content p {
 		margin: 0;
-		color: #4b5563;
-		line-height: 1.6;
+		color: var(--fg-2);
+		line-height: 1.55;
 	}
-
-	.field {
+	.dr-content kbd {
+		font-family: var(--font-mono);
+		font-size: 0.85em;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		padding: 1px 5px;
+		border-radius: var(--r-1);
+	}
+	.dr-field {
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
+		gap: 4px;
 	}
-
-	.field span {
-		font-size: 0.875rem;
+	.dr-field span {
+		font-size: 13px;
 		font-weight: 500;
-		color: #374151;
+		color: var(--fg-2);
 	}
-
-	.field input,
-	.field textarea {
+	.dr-field input,
+	.dr-field textarea {
 		padding: 0.5rem 0.75rem;
-		border: 1px solid #d1d5db;
-		border-radius: 0.375rem;
-		font-size: 0.95rem;
+		border: 1px solid var(--border);
+		border-radius: var(--r-1);
+		font-size: 14px;
 		font-family: inherit;
+		background: var(--surface);
+		color: var(--fg-1);
 	}
-
-	.field input:focus,
-	.field textarea:focus {
-		outline: 2px solid #6366f1;
+	.dr-field input:focus,
+	.dr-field textarea:focus {
+		outline: 2px solid var(--accent);
 		outline-offset: 1px;
-		border-color: #6366f1;
+		border-color: var(--accent);
 	}
-
-	.field textarea {
+	.dr-field textarea {
 		resize: vertical;
 		min-height: 5rem;
 	}
-
-	.form-actions {
+	.dr-form-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: 8px;
 		justify-content: flex-end;
-		margin-top: 0.5rem;
-	}
-
-	.features ul {
-		list-style: none;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-		gap: 0.5rem 1.25rem;
-		color: #374151;
-	}
-
-	.features li {
-		line-height: 1.6;
-	}
-
-	.usage pre {
-		background: #0f172a;
-		color: #e2e8f0;
-		padding: 1rem 1.25rem;
-		border-radius: 0.5rem;
-		overflow-x: auto;
-		font-size: 0.875rem;
-		line-height: 1.5;
+		margin-top: 4px;
 	}
 </style>

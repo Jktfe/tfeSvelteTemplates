@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import FilterChips from '$lib/components/FilterChips.svelte';
+
+	const shell = catalogShellPropsForSlug('/filterchips')!;
 
 	const tagOptions = [
 		{ value: 'design', label: 'Design', count: 24 },
@@ -35,153 +39,209 @@
 	];
 
 	const filtered = $derived(
-		multi.length === 0
-			? articles
-			: articles.filter((a) => a.tags.some((t) => multi.includes(t)))
+		multi.length === 0 ? articles : articles.filter((a) => a.tags.some((t) => multi.includes(t)))
 	);
+
+	const codeExplanation =
+		'Each chip is a real <button> with aria-pressed, so the toggle state is announced correctly and Tab/Space/Enter all work without extra plumbing. Multi-select keeps the selected array in sync with bind:selected; single-select replaces the array on every click. Removable chips show an × control and emit onRemove so you can double-bind to a parent "active filters" row.';
 </script>
 
 <svelte:head>
-	<title>FilterChips | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-5xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">FilterChips</h1>
-			<p class="text-xl text-muted-foreground">
-				A toggleable chip row for filtering content. Real buttons under the hood — keyboard
-				accessible by default.
-			</p>
-		</header>
-
-		<!-- Multi-select with live filtered list -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Multi-select with live filtering</h2>
-			<p class="text-sm text-neutral-500">
-				Toggle chips on and off. The article list below updates from the selected tags.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-5">
-				<FilterChips
-					options={tagOptions}
-					bind:selected={multi}
-					showAll
-					ariaLabel="Article tags"
-				/>
-				<ul class="divide-y divide-neutral-100">
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Filtering', 'A11y', 'Multi-select', 'Keyboard']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="chips-demo">
+			<section>
+				<h3>Multi-select with live filtering</h3>
+				<FilterChips options={tagOptions} bind:selected={multi} showAll ariaLabel="Article tags" />
+				<ul class="list">
 					{#each filtered as article (article.title)}
-						<li class="py-3 flex items-center justify-between gap-4">
-							<span class="text-sm text-neutral-800">{article.title}</span>
-							<span class="text-xs text-neutral-400">{article.tags.join(', ')}</span>
+						<li>
+							<span>{article.title}</span>
+							<span class="tag">{article.tags.join(', ')}</span>
 						</li>
 					{:else}
-						<li class="py-6 text-sm text-neutral-500 text-center">No articles match the current filters.</li>
+						<li class="empty">No articles match the current filters.</li>
 					{/each}
 				</ul>
-			</div>
-		</section>
+			</section>
 
-		<!-- Single-select -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Single-select</h2>
-			<p class="text-sm text-neutral-500">
-				With <code>mode="single"</code> only one chip is active at a time. Click the active chip
-				again to clear.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-3">
+			<section>
+				<h3>Single-select</h3>
 				<FilterChips
 					options={sortOptions}
 					mode="single"
 					bind:selected={single}
 					ariaLabel="Sort order"
 				/>
-				<div class="text-sm text-neutral-500">
-					Active sort:
-					<strong>{single[0] ?? 'none'}</strong>
-				</div>
-			</div>
-		</section>
+				<p class="note">Active sort: <strong>{single[0] ?? 'none'}</strong></p>
+			</section>
 
-		<!-- Removable -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Removable</h2>
-			<p class="text-sm text-neutral-500">
-				Active chips show an <code>×</code> handle. Click it to remove the filter — perfect for an
-				"active filters" row.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-3">
+			<section>
+				<h3>Removable chips</h3>
 				<FilterChips
 					options={tagOptions}
 					removable
 					bind:selected={removable}
 					ariaLabel="Active filters"
 				/>
-				<div class="text-sm text-neutral-500">
+				<p class="note">
 					Active: {removable.length === 0 ? '(none)' : removable.join(', ')}
+				</p>
+			</section>
+
+			<section>
+				<h3>Custom palette &amp; sizes</h3>
+				<FilterChips
+					options={facets}
+					bind:selected={custom}
+					mode="single"
+					activeBg="#7c3aed"
+					activeText="#ffffff"
+				/>
+				<div class="size-stack">
+					<FilterChips options={facets.slice(0, 2)} size="sm" selected={['free']} />
+					<FilterChips options={facets.slice(0, 2)} size="md" selected={['free']} />
+					<FilterChips options={facets.slice(0, 2)} size="lg" selected={['free']} />
 				</div>
-			</div>
-		</section>
+			</section>
+		</div>
+	{/snippet}
 
-		<!-- Custom palette + sizes -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Custom palette &amp; sizes</h2>
-			<div class="grid md:grid-cols-2 gap-4">
-				<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-					<div class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">Brand purple</div>
-					<FilterChips
-						options={facets}
-						bind:selected={custom}
-						mode="single"
-						activeBg="#7c3aed"
-						activeText="#ffffff"
-					/>
-				</div>
-				<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-					<div class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">Sizes</div>
-					<div class="space-y-2">
-						<FilterChips options={facets.slice(0, 2)} size="sm" selected={['free']} />
-						<FilterChips options={facets.slice(0, 2)} size="md" selected={['free']} />
-						<FilterChips options={facets.slice(0, 2)} size="lg" selected={['free']} />
-					</div>
-				</div>
-			</div>
-		</section>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>options</code></td>
+					<td><code>{'Array<{ value, label, count? }>'}</code></td>
+					<td>—</td>
+					<td>Required. Chips to render.</td>
+				</tr>
+				<tr>
+					<td><code>selected</code></td>
+					<td><code>string[]</code></td>
+					<td><code>[]</code></td>
+					<td>Bindable list of selected values.</td>
+				</tr>
+				<tr>
+					<td><code>mode</code></td>
+					<td><code>'multi' | 'single'</code></td>
+					<td><code>'multi'</code></td>
+					<td>Selection model.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>'sm' | 'md' | 'lg'</code></td>
+					<td><code>'md'</code></td>
+					<td>Chip height and padding.</td>
+				</tr>
+				<tr>
+					<td><code>removable</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Render an × handle on active chips.</td>
+				</tr>
+				<tr>
+					<td><code>showAll</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Prepend an "All" reset chip.</td>
+				</tr>
+				<tr>
+					<td><code>allLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'All'</code></td>
+					<td>Override the reset chip label.</td>
+				</tr>
+				<tr>
+					<td><code>activeBg</code> / <code>activeText</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Custom palette for selected chips.</td>
+				</tr>
+				<tr>
+					<td><code>onChange</code></td>
+					<td><code>(selected) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires whenever the selected list changes.</td>
+				</tr>
+				<tr>
+					<td><code>onRemove</code></td>
+					<td><code>(value) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when a removable chip's × is clicked.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Multi-select (default) or single-select</li>
-					<li>Optional 'All' reset chip</li>
-					<li>Optional removable mode with × per active chip</li>
-					<li>Optional count badges next to labels</li>
-					<li>Three sizes: <code>sm</code> / <code>md</code> / <code>lg</code></li>
-					<li>Custom active palette</li>
-					<li>Real <code>&lt;button&gt;</code> with <code>aria-pressed</code></li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-					<li>Zero dependencies</li>
-				</ul>
-			</div>
+<style>
+	.chips-demo {
+		display: grid;
+		gap: 2rem;
+	}
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre
-					class="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
-  import FilterChips from '$lib/components/FilterChips.svelte';
-  let selected = $state<string[]>([]);
-  const options = [
-    { value: 'design', label: 'Design' },
-    { value: 'engineering', label: 'Engineering' }
-  ];
-</${''}script>
+	.chips-demo h3 {
+		font-size: 0.95rem;
+		margin: 0 0 0.65rem;
+		color: var(--fg-1);
+	}
 
-<FilterChips
-  {options}
-  bind:selected
-  showAll
-  removable
-/>`}</code></pre>
-			</div>
-		</section>
-	</div>
-</div>
+	.note {
+		margin: 0.6rem 0 0;
+		color: var(--fg-2);
+		font-size: 0.85rem;
+	}
+
+	.list {
+		list-style: none;
+		padding: 0;
+		margin: 1rem 0 0;
+		border-top: 1px solid var(--border);
+	}
+
+	.list li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.7rem 0;
+		border-bottom: 1px solid var(--border);
+		font-size: 0.9rem;
+		color: var(--fg-1);
+	}
+
+	.list .empty {
+		justify-content: center;
+		color: var(--fg-2);
+	}
+
+	.tag {
+		font-size: 0.72rem;
+		color: var(--fg-2);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.size-stack {
+		display: grid;
+		gap: 0.5rem;
+		margin-top: 1rem;
+	}
+</style>

@@ -1,270 +1,164 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import ProgressBar from '$lib/components/ProgressBar.svelte';
 
+	const shell = catalogShellPropsForSlug('/progressbar')!;
+
 	let liveValue = $state(20);
-	let intervalId: ReturnType<typeof setInterval> | undefined;
 
 	$effect(() => {
-		intervalId = setInterval(() => {
+		const id = setInterval(() => {
 			liveValue = liveValue >= 100 ? 0 : liveValue + 5;
 		}, 600);
-		return () => clearInterval(intervalId);
+		return () => clearInterval(id);
 	});
 </script>
 
 <svelte:head>
-	<title>ProgressBar · TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="page">
-	<header class="page-header">
-		<h1>📊 ProgressBar</h1>
-		<p>
-			Linear progress indicator. Pass a number 0–100 for determinate progress, or
-			<code>value={'{null}'}</code> for an indeterminate animated stripe. Screen readers announce
-			the percent automatically via a hidden native <code>&lt;progress&gt;</code> element.
-		</p>
-	</header>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Progress', 'A11y', 'Zero deps']}
+	codeExplanation="ProgressBar pairs a styled track with a hidden native progress element so screen readers announce the percent without any extra ARIA wiring. Pass value 0–100 for determinate; pass null when you don't know — an animated stripe slides across the track instead. Three sizes, four semantic variants, and optional value labels (above/inline/none) cover most real product use cases. The animation falls back to a calm fade under prefers-reduced-motion."
+>
+	{#snippet demo()}
+		<div class="pb-stack">
+			<section class="pb-card">
+				<h3 class="pb-h3">Determinate</h3>
+				{#each [0, 25, 50, 75, 100] as v (v)}
+					<div class="pb-row">
+						<span class="pb-label">{v}%</span>
+						<ProgressBar value={v} ariaLabel={`${v} percent progress`} />
+					</div>
+				{/each}
+			</section>
 
-	<section class="demo">
-		<h2>Determinate — basic values</h2>
-		<p class="demo-note">A static value renders a fixed fill width.</p>
+			<section class="pb-card">
+				<h3 class="pb-h3">Variants</h3>
+				<div class="pb-row"><span class="pb-label">default</span><ProgressBar value={70} variant="default" ariaLabel="Default" /></div>
+				<div class="pb-row"><span class="pb-label">success</span><ProgressBar value={70} variant="success" ariaLabel="Success" /></div>
+				<div class="pb-row"><span class="pb-label">warning</span><ProgressBar value={70} variant="warning" ariaLabel="Warning" /></div>
+				<div class="pb-row"><span class="pb-label">danger</span><ProgressBar value={70} variant="danger" ariaLabel="Danger" /></div>
+			</section>
 
-		<div class="row">
-			<div class="row-label">0%</div>
-			<ProgressBar value={0} ariaLabel="Empty progress" />
-		</div>
-		<div class="row">
-			<div class="row-label">25%</div>
-			<ProgressBar value={25} ariaLabel="Quarter progress" />
-		</div>
-		<div class="row">
-			<div class="row-label">50%</div>
-			<ProgressBar value={50} ariaLabel="Half progress" />
-		</div>
-		<div class="row">
-			<div class="row-label">75%</div>
-			<ProgressBar value={75} ariaLabel="Three-quarter progress" />
-		</div>
-		<div class="row">
-			<div class="row-label">100%</div>
-			<ProgressBar value={100} ariaLabel="Complete progress" />
-		</div>
-	</section>
+			<section class="pb-card">
+				<h3 class="pb-h3">Sizes &amp; indeterminate</h3>
+				<div class="pb-row"><span class="pb-label">sm</span><ProgressBar value={60} size="sm" ariaLabel="Small" /></div>
+				<div class="pb-row"><span class="pb-label">md</span><ProgressBar value={60} size="md" ariaLabel="Medium" /></div>
+				<div class="pb-row"><span class="pb-label">lg</span><ProgressBar value={60} size="lg" ariaLabel="Large" /></div>
+				<div class="pb-row"><span class="pb-label">loading</span><ProgressBar value={null} ariaLabel="Loading" /></div>
+				<div class="pb-row"><span class="pb-label">saving</span><ProgressBar value={null} variant="success" ariaLabel="Saving" /></div>
+			</section>
 
-	<section class="demo">
-		<h2>Sizes</h2>
-		<p class="demo-note">
-			Three heights — <code>sm</code> (4px), <code>md</code> (8px, default), <code>lg</code> (12px).
-		</p>
-		<div class="row">
-			<div class="row-label">sm</div>
-			<ProgressBar value={60} size="sm" ariaLabel="Small" />
+			<section class="pb-card">
+				<h3 class="pb-h3">Labels</h3>
+				<div class="pb-row"><span class="pb-label">inline</span><ProgressBar value={45} showValue="inline" ariaLabel="Inline label" /></div>
+				<div class="pb-stack-row">
+					<ProgressBar
+						value={3}
+						max={5}
+						showValue="above"
+						ariaLabel="Onboarding"
+						format={(v, m) => `${v} of ${m} steps`}
+						size="lg"
+					/>
+				</div>
+				<div class="pb-stack-row">
+					<ProgressBar value={liveValue} showValue="above" ariaLabel="Live demo" size="md" />
+				</div>
+			</section>
 		</div>
-		<div class="row">
-			<div class="row-label">md</div>
-			<ProgressBar value={60} size="md" ariaLabel="Medium" />
-		</div>
-		<div class="row">
-			<div class="row-label">lg</div>
-			<ProgressBar value={60} size="lg" ariaLabel="Large" />
-		</div>
-	</section>
+	{/snippet}
 
-	<section class="demo">
-		<h2>Variants</h2>
-		<p class="demo-note">Semantic colour variants for context.</p>
-		<div class="row">
-			<div class="row-label">default</div>
-			<ProgressBar value={70} variant="default" ariaLabel="Default" />
-		</div>
-		<div class="row">
-			<div class="row-label">success</div>
-			<ProgressBar value={70} variant="success" ariaLabel="Success" />
-		</div>
-		<div class="row">
-			<div class="row-label">warning</div>
-			<ProgressBar value={70} variant="warning" ariaLabel="Warning" />
-		</div>
-		<div class="row">
-			<div class="row-label">danger</div>
-			<ProgressBar value={70} variant="danger" ariaLabel="Danger" />
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Indeterminate</h2>
-		<p class="demo-note">
-			Pass <code>value={'{null}'}</code> when you don't know the percent — animated stripe slides
-			across the track. Falls back to a soft fill under <code>prefers-reduced-motion</code>.
-		</p>
-		<div class="row">
-			<div class="row-label">loading</div>
-			<ProgressBar value={null} ariaLabel="Loading" />
-		</div>
-		<div class="row">
-			<div class="row-label">success</div>
-			<ProgressBar value={null} variant="success" ariaLabel="Saving" />
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Labels</h2>
-		<p class="demo-note">
-			Show the value <code>inline</code>, <code>above</code>, or hidden (<code>none</code>, default).
-		</p>
-		<div class="row">
-			<div class="row-label">inline</div>
-			<ProgressBar value={45} showValue="inline" ariaLabel="Inline label" />
-		</div>
-		<div class="stack">
-			<ProgressBar
-				value={3}
-				max={5}
-				showValue="above"
-				ariaLabel="Onboarding"
-				format={(v, m) => `${v} of ${m} steps`}
-				size="lg"
-			/>
-		</div>
-		<div class="stack">
-			<ProgressBar
-				value={liveValue}
-				showValue="above"
-				ariaLabel="Live demo"
-				size="md"
-			/>
-		</div>
-	</section>
-
-	<section class="features">
-		<h2>Features</h2>
-		<ul>
-			<li>✅ Determinate (0–100) or indeterminate animated mode</li>
-			<li>✅ Three sizes (<code>sm</code> / <code>md</code> / <code>lg</code>)</li>
-			<li>✅ Four variants (<code>default</code>, <code>success</code>, <code>warning</code>, <code>danger</code>)</li>
-			<li>✅ Optional value label (<code>above</code> / <code>inline</code> / <code>none</code>)</li>
-			<li>✅ Custom <code>format</code> and <code>max</code></li>
-			<li>✅ Hidden native <code>&lt;progress&gt;</code> for accurate SR announcement</li>
-			<li>✅ Honours <code>prefers-reduced-motion</code></li>
-			<li>✅ Zero dependencies, fully copy-paste ready</li>
-		</ul>
-	</section>
-
-	<section class="usage">
-		<h2>Usage</h2>
-		<pre><code>{`<script lang="ts">
-  import ProgressBar from '$lib/components/ProgressBar.svelte';
-</`+`script>
-
-<!-- Determinate -->
-<ProgressBar value={40} ariaLabel="Upload progress" />
-
-<!-- Indeterminate -->
-<ProgressBar value={null} ariaLabel="Loading" />
-
-<!-- With above-label and a custom formatter -->
-<ProgressBar
-  value={3}
-  max={5}
-  showValue="above"
-  ariaLabel="Onboarding"
-  format={(v, m) => \`\${v} of \${m} steps\`}
-/>
-
-<!-- Variant + inline -->
-<ProgressBar value={92} variant="success" showValue="inline" size="lg" />`}</code></pre>
-	</section>
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>value</code></td>
+					<td><code>number | null</code></td>
+					<td><code>0</code></td>
+					<td>Progress 0–max. Pass null for indeterminate animated mode.</td>
+				</tr>
+				<tr>
+					<td><code>max</code></td>
+					<td><code>number</code></td>
+					<td><code>100</code></td>
+					<td>Upper bound — useful for step counters (e.g. max=5).</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>"sm" | "md" | "lg"</code></td>
+					<td><code>"md"</code></td>
+					<td>Track height: 4px, 8px, or 12px.</td>
+				</tr>
+				<tr>
+					<td><code>variant</code></td>
+					<td><code>"default" | "success" | "warning" | "danger"</code></td>
+					<td><code>"default"</code></td>
+					<td>Semantic colour token for the fill.</td>
+				</tr>
+				<tr>
+					<td><code>showValue</code></td>
+					<td><code>"none" | "above" | "inline"</code></td>
+					<td><code>"none"</code></td>
+					<td>Where to render the value label, if at all.</td>
+				</tr>
+				<tr>
+					<td><code>format</code></td>
+					<td><code>(value, max) =&gt; string</code></td>
+					<td>percent</td>
+					<td>Custom formatter for the displayed label.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Accessible name forwarded to the hidden progress element.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>""</code></td>
+					<td>Extra class names forwarded to the root.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 64rem;
-		margin: 0 auto;
-		padding: 2rem 1rem 4rem;
-	}
-
-	.page-header {
-		margin-bottom: 2.5rem;
-		text-align: center;
-	}
-
-	.page-header h1 {
-		font-size: 2.25rem;
-		margin: 0 0 0.5rem;
-	}
-
-	.page-header p {
-		color: #4b5563;
-		max-width: 42rem;
-		margin: 0 auto;
-		line-height: 1.6;
-	}
-
-	.demo {
-		margin-bottom: 3rem;
-	}
-
-	.demo h2,
-	.features h2,
-	.usage h2 {
-		font-size: 1.25rem;
-		margin: 0 0 0.5rem;
-		color: #111827;
-	}
-
-	.demo-note {
-		color: #6b7280;
-		font-size: 0.95rem;
-		margin: 0 0 1.25rem;
-	}
-
-	.demo-note code,
-	.features code {
-		background: #f3f4f6;
-		padding: 0.1rem 0.35rem;
-		border-radius: 0.25rem;
-		font-size: 0.875em;
-	}
-
-	.row {
+	.pb-stack { display: grid; gap: 16px; }
+	.pb-card {
 		display: grid;
-		grid-template-columns: 5rem 1fr;
+		gap: 12px;
+		padding: 18px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		background: var(--surface);
+	}
+	.pb-h3 {
+		margin: 0;
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.pb-row {
+		display: grid;
+		grid-template-columns: 80px 1fr;
 		align-items: center;
-		gap: 1rem;
-		margin-bottom: 0.875rem;
+		gap: 14px;
 	}
-
-	.row-label {
-		font-size: 0.875rem;
-		color: #6b7280;
-		font-weight: 500;
+	.pb-label {
+		font: 12px var(--font-mono);
+		color: var(--fg-3);
 	}
-
-	.stack {
-		margin-bottom: 1rem;
-	}
-
-	.features ul {
-		list-style: none;
-		padding: 0;
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-		gap: 0.5rem 1.25rem;
-		color: #374151;
-	}
-
-	.features li {
-		line-height: 1.6;
-	}
-
-	.usage pre {
-		background: #0f172a;
-		color: #e2e8f0;
-		padding: 1rem 1.25rem;
-		border-radius: 0.5rem;
-		overflow-x: auto;
-		font-size: 0.875rem;
-		line-height: 1.5;
-	}
+	.pb-stack-row { display: grid; gap: 6px; }
 </style>

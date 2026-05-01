@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import ProgressRing from '$lib/components/ProgressRing.svelte';
+
+	const shell = catalogShellPropsForSlug('/progressring')!;
 
 	let uploadValue = $state(0);
 	let uploadRunning = $state(false);
@@ -10,11 +14,8 @@
 		const tick = () => {
 			if (!uploadRunning) return;
 			uploadValue = Math.min(100, uploadValue + 7);
-			if (uploadValue < 100) {
-				setTimeout(tick, 220);
-			} else {
-				uploadRunning = false;
-			}
+			if (uploadValue < 100) setTimeout(tick, 220);
+			else uploadRunning = false;
 		};
 		setTimeout(tick, 220);
 	}
@@ -33,202 +34,205 @@
 </script>
 
 <svelte:head>
-	<title>ProgressRing | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-5xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">ProgressRing</h1>
-			<p class="text-xl text-muted-foreground">
-				Tiny circular progress indicator. Determinate fills smoothly; indeterminate spins while you
-				wait.
-			</p>
-		</header>
-
-		<!-- Determinate sizes -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Determinate</h2>
-			<p class="text-sm text-neutral-500">
-				Pass <code>value</code> from 0 to 100. The ring fills smoothly and announces its percent for screen readers.
-			</p>
-			<div
-				class="bg-white border border-neutral-200 rounded-xl p-6 flex flex-wrap items-center gap-10"
-			>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={25} ariaLabel="25 percent">
-						{#snippet label()}<strong>25%</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">value=25</span>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'SVG', 'A11y', 'Zero deps']}
+	codeExplanation="ProgressRing is a pure SVG circle wrapped in a small CSS animation. In determinate mode the stroke-dashoffset is calculated from value (0–100) and transitions smoothly. In indeterminate mode a dasharray spins forever — and the omitted aria-valuenow tells screen readers we don't know the percent yet. Track and progress colours, size, and stroke are all CSS custom properties, so theming is a one-line change. The label snippet renders dead-centre and accepts any markup."
+>
+	{#snippet demo()}
+		<div class="pr-stack">
+			<div class="pr-row">
+				<div class="pr-cell">
+					<ProgressRing value={25} ariaLabel="25 percent">{#snippet label()}<strong>25%</strong>{/snippet}</ProgressRing>
+					<span class="pr-cap">value=25</span>
 				</div>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={50} ariaLabel="50 percent">
-						{#snippet label()}<strong>50%</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">value=50</span>
+				<div class="pr-cell">
+					<ProgressRing value={50} ariaLabel="50 percent">{#snippet label()}<strong>50%</strong>{/snippet}</ProgressRing>
+					<span class="pr-cap">value=50</span>
 				</div>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={75} ariaLabel="75 percent">
-						{#snippet label()}<strong>75%</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">value=75</span>
+				<div class="pr-cell">
+					<ProgressRing value={75} ariaLabel="75 percent">{#snippet label()}<strong>75%</strong>{/snippet}</ProgressRing>
+					<span class="pr-cap">value=75</span>
 				</div>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={100} ariaLabel="100 percent" progressColor="#16a34a">
-						{#snippet label()}<strong>✓</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">value=100 (success)</span>
+				<div class="pr-cell">
+					<ProgressRing value={100} ariaLabel="100 percent" progressColor="#16a34a">{#snippet label()}<strong>✓</strong>{/snippet}</ProgressRing>
+					<span class="pr-cap">complete</span>
 				</div>
 			</div>
-		</section>
 
-		<!-- Indeterminate -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Indeterminate</h2>
-			<p class="text-sm text-neutral-500">
-				When you can't tell users <em>how much longer</em>, set <code>indeterminate</code> and the ring
-				spins. <code>aria-valuenow</code> is correctly omitted in this mode.
-			</p>
-			<div
-				class="bg-white border border-neutral-200 rounded-xl p-6 flex flex-wrap items-center gap-10"
-			>
-				<div class="flex flex-col items-center gap-2">
+			<div class="pr-row">
+				<div class="pr-cell">
 					<ProgressRing indeterminate ariaLabel="Loading data" />
-					<span class="text-xs text-neutral-500">default</span>
+					<span class="pr-cap">indeterminate</span>
 				</div>
-				<div class="flex flex-col items-center gap-2">
+				<div class="pr-cell">
 					<ProgressRing indeterminate size={48} stroke={4} ariaLabel="Loading" />
-					<span class="text-xs text-neutral-500">small</span>
+					<span class="pr-cap">small</span>
 				</div>
-				<div class="flex flex-col items-center gap-2">
+				<div class="pr-cell">
+					<ProgressRing indeterminate size={96} stroke={8} progressColor="#a855f7" ariaLabel="Working" />
+					<span class="pr-cap">large + custom colour</span>
+				</div>
+			</div>
+
+			<div class="pr-live">
+				<div class="pr-live-head">
+					<strong>Simulated upload</strong>
+					<div class="pr-actions">
+						<button class="pr-btn" onclick={startUpload} disabled={uploadRunning}>
+							{uploadRunning ? 'Uploading…' : 'Start upload'}
+						</button>
+						<button class="pr-btn pr-btn--ghost" onclick={resetUpload}>Reset</button>
+					</div>
+				</div>
+				<div class="pr-live-body">
 					<ProgressRing
-						indeterminate
-						size={96}
-						stroke={8}
-						progressColor="#a855f7"
-						ariaLabel="Working"
-					/>
-					<span class="text-xs text-neutral-500">large + custom colour</span>
-				</div>
-			</div>
-		</section>
-
-		<!-- Live composed demo -->
-		<section class="space-y-3">
-			<div class="flex items-center justify-between">
-				<h2 class="text-2xl font-semibold">Live: simulated upload</h2>
-				<div class="flex gap-2">
-					<button
-						onclick={startUpload}
-						disabled={uploadRunning}
-						class="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+						value={uploadValue}
+						size={120}
+						stroke={10}
+						progressColor={uploadValue === 100 ? '#16a34a' : '#3b82f6'}
+						ariaLabel="Upload progress"
 					>
-						{uploadRunning ? 'Uploading…' : 'Start upload'}
-					</button>
-					<button
-						onclick={resetUpload}
-						class="rounded-md border border-neutral-300 px-3 py-1.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-50"
-					>
-						Reset
-					</button>
-				</div>
-			</div>
-			<div
-				class="bg-white border border-neutral-200 rounded-xl p-8 flex items-center justify-center gap-8"
-			>
-				<ProgressRing
-					value={uploadValue}
-					size={120}
-					stroke={10}
-					progressColor={uploadValue === 100 ? '#16a34a' : '#3b82f6'}
-					ariaLabel="Upload progress"
-				>
-					{#snippet label()}
-						{#if uploadValue === 100}
-							<strong style="color: #16a34a;">Done</strong>
-						{:else}
-							<strong>{uploadValue}%</strong>
-						{/if}
-					{/snippet}
-				</ProgressRing>
-				<div class="text-sm text-neutral-600 max-w-xs">
-					<p class="font-semibold text-neutral-900">photo-12.jpg</p>
-					<p class="text-neutral-500">
-						{uploadValue === 100
-							? 'Uploaded successfully.'
-							: uploadRunning
-								? 'Uploading… please don\'t close this tab.'
-								: 'Ready when you are.'}
-					</p>
-				</div>
-			</div>
-		</section>
-
-		<!-- Custom palette -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Custom palettes</h2>
-			<p class="text-sm text-neutral-500">
-				Override <code>trackColor</code> and <code>progressColor</code> for brand-aware indicators.
-			</p>
-			<div
-				class="bg-white border border-neutral-200 rounded-xl p-6 flex flex-wrap items-center gap-10"
-			>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={42} progressColor="#22c55e" trackColor="#dcfce7">
-						{#snippet label()}<strong style="color:#15803d;">42%</strong>{/snippet}
+						{#snippet label()}
+							{#if uploadValue === 100}
+								<strong style="color: #16a34a;">Done</strong>
+							{:else}
+								<strong>{uploadValue}%</strong>
+							{/if}
+						{/snippet}
 					</ProgressRing>
-					<span class="text-xs text-neutral-500">success</span>
-				</div>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={66} progressColor="#f97316" trackColor="#ffedd5">
-						{#snippet label()}<strong style="color:#c2410c;">66%</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">warning</span>
-				</div>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={88} progressColor="#ef4444" trackColor="#fee2e2">
-						{#snippet label()}<strong style="color:#b91c1c;">88%</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">danger</span>
-				</div>
-				<div class="flex flex-col items-center gap-2">
-					<ProgressRing value={50} size={80} stroke={3} progressColor="#0f172a" trackColor="#e2e8f0">
-						{#snippet label()}<strong>50%</strong>{/snippet}
-					</ProgressRing>
-					<span class="text-xs text-neutral-500">thin stroke</span>
+					<div class="pr-live-meta">
+						<div class="pr-live-name">photo-12.jpg</div>
+						<div class="pr-live-status">
+							{uploadValue === 100 ? 'Uploaded successfully.' : uploadRunning ? 'Uploading… please don\'t close this tab.' : 'Ready when you are.'}
+						</div>
+					</div>
 				</div>
 			</div>
-		</section>
+		</div>
+	{/snippet}
 
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Determinate (0–100) and indeterminate (spinning) modes</li>
-					<li>Configurable size and stroke thickness</li>
-					<li>Custom track / progress colours</li>
-					<li>Centred label snippet — render any content</li>
-					<li><code>role="progressbar"</code> with proper ARIA</li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-					<li>Pure SVG + CSS — zero dependencies</li>
-				</ul>
-			</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr><th>Prop</th><th>Type</th><th>Default</th><th>Description</th></tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>value</code></td>
+					<td><code>number</code></td>
+					<td><code>0</code></td>
+					<td>Determinate progress 0–100. Ignored when indeterminate is true.</td>
+				</tr>
+				<tr>
+					<td><code>indeterminate</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Spin continuously when true; aria-valuenow is omitted automatically.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>number</code></td>
+					<td><code>64</code></td>
+					<td>Outer width and height in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>stroke</code></td>
+					<td><code>number</code></td>
+					<td><code>6</code></td>
+					<td>Ring thickness in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>trackColor</code></td>
+					<td><code>string</code></td>
+					<td>token-based</td>
+					<td>Background ring colour — any CSS colour string.</td>
+				</tr>
+				<tr>
+					<td><code>progressColor</code></td>
+					<td><code>string</code></td>
+					<td><code>"#3b82f6"</code></td>
+					<td>Foreground ring colour.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Accessible name for the progressbar role.</td>
+				</tr>
+				<tr>
+					<td><code>label</code></td>
+					<td><code>Snippet</code></td>
+					<td>—</td>
+					<td>Optional centred label — accepts any markup.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>""</code></td>
+					<td>Extra class names forwarded to the root.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre
-					class="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
-  import ProgressRing from '$lib/components/ProgressRing.svelte';
-</${''}script>
-
-<!-- Determinate with label -->
-<ProgressRing value={75} ariaLabel="Upload">
-  {#snippet label()}<strong>75%</strong>{/snippet}
-</ProgressRing>
-
-<!-- Indeterminate -->
-<ProgressRing indeterminate ariaLabel="Loading" />`}</code></pre>
-			</div>
-		</section>
-	</div>
-</div>
+<style>
+	.pr-stack { display: grid; gap: 24px; }
+	.pr-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 28px;
+		padding: 18px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+	}
+	.pr-cell { display: grid; gap: 8px; justify-items: center; }
+	.pr-cap { font: 11px var(--font-mono); color: var(--fg-3); letter-spacing: 0.08em; }
+	.pr-live {
+		padding: 18px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		display: grid;
+		gap: 14px;
+	}
+	.pr-live-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		flex-wrap: wrap;
+	}
+	.pr-live-body {
+		display: flex;
+		align-items: center;
+		gap: 24px;
+		flex-wrap: wrap;
+	}
+	.pr-live-meta { display: grid; gap: 4px; max-width: 28ch; }
+	.pr-live-name { font: 600 14px var(--font-sans); color: var(--fg-1); }
+	.pr-live-status { font-size: 13px; color: var(--fg-3); }
+	.pr-actions { display: flex; gap: 8px; }
+	.pr-btn {
+		padding: 6px 12px;
+		background: var(--accent);
+		color: #fff;
+		border: 0;
+		border-radius: var(--r-2);
+		font: 500 13px var(--font-sans);
+		cursor: pointer;
+	}
+	.pr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+	.pr-btn--ghost {
+		background: transparent;
+		color: var(--fg-1);
+		border: 1px solid var(--border);
+	}
+</style>

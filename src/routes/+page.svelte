@@ -1,713 +1,1063 @@
 <!--
-	Component Template Library Home Page
+	============================================================
+	TFE / Svelte Templates — Editorial Home (v2)
+	============================================================
 
-	Component library homepage.
-	Small categories use interactive stacks; larger categories use a dense directory.
+	WHAT
+	Reimagined homepage in the TFE house style: ink hero slab,
+	Anton display headline, Plex body, twelve numbered shelves
+	for 100+ Svelte 5 components.
+
+	STRUCTURE
+	1. Hero (ink, editorial display)
+	2. Marquee ticker
+	3. GSAP suite featured spread (with animated dot field)
+	4. Component index head (chip filter / scroll-spy)
+	5. Twelve category shelves (auto-generated from componentCatalog)
+	6. Quick-start how-to
+	7. Editorial footer
+
+	DESIGN TOKENS
+	Imports tfe-tokens.css globally via app.css.
 -->
 
 <script lang="ts">
-	import CardStack from '$lib/components/CardStack.svelte';
-	import ComponentDirectory, {
-		shouldUseComponentDirectory
-	} from '$lib/components/ComponentDirectory.svelte';
-	import {
-		componentCategories,
-		componentCount,
-		getIconColors,
-		type ComponentCatalogItem
-	} from '$lib/componentCatalog';
-	import type { Card } from '$lib/types';
+	import { onMount } from 'svelte';
+	import { componentCategories, componentCount } from '$lib/componentCatalog';
+	import type { ComponentCatalogCategory } from '$lib/componentCatalog';
 
 	const categories = componentCategories;
-	const totalComponents = componentCount;
+	const total = componentCount;
 
-	function toCards(components: ComponentCatalogItem[]): Card[] {
-		return components.map((component) => {
-			const colors = getIconColors(component.icon);
+	const categoryNums = categories.map((_, i) => String(i + 1).padStart(2, '0'));
+	const categorySlugs = categories.map((c) => slugify(c.name));
 
-			return {
-				image: component.screenshot,
-				title: component.name,
-				content: `
-					<p style="margin: 0 0 1rem 0; color: #4a5568; font-size: 0.9rem;">${component.description}</p>
-					<a href="${component.href}"
-					   class="view-demo-btn"
-					   data-sveltekit-preload-data="tap"
-					   style="
-						display: inline-flex;
-						align-items: center;
-						gap: 0.375rem;
-						padding: 0.5rem 1rem;
-						background: ${colors.bg};
-						color: ${colors.text};
-						font-weight: 600;
-						font-size: 0.85rem;
-						text-decoration: none;
-						border-radius: 6px;
-						transition: all 0.2s ease;
-						position: relative;
-						z-index: 10;
-					   ">
-						View Demo <span style="margin-left: 0.25rem;">→</span>
-					</a>
-				`
-			};
-		});
+	// Cumulative offsets so each card carries a global 001..N number.
+	const offsets = categories.reduce<number[]>((acc, cat, i) => {
+		acc.push(i === 0 ? 0 : acc[i - 1] + categories[i - 1].components.length);
+		return acc;
+	}, []);
+
+	let activeId = $state<string>('all');
+
+	// Scroll-spy: highlight the chip whose section is most visible.
+	let canvasEl = $state<HTMLCanvasElement | null>(null);
+
+	onMount(() => {
+		const ids = categorySlugs.map((s) => `cat-${s}`);
+		const sections = ids
+			.map((id) => document.getElementById(id))
+			.filter((el): el is HTMLElement => Boolean(el));
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				const visible = entries
+					.filter((e) => e.isIntersecting)
+					.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+				if (visible[0]) {
+					activeId = visible[0].target.id.replace('cat-', '');
+				}
+			},
+			{ rootMargin: '-30% 0px -55% 0px', threshold: [0, 0.2, 0.5, 1] }
+		);
+
+		sections.forEach((s) => observer.observe(s));
+
+		// Animated dot field for the GSAP feature visual.
+		let raf = 0;
+		let t = 0;
+		const cv = canvasEl;
+		const ctx = cv?.getContext('2d') ?? null;
+		const dpr = Math.min(window.devicePixelRatio || 1, 2);
+		const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		function resize() {
+			if (!cv || !ctx) return;
+			const r = cv.getBoundingClientRect();
+			cv.width = Math.max(1, r.width * dpr);
+			cv.height = Math.max(1, r.height * dpr);
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
+			ctx.scale(dpr, dpr);
+		}
+
+		function tick() {
+			if (!cv || !ctx) return;
+			const r = cv.getBoundingClientRect();
+			ctx.clearRect(0, 0, r.width, r.height);
+			const gap = 28;
+			const cols = Math.floor(r.width / gap);
+			const rows = Math.floor(r.height / gap);
+			const cx = r.width / 2;
+			const cy = r.height / 2;
+			t += reduceMotion ? 0.002 : 0.012;
+			for (let y = 0; y < rows; y++) {
+				for (let x = 0; x < cols; x++) {
+					const px = (x + 0.5) * gap;
+					const py = (y + 0.5) * gap;
+					const dx = px - cx;
+					const dy = py - cy;
+					const d = Math.sqrt(dx * dx + dy * dy);
+					const wave = Math.sin(d * 0.04 - t * 2);
+					const sz = 1.2 + Math.max(0, wave) * 2.6;
+					const a = 0.18 + Math.max(0, wave) * 0.55;
+					ctx.fillStyle = `rgba(91,130,196,${a})`;
+					ctx.fillRect(px - sz / 2, py - sz / 2, sz, sz);
+				}
+			}
+			raf = requestAnimationFrame(tick);
+		}
+
+		if (cv && ctx) {
+			resize();
+			window.addEventListener('resize', resize);
+			tick();
+		}
+
+		return () => {
+			observer.disconnect();
+			cancelAnimationFrame(raf);
+			window.removeEventListener('resize', resize);
+		};
+	});
+
+	function slugify(name: string): string {
+		return name
+			.toLowerCase()
+			.replace(/[^a-z0-9]+/g, '-')
+			.replace(/^-|-$/g, '');
 	}
+
+	function tickerItems(): string[] {
+		return [
+			'Svelte 5 · Runes',
+			'Accessibility wired',
+			'TypeScript',
+			'Zero-dep options',
+			'Motion that doesn’t bounce',
+			'GSAP suite',
+			'Better Auth',
+			'Open source',
+			'Built in Britain',
+			'Copy · paste · ship'
+		];
+	}
+
+	const ticker = tickerItems();
 </script>
 
 <svelte:head>
-	<title>Svelte 5 Component Templates</title>
+	<title>TFE / Svelte Templates — Component library, v2</title>
 	<meta
 		name="description"
-		content="Production-ready Svelte 5 component templates with modern interactions and animations"
+		content="A working library of Svelte 5 components by @Jktfe. {total} parts across {categories.length} categories. Copy, customise, ship."
 	/>
 </svelte:head>
 
-<div class="page">
-	<div class="container">
-		<!-- Hero Section -->
-		<section class="hero">
-			<h1 class="hero-title">Svelte 5 Component Templates</h1>
-			<p class="hero-subtitle">
-				Modern interactions. Smooth animations. Clean design. A growing collection of
-				production-ready Svelte 5 components, inspired by Magic UI, Aceternity, and Sikandar S.
-				Bhide's animation-svelte.
-			</p>
-			<p class="hero-description">
-				Rebuilt with runes, thoroughly documented, made accessible, with some original creations
-				mixed in. Copy, customise, and use in your projects.
-			</p>
-
-			<div class="hero-ctas">
-				<a href="#components" class="cta-primary">Browse {totalComponents} Components</a>
-				<a href="/gsap-suite" class="cta-gsap">Explore GSAP Suite</a>
-				<a
-					href="https://github.com/Jktfe/tfeSvelteTemplates"
-					target="_blank"
-					rel="noopener noreferrer"
-					class="cta-secondary"
-				>
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-						<path
-							d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"
-						/>
-					</svg>
-					View on GitHub
-				</a>
+<div class="tfe-home" id="top">
+	<!-- ===== Hero ===== -->
+	<header class="t-hero">
+		<div class="t-hero__inner">
+			<div class="t-hero__meta">
+				<span><b>TFE</b> — Svelte 5 Templates</span>
+				<span>v2.0 · {total} components · {categories.length} categories</span>
+				<span>Updated · MAY 2026</span>
 			</div>
 
-			<p class="hero-credit">
-				Built by <strong>@Jktfe</strong> with patient support from Claude. Feel free to use, adapt,
-				and let me know where you use it!
-			</p>
-		</section>
+			<h1 class="t-hero__headline">
+				A Working<br />
+				<span class="outline">Library&nbsp;of</span><br />
+				<span class="accent">Svelte&nbsp;Parts.</span>
+			</h1>
 
-		<section class="gsap-suite-callout" aria-labelledby="gsap-suite-callout-title">
-			<div>
-				<p class="callout-kicker">GSAP suite</p>
-				<h2 id="gsap-suite-callout-title">Animation primitives built for copy-and-ship agents</h2>
-				<p>
-					SplitText heroes, reveal wrappers, kinetic canvas fields, fan decks, and the new Flip grid
-					are grouped on one route with provenance chips and copy-for-your-agent prompts.
+			<div class="t-hero__rule"></div>
+
+			<div class="t-hero__sub">
+				<p class="t-hero__lede">
+					<em>I’m @Jktfe.</em> I build interface parts in Svelte 5 — runes, accessibility wired in,
+					animation that doesn’t bounce. <em>{total} of them, so far.</em> Inspired by Magic UI,
+					Aceternity and Sikandar S. Bhide; rebuilt properly, then mixed with originals. Copy what
+					you need.
 				</p>
+				<div class="t-hero__actions">
+					<a class="t-btn t-btn--primary" href="#components">
+						Browse {total} components <span class="arrow" aria-hidden="true">→</span>
+					</a>
+					<a class="t-btn t-btn--ghost" href="/gsap-suite">
+						GSAP suite <span class="arrow" aria-hidden="true">↗</span>
+					</a>
+					<a
+						class="t-btn t-btn--ghost"
+						href="https://github.com/Jktfe/tfeSvelteTemplates"
+						target="_blank"
+						rel="noopener noreferrer"
+					>
+						GitHub <span class="arrow" aria-hidden="true">↗</span>
+					</a>
+				</div>
 			</div>
-			<a href="/gsap-suite" class="callout-link">Open /gsap-suite</a>
-		</section>
+		</div>
+	</header>
 
-		<!-- Component Categories -->
-		<section id="components" class="categories-section">
-			<h2 class="section-title">Component Categories</h2>
-			<p class="section-subtitle">
-				{totalComponents} components organised into {categories.length} categories with compact
-				directories for larger groups and interactive stacks for smaller sets.
-			</p>
+	<!-- ===== Ticker ===== -->
+	<div class="t-ticker" aria-hidden="true">
+		<div class="t-ticker__track">
+			{#each [0, 1, 2] as _}
+				<span class="t-ticker__group">
+					{#each ticker as item}
+						<span>{item}</span><span class="dot">●</span>
+					{/each}
+				</span>
+			{/each}
+		</div>
+	</div>
 
-			<div class="categories-list">
-				{#each categories as category (category.name)}
-					<div class="category-card">
-						<h3 class="category-header">
-							<span class="category-icon">{category.icon}</span>
-							{category.name}
-							<span class="category-count">{category.components.length}</span>
-						</h3>
-						<p class="category-summary">{category.summary}</p>
-						{#if shouldUseComponentDirectory(category.components.length)}
-							<ComponentDirectory
-								components={category.components}
-								categoryName={category.name}
-							/>
-						{:else}
-							<div class="category-stack">
-								<CardStack
-									cards={toCards(category.components)}
-									cardWidth={272}
-									cardHeight={336}
-								/>
-							</div>
-						{/if}
-					</div>
+	<!-- ===== Featured GSAP suite ===== -->
+	<section class="t-featured">
+		<div class="t-wrap">
+			<div class="t-featured__grid">
+				<div>
+					<div class="t-featured__num">— Suite · 06.13</div>
+					<h2 class="t-featured__title">
+						GSAP, sequenced.<br /><span class="blue">For copy-and-ship agents.</span>
+					</h2>
+					<p class="t-featured__body">
+						SplitText heroes, reveal wrappers, a kinetic canvas field, fan decks, and a Flip grid —
+						grouped on one route, with provenance chips and copy-for-your-agent prompts.
+					</p>
+					<ul class="t-featured__list">
+						<li><b>01</b><span>SplitText hero with stagger and word focus</span></li>
+						<li><b>02</b><span>Reveal wrapper for any block, viewport-driven</span></li>
+						<li><b>03</b><span>Kinetic canvas field, pointer-reactive</span></li>
+						<li><b>04</b><span>Fan deck and Flip grid, scoped keyboard control</span></li>
+					</ul>
+					<a class="t-btn t-btn--blue" href="/gsap-suite">
+						Open /gsap-suite <span class="arrow" aria-hidden="true">↗</span>
+					</a>
+				</div>
+				<div class="t-featured__visual" aria-hidden="true">
+					<canvas bind:this={canvasEl}></canvas>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<!-- ===== Index head ===== -->
+	<section id="components" class="t-index-head">
+		<div class="t-wrap">
+			<div class="t-index-head__row">
+				<div>
+					<div class="t-index-head__eyebrow">— Section · 02.00</div>
+					<h2>The catalogue.<br />Twelve shelves.</h2>
+				</div>
+				<div class="t-index-head__meta">
+					<b>{total}</b>
+					components on file
+				</div>
+			</div>
+			<div class="t-filters" role="tablist" aria-label="Filter component categories">
+				<a
+					class="t-filters__chip"
+					href="#components"
+					data-active={activeId === 'all'}
+					onclick={() => (activeId = 'all')}
+				>
+					All <b>{total}</b>
+				</a>
+				{#each categories as cat, i (cat.name)}
+					<a
+						class="t-filters__chip"
+						href={`#cat-${categorySlugs[i]}`}
+						data-active={activeId === categorySlugs[i]}
+						onclick={() => (activeId = categorySlugs[i])}
+					>
+						{cat.name} <b>{cat.components.length}</b>
+					</a>
 				{/each}
 			</div>
-		</section>
+		</div>
+	</section>
 
-		<!-- Quick Start -->
-		<section class="quickstart-section">
-			<h2 class="section-title">Quick Start</h2>
-			<div class="quickstart-steps">
-				<div class="step">
-					<div class="step-number">1</div>
-					<div class="step-content">
-						<h3>Browse Components</h3>
-						<p>Explore the categories above to find the components you need.</p>
+	<!-- ===== Category shelves ===== -->
+	{#each categories as cat, i (cat.name)}
+		{@const offset = offsets[i]}
+		<section id={`cat-${categorySlugs[i]}`} class="t-cat">
+			<div class="t-wrap">
+				<div class="t-cat__head">
+					<div class="t-cat__num">{categoryNums[i]}</div>
+					<div>
+						<h3 class="t-cat__title">{cat.name}</h3>
+						<p class="t-cat__blurb">{cat.summary}</p>
+					</div>
+					<div class="t-cat__count">
+						<b>{String(cat.components.length).padStart(2, '0')}</b>
+						in this shelf
 					</div>
 				</div>
-
-				<div class="step">
-					<div class="step-number">2</div>
-					<div class="step-content">
-						<h3>Copy to Your Project</h3>
-						<p>
-							Copy component files from <code>src/lib/components/</code> to your project.
-						</p>
-					</div>
-				</div>
-
-				<div class="step">
-					<div class="step-number">3</div>
-					<div class="step-content">
-						<h3>Customise & Use</h3>
-						<p>Import and use with your data. All props are fully typed and documented.</p>
-					</div>
+				<div class="t-grid">
+					{#each cat.components as item, j (item.href)}
+						<a class="t-card" href={item.href} data-sveltekit-preload-data="hover">
+							<div class="t-card__shot">
+								<span class="t-card__num">{String(offset + j + 1).padStart(3, '0')}</span>
+								<img src={item.screenshot} alt="" loading="lazy" decoding="async" />
+							</div>
+							<div class="t-card__body">
+								<h4 class="t-card__name">{item.name}</h4>
+								<p class="t-card__blurb">{item.description}</p>
+								<div class="t-card__foot">
+									<span>{item.href}</span>
+									<span class="t-card__view"
+										>View <span class="arrow" aria-hidden="true">→</span></span
+									>
+								</div>
+							</div>
+						</a>
+					{/each}
 				</div>
 			</div>
 		</section>
+	{/each}
 
-		<!-- Features -->
-		<section class="features-section">
-			<div class="features-grid">
-				<div class="feature">
-					<span class="feature-icon">⚡</span>
-					<span class="feature-text">Svelte 5 Runes</span>
+	<!-- ===== How-to ===== -->
+	<section id="how" class="t-howto">
+		<div class="t-wrap">
+			<div class="t-howto__head">
+				<h2>Copy, customise,<br />ship.</h2>
+				<p>
+					Three steps. No package install, no opaque API. The components are plain Svelte 5 files.
+					Lift and adapt.
+				</p>
+			</div>
+			<div class="t-howto__steps">
+				<div class="t-step">
+					<div class="t-step__num">01</div>
+					<h3 class="t-step__title">Browse the shelf</h3>
+					<p class="t-step__body">
+						Find the component you want. Hit the demo, prod the controls, read the source.
+					</p>
+					<div class="t-step__code">/components → /demo</div>
 				</div>
-				<div class="feature">
-					<span class="feature-icon">📱</span>
-					<span class="feature-text">Fully Responsive</span>
+				<div class="t-step">
+					<div class="t-step__num">02</div>
+					<h3 class="t-step__title">Copy the file</h3>
+					<p class="t-step__body">
+						Grab the .svelte file from src/lib/components/. Drop it into your project. Props are
+						typed.
+					</p>
+					<div class="t-step__code">cp Component.svelte ./src/lib</div>
 				</div>
-				<div class="feature">
-					<span class="feature-icon">♿</span>
-					<span class="feature-text">Accessible</span>
-				</div>
-				<div class="feature">
-					<span class="feature-icon">🚀</span>
-					<span class="feature-text">Zero Deps Options</span>
-				</div>
-				<div class="feature">
-					<span class="feature-icon">📝</span>
-					<span class="feature-text">TypeScript</span>
-				</div>
-				<div class="feature">
-					<span class="feature-icon">🎨</span>
-					<span class="feature-text">Modern Design</span>
+				<div class="t-step">
+					<div class="t-step__num">03</div>
+					<h3 class="t-step__title">Bend it to fit</h3>
+					<p class="t-step__body">
+						Wire your data, swap colours, tune the motion. If something’s missing, tell me — I’ll
+						add it.
+					</p>
+					<div class="t-step__code">{'<Component data={...} />'}</div>
 				</div>
 			</div>
-		</section>
-	</div>
+		</div>
+	</section>
+
+	<!-- Footer is rendered by the global layout (TfeFooter). -->
 </div>
 
 <style>
-	.page {
-		--home-bg: #f7fafc;
-		--home-surface: #ffffff;
-		--home-surface-raised: #ffffff;
-		--home-surface-muted: #edf2f7;
-		--home-text: #1a202c;
-		--home-text-muted: #4a5568;
-		--home-text-subtle: #718096;
-		--home-border: #dfe7f2;
-		--home-border-soft: #e2e8f0;
-		--home-primary: #146ef5;
-		--home-shadow: 0 10px 34px rgba(20, 110, 245, 0.08);
-		background: var(--home-bg);
-		color: var(--home-text);
-		padding: 3rem 0;
-		overflow-x: hidden;
+	.tfe-home {
+		background: var(--bg);
+		color: var(--fg);
+		font-family: var(--font-sans);
+		line-height: var(--lh-loose);
+		font-size: 16px;
 	}
 
-	.container {
-		max-width: 900px;
+	.tfe-home :global(*) {
+		box-sizing: border-box;
+	}
+
+	.tfe-home :global(::selection) {
+		background: var(--tfe-blue);
+		color: #fff;
+	}
+
+	.t-wrap {
+		width: 100%;
+		max-width: var(--container);
 		margin: 0 auto;
-		padding: 0 2rem;
+		padding: 0 32px;
 	}
 
-	/* Hero Section */
-	.hero {
-		text-align: center;
-		margin-bottom: 5rem;
+	/* ============ Hero — paper-default ============ */
+	.t-hero {
+		background: var(--tfe-paper);
+		color: var(--fg-1);
+		position: relative;
+		overflow: hidden;
+		border-bottom: 1px solid var(--border);
 	}
-
-	.hero-title {
-		font-size: 3rem;
-		font-weight: 700;
-		margin: 0 0 1.5rem 0;
-		color: var(--home-text);
-		line-height: 1.2;
+	.t-hero__inner {
+		max-width: var(--container);
+		margin: 0 auto;
+		padding: 80px 32px 96px;
+		position: relative;
 	}
-
-	.hero-subtitle {
-		font-size: 1.25rem;
-		color: var(--home-text-muted);
-		margin: 0 auto 1rem;
-		max-width: 700px;
-		line-height: 1.6;
-	}
-
-	.hero-description {
-		font-size: 1.1rem;
-		color: var(--home-text-subtle);
-		margin: 0 auto 2rem;
-		max-width: 600px;
-		line-height: 1.6;
-	}
-
-	.hero-ctas {
+	.t-hero__meta {
 		display: flex;
-		gap: 1rem;
-		justify-content: center;
-		flex-wrap: wrap;
-		margin-bottom: 2rem;
+		justify-content: space-between;
+		gap: 24px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		margin-bottom: 56px;
+		padding-bottom: 16px;
+		border-bottom: 1px solid var(--border);
+	}
+	.t-hero__meta span {
+		white-space: nowrap;
+	}
+	.t-hero__meta b {
+		color: var(--fg-1);
+		font-weight: 500;
 	}
 
-	.cta-primary {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.875rem 2rem;
-		background: linear-gradient(135deg, #146ef5 0%, #667eea 100%);
-		color: white;
-		font-weight: 600;
-		font-size: 1rem;
-		text-decoration: none;
-		border-radius: 8px;
-		transition: all 0.2s ease;
-	}
-
-	.cta-primary:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 20px rgba(20, 110, 245, 0.4);
-	}
-
-	.cta-gsap {
-		display: inline-flex;
-		align-items: center;
-		padding: 0.875rem 1.5rem;
-		background: #0c0d10;
-		color: #f8fafc;
-		font-weight: 700;
-		font-size: 1rem;
-		text-decoration: none;
-		border: 2px solid #0c0d10;
-		border-radius: 8px;
-		transition: all 0.2s ease;
-	}
-
-	.cta-gsap:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 20px rgba(255, 106, 61, 0.28);
-	}
-
-	.cta-secondary {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.875rem 1.5rem;
-		background: var(--home-surface-raised);
-		color: var(--home-text);
-		font-weight: 600;
-		font-size: 1rem;
-		text-decoration: none;
-		border: 2px solid var(--home-border-soft);
-		border-radius: 8px;
-		transition: all 0.2s ease;
-	}
-
-	.cta-secondary:hover {
-		border-color: var(--home-text);
-		background: var(--home-surface-muted);
-	}
-
-	.hero-credit {
-		font-size: 0.95rem;
-		color: var(--home-text-subtle);
+	.t-hero__headline {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: clamp(56px, 11.5vw, 184px);
+		line-height: 0.92;
+		letter-spacing: 0.005em;
+		text-transform: uppercase;
 		margin: 0;
+		color: var(--fg-1);
+	}
+	.t-hero__headline .accent {
+		color: var(--tfe-blue);
+	}
+	.t-hero__headline .outline {
+		color: transparent;
+		-webkit-text-stroke: 1.5px var(--fg-1);
 	}
 
-	.gsap-suite-callout {
+	.t-hero__rule {
+		margin: 56px 0 40px;
+		height: 1px;
+		background: var(--border);
+	}
+
+	.t-hero__sub {
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		align-items: center;
-		gap: 1.5rem;
-		margin: -2rem 0 4rem;
-		padding: 1.5rem;
-		border: 1px solid rgba(255, 106, 61, 0.34);
-		border-radius: 8px;
-		background:
-			linear-gradient(135deg, rgba(255, 106, 61, 0.11), rgba(94, 179, 255, 0.1)),
-			#ffffff;
-		box-shadow: 0 18px 50px rgba(15, 23, 42, 0.08);
+		grid-template-columns: 1.1fr 1fr;
+		gap: 48px;
+		align-items: end;
 	}
-
-	.callout-kicker,
-	.gsap-suite-callout h2,
-	.gsap-suite-callout p {
+	.t-hero__lede {
+		font-size: clamp(18px, 1.6vw, 22px);
+		line-height: 1.55;
+		color: var(--fg-2);
+		font-weight: 300;
+		max-width: 56ch;
 		margin: 0;
 	}
+	.t-hero__lede em {
+		font-style: normal;
+		color: var(--fg-1);
+		font-weight: 500;
+	}
 
-	.callout-kicker {
-		color: #d94e24;
-		font-size: 0.78rem;
-		font-weight: 850;
+	.t-hero__actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 12px;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	/* ============ Buttons ============ */
+	.t-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+		padding: 14px 22px;
+		font-family: var(--font-sans);
+		font-size: 14px;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		border-radius: var(--r-2);
+		border: 1px solid transparent;
+		text-decoration: none;
+		transition: all var(--dur-fast) var(--ease-std);
+		cursor: pointer;
+	}
+	.t-btn--primary {
+		background: var(--tfe-ink);
+		color: #f6f5f1;
+		border-color: var(--tfe-ink);
+	}
+	.t-btn--primary:hover {
+		background: var(--tfe-blue);
+		border-color: var(--tfe-blue);
+		color: #fff;
+	}
+	.t-btn--ghost {
+		background: transparent;
+		color: var(--fg-1);
+		border-color: var(--border-strong);
+	}
+	.t-btn--ghost:hover {
+		background: var(--surface-2);
+		border-color: var(--fg-1);
+	}
+	.t-btn--blue {
+		background: var(--tfe-blue);
+		color: #fff;
+		border-color: var(--tfe-blue);
+	}
+	.t-btn--blue:hover {
+		background: var(--tfe-blue-700);
+		border-color: var(--tfe-blue-700);
+	}
+	.t-btn .arrow {
+		display: inline-block;
+		transition: transform var(--dur-fast);
+	}
+	.t-btn:hover .arrow {
+		transform: translateX(2px);
+	}
+
+	/* ============ Ticker — paper-default ============ */
+	.t-ticker {
+		background: var(--surface-2);
+		color: var(--fg-3);
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		padding: 14px 0;
+		overflow: hidden;
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
+		position: relative;
+	}
+	.t-ticker__track {
+		display: flex;
+		gap: 56px;
+		white-space: nowrap;
+		width: max-content;
+		animation: t-ticker-scroll 60s linear infinite;
+	}
+	.t-ticker__group {
+		display: inline-flex;
+		align-items: center;
+		gap: 56px;
+	}
+	.t-ticker .dot {
+		color: var(--tfe-blue-300);
+	}
+	@keyframes t-ticker-scroll {
+		from {
+			transform: translateX(0);
+		}
+		to {
+			transform: translateX(-33.333%);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.t-ticker__track {
+			animation-duration: 240s;
+		}
+	}
+
+	/* ============ Featured ============ */
+	.t-featured {
+		background: var(--tfe-paper);
+		border-bottom: 1px solid var(--border);
+		padding: 96px 0;
+	}
+	.t-featured__grid {
+		display: grid;
+		grid-template-columns: 0.85fr 1.15fr;
+		gap: 80px;
+		align-items: center;
+	}
+	.t-featured__num {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.16em;
+		color: var(--fg-3);
+		text-transform: uppercase;
+		margin-bottom: 20px;
+	}
+	.t-featured__title {
+		font-family: var(--font-display);
+		font-size: clamp(40px, 5.4vw, 80px);
+		line-height: 0.96;
+		text-transform: uppercase;
+		margin: 0 0 24px;
+		color: var(--tfe-ink);
+		font-weight: 400;
+		letter-spacing: 0.005em;
+	}
+	.t-featured__title .blue {
+		color: var(--tfe-blue);
+	}
+	.t-featured__body {
+		font-size: 17px;
+		line-height: 1.65;
+		color: var(--fg-2);
+		max-width: 52ch;
+		margin: 0 0 28px;
+	}
+	.t-featured__list {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 32px;
+		display: grid;
+		gap: 8px;
+		font-size: 14px;
+		color: var(--fg-2);
+	}
+	.t-featured__list li {
+		display: flex;
+		gap: 12px;
+		padding: 10px 0;
+		border-bottom: 1px solid var(--border);
+	}
+	.t-featured__list li b {
+		font-family: var(--font-mono);
+		font-weight: 500;
+		font-size: 11px;
+		color: var(--fg-3);
 		letter-spacing: 0.08em;
+		min-width: 56px;
+		padding-top: 2px;
 		text-transform: uppercase;
 	}
-
-	.gsap-suite-callout h2 {
-		margin-top: 0.35rem;
-		color: #111827;
-		font-size: clamp(1.35rem, 3vw, 2rem);
-		line-height: 1.12;
+	.t-featured__list li span {
+		color: var(--fg-1);
+		flex: 1;
+	}
+	.t-featured__visual {
+		position: relative;
+		aspect-ratio: 4 / 3;
+		background: var(--tfe-ink);
+		border: 1px solid var(--border-strong);
+		overflow: hidden;
+		border-radius: var(--r-2);
+	}
+	.t-featured__visual canvas {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+	.t-featured__visual::after {
+		content: 'GSAP / SUITE';
+		position: absolute;
+		bottom: 16px;
+		left: 16px;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.18em;
+		color: rgba(246, 245, 241, 0.6);
 	}
 
-	.gsap-suite-callout p:not(.callout-kicker) {
-		max-width: 66ch;
-		margin-top: 0.65rem;
-		color: #4b5563;
-		line-height: 1.55;
+	/* ============ Index head ============ */
+	.t-index-head {
+		padding: 96px 0 24px;
+		border-bottom: 1px solid var(--border);
+		background: var(--bg);
 	}
-
-	.callout-link {
+	.t-index-head__row {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: 32px;
+		padding-bottom: 24px;
+	}
+	.t-index-head__eyebrow {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		margin-bottom: 16px;
+	}
+	.t-index-head h2 {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: clamp(40px, 5vw, 72px);
+		line-height: 0.96;
+		text-transform: uppercase;
+		letter-spacing: 0.005em;
+		margin: 0;
+		color: var(--fg-1);
+	}
+	.t-index-head__meta {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		text-align: right;
+		white-space: nowrap;
+	}
+	.t-index-head__meta b {
+		display: block;
+		font-size: 32px;
+		color: var(--fg-1);
+		font-family: var(--font-display);
+		letter-spacing: 0.02em;
+	}
+	.t-filters {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		padding: 24px 0 0;
+	}
+	.t-filters__chip {
 		display: inline-flex;
 		align-items: center;
-		justify-content: center;
-		min-height: 2.75rem;
-		padding: 0.7rem 1rem;
-		border-radius: 8px;
-		background: #ff6a3d;
-		color: #0c0d10;
-		font-weight: 800;
+		gap: 8px;
+		padding: 8px 14px;
+		border: 1px solid var(--border-strong);
+		background: transparent;
+		color: var(--fg-2);
+		font-family: var(--font-sans);
+		font-size: 12px;
+		letter-spacing: 0.02em;
+		border-radius: var(--r-pill);
 		text-decoration: none;
+		cursor: pointer;
+		transition: all var(--dur-fast) var(--ease-std);
+	}
+	.t-filters__chip b {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		color: var(--fg-3);
+		font-weight: 500;
+	}
+	.t-filters__chip:hover {
+		border-color: var(--fg-1);
+		color: var(--fg-1);
+	}
+	.t-filters__chip[data-active='true'] {
+		background: var(--fg-1);
+		border-color: var(--fg-1);
+		color: var(--bg);
+	}
+	.t-filters__chip[data-active='true'] b {
+		color: var(--fg-3);
+	}
+
+	/* ============ Categories ============ */
+	.t-cat {
+		border-bottom: 1px solid var(--border);
+		padding: 64px 0 80px;
+		scroll-margin-top: 96px;
+	}
+	.t-cat__head {
+		display: grid;
+		grid-template-columns: 80px 1fr auto;
+		gap: 32px;
+		align-items: baseline;
+		margin-bottom: 40px;
+	}
+	.t-cat__num {
+		font-family: var(--font-display);
+		font-size: 56px;
+		line-height: 1;
+		color: var(--accent);
+		letter-spacing: 0.02em;
+	}
+	.t-cat__title {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: clamp(28px, 3.4vw, 44px);
+		line-height: 1;
+		text-transform: uppercase;
+		letter-spacing: 0.005em;
+		margin: 0 0 8px;
+		color: var(--fg-1);
+	}
+	.t-cat__blurb {
+		font-size: 15px;
+		color: var(--fg-2);
+		margin: 0;
+		max-width: 56ch;
+	}
+	.t-cat__count {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		text-align: right;
 		white-space: nowrap;
-		transition:
-			transform 0.2s ease,
-			box-shadow 0.2s ease;
+		align-self: center;
+	}
+	.t-cat__count b {
+		display: block;
+		font-family: var(--font-display);
+		font-size: 32px;
+		color: var(--fg-1);
 	}
 
-	.callout-link:hover,
-	.callout-link:focus-visible {
-		transform: translateY(-2px);
-		box-shadow: 0 12px 26px rgba(255, 106, 61, 0.32);
-		outline: none;
+	/* ============ Card grid — dense default ============ */
+	.t-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+		gap: 16px;
 	}
-
-	/* Section Titles */
-	.section-title {
-		font-size: 2rem;
-		font-weight: 700;
-		margin: 0 0 1rem 0;
-		color: var(--home-text);
-		text-align: center;
-	}
-
-	.section-subtitle {
-		font-size: 1.1rem;
-		color: var(--home-text-subtle);
-		text-align: center;
-		max-width: 600px;
-		margin: 0 auto 3rem;
-	}
-
-	/* Component Categories */
-	.categories-section {
-		margin-bottom: 5rem;
-	}
-
-	.categories-list {
+	.t-card {
 		display: flex;
 		flex-direction: column;
-		gap: 2.5rem;
+		border: 1px solid var(--border);
+		background: var(--surface);
+		border-radius: var(--r-2);
+		overflow: hidden;
+		text-decoration: none;
+		color: inherit;
+		position: relative;
+		transition: all var(--dur-base) var(--ease-std);
 	}
-
-	.category-card {
-		background: var(--home-surface-raised);
-		border: 1px solid var(--home-border);
-		border-radius: 8px;
-		padding: 2rem;
-		transition: all 0.2s ease;
+	.t-card:hover {
+		border-color: var(--fg-1);
+		box-shadow: var(--shadow-2);
+		transform: translateY(-2px);
 	}
-
-	.category-card:hover {
-		border-color: var(--home-primary);
-		box-shadow: var(--home-shadow);
-	}
-
-	.category-header {
-		display: flex;
-		align-items: center;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin: 0 0 0.5rem 0;
-		font-size: 1.5rem;
-		font-weight: 700;
-		color: var(--home-text);
-		line-height: 1.2;
-	}
-
-	.category-icon {
-		font-size: 1.5rem;
-	}
-
-	.category-count {
-		margin-left: auto;
-		background: var(--home-surface-muted);
-		color: var(--home-text-muted);
-		font-size: 0.875rem;
-		font-weight: 500;
-		padding: 0.375rem 0.75rem;
-		border-radius: 9999px;
-	}
-
-	.category-summary {
-		margin: 0 0 1.5rem;
-		color: var(--home-text-subtle);
-		font-size: 0.95rem;
-		line-height: 1.5;
-	}
-
-	.category-stack {
-		height: 520px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+	.t-card__shot {
+		aspect-ratio: 16 / 10;
+		background: var(--surface-2);
+		border-bottom: 1px solid var(--border);
+		position: relative;
 		overflow: hidden;
 	}
-
-	/* Quick Start */
-	.quickstart-section {
-		margin-bottom: 4rem;
+	.t-card__shot img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+		transition: transform var(--dur-slow) var(--ease-out);
 	}
-
-	.quickstart-steps {
-		max-width: 700px;
-		margin: 0 auto;
+	.t-card:hover .t-card__shot img {
+		transform: scale(1.04);
 	}
-
-	.step {
+	.t-card__shot::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, transparent 60%, rgba(17, 19, 21, 0.06));
+		pointer-events: none;
+	}
+	.t-card__num {
+		position: absolute;
+		top: 12px;
+		left: 12px;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		background: var(--surface);
+		padding: 4px 8px;
+		border-radius: var(--r-1);
+		border: 1px solid var(--border);
+	}
+	.t-card__body {
+		padding: 16px 18px 18px;
 		display: flex;
-		gap: 1.5rem;
-		margin-bottom: 1.5rem;
-		padding: 1.5rem;
-		background: var(--home-surface-raised);
-		border: 1px solid var(--home-border-soft);
-		border-radius: 12px;
-		transition: all 0.2s ease;
+		flex-direction: column;
+		gap: 6px;
+		flex: 1;
 	}
-
-	.step:hover {
-		border-color: var(--home-primary);
-		transform: translateX(4px);
-	}
-
-	.step-number {
-		flex-shrink: 0;
-		width: 2.5rem;
-		height: 2.5rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background: linear-gradient(135deg, #146ef5 0%, #667eea 100%);
-		color: white;
-		font-size: 1.25rem;
-		font-weight: 700;
-		border-radius: 50%;
-	}
-
-	.step-content h3 {
-		font-size: 1.1rem;
-		font-weight: 600;
-		margin: 0 0 0.25rem 0;
-		color: var(--home-text);
-	}
-
-	.step-content p {
-		font-size: 0.95rem;
-		color: var(--home-text-muted);
+	.t-card__name {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 22px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
 		margin: 0;
+		color: var(--fg-1);
+		line-height: 1;
+	}
+	.t-card__blurb {
+		font-size: 13.5px;
 		line-height: 1.5;
+		color: var(--fg-2);
+		margin: 0;
+		flex: 1;
 	}
-
-	.step-content code {
-		padding: 0.125rem 0.375rem;
-		background: var(--home-surface-muted);
-		color: var(--home-primary);
-		border-radius: 4px;
-		font-size: 0.85rem;
-		font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-	}
-
-	/* Features */
-	.features-section {
-		background: linear-gradient(135deg, var(--home-surface) 0%, var(--home-surface-muted) 100%);
-		margin: 0 -2rem;
-		padding: 3rem 2rem;
-		border-radius: 16px;
-	}
-
-	.features-grid {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 2rem;
-	}
-
-	.feature {
+	.t-card__foot {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		justify-content: space-between;
+		margin-top: 8px;
+		padding-top: 12px;
+		border-top: 1px solid var(--border);
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.t-card__view {
+		color: var(--accent);
 		font-weight: 500;
-		color: var(--home-text-muted);
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+	}
+	.t-card:hover .t-card__view {
+		color: var(--accent-strong);
+	}
+	.t-card__view .arrow {
+		transition: transform var(--dur-fast);
+	}
+	.t-card:hover .t-card__view .arrow {
+		transform: translateX(3px);
 	}
 
-	.feature-icon {
-		font-size: 1.25rem;
+	/* ============ How-to ============ */
+	.t-howto {
+		background: var(--surface-2);
+		border-top: 1px solid var(--border);
+		border-bottom: 1px solid var(--border);
+		padding: 96px 0;
+	}
+	.t-howto__head {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 48px;
+		align-items: end;
+		margin-bottom: 48px;
+	}
+	.t-howto__head h2 {
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: clamp(36px, 4.6vw, 64px);
+		line-height: 0.96;
+		text-transform: uppercase;
+		letter-spacing: 0.005em;
+		margin: 0;
+		color: var(--fg-1);
+	}
+	.t-howto__head p {
+		font-size: 16px;
+		color: var(--fg-2);
+		margin: 0;
+		max-width: 50ch;
+		justify-self: end;
+	}
+	.t-howto__steps {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0;
+		border-top: 2px solid var(--fg-1);
+		border-bottom: 1px solid var(--border);
+	}
+	.t-step {
+		padding: 32px 28px 36px;
+		border-right: 1px solid var(--border);
+		background: var(--surface);
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.t-step:last-child {
+		border-right: 0;
+	}
+	.t-step__num {
+		font-family: var(--font-display);
+		font-size: 56px;
+		line-height: 1;
+		color: var(--accent);
+		letter-spacing: 0.02em;
+	}
+	.t-step__title {
+		font-family: var(--font-display);
+		font-weight: 400;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		font-size: 22px;
+		margin: 0;
+		color: var(--fg-1);
+		line-height: 1.05;
+	}
+	.t-step__body {
+		font-size: 14px;
+		color: var(--fg-2);
+		line-height: 1.55;
+		margin: 0;
+	}
+	.t-step__code {
+		margin-top: 8px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--tfe-ink);
+		color: #c8d6ec;
+		padding: 10px 14px;
+		border-radius: var(--r-2);
+		letter-spacing: 0.01em;
+		white-space: pre;
+		overflow-x: auto;
 	}
 
-	.feature-text {
-		font-size: 0.95rem;
-	}
-
-	/* Responsive */
-	@media (max-width: 768px) {
-		.page {
-			padding: 2rem 0;
-		}
-
-		.container {
-			padding: 0 1rem;
-		}
-
-		.hero-title {
-			font-size: 2rem;
-		}
-
-		.hero-subtitle {
-			font-size: 1.1rem;
-		}
-
-		.hero-description {
-			font-size: 1rem;
-		}
-
-		.hero-ctas {
-			flex-direction: column;
-			align-items: center;
-		}
-
-		.cta-primary,
-		.cta-gsap,
-		.cta-secondary {
-			width: 100%;
-			max-width: 280px;
-			justify-content: center;
-		}
-
-		.gsap-suite-callout {
+	/* ============ Responsive ============ */
+	@media (max-width: 980px) {
+		.t-featured__grid {
 			grid-template-columns: 1fr;
-			margin: -2rem 0 3rem;
-			padding: 1.25rem;
+			gap: 48px;
 		}
-
-		.callout-link {
-			width: 100%;
+		.t-featured {
+			padding: 72px 0;
 		}
-
-		.section-title {
-			font-size: 1.5rem;
+	}
+	@media (max-width: 880px) {
+		.t-hero__sub {
+			grid-template-columns: 1fr;
+			gap: 32px;
 		}
-
-		.categories-list {
-			gap: 1.5rem;
+		.t-hero__actions {
+			justify-content: flex-start;
 		}
-
-		.category-card {
-			padding: 1.25rem;
+		.t-hero__inner {
+			padding: 56px 20px 72px;
 		}
-
-		.category-header {
-			font-size: 1.25rem;
+		.t-hero__meta {
+			flex-wrap: wrap;
 		}
-
-		.category-stack {
-			height: 450px;
+		.t-howto__head {
+			grid-template-columns: 1fr;
 		}
-
-		.category-count {
-			margin-left: 0;
+		.t-howto__head p {
+			justify-self: start;
 		}
-
-		.step {
-			flex-direction: column;
-			gap: 1rem;
-			padding: 1rem;
+		.t-howto__steps {
+			grid-template-columns: 1fr;
 		}
-
-		.features-section {
-			margin: 0 -1rem;
-			padding: 2rem 1rem;
+		.t-step {
+			border-right: 0;
+			border-bottom: 1px solid var(--border);
 		}
-
-		.features-grid {
-			gap: 1rem;
+		.t-step:last-child {
+			border-bottom: 0;
 		}
-
-		.feature {
-			flex: 0 0 calc(50% - 0.5rem);
-			justify-content: center;
+	}
+	@media (max-width: 720px) {
+		.t-wrap {
+			padding: 0 20px;
+		}
+		.t-cat__head {
+			grid-template-columns: 56px 1fr;
+		}
+		.t-cat__num {
+			font-size: 40px;
+		}
+		.t-cat__count {
+			grid-column: 1 / -1;
+			text-align: left;
 		}
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.page {
-			--home-bg: #0f172a;
-			--home-surface: #111827;
-			--home-surface-raised: #182235;
-			--home-surface-muted: #263246;
-			--home-text: #f8fafc;
-			--home-text-muted: #cbd5e1;
-			--home-text-subtle: #94a3b8;
-			--home-border: rgba(226, 232, 240, 0.14);
-			--home-border-soft: rgba(226, 232, 240, 0.12);
-			--home-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
-		}
-
-		.gsap-suite-callout {
-			border-color: rgba(255, 106, 61, 0.42);
-			background:
-				linear-gradient(135deg, rgba(255, 106, 61, 0.16), rgba(94, 179, 255, 0.12)),
-				#111827;
-			box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
-		}
-
-		.gsap-suite-callout h2 {
-			color: #f8fafc;
-		}
-
-		.gsap-suite-callout p:not(.callout-kicker) {
-			color: #cbd5e1;
-		}
-
-		.cta-gsap {
-			background: #f8fafc;
-			color: #0c0d10;
-			border-color: #f8fafc;
-		}
-	}
+	/* Tokens already swap surfaces under prefers-color-scheme: dark — no per-route overrides needed. */
 </style>

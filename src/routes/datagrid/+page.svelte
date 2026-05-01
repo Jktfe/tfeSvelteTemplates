@@ -1,8 +1,18 @@
+<!--
+	============================================================
+	DataGrid Demo Page (TFE shell)
+	============================================================
+
+	Server-loaded employee data is preserved via +page.server.ts.
+	The shell wraps the existing tabbed live demos.
+-->
+
 <script lang="ts">
 	import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
 	import DataGridBasic from '$lib/components/DataGridBasic.svelte';
 	import DataGridFilters from '$lib/components/DataGridFilters.svelte';
-	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import type { DataGridColumn, DataGridFilterValues, Employee } from '$lib/types';
 	import {
 		formatCurrency,
@@ -13,6 +23,8 @@
 		createStatusBadge,
 		createIconRenderer
 	} from '$lib/dataGridFormatters';
+
+	const shell = catalogShellPropsForSlug('/datagrid')!;
 
 	// Data loaded from +page.server.ts
 	let { data } = $props();
@@ -36,34 +48,14 @@
 		{ id: 'status', header: 'Status', width: 100 }
 	];
 
-	// Currency format comparison - demonstrates choosing different formats
 	const currencyComparisonColumns: DataGridColumn[] = [
 		{ id: 'firstName', header: 'First Name', width: 120 },
 		{ id: 'lastName', header: 'Last Name', width: 120 },
-		{
-			id: 'salary',  // Original field for data access
-			header: 'Standard (No Decimals)',
-			width: 160,
-			type: 'number',
-			formatter: formatCurrency  // £75,000
-		},
-		{
-			id: 'salary',  // Original field for data access
-			header: 'With Decimals',
-			width: 160,
-			type: 'number',
-			formatter: formatCurrencyDecimals  // £75,000.00
-		},
-		{
-			id: 'salary',  // Original field for data access
-			header: 'Compact (K/M)',
-			width: 130,
-			type: 'number',
-			formatter: formatCurrencyCompact  // £75K
-		}
+		{ id: 'salary', header: 'Standard (no decimals)', width: 160, type: 'number', formatter: formatCurrency },
+		{ id: 'salary', header: 'With decimals', width: 160, type: 'number', formatter: formatCurrencyDecimals },
+		{ id: 'salary', header: 'Compact (K/M)', width: 130, type: 'number', formatter: formatCurrencyCompact }
 	];
 
-	// Styled column definitions showcasing formatting utilities
 	const styledColumns: DataGridColumn[] = [
 		{ id: 'firstName', header: 'First Name', width: 120 },
 		{ id: 'lastName', header: 'Last Name', width: 120 },
@@ -88,9 +80,9 @@
 			header: 'Status',
 			width: 120,
 			cellRenderer: createStatusBadge({
-				'active': { color: '#22c55e', label: 'Active' },
+				active: { color: '#22c55e', label: 'Active' },
 				'on-leave': { color: '#f59e0b', label: 'On Leave' },
-				'inactive': { color: '#ef4444', label: 'Inactive' }
+				inactive: { color: '#ef4444', label: 'Inactive' }
 			})
 		},
 		{
@@ -106,10 +98,16 @@
 		}
 	];
 
-	// State for toggling between examples
-	let activeExample = $state<'basic' | 'advanced-simple' | 'advanced-full' | 'advanced-filtered' | 'styled-formatted' | 'currency-comparison'>('currency-comparison');
+	type ExampleKey =
+		| 'basic'
+		| 'advanced-simple'
+		| 'advanced-full'
+		| 'advanced-filtered'
+		| 'styled-formatted'
+		| 'currency-comparison';
 
-	// Filter state
+	let activeExample = $state<ExampleKey>('currency-comparison');
+
 	let filters = $state<DataGridFilterValues>({
 		departments: [],
 		statuses: [],
@@ -119,884 +117,350 @@
 		hireDateTo: ''
 	});
 
-	// Get unique departments and statuses from data
 	const departments = $derived.by(() => {
-		const uniqueDepts = new Set(data.employees.map(e => e.department));
+		const uniqueDepts = new Set(data.employees.map((e) => e.department));
 		return Array.from(uniqueDepts).sort();
 	});
 
 	const statuses = $derived.by(() => {
-		const uniqueStatuses = new Set(data.employees.map(e => e.status));
+		const uniqueStatuses = new Set(data.employees.map((e) => e.status));
 		return Array.from(uniqueStatuses).sort();
 	});
 
-	// Apply filters to employee data
 	const filteredEmployees = $derived.by<Employee[]>(() => {
-		return data.employees.filter(employee => {
-			// Department filter
-			if (filters.departments.length > 0 && !filters.departments.includes(employee.department)) {
-				return false;
-			}
-
-			// Status filter
-			if (filters.statuses.length > 0 && !filters.statuses.includes(employee.status)) {
-				return false;
-			}
-
-			// Salary range filter
-			if (employee.salary < filters.salaryMin || employee.salary > filters.salaryMax) {
-				return false;
-			}
-
-			// Hire date range filter (compare as ISO strings for consistent ordering)
-			const hireDateStr = employee.hireDate instanceof Date
-				? employee.hireDate.toISOString().split('T')[0]
-				: String(employee.hireDate);
-			if (filters.hireDateFrom && hireDateStr < filters.hireDateFrom) {
-				return false;
-			}
-			if (filters.hireDateTo && hireDateStr > filters.hireDateTo) {
-				return false;
-			}
-
+		return data.employees.filter((employee) => {
+			if (filters.departments.length > 0 && !filters.departments.includes(employee.department)) return false;
+			if (filters.statuses.length > 0 && !filters.statuses.includes(employee.status)) return false;
+			if (employee.salary < filters.salaryMin || employee.salary > filters.salaryMax) return false;
+			const hireDateStr =
+				employee.hireDate instanceof Date
+					? employee.hireDate.toISOString().split('T')[0]
+					: String(employee.hireDate);
+			if (filters.hireDateFrom && hireDateStr < filters.hireDateFrom) return false;
+			if (filters.hireDateTo && hireDateStr > filters.hireDateTo) return false;
 			return true;
 		});
 	});
 
-	// Handle filter changes
 	function handleFiltersChange(newFilters: DataGridFilterValues) {
 		filters = newFilters;
 	}
+
+	const usageSnippet = `<script>
+  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
+  import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
+
+  const columns = [
+    { id: 'name', header: 'Name', width: 150 },
+    { id: 'email', header: 'Email', type: 'email' },
+    {
+      id: 'salary',
+      header: 'Salary',
+      type: 'number',
+      formatter: (val) => '£' + val.toLocaleString('en-GB')
+    }
+  ];
+<\/script>
+
+<DataGridBasic data={rows} {columns} sortable filterable pageSize={10} />`;
+
+	const codeExplanation =
+		'DataGridBasic is the copy-paste-ready, zero-dependency option suitable for ~500 rows: scoped styles, native sort + filter + pagination, and pluggable formatters/cell renderers via the column definition. DataGridAdvanced wraps SVAR Grid for virtual scrolling, inline editing, row selection, bulk delete and CSV export — pick it when you need the production muscle. Both components consume the same DataGridColumn shape so swapping is a one-line change.';
+
+	const examples: { key: ExampleKey; label: string }[] = [
+		{ key: 'currency-comparison', label: 'Currency formats' },
+		{ key: 'basic', label: 'DataGridBasic' },
+		{ key: 'advanced-simple', label: 'Advanced (simple)' },
+		{ key: 'advanced-full', label: 'Advanced (full)' },
+		{ key: 'styled-formatted', label: 'Styled & formatted' },
+		{ key: 'advanced-filtered', label: 'With filters' }
+	];
 </script>
 
 <svelte:head>
-	<title>DataGrid Components - Svelte Templates</title>
-	<meta name="description" content="Interactive data grid components with sorting, filtering, and pagination" />
+	<title>DataGrid — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Two data grid implementations: a self-contained DataGridBasic and an SVAR-powered DataGridAdvanced with virtual scrolling and editing."
+	/>
 </svelte:head>
 
-<main class="demo-page">
-	<!-- Page Header -->
-	<header class="page-header">
-		<h1>DataGrid Components</h1>
-		<p class="subtitle">
-			Two approaches to building data grids: a lightweight self-contained version and a production-ready
-			wrapper around SVAR Grid
-		</p>
-		<DatabaseStatus usingDatabase={data.usingDatabase} />
-	</header>
-
-	<!-- Statistics Cards -->
-	<section class="stats-section">
-		<div class="stat-card">
-			<div class="stat-value">{data.stats.totalEmployees}</div>
-			<div class="stat-label">Total Employees</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-value">£{data.stats.averageSalary.toLocaleString('en-GB')}</div>
-			<div class="stat-label">Average Salary</div>
-		</div>
-		<div class="stat-card">
-			<div class="stat-value">{data.stats.departmentCount}</div>
-			<div class="stat-label">Departments</div>
-		</div>
-	</section>
-
-	<!-- Component Comparison -->
-	<section class="comparison-section">
-		<h2>Component Comparison</h2>
-		<div class="comparison-grid">
-			<div class="comparison-card">
-				<h3>DataGridBasic</h3>
-				<ul class="feature-list">
-					<li class="pro">✓ Zero dependencies</li>
-					<li class="pro">✓ Copy-paste ready</li>
-					<li class="pro">✓ ~10KB bundle size</li>
-					<li class="pro">✓ Column sorting</li>
-					<li class="pro">✓ Global search</li>
-					<li class="pro">✓ Pagination</li>
-					<li class="con">✗ No virtual scrolling</li>
-					<li class="con">✗ No inline editing</li>
-					<li class="con">✗ Basic filtering only</li>
-				</ul>
-				<p class="use-case">
-					<strong>Best for:</strong> Small-medium datasets (up to 500 rows), prototypes, learning
-				</p>
+<ComponentPageShell
+	{...shell.props}
+	{usageSnippet}
+	{codeExplanation}
+	tags={['Svelte 5', 'Data tables', 'Sort + filter', 'Pagination', 'CSV export']}
+>
+	{#snippet demo()}
+		<div class="dg-demo">
+			<div class="dg-demo__stats">
+				<div class="dg-stat">
+					<div class="dg-stat__value">{data.stats.totalEmployees}</div>
+					<div class="dg-stat__label">Total employees</div>
+				</div>
+				<div class="dg-stat">
+					<div class="dg-stat__value">£{data.stats.averageSalary.toLocaleString('en-GB')}</div>
+					<div class="dg-stat__label">Average salary</div>
+				</div>
+				<div class="dg-stat">
+					<div class="dg-stat__value">{data.stats.departmentCount}</div>
+					<div class="dg-stat__label">Departments</div>
+				</div>
+				<div class="dg-stat">
+					<div class="dg-stat__value">{data.usingDatabase ? 'DB' : 'Fallback'}</div>
+					<div class="dg-stat__label">Data source</div>
+				</div>
 			</div>
 
-			<div class="comparison-card">
-				<h3>DataGridAdvanced</h3>
-				<ul class="feature-list">
-					<li class="pro">✓ Virtual scrolling</li>
-					<li class="pro">✓ Global search</li>
-					<li class="pro">✓ Column sorting</li>
-					<li class="pro">✓ Inline editing</li>
-					<li class="pro">✓ Row selection</li>
-					<li class="pro">✓ Bulk operations</li>
-					<li class="pro">✓ CSV export</li>
-					<li class="pro">✓ Theme support</li>
-					<li class="con">✗ Requires SVAR Grid</li>
-					<li class="con">✗ ~155KB bundle</li>
-					<li class="con">✗ Not copy-paste ready</li>
-				</ul>
-				<p class="use-case">
-					<strong>Best for:</strong> Large datasets (1000s of rows), production apps, rich features
-				</p>
+			<div class="dg-demo__chips">
+				{#each examples as ex (ex.key)}
+					<button
+						type="button"
+						class="dg-chip"
+						class:dg-chip--active={activeExample === ex.key}
+						onclick={() => (activeExample = ex.key)}
+					>
+						{ex.label}
+					</button>
+				{/each}
 			</div>
-		</div>
-	</section>
 
-	<!-- Example Selector -->
-	<section class="example-selector">
-		<h2>Live Examples</h2>
-		<div class="tabs">
-			<button
-				class="tab"
-				class:active={activeExample === 'currency-comparison'}
-				onclick={() => activeExample = 'currency-comparison'}
-			>
-				Currency Formats Comparison
-			</button>
-			<button
-				class="tab"
-				class:active={activeExample === 'basic'}
-				onclick={() => activeExample = 'basic'}
-			>
-				DataGridBasic
-			</button>
-			<button
-				class="tab"
-				class:active={activeExample === 'advanced-simple'}
-				onclick={() => activeExample = 'advanced-simple'}
-			>
-				DataGridAdvanced (Simple)
-			</button>
-			<button
-				class="tab"
-				class:active={activeExample === 'advanced-full'}
-				onclick={() => activeExample = 'advanced-full'}
-			>
-				DataGridAdvanced (Full Features)
-			</button>
-			<button
-				class="tab"
-				class:active={activeExample === 'styled-formatted'}
-				onclick={() => activeExample = 'styled-formatted'}
-			>
-				Styled & Formatted
-			</button>
-			<button
-				class="tab"
-				class:active={activeExample === 'advanced-filtered'}
-				onclick={() => activeExample = 'advanced-filtered'}
-			>
-				Advanced Filtering
-			</button>
-		</div>
-	</section>
-
-	<!-- Example Display -->
-	<section class="example-display">
-		{#if activeExample === 'currency-comparison'}
-			<div class="example-container">
-				<div class="example-header">
-					<h3>Currency Format Comparison - Choose Your Format</h3>
-					<p>
-						The same salary data displayed in three different formats. You choose which formatter to use for each column!
+			<div class="dg-demo__stage">
+				{#if activeExample === 'currency-comparison'}
+					<p class="dg-demo__hint">
+						Same salary data shown three ways: <code>formatCurrency</code> (£75,000),
+						<code>formatCurrencyDecimals</code> (£75,000.00), <code>formatCurrencyCompact</code>
+						(£75K). Pick the formatter that fits each column.
 					</p>
-				</div>
-
-				<div class="format-explanation">
-					<h4>Three Currency Formatters Available:</h4>
-					<ul>
-						<li><code>formatCurrency</code> - Standard with commas, no decimals (e.g., £75,000)</li>
-						<li><code>formatCurrencyDecimals</code> - With commas AND decimals (e.g., £75,000.00)</li>
-						<li><code>formatCurrencyCompact</code> - With K/M abbreviations (e.g., £75K)</li>
-					</ul>
-					<p style="margin-top: 1rem; font-style: italic;">
-						Each column below uses a different formatter on the same salary data. You can use different formats in different columns based on your needs!
+					<DataGridBasic
+						data={data.employees}
+						columns={currencyComparisonColumns}
+						sortable
+						filterable
+						pageSize={10}
+						striped
+						hoverable
+					/>
+				{:else if activeExample === 'basic'}
+					<p class="dg-demo__hint">
+						Self-contained grid: zero dependencies, sortable headers, global search, pagination.
 					</p>
-				</div>
-
-				<DataGridBasic
-					data={data.employees}
-					columns={currencyComparisonColumns}
-					sortable={true}
-					filterable={true}
-					pageSize={10}
-					striped={true}
-					hoverable={true}
-				/>
-
-				<div class="code-example">
-					<h4>How to Use Different Formatters:</h4>
-					<pre><code>{`import { formatCurrency, formatCurrencyDecimals, formatCurrencyCompact } from '$lib/dataGridFormatters';
-
-const columns: DataGridColumn[] = [
-  {
-    id: 'annualBudget',
-    header: 'Annual Budget',
-    formatter: formatCurrencyCompact  // ← Use compact for large numbers (£1.5M)
-  },
-  {
-    id: 'productPrice',
-    header: 'Product Price',
-    formatter: formatCurrencyDecimals  // ← Use decimals for precise prices (£12.99)
-  },
-  {
-    id: 'totalRevenue',
-    header: 'Total Revenue',
-    formatter: formatCurrency  // ← Use standard for whole numbers (£75,000)
-  }
-];`}</code></pre>
-				</div>
-			</div>
-		{:else if activeExample === 'basic'}
-			<div class="example-container">
-				<div class="example-header">
-					<h3>DataGridBasic - Self-Contained Grid</h3>
-					<p>
-						Zero dependencies • Sortable columns • Global search • Pagination •
-						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridBasic.svelte" target="_blank">View Source</a>
+					<DataGridBasic
+						data={data.employees}
+						columns={basicColumns}
+						sortable
+						filterable
+						pageSize={10}
+						striped
+						hoverable
+					/>
+				{:else if activeExample === 'advanced-simple'}
+					<p class="dg-demo__hint">
+						SVAR-powered grid with auto-generated columns and virtual scrolling.
 					</p>
-				</div>
-				<DataGridBasic
-					data={data.employees}
-					columns={basicColumns}
-					sortable={true}
-					filterable={true}
-					pageSize={10}
-					striped={true}
-					hoverable={true}
-				/>
-			</div>
-		{:else if activeExample === 'advanced-simple'}
-			<div class="example-container">
-				<div class="example-header">
-					<h3>DataGridAdvanced - Simple Configuration</h3>
-					<p>
-						SVAR Grid wrapper • Auto-generated columns • Virtual scrolling •
-						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridAdvanced.svelte" target="_blank">View Source</a>
+					<DataGridAdvanced
+						data={data.employees}
+						editable={false}
+						selectable={false}
+						pageSize={20}
+						exportable={false}
+						theme="willow"
+					/>
+				{:else if activeExample === 'advanced-full'}
+					<p class="dg-demo__hint">
+						Inline edit, row selection, bulk delete, CSV export — try double-clicking a cell.
 					</p>
-				</div>
-				<DataGridAdvanced
-					data={data.employees}
-					editable={false}
-					selectable={false}
-					pageSize={20}
-					exportable={false}
-					theme="willow"
-				/>
-			</div>
-		{:else if activeExample === 'advanced-full'}
-			<div class="example-container">
-				<div class="example-header">
-					<h3>DataGridAdvanced - Full Features</h3>
-					<p>
-						Global search • Inline editing • Row selection • Bulk delete • CSV export •
-						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridAdvanced.svelte" target="_blank">View Source</a>
+					<DataGridAdvanced
+						data={data.employees}
+						editable
+						selectable
+						pageSize={20}
+						exportable
+						theme="willow"
+					/>
+				{:else if activeExample === 'styled-formatted'}
+					<p class="dg-demo__hint">
+						Cell renderers, gradient cell styling, status badges, and icon-coded performance.
 					</p>
-				</div>
-				<DataGridAdvanced
-					data={data.employees}
-					editable={true}
-					selectable={true}
-					pageSize={20}
-					exportable={true}
-					theme="willow"
-				/>
-				<div class="feature-note">
-					<strong>Try it:</strong> Search for names/departments • Click cells to edit • Select rows • Delete selected • Export CSV
-				</div>
-			</div>
-		{:else if activeExample === 'styled-formatted'}
-			<div class="example-container">
-				<div class="example-header">
-					<h3>Styled & Formatted Columns</h3>
-					<p>
-						Currency formatting with abbreviations • Color gradients • Status badges • Icon-based performance indicators •
-						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/dataGridFormatters.ts" target="_blank">View Formatter Utilities</a>
+					<DataGridBasic
+						data={data.employees}
+						columns={styledColumns}
+						sortable
+						filterable
+						pageSize={10}
+						striped
+						hoverable
+					/>
+				{:else}
+					<p class="dg-demo__hint">
+						Department / status / salary / date filters wired into the advanced grid.
 					</p>
-				</div>
-				<DataGridBasic
-					data={data.employees}
-					columns={styledColumns}
-					sortable={true}
-					filterable={true}
-					pageSize={10}
-					striped={true}
-					hoverable={true}
-				/>
-				<div class="feature-note">
-					<strong>Formatting Features:</strong>
-					<ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-						<li><strong>Salary column:</strong> Compact currency format (£75K, £1.5M) with gradient from red (low) to green (high)</li>
-						<li><strong>Tenure column:</strong> Relative date formatting ("2 years ago", "3 months ago")</li>
-						<li><strong>Status column:</strong> Color-coded badges with custom labels</li>
-						<li><strong>Performance column:</strong> Icon-based indicators with color coding by salary range</li>
-					</ul>
-				</div>
-			</div>
-		{:else}
-			<div class="example-container">
-				<div class="example-header">
-					<h3>Advanced Filtering - DataGridAdvanced with Filters</h3>
-					<p>
-						Department filter • Status filter • Salary range • Date range • Real-time filtering •
-						<a href="https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/DataGridFilters.svelte" target="_blank">View Filter Source</a>
+					<DataGridFilters
+						{departments}
+						{statuses}
+						salaryRange={{ min: 30000, max: 150000 }}
+						initiallyExpanded={false}
+						onFiltersChange={handleFiltersChange}
+					/>
+					<p class="dg-demo__count">
+						<strong>Showing {filteredEmployees.length} of {data.employees.length}</strong>
+						{#if filteredEmployees.length !== data.employees.length}
+							· filters active
+						{/if}
 					</p>
-				</div>
-
-				<!-- Filter Component -->
-				<DataGridFilters
-					departments={departments}
-					statuses={statuses}
-					salaryRange={{ min: 30000, max: 150000 }}
-					initiallyExpanded={false}
-					onFiltersChange={handleFiltersChange}
-				/>
-
-				<!-- Filtered Results Count -->
-				<div class="filter-results">
-					<strong>Showing {filteredEmployees.length} of {data.employees.length} employees</strong>
-					{#if filteredEmployees.length !== data.employees.length}
-						<span class="filter-active-indicator">• Filters active</span>
-					{/if}
-				</div>
-
-				<!-- Data Grid with Filtered Data -->
-				<DataGridAdvanced
-					data={filteredEmployees}
-					editable={false}
-					selectable={false}
-					pageSize={20}
-					exportable={true}
-					theme="willow"
-				/>
-				<div class="feature-note">
-					<strong>Try it:</strong> Expand filters • Select departments/statuses • Adjust salary range • Set date range
-				</div>
+					<DataGridAdvanced
+						data={filteredEmployees}
+						editable={false}
+						selectable={false}
+						pageSize={20}
+						exportable
+						theme="willow"
+					/>
+				{/if}
 			</div>
-		{/if}
-	</section>
-
-	<!-- Usage Guide -->
-	<section class="usage-guide">
-		<h2>Usage Guide</h2>
-
-		<div class="guide-section">
-			<h3>Column Styling & Formatting</h3>
-			<pre><code>{`${'<'}script>
-  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
-  import ${'{'}
-    formatCurrencyCompact,
-    createGradientStyle,
-    createStatusBadge,
-    createIconRenderer
-  ${'}'} from '$lib/dataGridFormatters';
-
-  const columns = [
-    ${'{'}
-      id: 'salary',
-      header: 'Salary',
-      type: 'number',
-      formatter: formatCurrencyCompact, // £75K, £1.5M
-      cellStyle: createGradientStyle(30000, 150000, '#ef4444', '#22c55e')
-    ${'}'},
-    ${'{'}
-      id: 'status',
-      header: 'Status',
-      cellRenderer: createStatusBadge(${'{'}
-        'active': ${'{'} color: '#22c55e', label: 'Active' ${'}'},
-        'on-leave': ${'{'} color: '#f59e0b', label: 'On Leave' ${'}'}
-      ${'}'})
-    ${'}'},
-    ${'{'}
-      id: 'performance',
-      header: 'Level',
-      cellRenderer: createIconRenderer([
-        ${'{'} max: 50000, icon: '📉', color: '#ef4444' ${'}'},
-        ${'{'} max: 100000, icon: '📊', color: '#3b82f6' ${'}'},
-        ${'{'} max: Infinity, icon: '📈', color: '#22c55e' ${'}'}
-      ])
-    ${'}'}
-  ];
-</script>
-
-<DataGridBasic ${'{'} data ${'}'} ${'{'} columns ${'}'} />`}</code></pre>
 		</div>
+	{/snippet}
 
-		<div class="guide-section">
-			<h3>DataGridBasic - Copy & Paste Ready</h3>
-			<pre><code>{`${'<'}script>
-  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
-
-  const columns = [
-    ${'{'} id: 'name', header: 'Name', width: 150 ${'}'},
-    ${'{'} id: 'email', header: 'Email', type: 'email' ${'}'},
-    ${'{'}
-      id: 'salary',
-      header: 'Salary',
-      type: 'number',
-      formatter: (val) => \`£$\{val.toLocaleString()}\`
-    ${'}'}
-  ];
-
-  const data = [
-    ${'{'} name: 'John Doe', email: 'john@example.com', salary: 75000 ${'}'},
-    // ... more rows
-  ];
-</script>
-
-<DataGridBasic
-  ${'{'} data ${'}'}
-  ${'{'} columns ${'}'}
-  sortable=${'{'} true ${'}'}
-  filterable=${'{'} true ${'}'}
-  pageSize=${'{'} 10 ${'}'}
-/>`}</code></pre>
-		</div>
-
-		<div class="guide-section">
-			<h3>DataGridAdvanced - Production Features</h3>
-			<pre><code>{`${'<'}script>
-  import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
-
-  // Auto-generates columns from data structure
-  const employees = []; // Your employee data
-</script>
-
-<DataGridAdvanced
-  data=${'{'} employees ${'}'}
-  editable=${'{'} true ${'}'}
-  selectable=${'{'} true ${'}'}
-  exportable=${'{'} true ${'}'}
-  pageSize=${'{'} 20 ${'}'}
-  theme="willow"
-/>`}</code></pre>
-		</div>
-
-		<div class="guide-section">
-			<h3>DataGridFilters - Advanced Filtering</h3>
-			<pre><code>{`${'<'}script>
-  import DataGridFilters from '$lib/components/DataGridFilters.svelte';
-  import DataGridAdvanced from '$lib/components/DataGridAdvanced.svelte';
-
-  let filters = $state(${'{'}
-    departments: [],
-    statuses: [],
-    salaryMin: 30000,
-    salaryMax: 150000,
-    hireDateFrom: '',
-    hireDateTo: ''
-  ${'}'});
-
-  const filteredData = $derived.by(() => ${'{'}
-    return data.filter(employee => ${'{'}
-      // Apply filter logic
-      return true;
-    ${'}'});
-  ${'}'});
-</script>
-
-<DataGridFilters
-  departments=${'{'} ['Engineering', 'Sales', 'Marketing'] ${'}'}
-  statuses=${'{'} ['active', 'on-leave'] ${'}'}
-  salaryRange=${'{'} ${'{'} min: 30000, max: 150000 ${'}'} ${'}'}
-  onFiltersChange=${'{'} (newFilters) => filters = newFilters ${'}'}
-/>
-
-<DataGridAdvanced
-  data=${'{'} filteredData ${'}'}
-  editable=${'{'} false ${'}'}
-  selectable=${'{'} false ${'}'}
-  pageSize=${'{'} 20 ${'}'}
-  exportable=${'{'} true ${'}'}
-/>`}</code></pre>
-		</div>
-	</section>
-
-	<!-- Department Breakdown -->
-	<section class="department-section">
-		<h2>Department Breakdown</h2>
-		<div class="department-grid">
-			{#each Object.entries(data.stats.departmentBreakdown).sort((a, b) => b[1] - a[1]) as [dept, count] (dept)}
-				<div class="department-card">
-					<div class="department-name">{dept}</div>
-					<div class="department-count">{count} employee{count === 1 ? '' : 's'}</div>
-				</div>
-			{/each}
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>data</code></td>
+					<td><code>T[]</code></td>
+					<td>required</td>
+					<td>Row objects keyed by column id.</td>
+				</tr>
+				<tr>
+					<td><code>columns</code></td>
+					<td><code>DataGridColumn[]</code></td>
+					<td>required (basic) / auto (advanced)</td>
+					<td>Column definitions with optional formatter, cellStyle, cellRenderer.</td>
+				</tr>
+				<tr>
+					<td><code>sortable</code> / <code>filterable</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Toggle DataGridBasic features (advanced exposes its own UI).</td>
+				</tr>
+				<tr>
+					<td><code>pageSize</code></td>
+					<td><code>number</code></td>
+					<td><code>10</code></td>
+					<td>Rows per page.</td>
+				</tr>
+				<tr>
+					<td><code>striped</code> / <code>hoverable</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Visual options on DataGridBasic.</td>
+				</tr>
+				<tr>
+					<td><code>editable</code> / <code>selectable</code> / <code>exportable</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>DataGridAdvanced features. Editable enables inline editing, exportable adds the CSV button.</td>
+				</tr>
+				<tr>
+					<td><code>theme</code></td>
+					<td><code>'willow' | 'willow-dark'</code></td>
+					<td><code>'willow'</code></td>
+					<td>SVAR theme passthrough on DataGridAdvanced.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.demo-page {
-		max-width: 1400px;
-		margin: 0 auto;
-		padding: 2rem;
-	}
-
-	.page-header {
-		margin-bottom: 3rem;
-	}
-
-	.page-header h1 {
-		font-size: 2.5rem;
-		font-weight: 700;
-		color: #1f2937;
-		margin-bottom: 0.5rem;
-	}
-
-	.subtitle {
-		font-size: 1.125rem;
-		color: #6b7280;
-		margin-bottom: 1rem;
-	}
-
-	/* Statistics Cards */
-	.stats-section {
+	.dg-demo {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-		gap: 1.5rem;
-		margin-bottom: 3rem;
+		gap: 18px;
 	}
-
-	.stat-card {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 12px;
-		padding: 1.5rem;
+	.dg-demo__stats {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		gap: 12px;
+	}
+	.dg-stat {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		padding: 14px;
 		text-align: center;
 	}
-
-	.stat-value {
-		font-size: 2rem;
-		font-weight: 700;
-		color: #146ef5;
-		margin-bottom: 0.5rem;
+	.dg-stat__value {
+		font-family: var(--font-display);
+		font-size: 22px;
+		font-weight: 400;
+		color: var(--fg-1);
 	}
-
-	.stat-label {
-		font-size: 0.875rem;
-		color: #6b7280;
+	.dg-stat__label {
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
-		letter-spacing: 0.05em;
+		color: var(--fg-3);
+		margin-top: 4px;
 	}
-
-	/* Comparison Section */
-	.comparison-section {
-		margin-bottom: 3rem;
-	}
-
-	.comparison-section h2 {
-		font-size: 1.875rem;
-		font-weight: 700;
-		color: #1f2937;
-		margin-bottom: 1.5rem;
-	}
-
-	.comparison-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-		gap: 2rem;
-	}
-
-	.comparison-card {
-		background: white;
-		border: 2px solid #e5e7eb;
-		border-radius: 12px;
-		padding: 2rem;
-	}
-
-	.comparison-card h3 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #1f2937;
-		margin-bottom: 1rem;
-	}
-
-	.feature-list {
-		list-style: none;
-		padding: 0;
-		margin: 0 0 1rem 0;
-	}
-
-	.feature-list li {
-		padding: 0.5rem 0;
-		font-size: 0.9375rem;
-	}
-
-	.feature-list .pro {
-		color: #059669;
-	}
-
-	.feature-list .con {
-		color: #dc2626;
-	}
-
-	.use-case {
-		padding-top: 1rem;
-		border-top: 1px solid #e5e7eb;
-		font-size: 0.875rem;
-		color: #6b7280;
-	}
-
-	/* Example Selector */
-	.example-selector {
-		margin-bottom: 2rem;
-	}
-
-	.example-selector h2 {
-		font-size: 1.875rem;
-		font-weight: 700;
-		color: #1f2937;
-		margin-bottom: 1rem;
-	}
-
-	.tabs {
+	.dg-demo__chips {
 		display: flex;
-		gap: 0.5rem;
-		border-bottom: 2px solid #e5e7eb;
+		flex-wrap: wrap;
+		gap: 8px;
 	}
-
-	.tab {
-		padding: 0.75rem 1.5rem;
-		background: none;
-		border: none;
-		border-bottom: 3px solid transparent;
-		font-size: 1rem;
-		font-weight: 500;
-		color: #6b7280;
+	.dg-chip {
+		padding: 6px 12px;
+		border: 1px solid var(--border-strong);
+		border-radius: var(--r-pill);
+		background: var(--surface);
+		color: var(--fg-2);
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all var(--dur-fast);
 	}
-
-	.tab:hover {
-		color: #146ef5;
+	.dg-chip:hover {
+		color: var(--fg-1);
+		border-color: var(--accent);
 	}
-
-	.tab.active {
-		color: #146ef5;
-		border-bottom-color: #146ef5;
+	.dg-chip--active {
+		background: var(--accent);
+		color: var(--fg-on-dark, #f6f5f1);
+		border-color: var(--accent);
 	}
-
-	/* Example Display */
-	.example-display {
-		margin-bottom: 3rem;
-	}
-
-	.example-container {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 12px;
-		padding: 2rem;
-		overflow-x: auto;
-	}
-
-	.example-header {
-		margin-bottom: 1.5rem;
-	}
-
-	.example-header h3 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #1f2937;
-		margin-bottom: 0.5rem;
-	}
-
-	.example-header p {
-		font-size: 0.875rem;
-		color: #6b7280;
-	}
-
-	.example-header a {
-		color: #146ef5;
-		text-decoration: none;
-	}
-
-	.example-header a:hover {
-		text-decoration: underline;
-	}
-
-	.feature-note {
-		margin-top: 1rem;
-		padding: 1rem;
-		background: #eff6ff;
-		border-left: 4px solid #146ef5;
-		border-radius: 4px;
-		font-size: 0.875rem;
-		color: #1e40af;
-	}
-
-	/* Filter Results */
-	.filter-results {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 1rem;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
-		border-radius: 6px;
-		margin-bottom: 1rem;
-		font-size: 0.875rem;
-	}
-
-	.filter-active-indicator {
-		color: #059669;
-		font-weight: 600;
-	}
-
-	/* Usage Guide */
-	.usage-guide {
-		margin-bottom: 3rem;
-	}
-
-	.usage-guide h2 {
-		font-size: 1.875rem;
-		font-weight: 700;
-		color: #1f2937;
-		margin-bottom: 1.5rem;
-	}
-
-	.guide-section {
-		margin-bottom: 2rem;
-	}
-
-	.guide-section h3 {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: #1f2937;
-		margin-bottom: 1rem;
-	}
-
-	pre {
-		background: #1f2937;
-		border-radius: 8px;
-		padding: 1.5rem;
-		overflow-x: auto;
-	}
-
-	code {
-		font-family: 'Fira Code', 'Courier New', monospace;
-		font-size: 0.875rem;
-		line-height: 1.6;
-		color: #e5e7eb;
-	}
-
-	/* Department Section */
-	.department-section {
-		margin-bottom: 3rem;
-	}
-
-	.department-section h2 {
-		font-size: 1.875rem;
-		font-weight: 700;
-		color: #1f2937;
-		margin-bottom: 1.5rem;
-	}
-
-	.department-grid {
+	.dg-demo__stage {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		padding: 18px;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: 1rem;
+		gap: 12px;
+		overflow-x: auto;
 	}
-
-	.department-card {
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		padding: 1.25rem;
+	.dg-demo__hint {
+		margin: 0;
+		font-size: 13px;
+		color: var(--fg-2);
 	}
-
-	.department-name {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #1f2937;
-		margin-bottom: 0.25rem;
+	.dg-demo__hint code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 6px;
+		border-radius: var(--r-1);
 	}
-
-	.department-count {
-		font-size: 0.875rem;
-		color: #6b7280;
-	}
-
-	/* Responsive Design */
-	/* Format Explanation Section */
-	.format-explanation {
-		background: #f0f9ff;
-		border: 2px solid #0ea5e9;
-		border-radius: 8px;
-		padding: 1.5rem;
-		margin-bottom: 2rem;
-	}
-
-	.format-explanation h4 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #0c4a6e;
-		margin-bottom: 1rem;
-	}
-
-	.format-explanation ul {
-		margin: 0 0 0 1.5rem;
-		padding: 0;
-	}
-
-	.format-explanation li {
-		margin-bottom: 0.5rem;
-		color: #1e3a8a;
-	}
-
-	.format-explanation code {
-		background: #dbeafe;
-		color: #1e40af;
-		padding: 0.125rem 0.5rem;
-		border-radius: 4px;
-		font-size: 0.875rem;
-	}
-
-	/* Code Example Section */
-	.code-example {
-		margin-top: 2rem;
-		background: white;
-		border: 1px solid #e5e7eb;
-		border-radius: 8px;
-		padding: 1.5rem;
-	}
-
-	.code-example h4 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #1f2937;
-		margin-bottom: 1rem;
-	}
-
-	@media (max-width: 768px) {
-		.demo-page {
-			padding: 1rem;
-		}
-
-		.page-header h1 {
-			font-size: 2rem;
-		}
-
-		.comparison-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.tabs {
-			flex-direction: column;
-			border-bottom: none;
-		}
-
-		.tab {
-			border-bottom: 1px solid #e5e7eb;
-			border-left: 3px solid transparent;
-		}
-
-		.tab.active {
-			border-bottom-color: #e5e7eb;
-			border-left-color: #146ef5;
-		}
+	.dg-demo__count {
+		margin: 0;
+		font-size: 13px;
+		color: var(--fg-2);
 	}
 </style>

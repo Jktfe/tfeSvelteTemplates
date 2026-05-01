@@ -297,6 +297,10 @@ export interface NavbarProps {
 	menuCategories?: MenuCategory[];
 	currentPageTitle?: string;
 	logoIcon?: string;
+	/** Optional image src — when provided, replaces the emoji logoIcon with an <img> */
+	logoSrc?: string;
+	/** Alt text for logoSrc (defaults to logoText) */
+	logoAlt?: string;
 	logoText?: string;
 	logoHref?: string;
 	/** Whether Better Auth is configured and can serve auth requests */

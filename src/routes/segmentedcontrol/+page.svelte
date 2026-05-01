@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import SegmentedControl from '$lib/components/SegmentedControl.svelte';
+
+	const shell = catalogShellPropsForSlug('/segmentedcontrol')!;
 
 	let view = $state<'list' | 'grid' | 'cards'>('list');
 	let range = $state<'1d' | '1w' | '1m' | '1y'>('1w');
@@ -31,165 +35,222 @@
 		{ value: 'team', label: 'Team' }
 	];
 
-	// Mock list to demonstrate the view switcher.
 	const items = [
 		{ id: 1, title: 'A modest case for monochrome UI', tag: 'design' },
 		{ id: 2, title: 'Owning your design tokens', tag: 'engineering' },
 		{ id: 3, title: 'Why we picked SvelteKit over Next', tag: 'engineering' },
 		{ id: 4, title: 'Listening better in user interviews', tag: 'research' }
 	];
+
+	const codeExplanation =
+		'Each segment is a hidden native radio input wrapped by a label, so a single arrow-key tab handles selection — no JS keyboard plumbing required. The visual "pill" you see is a single transform: translateX() shifted to match the active index, which means the slide animation stays smooth no matter how many segments you add.';
 </script>
 
 <svelte:head>
-	<title>SegmentedControl | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-5xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">SegmentedControl</h1>
-			<p class="text-xl text-muted-foreground">
-				iOS-style joined picker for mutually-exclusive options. Native radio semantics, sliding
-				indicator, two sizes, and custom palettes.
-			</p>
-		</header>
-
-		<!-- View switcher with live render -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">View mode switcher</h2>
-			<p class="text-sm text-neutral-500">
-				A classic use case — toggle between list/grid/card layouts. The list below re-renders.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-5">
-				<SegmentedControl
-					options={viewOptions}
-					bind:value={view}
-					ariaLabel="View mode"
-				/>
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Radio', 'A11y', 'Keyboard', 'CSS-only']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="seg-demo">
+			<section>
+				<h3>View mode switcher</h3>
+				<SegmentedControl options={viewOptions} bind:value={view} ariaLabel="View mode" />
 
 				{#if view === 'list'}
-					<ul class="divide-y divide-neutral-100">
+					<ul class="list">
 						{#each items as item (item.id)}
-							<li class="py-3 flex items-center justify-between gap-4">
-								<span class="text-sm text-neutral-800">{item.title}</span>
-								<span class="text-xs text-neutral-400">{item.tag}</span>
+							<li>
+								<span>{item.title}</span>
+								<span class="tag">{item.tag}</span>
 							</li>
 						{/each}
 					</ul>
 				{:else if view === 'grid'}
-					<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+					<div class="grid">
 						{#each items as item (item.id)}
-							<div class="border border-neutral-200 rounded-lg p-3 space-y-2">
-								<div class="text-xs uppercase text-neutral-400">{item.tag}</div>
-								<div class="text-sm font-medium text-neutral-800">{item.title}</div>
+							<div class="grid-cell">
+								<div class="tag">{item.tag}</div>
+								<div class="title">{item.title}</div>
 							</div>
 						{/each}
 					</div>
 				{:else}
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div class="cards">
 						{#each items as item (item.id)}
-							<div
-								class="border border-neutral-200 rounded-xl p-4 bg-neutral-50 space-y-2 shadow-sm"
-							>
-								<div class="text-xs uppercase tracking-wide text-neutral-500">{item.tag}</div>
-								<div class="text-base font-semibold text-neutral-900">{item.title}</div>
+							<div class="card">
+								<div class="tag">{item.tag}</div>
+								<div class="title">{item.title}</div>
 							</div>
 						{/each}
 					</div>
 				{/if}
-			</div>
-		</section>
+			</section>
 
-		<!-- Time range -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Time range</h2>
-			<p class="text-sm text-neutral-500">
-				Short labels work nicely at <code>size="sm"</code>.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-3">
+			<section>
+				<h3>Time range (size="sm")</h3>
+				<SegmentedControl options={rangeOptions} bind:value={range} size="sm" ariaLabel="Time range" />
+				<p class="note">Showing data for: <strong>{range.toUpperCase()}</strong></p>
+			</section>
+
+			<section>
+				<h3>Custom palette</h3>
 				<SegmentedControl
-					options={rangeOptions}
-					bind:value={range}
-					size="sm"
-					ariaLabel="Time range"
+					options={themeOptions}
+					bind:value={theme}
+					activeBg="#7c3aed"
+					activeText="#ffffff"
+					ariaLabel="Theme preference"
 				/>
-				<div class="text-sm text-neutral-500">
-					Showing data for: <strong>{range.toUpperCase()}</strong>
-				</div>
-			</div>
-		</section>
+				<p class="note">Theme: <strong>{theme}</strong></p>
+			</section>
 
-		<!-- Custom palette + content width -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Custom palette &amp; content width</h2>
-			<div class="grid md:grid-cols-2 gap-4">
-				<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-					<div class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
-						Brand purple
-					</div>
-					<SegmentedControl
-						options={themeOptions}
-						bind:value={theme}
-						activeBg="#7c3aed"
-						activeText="#ffffff"
-						ariaLabel="Theme preference"
-					/>
-					<div class="text-sm text-neutral-500">
-						Theme: <strong>{theme}</strong>
-					</div>
-				</div>
-				<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-					<div class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">
-						Content width (equalWidth=false)
-					</div>
-					<SegmentedControl
-						options={planOptions}
-						bind:value={plan}
-						equalWidth={false}
-						ariaLabel="Plan tier"
-					/>
-					<div class="text-sm text-neutral-500">
-						Plan: <strong>{plan}</strong>
-					</div>
-				</div>
-			</div>
-		</section>
+			<section>
+				<h3>Content width (equalWidth=false)</h3>
+				<SegmentedControl
+					options={planOptions}
+					bind:value={plan}
+					equalWidth={false}
+					ariaLabel="Plan tier"
+				/>
+				<p class="note">Plan: <strong>{plan}</strong></p>
+			</section>
+		</div>
+	{/snippet}
 
-		<!-- Features + usage -->
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Single-select only (joined look implies "pick one")</li>
-					<li>Sliding indicator with smooth transition</li>
-					<li>Equal-width or content-fit segments</li>
-					<li>Two sizes: <code>sm</code> / <code>md</code></li>
-					<li>Custom active palette via CSS vars</li>
-					<li>Optional icons per segment</li>
-					<li>Native <code>&lt;input type="radio"&gt;</code> — keyboard arrows for free</li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-					<li>Zero dependencies</li>
-				</ul>
-			</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>options</code></td>
+					<td><code>{'Array<{ value, label, icon? }>'}</code></td>
+					<td>—</td>
+					<td>Required. List of segments.</td>
+				</tr>
+				<tr>
+					<td><code>value</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Bindable currently selected value.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>'sm' | 'md'</code></td>
+					<td><code>'md'</code></td>
+					<td>Compact or default segment height.</td>
+				</tr>
+				<tr>
+					<td><code>equalWidth</code></td>
+					<td><code>boolean</code></td>
+					<td><code>true</code></td>
+					<td>Force every segment to share the same width, or fit to content.</td>
+				</tr>
+				<tr>
+					<td><code>activeBg</code> / <code>activeText</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Custom palette for the active pill.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Segmented control'</code></td>
+					<td>Group label for assistive tech.</td>
+				</tr>
+				<tr>
+					<td><code>onChange</code></td>
+					<td><code>(value) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when the selection changes.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre
-					class="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
-  import SegmentedControl from '$lib/components/SegmentedControl.svelte';
-  let view = $state('list');
-  const options = [
-    { value: 'list', label: 'List' },
-    { value: 'grid', label: 'Grid' }
-  ];
-</${''}script>
+<style>
+	.seg-demo {
+		display: grid;
+		gap: 2rem;
+	}
 
-<SegmentedControl
-  {options}
-  bind:value={view}
-  ariaLabel="View mode"
-/>`}</code></pre>
-			</div>
-		</section>
-	</div>
-</div>
+	.seg-demo h3 {
+		font-size: 0.95rem;
+		margin: 0 0 0.65rem;
+		color: var(--fg-1);
+	}
+
+	.note {
+		margin: 0.6rem 0 0;
+		color: var(--fg-2);
+		font-size: 0.85rem;
+	}
+
+	.list {
+		list-style: none;
+		padding: 0;
+		margin: 1rem 0 0;
+		border-top: 1px solid var(--border);
+	}
+
+	.list li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.7rem 0;
+		border-bottom: 1px solid var(--border);
+		font-size: 0.9rem;
+		color: var(--fg-1);
+	}
+
+	.tag {
+		font-size: 0.72rem;
+		color: var(--fg-2);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
+	.grid-cell,
+	.card {
+		border: 1px solid var(--border);
+		border-radius: 0.6rem;
+		padding: 0.85rem;
+		background: var(--surface);
+		display: grid;
+		gap: 0.4rem;
+	}
+
+	.cards {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 0.75rem;
+		margin-top: 1rem;
+	}
+
+	.title {
+		font-size: 0.92rem;
+		font-weight: 500;
+		color: var(--fg-1);
+	}
+</style>

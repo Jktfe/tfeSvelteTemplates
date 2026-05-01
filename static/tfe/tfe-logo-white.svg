@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 86.5">
+
+  
+  <rect fill="#ffffff" x=".3" width="20.7" height="23.1"></rect>
+  <rect fill="#ffffff" x="25.2" width="66.7" height="23.1"></rect>
+  <rect fill="#ffffff" x="25.2" y="32.4" width="41.3" height="22.1"></rect>
+  <rect fill="#ffffff" x="25.2" y="63.5" width="22.4" height="23.1"></rect>
+  <rect fill="#ffffff" x="51.7" y="63.5" width="14.1" height="23.1"></rect>
+  <rect fill="#ffffff" x="69.8" y="63.5" width="22.4" height="23.1"></rect>
+  <path fill="#ffffff" d="m109.7 3.1h-1.9v19.9h-3.8v-19.9h-2.7v-3.1h8.6l-0.2 3.1z"></path>
+  <path fill="#ffffff" d="m121.1 0v23h-3.4v-9.9h-2.7v9.9h-3.5v-23h3.5v9.4h2.9v-9.4h3.2z"></path>
+  <path fill="#ffffff" d="m127.3 3.1v6.3h3.1v3.4h-3.1v6.6h3.1v3.6h-6.3v-23h6.3v3l-3.1 0.1z"></path>
+  <path fill="#ffffff" d="m139.4 23-3.2-8.6v8.5h-3.5v-22.9h6.3c1.4 0 2.8 0.8 2.8 2.7v7.9c0 1.7-1.9 2.6-2.3 2.6l2.7 9.8h-3.6zm-3.2-13.4h2.2l0.1-6.4h-2.3v6.4z"></path>
+  <path fill="#ffffff" d="m147.8 3.1v6.3h2.9v3.4h-2.9v6.7h3.2v3.5h-6.1v-23h6l0.1 3.1h-3.2z"></path>
+  <path fill="#ffffff" d="m81.3 35.5v5.8h2.9v3.7h-2.9v9.5h-3.3v-22h6.3l0.1 3h-3.1z"></path>
+  <path fill="#ffffff" d="m94.9 34.6v17.5c0 1.3-1 2.4-2.3 2.4h-4.6c-1.3 0-2.4-1-2.4-2.3v-17.5c0-1.3 1.1-2.4 2.4-2.4h4.6c1.3 0 2.3 1 2.3 2.3zm-3.3 0.9h-2.6v15.8h2.6v-15.8z"></path>
+  <path fill="#ffffff" d="m103.1 54.5-2.3-8.2v8.2h-3.4v-22h6.2c1.4 0 2.6 1 2.7 2.4v7.6c0 1.7-1 2.5-2.3 2.5l2.6 9.4-3.5 0.1zm-2.3-12.5h2c0.2 0 0.2-0.1 0.2-0.4v-5.6c0-0.2-0.1-0.4-0.3-0.4h-1.9v6.4z"></path>
+  <path fill="#ffffff" d="m105.9 66.7v5.8h3v3.6h-2.9v6.8h3v3.3h-6.3v-22.7h6.1l0.1 3.1-3 0.1z"></path>
+  <path fill="#ffffff" d="m121.2 63.5-3.7 22.8h-3.7l-4.1-22.8h3.7l2.2 13.1 2.1-13.1h3.5z"></path>
+  <path fill="#ffffff" d="m125.9 66.7v5.9h2.9v3.5h-2.9v6.8h2.9v3.3h-6.2v-22.7h6.2v3.1l-2.9 0.1z"></path>
+  <path fill="#ffffff" d="m137.3 86.3-2.7-8.8v8.8h-3.6v-22.8h6.7c1.4 0 2.6 1 2.6 2.4v7.9c0 1.7-2.2 2.6-2.3 2.6l2.7 9.9h-3.4zm-2.8-13.6h2.3l0.1-6h-2.4v6z"></path>
+  <path fill="#ffffff" d="m150.9 65.1-3.1 13.2v8h-3.5v-8l-3.3-14.8h3.4l1.4 7.4 1.5-7.5h3.5l0.1 1.7z"></path>
+  <path fill="#ffffff" d="m159.4 66.7h-2.4v19.6h-3.3v-19.6h-2.4l-0.1-3.1h8.4l-0.2 3.1z"></path>
+  <path fill="#ffffff" d="m171.1 63.5v22.8h-3.6v-10.2h-2.9v10.2h-3.7v-22.8h3.6v9.1h2.9v-9.1h3.7z"></path>
+  <path fill="#ffffff" d="m177.2 63.5v22.8h-3.4v-22.8h3.4z"></path>
+  <path fill="#ffffff" d="m189 63.5v22.8h-3l-2.6-10.6-0.2 1.7v8.9h-3.2v-22.8h3.3l2.5 9.6 0.2-1.4v-8.2h3z"></path>
+  <path fill="#ffffff" d="m197.2 69.4v-2.9h-2.5v16.4h2.5v-5.6h-0.9l-0.1-3.4h3.5v10c0 2-1.4 2.6-2.7 2.6h-3c-1.3 0-2.6-0.8-2.6-2.3v-18.5c0-1.2 1-2.3 2.2-2.3h4c1.3 0 2.4 1 2.4 2.3v3.7h-2.8z"></path>
+</svg>

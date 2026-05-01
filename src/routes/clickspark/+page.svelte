@@ -1,8 +1,14 @@
+<!--
+	ClickSpark Demo Page (TFE shell)
+-->
+
 <script lang="ts">
 	import ClickSpark from '$lib/components/ClickSpark.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 
-	// Live counter so visitors can see that clicks still propagate
-	// to the wrapped child even though sparks are firing on top.
+	const shell = catalogShellPropsForSlug('/clickspark')!;
+
 	let primaryClicks = $state(0);
 	let likeCount = $state(48);
 	let liked = $state(false);
@@ -11,349 +17,230 @@
 		liked = !liked;
 		likeCount += liked ? 1 : -1;
 	}
-</script>
 
-<svelte:head>
-	<title>ClickSpark · TFE Svelte Templates</title>
-</svelte:head>
-
-<div class="page">
-	<header class="page-header">
-		<h1>💥 ClickSpark</h1>
-		<p class="lede">
-			Wrap any element. Every click sprays a configurable burst of particles outward from the
-			click point. Pure CSS keyframes, no rAF loop. Multiple rapid clicks compose into independent
-			bursts that self-clean. Reduced-motion preference suppresses the burst entirely while keeping
-			the wrapped child fully interactive.
-		</p>
-	</header>
-
-	<section class="demo">
-		<h2>Default — try it</h2>
-		<p class="hint">
-			8 white dots, 60px spread, 500ms. The button below counts real clicks — sparks are
-			decorative, the click semantics are untouched.
-		</p>
-		<div class="card centered">
-			<ClickSpark>
-				<button class="cta primary" onclick={() => primaryClicks++}>
-					Click me · {primaryClicks}
-				</button>
-			</ClickSpark>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Four spark shapes</h2>
-		<p class="hint">
-			Pick a shape that matches your product's tone. <code>dot</code> is universal,
-			<code>plus</code> feels mechanical / playful, <code>line</code> reads as motion lines, and
-			<code>star</code> is festive.
-		</p>
-		<div class="card row">
-			<ClickSpark sparkColor="#ffffff" shape="dot">
-				<button class="cta dark">dot</button>
-			</ClickSpark>
-			<ClickSpark sparkColor="#22d3ee" shape="plus" sparkCount={10}>
-				<button class="cta dark">plus</button>
-			</ClickSpark>
-			<ClickSpark sparkColor="#f97316" shape="line" sparkCount={12} sparkSize={14}>
-				<button class="cta dark">line</button>
-			</ClickSpark>
-			<ClickSpark sparkColor="#fbbf24" shape="star" sparkCount={6} sparkSize={14}>
-				<button class="cta dark">star</button>
-			</ClickSpark>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Bigger, slower bursts</h2>
-		<p class="hint">
-			Generous spread + longer duration suit hero CTAs. <code>spreadRadius=120</code>,
-			<code>duration=900</code>, <code>sparkSize=14</code>.
-		</p>
-		<div class="card centered">
-			<ClickSpark
-				sparkColor="#a78bfa"
-				sparkCount={14}
-				sparkSize={14}
-				spreadRadius={120}
-				duration={900}
-			>
-				<button class="cta hero">Get started →</button>
-			</ClickSpark>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Wrapping a like button</h2>
-		<p class="hint">
-			A real piece of UI — toggle the heart on/off. Sparks only spray when the click runs (i.e.
-			both directions), so the burst feels like part of the interaction, not noise.
-		</p>
-		<div class="card centered">
-			<ClickSpark sparkColor="#f43f5e" shape="star" sparkCount={10} spreadRadius={70} duration={650}>
-				<button class="like-btn" class:liked onclick={handleLike} aria-pressed={liked}>
-					<span class="heart" aria-hidden="true">{liked ? '♥' : '♡'}</span>
-					<span class="count">{likeCount}</span>
-				</button>
-			</ClickSpark>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Wrapping a card</h2>
-		<p class="hint">
-			The wrapper is <code>display: inline-block</code>, so it picks up the child's footprint. Click
-			anywhere inside the card — sparks fire from the click point, not the centre.
-		</p>
-		<div class="card">
-			<ClickSpark sparkColor="#10b981" shape="dot" sparkCount={12} spreadRadius={90} duration={650}>
-				<article class="feature-card">
-					<h3>Click anywhere inside this card</h3>
-					<p>
-						The burst origin tracks the cursor — try clicking the corners, the heading, or the
-						body text and you'll see the sparks spray from exactly that point.
-					</p>
-				</article>
-			</ClickSpark>
-		</div>
-	</section>
-
-	<section class="demo">
-		<h2>Composing rapid clicks</h2>
-		<p class="hint">
-			Each click spawns an independent burst. Click as fast as you can — bursts overlap without
-			colliding. No global state, no rAF loop, no debounce.
-		</p>
-		<div class="card centered">
-			<ClickSpark sparkColor="#0ea5e9" shape="dot" sparkCount={8}>
-				<button class="cta primary">Spam me</button>
-			</ClickSpark>
-		</div>
-	</section>
-
-	<section class="features">
-		<h2>Features</h2>
-		<ul>
-			<li>Wrap-anything API — works with buttons, links, cards, images.</li>
-			<li>Four CSS-only spark shapes: dot, plus, line, star.</li>
-			<li>Multiple bursts compose without state churn.</li>
-			<li>Pure CSS keyframes — no rAF loop, no spring physics.</li>
-			<li>Honours <code>prefers-reduced-motion</code> — burst suppressed entirely.</li>
-			<li>Wrapped child keeps native role / focus / click semantics.</li>
-			<li>Zero external dependencies.</li>
-		</ul>
-	</section>
-
-	<section class="usage">
-		<h2>Usage</h2>
-		<pre><code>{`<` + `script lang="ts">
+	const usageSnippet = `<script>
   import ClickSpark from '$lib/components/ClickSpark.svelte';
-<` + `/script>
+<\/script>
 
 <ClickSpark sparkColor="#fbbf24" sparkCount={12} shape="star">
   <button>Try the demo</button>
-</ClickSpark>`}</code></pre>
-	</section>
-</div>
+</ClickSpark>`;
+
+	const codeExplanation =
+		'ClickSpark is a wrap-anything decoration. Each click spawns an independent burst of CSS-keyframed particles that origin from the actual click point — never the wrapper centre — so the burst feels tied to the gesture. Bursts self-clean on animation end, and reduced-motion users get the click semantics with no particles at all.';
+</script>
+
+<svelte:head>
+	<title>ClickSpark — TFE / Svelte Templates</title>
+	<meta
+		name="description"
+		content="Wrap any element to spray a configurable particle burst on click. Pure CSS, four shapes."
+	/>
+</svelte:head>
+
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Click', 'CSS-only', 'Reduced-motion safe']}
+	{usageSnippet}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="cs-demo">
+			<section class="cs-section">
+				<h3>Default — try it</h3>
+				<div class="cs-stage cs-stage--centered">
+					<ClickSpark>
+						<button class="cs-cta cs-cta--primary" onclick={() => primaryClicks++}>
+							Click me · {primaryClicks}
+						</button>
+					</ClickSpark>
+				</div>
+			</section>
+
+			<section class="cs-section">
+				<h3>Four spark shapes</h3>
+				<div class="cs-stage cs-stage--row">
+					<ClickSpark sparkColor="#ffffff" shape="dot">
+						<button class="cs-cta cs-cta--dark">dot</button>
+					</ClickSpark>
+					<ClickSpark sparkColor="#22d3ee" shape="plus" sparkCount={10}>
+						<button class="cs-cta cs-cta--dark">plus</button>
+					</ClickSpark>
+					<ClickSpark sparkColor="#f97316" shape="line" sparkCount={12} sparkSize={14}>
+						<button class="cs-cta cs-cta--dark">line</button>
+					</ClickSpark>
+					<ClickSpark sparkColor="#fbbf24" shape="star" sparkCount={6} sparkSize={14}>
+						<button class="cs-cta cs-cta--dark">star</button>
+					</ClickSpark>
+				</div>
+			</section>
+
+			<section class="cs-section">
+				<h3>Like — composes with stateful UI</h3>
+				<div class="cs-stage cs-stage--centered">
+					<ClickSpark
+						sparkColor="#f43f5e"
+						shape="star"
+						sparkCount={10}
+						spreadRadius={70}
+						duration={650}
+					>
+						<button class="cs-like" class:liked onclick={handleLike} aria-pressed={liked}>
+							<span class="cs-like__heart" aria-hidden="true">{liked ? '♥' : '♡'}</span>
+							<span>{likeCount}</span>
+						</button>
+					</ClickSpark>
+				</div>
+			</section>
+		</div>
+	{/snippet}
+
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>sparkColor</code></td>
+					<td><code>string</code></td>
+					<td><code>'#ffffff'</code></td>
+					<td>Hex / RGB colour for each particle.</td>
+				</tr>
+				<tr>
+					<td><code>shape</code></td>
+					<td><code>'dot' | 'plus' | 'line' | 'star'</code></td>
+					<td><code>'dot'</code></td>
+					<td>Particle shape rendered via pure CSS.</td>
+				</tr>
+				<tr>
+					<td><code>sparkCount</code></td>
+					<td><code>number</code></td>
+					<td><code>8</code></td>
+					<td>Number of particles per burst.</td>
+				</tr>
+				<tr>
+					<td><code>sparkSize</code></td>
+					<td><code>number</code></td>
+					<td><code>10</code></td>
+					<td>Base particle size in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>spreadRadius</code></td>
+					<td><code>number</code></td>
+					<td><code>60</code></td>
+					<td>Distance particles travel from origin.</td>
+				</tr>
+				<tr>
+					<td><code>duration</code></td>
+					<td><code>number</code></td>
+					<td><code>500</code></td>
+					<td>Burst lifetime in milliseconds.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.page {
-		max-width: 880px;
-		margin: 0 auto;
-		padding: 2rem 1.5rem 4rem;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		color: #0f172a;
+	.cs-demo {
+		display: grid;
+		gap: 20px;
 	}
-
-	.page-header h1 {
-		margin: 0 0 0.5rem;
-		font-size: 2rem;
-		font-weight: 700;
+	.cs-section {
+		display: grid;
+		gap: 10px;
 	}
-	.lede {
-		margin: 0 0 2rem;
-		color: #475569;
-		line-height: 1.6;
+	.cs-section h3 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
 	}
-
-	.demo {
-		margin: 0 0 2.5rem;
+	.cs-stage {
+		padding: 24px;
+		border-radius: 12px;
+		background: var(--surface);
+		border: 1px solid var(--border);
 	}
-	.demo h2 {
-		margin: 0 0 0.25rem;
-		font-size: 1.125rem;
-		font-weight: 600;
-	}
-	.hint {
-		margin: 0 0 0.875rem;
-		color: #64748b;
-		font-size: 0.875rem;
-		line-height: 1.55;
-	}
-	.hint code,
-	.demo code,
-	.features code,
-	.usage code {
-		background: #f1f5f9;
-		padding: 0.125rem 0.375rem;
-		border-radius: 0.25rem;
-		font-size: 0.8125rem;
-	}
-
-	.card {
-		background: #fff;
-		border: 1px solid #e2e8f0;
-		border-radius: 0.75rem;
-		padding: 2rem 1.5rem;
-	}
-	.card.centered {
+	.cs-stage--centered {
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		min-height: 140px;
+		min-height: 120px;
 	}
-	.card.row {
+	.cs-stage--row {
 		display: flex;
-		gap: 1rem;
-		align-items: center;
 		flex-wrap: wrap;
+		gap: 12px;
 		justify-content: center;
+		align-items: center;
+		min-height: 120px;
 	}
 
-	.cta {
-		padding: 0.625rem 1.25rem;
-		font-size: 0.9375rem;
+	.cs-cta {
+		padding: 10px 20px;
+		font-size: 14px;
 		font-weight: 500;
-		border-radius: 0.5rem;
+		border-radius: 8px;
 		cursor: pointer;
-		transition: transform 120ms ease;
+		border: 1px solid transparent;
+		transition: transform 120ms ease, background 120ms ease;
 	}
-	.cta:active {
+	.cs-cta:active {
 		transform: scale(0.97);
 	}
-
-	.cta.primary {
-		background: #6366f1;
-		color: white;
-		border: 1px solid #4f46e5;
+	.cs-cta--primary {
+		background: var(--accent);
+		color: var(--accent-on);
+		border-color: var(--accent-strong);
 	}
-	.cta.primary:hover {
-		background: #4f46e5;
+	.cs-cta--primary:hover {
+		background: var(--accent-strong);
 	}
-
-	.cta.dark {
+	.cs-cta--dark {
 		background: #1e293b;
 		color: white;
-		border: 1px solid #0f172a;
+		border-color: #0f172a;
 		min-width: 80px;
 	}
-	.cta.dark:hover {
+	.cs-cta--dark:hover {
 		background: #0f172a;
 	}
 
-	.cta.hero {
-		background: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
-		color: white;
-		border: none;
-		padding: 0.875rem 1.75rem;
-		font-size: 1rem;
-		font-weight: 600;
-		box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
-	}
-	.cta.hero:hover {
-		box-shadow: 0 8px 28px rgba(124, 58, 237, 0.45);
-	}
-
-	.like-btn {
+	.cs-like {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		font-size: 1rem;
+		gap: 8px;
+		padding: 8px 16px;
+		font-size: 16px;
 		font-weight: 500;
-		background: #fff;
-		color: #475569;
-		border: 1px solid #e2e8f0;
-		border-radius: 9999px;
+		background: var(--surface-2);
+		color: var(--fg-2);
+		border: 1px solid var(--border-strong);
+		border-radius: 999px;
 		cursor: pointer;
-		transition:
-			color 200ms ease,
-			border-color 200ms ease,
-			background 200ms ease;
+		transition: color 200ms ease, background 200ms ease, border-color 200ms ease;
 	}
-	.like-btn .heart {
-		font-size: 1.25rem;
+	.cs-like__heart {
+		font-size: 20px;
 		line-height: 1;
 	}
-	.like-btn:hover {
+	.cs-like:hover {
 		color: #f43f5e;
 		border-color: #fecdd3;
 	}
-	.like-btn.liked {
+	.cs-like.liked {
 		color: #f43f5e;
 		background: #fff1f2;
 		border-color: #fecdd3;
-	}
-
-	.feature-card {
-		min-width: 320px;
-		max-width: 460px;
-		padding: 1.25rem;
-		border-radius: 0.5rem;
-		border: 1px solid #e2e8f0;
-		background: #f8fafc;
-		cursor: pointer;
-	}
-	.feature-card h3 {
-		margin: 0 0 0.5rem;
-		font-size: 1rem;
-		font-weight: 600;
-		color: #0f172a;
-	}
-	.feature-card p {
-		margin: 0;
-		color: #475569;
-		font-size: 0.875rem;
-		line-height: 1.55;
-	}
-
-	.features {
-		margin: 2.5rem 0;
-		padding: 1.5rem;
-		background: #f8fafc;
-		border-radius: 0.75rem;
-		border: 1px solid #e2e8f0;
-	}
-	.features h2 {
-		margin: 0 0 0.75rem;
-		font-size: 1rem;
-		font-weight: 600;
-	}
-	.features ul {
-		margin: 0;
-		padding-left: 1.25rem;
-		color: #475569;
-		line-height: 1.7;
-	}
-
-	.usage {
-		margin-top: 2.5rem;
-	}
-	.usage h2 {
-		margin: 0 0 0.5rem;
-		font-size: 1rem;
-		font-weight: 600;
-	}
-	.usage pre {
-		margin: 0;
-		padding: 1rem;
-		background: #0f172a;
-		color: #e2e8f0;
-		border-radius: 0.5rem;
-		overflow-x: auto;
-		font-size: 0.8125rem;
-		line-height: 1.6;
 	}
 </style>

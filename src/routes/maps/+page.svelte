@@ -1,677 +1,269 @@
 <!--
-  Maps Demo Page
+	============================================================
+	Maps Demo Page (TFE shell)
+	============================================================
 
-  Demonstrates all four mapping components:
-  - MapBasic: Simple interactive map
-  - MapSearch: Location search with geocoding
-  - MapMarkers: Database markers with filtering
-  - MapLive: Real-time marker additions
+	Reference adoption of ComponentPageShell for the Leaflet
+	mapping suite (MapBasic, MapSearch, MapMarkers, MapLive).
 
-  @author TFE Svelte Templates
+	Leaflet runs client-only, so the live demo is wrapped in
+	{#if browser} to skip SSR mounting.
 -->
+
 <script lang="ts">
+	import { browser } from '$app/environment';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import MapBasic from '$lib/components/MapBasic.svelte';
 	import MapSearch from '$lib/components/MapSearch.svelte';
 	import MapMarkers from '$lib/components/MapMarkers.svelte';
 	import MapLive from '$lib/components/MapLive.svelte';
-	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
 	import type { MapMarker, GeoSearchResult } from '$lib/types';
 
-	// Page data from server
 	let { data } = $props();
+	const shell = catalogShellPropsForSlug('/maps')!;
 
-	// Tab state for switching between examples
 	let activeExample = $state<'basic' | 'search' | 'markers' | 'live'>('basic');
-
-	// Live map markers (local state for demo)
 	let liveMarkers = $state<MapMarker[]>([]);
-
-	// Search result state
 	let lastSearchResult = $state<GeoSearchResult | null>(null);
 
-	/**
-	 * Handle location select from MapSearch
-	 */
 	function handleLocationSelect(result: GeoSearchResult): void {
 		lastSearchResult = result;
-		console.log('[Maps Demo] Location selected:', result.displayName);
 	}
 
-	/**
-	 * Handle marker click from MapMarkers
-	 */
 	function handleMarkerClick(marker: MapMarker): void {
 		console.log('[Maps Demo] Marker clicked:', marker.title);
 	}
 
-	/**
-	 * Handle marker add from MapLive
-	 */
 	function handleMarkerAdd(marker: MapMarker): void {
 		console.log('[Maps Demo] Marker added:', marker);
 	}
 
-	/**
-	 * Handle marker remove from MapLive
-	 */
 	function handleMarkerRemove(marker: MapMarker): void {
 		console.log('[Maps Demo] Marker removed:', marker);
 	}
+
+	const codeExplanation =
+		'Each map component wraps Leaflet behind a typed Svelte 5 surface. MapBasic mounts a tile layer plus pan/zoom; MapSearch hits the Nominatim geocoder for live suggestions; MapMarkers renders database-loaded points with category filtering; MapLive lets users add and drag markers, syncing via $bindable state. Leaflet only runs client-side, so the demo is gated on `browser` from $app/environment.';
 </script>
 
 <svelte:head>
-	<title>Map Components | TFE Svelte Templates</title>
+	<title>Maps — TFE / Svelte Templates</title>
 	<meta
 		name="description"
-		content="Interactive mapping components using Leaflet.js and OpenStreetMap. Search locations, display markers, and add points dynamically."
+		content="Leaflet-powered Svelte 5 maps: basic display, location search, database markers, and live marker editing."
 	/>
 </svelte:head>
 
-<main class="demo-page">
-	<!-- Page Header -->
-	<header class="page-header">
-		<h1>Map Components</h1>
-		<p class="subtitle">
-			Interactive mapping components using Leaflet.js and OpenStreetMap tiles.
-			Search for locations, display database markers, and add points dynamically.
-		</p>
-		<DatabaseStatus usingDatabase={data.usingDatabase} />
-	</header>
-
-	<!-- Feature Overview Cards -->
-	<section class="features-section">
-		<div class="features-grid">
-			<div class="feature-card" class:active={activeExample === 'basic'}>
-				<div class="feature-icon">🗺️</div>
-				<h3>MapBasic</h3>
-				<p>Simple interactive map with pan and zoom controls</p>
-				<button class="feature-btn" onclick={() => (activeExample = 'basic')}>
-					{activeExample === 'basic' ? 'Viewing' : 'View Demo'}
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Leaflet', 'OpenStreetMap', 'Geocoding', 'Database-aware']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="map-demo">
+			<div class="map-demo__tabs" role="tablist" aria-label="Map component variants">
+				<button
+					type="button"
+					role="tab"
+					class="map-demo__tab"
+					class:active={activeExample === 'basic'}
+					aria-selected={activeExample === 'basic'}
+					onclick={() => (activeExample = 'basic')}
+				>
+					MapBasic
+				</button>
+				<button
+					type="button"
+					role="tab"
+					class="map-demo__tab"
+					class:active={activeExample === 'search'}
+					aria-selected={activeExample === 'search'}
+					onclick={() => (activeExample = 'search')}
+				>
+					MapSearch
+				</button>
+				<button
+					type="button"
+					role="tab"
+					class="map-demo__tab"
+					class:active={activeExample === 'markers'}
+					aria-selected={activeExample === 'markers'}
+					onclick={() => (activeExample = 'markers')}
+				>
+					MapMarkers
+				</button>
+				<button
+					type="button"
+					role="tab"
+					class="map-demo__tab"
+					class:active={activeExample === 'live'}
+					aria-selected={activeExample === 'live'}
+					onclick={() => (activeExample = 'live')}
+				>
+					MapLive
 				</button>
 			</div>
 
-			<div class="feature-card" class:active={activeExample === 'search'}>
-				<div class="feature-icon">🔍</div>
-				<h3>MapSearch</h3>
-				<p>Location search with Nominatim geocoding</p>
-				<button class="feature-btn" onclick={() => (activeExample = 'search')}>
-					{activeExample === 'search' ? 'Viewing' : 'View Demo'}
-				</button>
-			</div>
-
-			<div class="feature-card" class:active={activeExample === 'markers'}>
-				<div class="feature-icon">📍</div>
-				<h3>MapMarkers</h3>
-				<p>Database markers with popups and filtering</p>
-				<button class="feature-btn" onclick={() => (activeExample = 'markers')}>
-					{activeExample === 'markers' ? 'Viewing' : 'View Demo'}
-				</button>
-			</div>
-
-			<div class="feature-card" class:active={activeExample === 'live'}>
-				<div class="feature-icon">✨</div>
-				<h3>MapLive</h3>
-				<p>Real-time marker additions with animations</p>
-				<button class="feature-btn" onclick={() => (activeExample = 'live')}>
-					{activeExample === 'live' ? 'Viewing' : 'View Demo'}
-				</button>
-			</div>
-		</div>
-	</section>
-
-	<!-- Example Display -->
-	<section class="example-section">
-		<div class="example-header">
-			<h2>
+			<p class="map-demo__hint">
 				{#if activeExample === 'basic'}
-					MapBasic - Interactive Map
+					Pan and zoom an OpenStreetMap-tiled map. Drag, scroll, or use the on-screen controls.
 				{:else if activeExample === 'search'}
-					MapSearch - Location Search
+					Type a place name to query Nominatim. Pick a result and the map flies to it.
 				{:else if activeExample === 'markers'}
-					MapMarkers - Database Markers
+					{data.markers.length} UK landmarks loaded {data.usingDatabase ? 'from the database' : 'from the static fallback'}. Filter by category.
 				{:else}
-					MapLive - Real-Time Additions
-				{/if}
-			</h2>
-			<p class="example-description">
-				{#if activeExample === 'basic'}
-					A foundation map component with pan, zoom, and OpenStreetMap tiles. Use keyboard arrows or drag to navigate.
-				{:else if activeExample === 'search'}
-					Search for any location worldwide using OpenStreetMap's Nominatim API. Results appear as you type.
-				{:else if activeExample === 'markers'}
-					Displaying {data.markers.length} UK landmarks from the database. Use the filter pills to narrow by category.
-				{:else}
-					Click anywhere on the map to add markers. Drag markers to reposition, click to edit details or delete.
+					Click anywhere to add a marker. Drag to reposition, click to edit or delete.
 				{/if}
 			</p>
-		</div>
 
-		<div class="example-container">
-			{#if activeExample === 'basic'}
-				<MapBasic
-					center={DEFAULT_MAP_CENTER}
-					zoom={13}
-					height={500}
-					enableScrollZoom={true}
-					showZoomControl={true}
-				/>
-			{:else if activeExample === 'search'}
-				<MapSearch
-					center={DEFAULT_MAP_CENTER}
-					zoom={10}
-					height={500}
-					placeholder="Search for a city, address, or landmark..."
-					maxResults={6}
-					onLocationSelect={handleLocationSelect}
-				/>
-				{#if lastSearchResult}
-					<div class="search-result-info">
-						<strong>Selected:</strong> {lastSearchResult.displayName.split(',').slice(0, 2).join(',')}
-						<span class="coords">
-							({lastSearchResult.position.lat.toFixed(4)}, {lastSearchResult.position.lng.toFixed(4)})
-						</span>
-					</div>
+			<div class="map-stage">
+				{#if browser}
+					{#if activeExample === 'basic'}
+						<MapBasic
+							center={DEFAULT_MAP_CENTER}
+							zoom={13}
+							height={460}
+							enableScrollZoom
+							showZoomControl
+						/>
+					{:else if activeExample === 'search'}
+						<MapSearch
+							center={DEFAULT_MAP_CENTER}
+							zoom={10}
+							height={460}
+							placeholder="Search for a city, address, or landmark…"
+							maxResults={6}
+							onLocationSelect={handleLocationSelect}
+						/>
+						{#if lastSearchResult}
+							<div class="map-demo__readout">
+								<strong>Selected:</strong>
+								{lastSearchResult.displayName.split(',').slice(0, 2).join(',')}
+								<span class="map-demo__coords">
+									({lastSearchResult.position.lat.toFixed(4)}, {lastSearchResult.position.lng.toFixed(4)})
+								</span>
+							</div>
+						{/if}
+					{:else if activeExample === 'markers'}
+						<MapMarkers
+							markers={data.markers}
+							height={460}
+							showCategories
+							onMarkerClick={handleMarkerClick}
+						/>
+					{:else}
+						<MapLive
+							bind:markers={liveMarkers}
+							center={DEFAULT_MAP_CENTER}
+							zoom={13}
+							height={460}
+							enableAddMode
+							animateNewMarkers
+							maxMarkers={20}
+							onMarkerAdd={handleMarkerAdd}
+							onMarkerRemove={handleMarkerRemove}
+						/>
+					{/if}
+				{:else}
+					<div class="map-stage__placeholder">Loading map…</div>
 				{/if}
-			{:else if activeExample === 'markers'}
-				<MapMarkers
-					markers={data.markers}
-					height={500}
-					showCategories={true}
-					onMarkerClick={handleMarkerClick}
-				/>
-			{:else}
-				<MapLive
-					bind:markers={liveMarkers}
-					center={DEFAULT_MAP_CENTER}
-					zoom={13}
-					height={500}
-					enableAddMode={true}
-					animateNewMarkers={true}
-					maxMarkers={20}
-					onMarkerAdd={handleMarkerAdd}
-					onMarkerRemove={handleMarkerRemove}
-				/>
-			{/if}
+			</div>
 		</div>
-	</section>
+	{/snippet}
 
-	<!-- Usage Section -->
-	<section class="usage-section">
-		<h2>Usage Examples</h2>
-
-		<div class="code-tabs">
-			<button
-				class="code-tab"
-				class:active={activeExample === 'basic'}
-				onclick={() => (activeExample = 'basic')}
-			>
-				MapBasic
-			</button>
-			<button
-				class="code-tab"
-				class:active={activeExample === 'search'}
-				onclick={() => (activeExample = 'search')}
-			>
-				MapSearch
-			</button>
-			<button
-				class="code-tab"
-				class:active={activeExample === 'markers'}
-				onclick={() => (activeExample = 'markers')}
-			>
-				MapMarkers
-			</button>
-			<button
-				class="code-tab"
-				class:active={activeExample === 'live'}
-				onclick={() => (activeExample = 'live')}
-			>
-				MapLive
-			</button>
-		</div>
-
-		<div class="code-block">
-			{#if activeExample === 'basic'}
-				<pre><code>{`${'<'}script>
-  import MapBasic from '$lib/components/MapBasic.svelte';
-${'<'}/script>
-
-<MapBasic
-  center={{ lat: 51.5074, lng: -0.1278 }}
-  zoom={13}
-  height={400}
-  enableScrollZoom={true}
-  showZoomControl={true}
-/>`}</code></pre>
-			{:else if activeExample === 'search'}
-				<pre><code>{`${'<'}script>
-  import MapSearch from '$lib/components/MapSearch.svelte';
-  import type { GeoSearchResult } from '$lib/types';
-
-  function handleSelect(result: GeoSearchResult) {
-    console.log('Selected:', result.displayName);
-    console.log('Position:', result.position);
-  }
-${'<'}/script>
-
-<MapSearch
-  center={{ lat: 51.5074, lng: -0.1278 }}
-  zoom={10}
-  height={500}
-  placeholder="Search for a location..."
-  maxResults={5}
-  onLocationSelect={handleSelect}
-/>`}</code></pre>
-			{:else if activeExample === 'markers'}
-				<pre><code>{`// +page.server.ts
-import { loadMapMarkersFromDatabase } from '$lib/server/maps';
-
-export const load = async () => {
-  const markers = await loadMapMarkersFromDatabase();
-  return { markers };
-};
-
-// +page.svelte
-${'<'}script>
-  import MapMarkers from '$lib/components/MapMarkers.svelte';
-
-  let { data } = $props();
-${'<'}/script>
-
-<MapMarkers
-  markers={data.markers}
-  height={500}
-  showCategories={true}
-  onMarkerClick={(m) => console.log(m)}
-/>`}</code></pre>
-			{:else}
-				<pre><code>{`${'<'}script>
-  import MapLive from '$lib/components/MapLive.svelte';
-  import type { MapMarker } from '$lib/types';
-
-  let markers = $state<MapMarker[]>([]);
-
-  function handleAdd(marker: MapMarker) {
-    console.log('Added:', marker);
-    // Save to database if needed
-  }
-${'<'}/script>
-
-<MapLive
-  bind:markers
-  center={{ lat: 51.5074, lng: -0.1278 }}
-  zoom={13}
-  height={500}
-  enableAddMode={true}
-  maxMarkers={20}
-  onMarkerAdd={handleAdd}
-/>`}</code></pre>
-			{/if}
-		</div>
-	</section>
-
-	<!-- Features Comparison -->
-	<section class="comparison-section">
-		<h2>Component Comparison</h2>
-		<div class="comparison-table-wrapper">
-			<table class="comparison-table">
-				<thead>
-					<tr>
-						<th>Feature</th>
-						<th>MapBasic</th>
-						<th>MapSearch</th>
-						<th>MapMarkers</th>
-						<th>MapLive</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr>
-						<td>Pan & Zoom</td>
-						<td>✅</td>
-						<td>✅</td>
-						<td>✅</td>
-						<td>✅</td>
-					</tr>
-					<tr>
-						<td>Location Search</td>
-						<td>-</td>
-						<td>✅</td>
-						<td>-</td>
-						<td>-</td>
-					</tr>
-					<tr>
-						<td>Display Markers</td>
-						<td>-</td>
-						<td>Single</td>
-						<td>✅ Multiple</td>
-						<td>✅ Multiple</td>
-					</tr>
-					<tr>
-						<td>Category Filtering</td>
-						<td>-</td>
-						<td>-</td>
-						<td>✅</td>
-						<td>-</td>
-					</tr>
-					<tr>
-						<td>Add Markers</td>
-						<td>-</td>
-						<td>-</td>
-						<td>-</td>
-						<td>✅ Click</td>
-					</tr>
-					<tr>
-						<td>Edit Markers</td>
-						<td>-</td>
-						<td>-</td>
-						<td>-</td>
-						<td>✅ Drag/Form</td>
-					</tr>
-					<tr>
-						<td>Database Integration</td>
-						<td>-</td>
-						<td>-</td>
-						<td>✅</td>
-						<td>Optional</td>
-					</tr>
-					<tr>
-						<td>Best For</td>
-						<td>Basic display</td>
-						<td>Location finding</td>
-						<td>Data visualisation</td>
-						<td>User input</td>
-					</tr>
-				</tbody>
-			</table>
-		</div>
-	</section>
-</main>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Feature</th>
+					<th>MapBasic</th>
+					<th>MapSearch</th>
+					<th>MapMarkers</th>
+					<th>MapLive</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr><td>Pan &amp; zoom</td><td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+				<tr><td>Geocoding search</td><td>—</td><td>Nominatim</td><td>—</td><td>—</td></tr>
+				<tr><td>Multiple markers</td><td>—</td><td>Single</td><td>Yes</td><td>Yes</td></tr>
+				<tr><td>Category filtering</td><td>—</td><td>—</td><td>Yes</td><td>—</td></tr>
+				<tr><td>Click to add</td><td>—</td><td>—</td><td>—</td><td>Yes</td></tr>
+				<tr><td>Drag to edit</td><td>—</td><td>—</td><td>—</td><td>Yes</td></tr>
+				<tr><td>Database-backed</td><td>—</td><td>—</td><td>Yes</td><td>Optional</td></tr>
+				<tr><td>Best for</td><td>Static display</td><td>Place lookup</td><td>Visualisation</td><td>User input</td></tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	/* ==================================================
-     Page Layout
-     ================================================== */
-	.demo-page {
-		max-width: 1200px;
-		margin: 0 auto;
-		padding: 2rem 1.5rem 4rem;
-	}
-
-	/* ==================================================
-     Page Header
-     ================================================== */
-	.page-header {
-		text-align: center;
-		margin-bottom: 3rem;
-	}
-
-	.page-header h1 {
-		font-size: 2.5rem;
-		font-weight: 700;
-		color: #1a1a1a;
-		margin: 0 0 0.75rem;
-	}
-
-	.subtitle {
-		font-size: 1.125rem;
-		color: #666;
-		max-width: 600px;
-		margin: 0 auto 1rem;
-		line-height: 1.6;
-	}
-
-	/* ==================================================
-     Features Section
-     ================================================== */
-	.features-section {
-		margin-bottom: 3rem;
-	}
-
-	.features-grid {
+	.map-demo {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-		gap: 1.5rem;
+		gap: 14px;
 	}
-
-	.feature-card {
-		padding: 1.5rem;
-		background: white;
-		border: 1px solid #e5e5e5;
-		border-radius: 12px;
-		text-align: center;
-		transition: all 0.2s ease;
-	}
-
-	.feature-card:hover {
-		border-color: #146ef5;
-		box-shadow: 0 4px 12px rgba(20, 110, 245, 0.1);
-	}
-
-	.feature-card.active {
-		border-color: #146ef5;
-		background: linear-gradient(135deg, rgba(20, 110, 245, 0.05) 0%, rgba(20, 110, 245, 0.02) 100%);
-	}
-
-	.feature-icon {
-		font-size: 2rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.feature-card h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-		color: #1a1a1a;
-		margin: 0 0 0.5rem;
-	}
-
-	.feature-card p {
-		font-size: 0.875rem;
-		color: #666;
-		margin: 0 0 1rem;
-		line-height: 1.5;
-	}
-
-	.feature-btn {
-		padding: 0.5rem 1rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #146ef5;
-		background: rgba(20, 110, 245, 0.1);
-		border: none;
-		border-radius: 6px;
-		cursor: pointer;
-		transition: all 0.15s ease;
-	}
-
-	.feature-btn:hover {
-		background: rgba(20, 110, 245, 0.2);
-	}
-
-	.feature-card.active .feature-btn {
-		color: white;
-		background: #146ef5;
-	}
-
-	/* ==================================================
-     Example Section
-     ================================================== */
-	.example-section {
-		margin-bottom: 3rem;
-	}
-
-	.example-header {
-		margin-bottom: 1.5rem;
-	}
-
-	.example-header h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #1a1a1a;
-		margin: 0 0 0.5rem;
-	}
-
-	.example-description {
-		font-size: 0.9375rem;
-		color: #666;
-		margin: 0;
-		line-height: 1.5;
-	}
-
-	.example-container {
-		border-radius: 12px;
-		overflow: hidden;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-	}
-
-	.search-result-info {
-		margin-top: 1rem;
-		padding: 0.75rem 1rem;
-		background: #f5f5f5;
-		border-radius: 8px;
-		font-size: 0.875rem;
-		color: #333;
-	}
-
-	.search-result-info .coords {
-		color: #888;
-		font-family: monospace;
-		margin-left: 0.5rem;
-	}
-
-	/* ==================================================
-     Usage Section
-     ================================================== */
-	.usage-section {
-		margin-bottom: 3rem;
-	}
-
-	.usage-section h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #1a1a1a;
-		margin: 0 0 1rem;
-	}
-
-	.code-tabs {
+	.map-demo__tabs {
 		display: flex;
-		gap: 0.5rem;
-		margin-bottom: 0;
-		border-bottom: 1px solid #e5e5e5;
+		flex-wrap: wrap;
+		gap: 6px;
+		padding: 4px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
 	}
-
-	.code-tab {
-		padding: 0.75rem 1rem;
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #666;
-		background: none;
-		border: none;
-		border-bottom: 2px solid transparent;
+	.map-demo__tab {
+		flex: 1 1 120px;
+		padding: 8px 12px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--fg-2);
+		background: transparent;
+		border: 1px solid transparent;
+		border-radius: var(--r-1);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 	}
-
-	.code-tab:hover {
-		color: #333;
+	.map-demo__tab:hover {
+		color: var(--fg-1);
+		background: var(--surface-2);
 	}
-
-	.code-tab.active {
-		color: #146ef5;
-		border-bottom-color: #146ef5;
+	.map-demo__tab.active {
+		color: var(--fg-1);
+		background: var(--bg);
+		border-color: var(--border);
 	}
-
-	.code-block {
-		background: #1a1a1a;
-		border-radius: 0 0 8px 8px;
-		overflow-x: auto;
-	}
-
-	.code-block pre {
+	.map-demo__hint {
 		margin: 0;
-		padding: 1.5rem;
+		font-size: 13px;
+		color: var(--fg-2);
+		line-height: 1.5;
 	}
-
-	.code-block code {
-		font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
-		font-size: 0.8125rem;
-		line-height: 1.6;
-		color: #e5e5e5;
+	.map-stage {
+		border-radius: var(--r-2);
+		overflow: hidden;
+		border: 1px solid var(--border);
+		background: var(--surface);
 	}
-
-	/* ==================================================
-     Comparison Section
-     ================================================== */
-	.comparison-section h2 {
-		font-size: 1.5rem;
-		font-weight: 600;
-		color: #1a1a1a;
-		margin: 0 0 1.5rem;
+	.map-stage__placeholder {
+		display: grid;
+		place-items: center;
+		min-height: 460px;
+		color: var(--fg-2);
+		font-size: 14px;
 	}
-
-	.comparison-table-wrapper {
-		overflow-x: auto;
-		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	.map-demo__readout {
+		margin-top: 12px;
+		padding: 10px 14px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-1);
+		font-size: 13px;
+		color: var(--fg-1);
 	}
-
-	.comparison-table {
-		width: 100%;
-		border-collapse: collapse;
-		background: white;
-		font-size: 0.875rem;
-	}
-
-	.comparison-table th,
-	.comparison-table td {
-		padding: 0.875rem 1rem;
-		text-align: left;
-		border-bottom: 1px solid #eee;
-	}
-
-	.comparison-table th {
-		font-weight: 600;
-		color: #1a1a1a;
-		background: #f9f9f9;
-	}
-
-	.comparison-table td:first-child {
-		font-weight: 500;
-		color: #333;
-	}
-
-	.comparison-table td {
-		color: #666;
-	}
-
-	/* ==================================================
-     Responsive
-     ================================================== */
-	@media (max-width: 768px) {
-		.page-header h1 {
-			font-size: 2rem;
-		}
-
-		.features-grid {
-			grid-template-columns: 1fr 1fr;
-		}
-
-		.code-tabs {
-			flex-wrap: wrap;
-		}
-	}
-
-	@media (max-width: 480px) {
-		.demo-page {
-			padding: 1.5rem 1rem 3rem;
-		}
-
-		.features-grid {
-			grid-template-columns: 1fr;
-		}
-
-		.code-block pre {
-			padding: 1rem;
-		}
+	.map-demo__coords {
+		margin-left: 6px;
+		color: var(--fg-2);
+		font-family: var(--font-mono, ui-monospace, monospace);
 	}
 </style>

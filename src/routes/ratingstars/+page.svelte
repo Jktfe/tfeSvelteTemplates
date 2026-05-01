@@ -1,5 +1,9 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import RatingStars from '$lib/components/RatingStars.svelte';
+
+	const shell = catalogShellPropsForSlug('/ratingstars')!;
 
 	let pizza = $state(4);
 	let chef = $state(0);
@@ -9,117 +13,166 @@
 		{ name: 'Bilal K.', stars: 3.5, comment: 'Solid, but the dough was a bit dense.' },
 		{ name: 'Carmen D.', stars: 4, comment: 'Loved the toppings. Delivery was slow.' }
 	];
+
+	const codeExplanation =
+		'Each star is a real input[type="radio"] inside a radiogroup, so the keyboard story (Left/Right to move, Space/Enter to commit) comes from the platform. Hover styling is pure CSS sibling selectors — no JS hover state. Read-only mode swaps to role="img" with an aria-label of the value, and supports fractional values that render the trailing star half-filled via a clip-path overlay.';
 </script>
 
 <svelte:head>
-	<title>RatingStars | TFE Svelte Templates</title>
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto py-12 px-4">
-	<div class="max-w-5xl mx-auto space-y-12">
-		<header class="text-center space-y-4">
-			<h1 class="text-4xl font-bold tracking-tight">RatingStars</h1>
-			<p class="text-xl text-muted-foreground">
-				Click to rate, hover to preview, keyboard arrows to navigate. Real radio inputs under the
-				hood.
-			</p>
-		</header>
-
-		<!-- Interactive -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Interactive</h2>
-			<p class="text-sm text-neutral-500">
-				Hover any star to preview the new value, click or press space/enter to commit.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-				<div class="flex items-center gap-4">
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Radio', 'A11y', 'Keyboard', 'Theme-aware']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="rating-demo">
+			<section>
+				<h3>Interactive</h3>
+				<div class="row">
 					<RatingStars value={pizza} onChange={(v) => (pizza = v)} ariaLabel="Rate the pizza" />
-					<span class="text-sm text-neutral-600">
-						Pizza: <strong>{pizza}</strong> / 5
-					</span>
+					<span>Pizza: <strong>{pizza}</strong> / 5</span>
 				</div>
-				<div class="flex items-center gap-4">
+				<div class="row">
 					<RatingStars value={chef} onChange={(v) => (chef = v)} ariaLabel="Rate the chef" />
-					<span class="text-sm text-neutral-600">
-						{chef === 0 ? 'No rating yet' : `Chef: ${chef} / 5`}
-					</span>
+					<span>{chef === 0 ? 'No rating yet' : `Chef: ${chef} / 5`}</span>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<!-- Read-only with half stars -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Read-only (with half stars)</h2>
-			<p class="text-sm text-neutral-500">
-				For displaying existing ratings. Pass a fractional <code>value</code> like 3.5 and the last
-				star renders half-filled.
-			</p>
-			<div class="bg-white border border-neutral-200 rounded-xl divide-y divide-neutral-100">
-				{#each reviews as review (review.name)}
-					<div class="flex items-center justify-between p-4">
-						<div>
-							<div class="font-semibold text-neutral-900">{review.name}</div>
-							<div class="text-sm text-neutral-500">{review.comment}</div>
-						</div>
-						<RatingStars value={review.stars} readonly size={20} />
-					</div>
-				{/each}
-			</div>
-		</section>
-
-		<!-- Custom scales / colours -->
-		<section class="space-y-3">
-			<h2 class="text-2xl font-semibold">Custom scales &amp; palettes</h2>
-			<div class="grid md:grid-cols-2 gap-4">
-				<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-					<div class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">10-point</div>
-					<RatingStars value={7} max={10} size={22} readonly />
-					<div class="text-sm text-neutral-500">A 10-star scale at 22px size, read-only.</div>
-				</div>
-				<div class="bg-white border border-neutral-200 rounded-xl p-6 space-y-4">
-					<div class="text-sm font-semibold text-neutral-500 uppercase tracking-wide">Brand</div>
-					<RatingStars
-						value={4}
-						filledColor="#ef4444"
-						emptyColor="#fee2e2"
-						size={32}
-						readonly
-					/>
-					<div class="text-sm text-neutral-500">Custom palette + 32px size.</div>
-				</div>
-			</div>
-		</section>
-
-		<section class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Features</h2>
-				<ul class="list-disc list-inside space-y-2 text-muted-foreground">
-					<li>Real <code>&lt;input type="radio"&gt;</code> elements — keyboard a11y for free</li>
-					<li>Click to rate, hover to preview the new value</li>
-					<li>Configurable max (default 5)</li>
-					<li>Read-only mode with optional half stars (fractional values)</li>
-					<li>Custom filled / empty colours and size</li>
-					<li><code>role="radiogroup"</code> interactive, <code>role="img"</code> read-only</li>
-					<li>Honours <code>prefers-reduced-motion</code></li>
-					<li>Pure inline SVG, zero dependencies</li>
+			<section>
+				<h3>Read-only with half stars</h3>
+				<ul class="reviews">
+					{#each reviews as review (review.name)}
+						<li>
+							<div>
+								<div class="who">{review.name}</div>
+								<div class="comment">{review.comment}</div>
+							</div>
+							<RatingStars value={review.stars} readonly size={20} />
+						</li>
+					{/each}
 				</ul>
-			</div>
+			</section>
 
-			<div class="space-y-4">
-				<h2 class="text-2xl font-semibold">Usage</h2>
-				<pre
-					class="bg-neutral-900 text-neutral-100 p-4 rounded-lg overflow-x-auto text-sm border border-neutral-800"><code>{`<script lang="ts">
-  import RatingStars from '$lib/components/RatingStars.svelte';
+			<section>
+				<h3>Custom scales &amp; palettes</h3>
+				<div class="row">
+					<RatingStars value={7} max={10} size={22} readonly />
+					<span>10-point scale, read-only.</span>
+				</div>
+				<div class="row">
+					<RatingStars value={4} filledColor="#ef4444" emptyColor="#fee2e2" size={32} readonly />
+					<span>Custom palette, 32 px.</span>
+				</div>
+			</section>
+		</div>
+	{/snippet}
 
-  let rating = $state(3);
-</${''}script>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>value</code></td>
+					<td><code>number</code></td>
+					<td><code>0</code></td>
+					<td>Current rating; supports fractional values when readonly.</td>
+				</tr>
+				<tr>
+					<td><code>max</code></td>
+					<td><code>number</code></td>
+					<td><code>5</code></td>
+					<td>Total number of stars.</td>
+				</tr>
+				<tr>
+					<td><code>readonly</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Render as a static rating display.</td>
+				</tr>
+				<tr>
+					<td><code>size</code></td>
+					<td><code>number</code></td>
+					<td><code>28</code></td>
+					<td>Star edge length in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>filledColor</code> / <code>emptyColor</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Inline-style overrides for the SVG fills.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Rating'</code></td>
+					<td>Group label announced by screen readers.</td>
+				</tr>
+				<tr>
+					<td><code>onChange</code></td>
+					<td><code>(value) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires when the user picks a new rating.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
-<!-- Interactive -->
-<RatingStars value={rating} onChange={(v) => rating = v} />
+<style>
+	.rating-demo {
+		display: grid;
+		gap: 2rem;
+	}
 
-<!-- Read-only with half stars -->
-<RatingStars value={4.5} readonly />`}</code></pre>
-			</div>
-		</section>
-	</div>
-</div>
+	.rating-demo h3 {
+		font-size: 0.95rem;
+		margin: 0 0 0.6rem;
+		color: var(--fg-1);
+	}
+
+	.row {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 0.6rem;
+		font-size: 0.9rem;
+		color: var(--fg-2);
+	}
+
+	.reviews {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		border-top: 1px solid var(--border);
+	}
+
+	.reviews li {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.85rem 0;
+		border-bottom: 1px solid var(--border);
+	}
+
+	.who {
+		font-weight: 600;
+		color: var(--fg-1);
+	}
+
+	.comment {
+		font-size: 0.85rem;
+		color: var(--fg-2);
+	}
+</style>

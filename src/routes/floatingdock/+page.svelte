@@ -1,9 +1,11 @@
 <script lang="ts">
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import FloatingDock from '$lib/components/FloatingDock.svelte';
 	import type { FloatingDockItem } from '$lib/types';
-	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 
-	// Custom items for the demo
+	const shell = catalogShellPropsForSlug('/floatingdock')!;
+
 	const customItems: FloatingDockItem[] = [
 		{ id: 'f1', title: 'Folder', icon: '📁' },
 		{ id: 'f2', title: 'Calendar', icon: '📅', href: '/calendarheatmap' },
@@ -13,101 +15,144 @@
 		{ id: 'f6', title: 'Terminal', icon: '💻' }
 	];
 
-	const usageExample = [
-		'<script lang="ts">',
-		"  import FloatingDock from '$lib/components/FloatingDock.svelte';",
-		'',
-		'  const items = [',
-		"    { id: 1, title: 'Home', icon: '🏠', href: '/' },",
-		"    { id: 2, title: 'Docs', icon: '📚' }",
-		'  ];',
-		'<\\/script>',
-		'',
-		'<FloatingDock {items} magnification={2.5} distance={150} />'
-	].join('\n').replace('<\\/script>', '<' + '/script>');
+	const codeExplanation =
+		'FloatingDock listens to mousemove relative to the dock element and feeds each icon a distance. A cosine-based scaling function spreads magnification across neighbouring icons so the result feels like a smooth wave rather than a binary hover. Below 768px the dock falls back to a simple horizontal scrollable bar — magnification only kicks in on pointer-friendly devices.';
 </script>
 
 <svelte:head>
-	<title>Floating Dock | Svelte Templates</title>
-	<meta name="description" content="Interactive macOS-style floating navigation bar with hover magnification" />
+	<title>{shell.item.name} — TFE / Svelte Templates</title>
+	<meta name="description" content={shell.item.description} />
 </svelte:head>
 
-<div class="container mx-auto px-4 py-8 pb-32">
-	<div class="mb-12">
-		<h1 class="text-4xl font-bold tracking-tight mb-4">Floating Dock</h1>
-		<p class="text-xl text-slate-600 dark:text-slate-400 mb-6">
-			A premium, high-interaction navigation bar with proximity-based icon magnification.
-		</p>
-		<DatabaseStatus usingDatabase={false} />
-	</div>
-
-	<!-- Interaction Showcase -->
-	<section class="mb-48">
-		<h2 class="text-2xl font-semibold mb-8">Interaction Showcase</h2>
-		<div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-12 border border-slate-200 dark:border-slate-800 text-center">
-			<p class="mb-4 text-slate-600 dark:text-slate-400 italic">
-				Hover over the dock icons at the bottom of the screen to see the magnification effect.
+<ComponentPageShell
+	{...shell.props}
+	tags={['Svelte 5', 'Hover', 'CSS transforms', 'Responsive']}
+	{codeExplanation}
+>
+	{#snippet demo()}
+		<div class="fd-demo">
+			<p class="fd-demo__lede">
+				The dock at the bottom of the viewport is the live component. Move your cursor across it
+				slowly to watch the cosine-based magnification ripple between neighbouring icons. The
+				<code>Calendar</code> and <code>Maps</code> icons link out to their respective demos.
 			</p>
-			<p class="text-sm text-blue-600 dark:text-blue-400 font-medium">
-				Tip: The "Calendar" and "Maps" icons are functional links.
-			</p>
-		</div>
-	</section>
 
-	<!-- Config Variations -->
-	<section class="grid md:grid-cols-2 gap-12 mb-20">
-		<div>
-			<h2 class="text-2xl font-semibold mb-4">Magnification Math</h2>
-			<div class="prose dark:prose-invert">
-				<p>
-					The Floating Dock uses a <strong>cosine-based scaling function</strong> to create a smooth "wave" effect.
-					As your mouse approaches an icon, it scales up dynamically based on its distance from the cursor.
-				</p>
-				<ul class="list-disc pl-5 space-y-2">
-					<li><strong>Distance:</strong> Controls the range of influence (how far the mouse triggers scaling).</li>
-					<li><strong>Magnification:</strong> Controls the maximum scale factor (how large the icon gets).</li>
-					<li><strong>Responsiveness:</strong> On mobile, it automatically switches to a standard scrollable bar.</li>
-				</ul>
+			<div class="fd-demo__grid">
+				<div class="fd-demo__card">
+					<h4>Magnification</h4>
+					<p>
+						<code>magnification</code> is the maximum scale factor. Each icon's actual scale is
+						interpolated by its distance to the cursor, so the effect feels analogue.
+					</p>
+				</div>
+				<div class="fd-demo__card">
+					<h4>Distance</h4>
+					<p>
+						<code>distance</code> sets the influence radius in px. A larger value spreads the
+						wave further; a smaller one keeps it tight to the hovered icon.
+					</p>
+				</div>
+				<div class="fd-demo__card">
+					<h4>Mobile fallback</h4>
+					<p>
+						Below 768px the dock renders as a flat scrollable row. Magnification is a desktop
+						affordance — touch targets stay full-size on small screens.
+					</p>
+				</div>
 			</div>
+
+			<FloatingDock items={customItems} />
 		</div>
+	{/snippet}
 
-		<div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
-			<h2 class="text-2xl font-semibold mb-4">Key Features</h2>
-			<ul class="space-y-4">
-				<li class="flex items-start gap-3">
-					<span class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full p-1 mt-1">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-					</span>
-					<span><strong>Zero Deps:</strong> Built purely with Svelte 5 and CSS.</span>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full p-1 mt-1">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-					</span>
-					<span><strong>Smooth FPS:</strong> Optimized using CSS transforms for 60fps interaction.</span>
-				</li>
-				<li class="flex items-start gap-3">
-					<span class="bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full p-1 mt-1">
-						<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-					</span>
-					<span><strong>A11y First:</strong> Full keyboard navigation and screen reader support.</span>
-				</li>
-			</ul>
-		</div>
-	</section>
-
-	<!-- Usage Info -->
-	<section class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-8 border border-slate-200 dark:border-slate-800">
-		<h2 class="text-2xl font-semibold mb-4">Usage Example</h2>
-		<pre class="bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto text-sm"><code>{usageExample}</code></pre>
-	</section>
-
-	<!-- The Docks -->
-	<FloatingDock items={customItems} />
-</div>
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>items</code></td>
+					<td><code>FloatingDockItem[]</code></td>
+					<td>required</td>
+					<td>Dock entries (id, title, icon, optional href).</td>
+				</tr>
+				<tr>
+					<td><code>magnification</code></td>
+					<td><code>number</code></td>
+					<td><code>2</code></td>
+					<td>Maximum scale factor when an icon is directly hovered.</td>
+				</tr>
+				<tr>
+					<td><code>distance</code></td>
+					<td><code>number</code></td>
+					<td><code>140</code></td>
+					<td>Influence radius in px — beyond this, scale is 1.</td>
+				</tr>
+				<tr>
+					<td><code>class</code></td>
+					<td><code>string</code></td>
+					<td><code>''</code></td>
+					<td>Extra CSS class on the dock wrapper.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.container {
-		max-width: 1000px;
+	.fd-demo {
+		display: grid;
+		gap: 24px;
+	}
+	.fd-demo__lede {
+		margin: 0;
+		color: var(--fg-2);
+		line-height: 1.6;
+	}
+	.fd-demo__lede code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 5px;
+		border-radius: var(--r-1);
+	}
+	.fd-demo__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 12px;
+	}
+	.fd-demo__card {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		padding: 16px 18px;
+	}
+	.fd-demo__card h4 {
+		margin: 0 0 6px;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
+	}
+	.fd-demo__card p {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--fg-2);
+	}
+	.fd-demo__card code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 5px;
+		border-radius: var(--r-1);
 	}
 </style>

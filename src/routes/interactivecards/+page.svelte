@@ -1,82 +1,88 @@
-<!--
-	InteractiveCards Template Demo Page
-
-	Scroll-driven paintings portfolio with ecommerce, ported from a GSAP +
-	ScrollTrigger React reference spec to pure Svelte 5 runes. Pin the page
-	and scroll slowly to see the three phases: fan → conveyor → (click a
-	card) detail view.
--->
-
 <script lang="ts">
 	import InteractiveCards from '$lib/components/InteractiveCards.svelte';
+	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/interactivecards')!;
+
+	const usageSnippet = `<script>
+  import InteractiveCards from '$lib/components/InteractiveCards.svelte';
+<\/script>
+
+<!-- The component manages its own sticky-pinned scroll region -->
+<InteractiveCards />`;
+
+	const codeExplanation =
+		'InteractiveCards is a multi-phase scroll-driven gallery: cards rise from below, fan into a parabolic arc, then travel along a curved diagonal conveyor. Click a card for a detail view with size, material and add-to-cart pills. Layout pinning uses native position: sticky inside a tall outer spacer — no GSAP required — and per-frame spring interpolation runs through requestAnimationFrame.';
 </script>
 
 <svelte:head>
-	<title>InteractiveCards Component - Svelte 5 Templates</title>
+	<title>InteractiveCards — TFE / Svelte Templates</title>
 	<meta
 		name="description"
-		content="Scroll-driven paintings portfolio with fan-to-conveyor card animation, detail view and add-to-cart for Svelte 5"
+		content="Scroll-driven Svelte 5 paintings portfolio with fan-to-conveyor card animation and detail view."
 	/>
 </svelte:head>
 
-<!-- The component is pinned internally; we just let it fill the route. -->
-<InteractiveCards />
-
-<!-- Post-scroll explainer — visible once the pinned region exits -->
-<section class="post">
-	<div class="wrap">
-		<h2>About this template</h2>
-		<p>
-			A Svelte 5 port of a scroll-driven paintings gallery. Cards rise from
-			below, fan into a parabolic arc under the hero headline, then travel
-			along a curved diagonal conveyor as the user scrolls. Click any card
-			to open a detail view with an ornate frame, size/material pills and a
-			paint-swatch Add&nbsp;to&nbsp;Cart button.
+<ComponentPageShell
+	{...shell.props}
+	{usageSnippet}
+	{codeExplanation}
+	tags={['Svelte 5', 'Scroll', 'Sticky pin', 'Spring', 'Reduced-motion']}
+>
+	{#snippet demo()}
+		<p class="ic-note">
+			Scroll the page to step through the three phases: <strong>fan</strong> →
+			<strong>conveyor</strong> → <strong>detail view</strong> (click a card). The component owns its
+			own sticky pin and tall scroll spacer, so let it fill the route below.
 		</p>
-		<ul>
-			<li>Scroll-pinned layout using native <code>position: sticky</code> — no GSAP required</li>
-			<li>Per-frame spring interpolation via <code>requestAnimationFrame</code></li>
-			<li>Fan → diagonal conveyor transition with seamless modulo wrapping</li>
-			<li>Painter room mockup cycles through paintings as you scroll</li>
-			<li>Awards &amp; testimonials slider with per-character reveal</li>
-			<li>Full keyboard + ARIA support; respects <code>prefers-reduced-motion</code></li>
-		</ul>
-	</div>
-</section>
+		<div class="ic-frame">
+			<InteractiveCards />
+		</div>
+	{/snippet}
+
+	{#snippet api()}
+		<table>
+			<thead>
+				<tr>
+					<th>Prop</th>
+					<th>Type</th>
+					<th>Default</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td><code>projects</code></td>
+					<td><code>InteractiveProject[]</code></td>
+					<td>fallback constants</td>
+					<td>Paintings to render in the conveyor and detail view.</td>
+				</tr>
+				<tr>
+					<td><code>testimonials</code></td>
+					<td><code>InteractiveTestimonial[]</code></td>
+					<td>fallback constants</td>
+					<td>Testimonials shown in the awards / quotes section.</td>
+				</tr>
+			</tbody>
+		</table>
+	{/snippet}
+</ComponentPageShell>
 
 <style>
-	.post {
-		padding: 4rem 1.25rem;
-		background: var(--background, #fff);
-		color: var(--foreground, #111);
-	}
-
-	.wrap {
-		max-width: 720px;
-		margin: 0 auto;
-	}
-
-	h2 {
-		font-family: var(--font-playfair, 'Playfair Display', serif);
-		font-size: clamp(22px, 3vw, 36px);
-		margin: 0 0 1rem;
-	}
-
-	p {
+	.ic-note {
+		margin: 0 0 16px;
+		color: var(--fg-2);
+		font-size: 14px;
 		line-height: 1.6;
-		opacity: 0.85;
 	}
-
-	ul {
-		margin: 1rem 0 0;
-		padding-left: 1.25rem;
-		line-height: 1.7;
+	.ic-note strong {
+		color: var(--fg-1);
 	}
-
-	code {
-		background: color-mix(in srgb, var(--foreground, #111) 8%, transparent);
-		padding: 0.1em 0.35em;
-		border-radius: 4px;
-		font-size: 0.92em;
+	.ic-frame {
+		border-radius: var(--r-2);
+		overflow: hidden;
+		border: 1px solid var(--border);
+		background: var(--surface);
 	}
 </style>
