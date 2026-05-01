@@ -117,6 +117,28 @@
 			transform: none;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Dark mode: keep semantic colour cues, dial brightness down so the pill
+	 * sits comfortably on the dark navbar/page chrome instead of glaring. */
+	@media (prefers-color-scheme: dark) {
+		.auth-status.configured {
+			background: rgba(34, 197, 94, 0.16);
+			border-color: rgba(134, 239, 172, 0.4);
+			color: #86efac;
+		}
+
+		.auth-status.demo-mode {
+			background: rgba(148, 163, 184, 0.12);
+			border-color: rgba(148, 163, 184, 0.3);
+			color: #cbd5e1;
+		}
+
+		.auth-status.configured:hover {
+			background: rgba(34, 197, 94, 0.24);
+		}
+
+		.auth-status.demo-mode:hover {
+			background: rgba(148, 163, 184, 0.2);
+		}
+	}
+</style>
