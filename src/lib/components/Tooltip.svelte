@@ -26,8 +26,12 @@
   - --tooltip-fg     foreground (light: #f9fafb / dark: #111827)
   - --tooltip-bg     background and arrow fill (light: #111827 / dark: #f9fafb)
   - --tooltip-shadow drop shadow under the body
-  Override at any scope to retheme without forking the component:
-      :root { --tooltip-bg: #1e3a8a; --tooltip-fg: #fff; }
+  Override the chrome tokens by targeting .tooltip-wrap directly with
+  at least 2-class specificity. An ancestor :root or body rule only
+  inherits the variable, so the component's own declared default still
+  wins — see docs/THEMING.md for the full mechanism. Doubled-class
+  trick is the cheapest unconditional override:
+      body .tooltip-wrap.tooltip-wrap { --tooltip-bg: #1e3a8a; --tooltip-fg: #fff; }
 
   ACCESSIBILITY
   - Trigger gets aria-describedby pointing at the tooltip element
@@ -185,9 +189,11 @@
 <style>
 	.tooltip-wrap {
 		/*
-		 * Theming tokens — light defaults here, dark flip in the media block
-		 * at the bottom of this stylesheet. Override at :root or any ancestor
-		 * to retheme without forking the component.
+		 * Theming tokens — light defaults here, dark flip in the media
+		 * block at the bottom of this stylesheet. To retheme, target
+		 * .tooltip-wrap directly with ≥2-class specificity (an ancestor
+		 * :root rule only inherits, so this declared default would still
+		 * win). See docs/THEMING.md for override patterns.
 		 */
 		--tooltip-fg: #f9fafb;
 		--tooltip-bg: #111827;
@@ -307,9 +313,9 @@
 	/*
 	 * Dark mode — invert fg/bg so the tooltip stays high-contrast on dark
 	 * pages. Heavier shadow because dark surfaces swallow light shadows.
-	 * Consumers who set custom tokens at :root (or any closer ancestor)
-	 * win because their values cascade after the defaults — this block only
-	 * fires when no override is present.
+	 * Consumer overrides that target .tooltip-wrap with ≥2-class
+	 * specificity (e.g. body .tooltip-wrap.tooltip-wrap) still win in
+	 * dark mode — they cascade after this block. See docs/THEMING.md.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.tooltip-wrap {
