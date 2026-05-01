@@ -20,25 +20,35 @@
 	let currentPath = $derived($page.url.pathname);
 	const menuCategories = $derived(buildMenuCategories(currentPath));
 	const currentPageTitle = $derived(getCatalogPageTitle(currentPath));
+
+	// Sandbox routes (e.g. /navbar/sandbox) render their own navbar inside
+	// an iframe. Suppressing the global chrome here is the only way to
+	// escape the root layout — SvelteKit's `@` filename syntax only breaks
+	// out of group layouts, not the root.
+	const isSandbox = $derived(currentPath.endsWith('/sandbox'));
 </script>
 
-<div class="app">
-	<Navbar
-		{menuCategories}
-		{currentPageTitle}
-		{isAuthConfigured}
-		{authUser}
-		logoSrc="/tfe/tfe-logo-blue.svg"
-		logoAlt="TFE"
-		logoText="TFE / Templates"
-		githubUrl="https://github.com/Jktfe/tfeSvelteTemplates"
-	/>
+<div class="app" class:app--sandbox={isSandbox}>
+	{#if !isSandbox}
+		<Navbar
+			{menuCategories}
+			{currentPageTitle}
+			{isAuthConfigured}
+			{authUser}
+			logoSrc="/tfe/tfe-logo-blue.svg"
+			logoAlt="TFE"
+			logoText="TFE / Templates"
+			githubUrl="https://github.com/Jktfe/tfeSvelteTemplates"
+		/>
+	{/if}
 
 	<main class="main">
 		{@render children()}
 	</main>
 
-	<TfeFooter />
+	{#if !isSandbox}
+		<TfeFooter />
+	{/if}
 </div>
 
 <style>

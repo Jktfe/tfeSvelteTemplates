@@ -46,10 +46,26 @@
 	{#snippet demo()}
 		<div class="nav-demo">
 			<p class="nav-demo__lede">
-				The navbar at the top of every page <em>is</em> this component. Click the hamburger
-				(<span aria-hidden="true">☰</span>) in the top-left to see the categorised panel, the
-				expand/collapse animations, and active-page highlighting.
+				The Navbar is mounted in a sandboxed iframe below — a fully isolated mini-app with its own
+				categories, scroll context, and focus trap. Click the <kbd>☰</kbd>, expand a category,
+				then <kbd>Tab</kbd> through the panel. The real navbar at the top of the page also runs
+				this same component.
 			</p>
+
+			<div class="nav-demo__frame">
+				<div class="nav-demo__bar" aria-hidden="true">
+					<span class="nav-demo__dot nav-demo__dot--r"></span>
+					<span class="nav-demo__dot nav-demo__dot--y"></span>
+					<span class="nav-demo__dot nav-demo__dot--g"></span>
+					<span class="nav-demo__url"><code>/navbar/sandbox</code></span>
+				</div>
+				<iframe
+					class="nav-demo__iframe"
+					src="/navbar/sandbox"
+					title="Navbar interactive sandbox"
+					loading="lazy"
+				></iframe>
+			</div>
 
 			<div class="nav-demo__grid">
 				<div class="nav-demo__card">
@@ -62,8 +78,15 @@
 				<div class="nav-demo__card">
 					<h4>Auto-expand active</h4>
 					<p>
-						Whichever category contains the page you're on opens on mount, so the user lands with
+						Whichever category contains the active page opens on mount, so users land with
 						context already visible.
+					</p>
+				</div>
+				<div class="nav-demo__card">
+					<h4>Focus trap + scroll lock</h4>
+					<p>
+						While the panel is open, Tab cycles only within it and the iframe's body scroll is
+						locked. On close, focus restores to the hamburger trigger.
 					</p>
 				</div>
 				<div class="nav-demo__card">
@@ -174,9 +197,68 @@
 		color: var(--fg-2);
 		line-height: 1.6;
 	}
-	.nav-demo__lede em {
-		font-style: italic;
+	.nav-demo__lede kbd {
+		display: inline-block;
+		padding: 1px 5px;
+		font-family: var(--font-mono);
+		font-size: 0.85em;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-bottom-width: 2px;
+		border-radius: 4px;
 		color: var(--fg-1);
+	}
+
+	/* Sandboxed iframe — mocked-up "browser window" chrome wraps the
+	   real iframe so users read it as an isolated environment, not as
+	   part of this page. */
+	.nav-demo__frame {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		overflow: hidden;
+		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+	}
+	.nav-demo__bar {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		padding: 9px 14px;
+		background: var(--surface-2);
+		border-bottom: 1px solid var(--border);
+	}
+	.nav-demo__dot {
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		display: inline-block;
+	}
+	.nav-demo__dot--r {
+		background: #ff5f56;
+	}
+	.nav-demo__dot--y {
+		background: #ffbd2e;
+	}
+	.nav-demo__dot--g {
+		background: #27c93f;
+	}
+	.nav-demo__url {
+		margin-left: 12px;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		color: var(--fg-3);
+	}
+	.nav-demo__url code {
+		background: transparent;
+		font: inherit;
+		color: inherit;
+	}
+	.nav-demo__iframe {
+		display: block;
+		width: 100%;
+		height: 560px;
+		border: 0;
+		background: var(--bg);
 	}
 	.nav-demo__grid {
 		display: grid;
