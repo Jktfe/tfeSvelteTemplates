@@ -233,11 +233,17 @@
   Override the brand tokens by targeting .glitch directly with
   at least 2-class specificity — required to overcome the (0,2,0)
   specificity of the component's scoped internal styles. Svelte
-  appends a hash class to every selector, so an ancestor :root
-  or body rule only inherits the variable and lands at (0,1,0)
-  — the component's own declared default still wins. See
-  docs/THEMING.md for the full specificity arithmetic. Doubled-
-  class trick is the cheapest unconditional override:
+  appends a hash class to every selector, so the component's own
+  .glitch.svelte-HASH rule (specificity (0,2,0)) declares the
+  default directly on the element. An ancestor :root or body rule
+  sets a value that descendants would inherit, but that inherited
+  value is shadowed by the component's own declaration on the
+  same element — declared values always win over inherited values
+  on the element where they're declared, regardless of the
+  ancestor rule's specificity. To override, you must declare on
+  the same element with ≥(0,2,0) specificity. See docs/THEMING.md
+  for the full arithmetic. Doubled-class trick is the cheapest
+  unconditional override:
       body .glitch.glitch { --glitch-cyan: #fbbf24; --glitch-magenta: #ef4444; }
 
   USAGE
@@ -285,8 +291,11 @@
 		 * schemes (mirrors the RatingStars gold-star pattern).
 		 * To retheme, target .glitch with ≥2-class specificity —
 		 * required to overcome this rule's (0,2,0) scoped specificity.
-		 * An ancestor :root rule only inherits the token (lands at
-		 * (0,1,0)) and loses to this declared default. See
+		 * An ancestor :root or body rule sets a value that
+		 * descendants would inherit, but that inherited value is
+		 * shadowed by this component's own declaration on the
+		 * .glitch element — declared values always win over
+		 * inherited values on the same element. See
 		 * docs/THEMING.md for the full arithmetic.
 		 */
 		--glitch-cyan: #00f5ff;
