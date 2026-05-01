@@ -186,10 +186,83 @@
 </script>
 
 <!--
-	Decorative effect: the underlying text node is still in the DOM and read
-	normally by AT. Hover/focus handlers are no-ops outside the 'hover' trigger;
-	for the 'hover' trigger, focusin / focusout provide keyboard parity with
-	mouseenter / mouseleave so keyboard users can also activate the effect.
+  ============================================================
+  GlitchText — Chromatic-aberration text glitch primitive
+  ============================================================
+
+  WHAT IT DOES
+  Wraps text in a real DOM node plus two CSS pseudo-element
+  ghost layers that drift cyan and magenta either side of the
+  glyph centre. An occasional clip-path "tear" band slices a
+  horizontal strip and shoves it sideways. The combined effect
+  fakes the rapid RGB-channel separation you see on glitchy CRTs
+  or analogue tape damage. Asset-free — pure CSS pseudo-elements
+  + clip-path + a small rAF loop for the timing.
+
+  FEATURES
+  - Three intensity profiles (subtle / moderate / wild)
+  - Three triggers (auto on mount / hover with kbd parity / first viewport entry)
+  - Pseudo-random deterministic jitter at 60fps via rAF
+  - Honours prefers-reduced-motion (effect disabled, clones hidden)
+  - Cyan/magenta channels exposed as CSS tokens so consumers can
+    retint without forking the component
+
+  ACCESSIBILITY
+  - Underlying text node is unmodified; screen readers read it
+    as-is. Ghost layers are CSS pseudo-elements (invisible to AT);
+    the tear span is aria-hidden and pointer-events:none.
+  - Hover trigger pairs with focusin / focusout for keyboard
+    parity, so keyboard users can also activate the effect.
+  - Reduced-motion users see the static base text, no jitter.
+
+  DEPENDENCIES
+  Zero external dependencies. Pure CSS pseudo-elements and a
+  small rAF/timeout loop for the deterministic jitter.
+
+  THEMING
+  Two CSS custom properties on .glitch, brand defaults inline.
+  The chromatic-aberration hues are treated as brand colours
+  — they stay vivid on both light and dark schemes (mirrors the
+  RatingStars gold-star pattern: brand colour stays, chrome
+  flips). No prefers-color-scheme block is needed because nothing
+  in this component is chrome — the underlying text inherits
+  colour from the parent, so it already adapts to whichever
+  scheme the host page uses.
+  - --glitch-cyan      cyan ghost colour    (default #00f5ff)
+  - --glitch-magenta   magenta ghost colour (default #ff00c8)
+  Override the brand tokens by targeting .glitch directly with
+  at least 2-class specificity — required to overcome the (0,2,0)
+  specificity of the component's scoped internal styles. Svelte
+  appends a hash class to every selector, so the component's own
+  .glitch.svelte-HASH rule (specificity (0,2,0)) declares the
+  default directly on the element. An ancestor :root or body rule
+  sets a value that descendants would inherit, but that inherited
+  value is shadowed by the component's own declaration on the
+  same element — declared values always win over inherited values
+  on the element where they're declared, regardless of the
+  ancestor rule's specificity. To override, you must declare on
+  the same element with ≥(0,2,0) specificity. See docs/THEMING.md
+  for the full arithmetic. Doubled-class trick is the cheapest
+  unconditional override:
+      body .glitch.glitch { --glitch-cyan: #fbbf24; --glitch-magenta: #ef4444; }
+
+  USAGE
+  Plain text:
+      <GlitchText text="ERROR" />
+
+  Wild on hover (keyboard accessible):
+      <GlitchText text="GLITCH" intensity="wild" trigger="hover" />
+
+  Trigger when scrolled into view:
+      <GlitchText text="HEADLINE" trigger="viewport" />
+
+  PROPS
+  | Prop      | Type                              | Default    | Description |
+  |-----------|-----------------------------------|------------|-------------|
+  | text      | string                            | required   | Text content (read by AT) |
+  | intensity | 'subtle' \| 'moderate' \| 'wild'  | 'moderate' | Effect amplitude |
+  | trigger   | 'auto' \| 'hover' \| 'viewport'   | 'auto'     | When to start the effect |
+  ============================================================
 -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
@@ -212,6 +285,22 @@
 
 <style>
 	.glitch {
+		/*
+		 * Theming tokens — chromatic-aberration hues. These are
+		 * brand colours and stay vivid on both light and dark
+		 * schemes (mirrors the RatingStars gold-star pattern).
+		 * To retheme, target .glitch with ≥2-class specificity —
+		 * required to overcome this rule's (0,2,0) scoped specificity.
+		 * An ancestor :root or body rule sets a value that
+		 * descendants would inherit, but that inherited value is
+		 * shadowed by this component's own declaration on the
+		 * .glitch element — declared values always win over
+		 * inherited values on the same element. See
+		 * docs/THEMING.md for the full arithmetic.
+		 */
+		--glitch-cyan: #00f5ff;
+		--glitch-magenta: #ff00c8;
+
 		position: relative;
 		display: inline-block;
 		font-family: inherit;
@@ -239,12 +328,12 @@
 	}
 
 	.glitch.active .glitch-base::before {
-		color: #00f5ff;
+		color: var(--glitch-cyan);
 		transform: translate(var(--cyan-dx, 0), var(--cyan-dy, 0));
 	}
 
 	.glitch.active .glitch-base::after {
-		color: #ff00c8;
+		color: var(--glitch-magenta);
 		transform: translate(var(--magenta-dx, 0), var(--magenta-dy, 0));
 	}
 

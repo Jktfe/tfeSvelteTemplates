@@ -94,8 +94,29 @@ In all cases, `stop()` runs on component destroy to cancel rAF + clear timers + 
 - `viewport` trigger disconnects its `IntersectionObserver` on first intersection; `hover` and `auto` triggers don't allocate one at all.
 - All timers / rAF / observers are torn down in `onDestroy`.
 
+## Theming
+
+The chromatic-aberration channels are exposed as two CSS custom properties on `.glitch`. Defaults are declared inline in the component's scoped styles:
+
+| Token              | Default     | Role                                |
+| ------------------ | ----------- | ----------------------------------- |
+| `--glitch-cyan`    | `#00f5ff`   | cyan ghost-clone colour (`::before`) |
+| `--glitch-magenta` | `#ff00c8`   | magenta ghost-clone colour (`::after`) |
+
+Both tokens are treated as **brand colours** and stay vivid on light AND dark schemes — they're the signature of the chromatic-aberration effect, so flipping them per scheme would break the visual identity (mirrors the gold-star pattern in `RatingStars`). The base text uses `color: inherit`, so the underlying glyph already adapts to whatever colour the host context uses.
+
+Override the tokens by targeting `.glitch` directly with **at least 2-class specificity** — required to overcome the `(0,2,0)` specificity of the component's scoped internal styles. Svelte appends a hash class to every selector, so the component's own `.glitch.svelte-HASH` rule declares the default directly on the element. An ancestor `:root` or `body` rule sets a value that descendants would inherit, but that inherited value is **shadowed by the component's own declaration on the same element** — declared values always win over inherited values on the element where they're declared, regardless of the ancestor rule's specificity. The override therefore needs to declare on the same element with `≥(0,2,0)` specificity. See `docs/THEMING.md` for the full arithmetic. The doubled-class trick is the cheapest unconditional override:
+
+```css
+body .glitch.glitch {
+	--glitch-cyan: #fbbf24;
+	--glitch-magenta: #ef4444;
+}
+```
+
 ## Recipes
 
 - **Cyberpunk hero**: `<CRTScreen profile="amber"><GlitchText text="SYSTEM ONLINE" intensity="wild" /></CRTScreen>`
 - **Tasteful brand glitch**: large display type, `intensity="subtle"`, `trigger="viewport"`. Glitches once on scroll-in, settles to clean.
 - **Hover-only headline**: nav link or button label with `trigger="hover"`. Rests clean, glitches on focus/hover for keyboard + mouse parity.
+- **Brand-tinted glitch**: override `--glitch-cyan` / `--glitch-magenta` to your brand palette for a glitch effect that still reads as on-brand.
