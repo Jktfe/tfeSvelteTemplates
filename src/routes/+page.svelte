@@ -24,6 +24,9 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { componentCategories, componentCount } from '$lib/componentCatalog';
+	import FilterChips from '$lib/components/FilterChips.svelte';
+	import InfiniteCardSlider, { type SliderItem } from '$lib/components/InfiniteCardSlider.svelte';
+	import LiquidTabBar from '$lib/components/LiquidTabBar.svelte';
 
 	const categories = componentCategories;
 	const total = componentCount;
@@ -37,31 +40,40 @@
 		return acc;
 	}, []);
 
-	let activeId = $state<string>('all');
+	// Filter state: when empty, show every shelf; when populated, show
+	// only the matching ones. Driven by FilterChips (multi-select, removable).
+	let selectedCategories = $state<string[]>([]);
 
-	// Scroll-spy: highlight the chip whose section is most visible.
+	const filterOptions = categories.map((cat, i) => ({
+		value: categorySlugs[i],
+		label: cat.name,
+		count: cat.components.length
+	}));
+
+	const visibleCategoryIndices = $derived(
+		selectedCategories.length === 0
+			? categories.map((_, i) => i)
+			: categories
+					.map((_, i) => i)
+					.filter((i) => selectedCategories.includes(categorySlugs[i]))
+	);
+
+	// Collapse state — each shelf gets its own LiquidTabBar tab id ('open' or
+	// 'hidden'). Default 'open' so the dogfood landing shows everything; the
+	// record is reactive ($state on a plain object), so binding LiquidTabBar's
+	// activeTab to shelfTabs[slug] flips collapse on tab change.
+	const shelfTabs = $state<Record<string, 'open' | 'hidden'>>(
+		Object.fromEntries(categorySlugs.map((slug) => [slug, 'open']))
+	);
+
+	const shelfToggleTabs = [
+		{ id: 'open', label: 'Open' },
+		{ id: 'hidden', label: 'Hide' }
+	];
+
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
 
 	onMount(() => {
-		const ids = categorySlugs.map((s) => `cat-${s}`);
-		const sections = ids
-			.map((id) => document.getElementById(id))
-			.filter((el): el is HTMLElement => Boolean(el));
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				const visible = entries
-					.filter((e) => e.isIntersecting)
-					.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-				if (visible[0]) {
-					activeId = visible[0].target.id.replace('cat-', '');
-				}
-			},
-			{ rootMargin: '-30% 0px -55% 0px', threshold: [0, 0.2, 0.5, 1] }
-		);
-
-		sections.forEach((s) => observer.observe(s));
-
 		// Animated dot field for the GSAP feature visual.
 		let raf = 0;
 		let t = 0;
@@ -113,7 +125,6 @@
 		}
 
 		return () => {
-			observer.disconnect();
 			cancelAnimationFrame(raf);
 			window.removeEventListener('resize', resize);
 		};
@@ -223,68 +234,114 @@
 					components on file
 				</div>
 			</div>
-			<div class="t-filters" role="tablist" aria-label="Filter component categories">
-				<a
-					class="t-filters__chip"
-					href="#components"
-					data-active={activeId === 'all'}
-					onclick={() => (activeId = 'all')}
-				>
-					All <b>{total}</b>
-				</a>
-				{#each categories as cat, i (cat.name)}
-					<a
-						class="t-filters__chip"
-						href={`#cat-${categorySlugs[i]}`}
-						data-active={activeId === categorySlugs[i]}
-						onclick={() => (activeId = categorySlugs[i])}
-					>
-						{cat.name} <b>{cat.components.length}</b>
-					</a>
-				{/each}
+			<div class="t-filters">
+				<FilterChips
+					options={filterOptions}
+					bind:selected={selectedCategories}
+					removable
+					showAll
+					allLabel={`All · ${total}`}
+					ariaLabel="Filter component shelves"
+					size="md"
+					activeBg="var(--fg-1)"
+					activeText="var(--bg)"
+				/>
+				{#if selectedCategories.length > 0}
+					<p class="t-filters__hint" aria-live="polite">
+						Showing {selectedCategories.length}
+						of {categories.length} shelves —
+						<button type="button" class="t-filters__reset" onclick={() => (selectedCategories = [])}>
+							show all
+						</button>
+					</p>
+				{/if}
 			</div>
 		</div>
 	</section>
 
 	<!-- ===== Category shelves ===== -->
-	{#each categories as cat, i (cat.name)}
+	{#each visibleCategoryIndices as i (categories[i].name)}
+		{@const cat = categories[i]}
 		{@const offset = offsets[i]}
-		<section id={`cat-${categorySlugs[i]}`} class="t-cat">
+		{@const slug = categorySlugs[i]}
+		{@const collapsed = shelfTabs[slug] === 'hidden'}
+		{@const sliderItems = cat.components.map((item, j) => ({
+			id: item.href,
+			href: item.href,
+			name: item.name,
+			description: item.description,
+			screenshot: item.screenshot,
+			number: String(offset + j + 1).padStart(3, '0')
+		}))}
+		<section id={`cat-${slug}`} class="t-cat" class:t-cat--collapsed={collapsed}>
 			<div class="t-wrap">
 				<div class="t-cat__head">
 					<div class="t-cat__num">{categoryNums[i]}</div>
-					<div>
+					<div class="t-cat__title-block">
 						<h3 class="t-cat__title">{cat.name}</h3>
 						<p class="t-cat__blurb">{cat.summary}</p>
 					</div>
-					<div class="t-cat__count">
-						<b>{String(cat.components.length).padStart(2, '0')}</b>
-						in this shelf
+					<div class="t-cat__meta">
+						<div class="t-cat__count">
+							<b>{String(cat.components.length).padStart(2, '0')}</b>
+							in this shelf
+						</div>
+						<div class="t-cat__toggle" aria-controls={`cat-body-${slug}`}>
+							<LiquidTabBar tabs={shelfToggleTabs} bind:activeTab={shelfTabs[slug]} />
+						</div>
 					</div>
 				</div>
-				<div class="t-grid">
-					{#each cat.components as item, j (item.href)}
-						<a class="t-card" href={item.href} data-sveltekit-preload-data="hover">
-							<div class="t-card__shot">
-								<span class="t-card__num">{String(offset + j + 1).padStart(3, '0')}</span>
-								<img src={item.screenshot} alt="" loading="lazy" decoding="async" />
-							</div>
-							<div class="t-card__body">
-								<h4 class="t-card__name">{item.name}</h4>
-								<p class="t-card__blurb">{item.description}</p>
-								<div class="t-card__foot">
-									<span>{item.href}</span>
-									<span class="t-card__view"
-										>View <span class="arrow" aria-hidden="true">→</span></span
-									>
-								</div>
-							</div>
-						</a>
-					{/each}
-				</div>
+				{#if !collapsed}
+					<div class="t-cat__body" id={`cat-body-${slug}`}>
+						<InfiniteCardSlider
+							items={sliderItems as SliderItem[]}
+							ariaLabel={`${cat.name} shelf`}
+							cardWidth={300}
+							gap={24}
+						>
+							{#snippet children(item: SliderItem & { number?: string })}
+								<a
+									class="t-card t-card--slide"
+									href={item.href}
+									data-sveltekit-preload-data="hover"
+								>
+									<div class="t-card__shot">
+										<span class="t-card__num">{item.number ?? ''}</span>
+										{#if item.screenshot}
+											<img src={item.screenshot} alt="" loading="lazy" decoding="async" />
+										{/if}
+									</div>
+									<div class="t-card__body">
+										<h4 class="t-card__name">{item.name ?? ''}</h4>
+										<p class="t-card__blurb">{item.description ?? ''}</p>
+										<div class="t-card__foot">
+											<span>{item.href ?? ''}</span>
+											<span class="t-card__view">
+												View <span class="arrow" aria-hidden="true">→</span>
+											</span>
+										</div>
+									</div>
+								</a>
+							{/snippet}
+						</InfiniteCardSlider>
+					</div>
+				{/if}
 			</div>
 		</section>
 	{/each}
+
+	{#if visibleCategoryIndices.length === 0}
+		<section class="t-empty">
+			<div class="t-wrap">
+				<p>
+					No shelves match the active filter.
+					<button type="button" class="t-filters__reset" onclick={() => (selectedCategories = [])}>
+						Clear filter
+					</button>
+				</p>
+			</div>
+		</section>
+	{/if}
 
 	<!-- ===== How-to ===== -->
 	<section id="how" class="t-howto">
@@ -711,43 +768,31 @@
 	}
 	.t-filters {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
+		flex-direction: column;
+		gap: 12px;
 		padding: 24px 0 0;
 	}
-	.t-filters__chip {
-		display: inline-flex;
-		align-items: center;
-		gap: 8px;
-		padding: 8px 14px;
-		border: 1px solid var(--border-strong);
-		background: transparent;
-		color: var(--fg-2);
-		font-family: var(--font-sans);
-		font-size: 12px;
-		letter-spacing: 0.02em;
-		border-radius: var(--r-pill);
-		text-decoration: none;
-		cursor: pointer;
-		transition: all var(--dur-fast) var(--ease-std);
-	}
-	.t-filters__chip b {
+	.t-filters__hint {
 		font-family: var(--font-mono);
-		font-size: 10px;
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
 		color: var(--fg-3);
-		font-weight: 500;
+		margin: 0;
 	}
-	.t-filters__chip:hover {
-		border-color: var(--fg-1);
-		color: var(--fg-1);
+	.t-filters__reset {
+		background: none;
+		border: 0;
+		padding: 0;
+		color: var(--accent);
+		font: inherit;
+		text-transform: inherit;
+		letter-spacing: inherit;
+		cursor: pointer;
+		text-decoration: underline;
 	}
-	.t-filters__chip[data-active='true'] {
-		background: var(--fg-1);
-		border-color: var(--fg-1);
-		color: var(--bg);
-	}
-	.t-filters__chip[data-active='true'] b {
-		color: var(--fg-3);
+	.t-filters__reset:hover {
+		color: var(--accent-strong);
 	}
 
 	/* ============ Categories ============ */
@@ -756,12 +801,21 @@
 		padding: 64px 0 80px;
 		scroll-margin-top: 96px;
 	}
+	.t-cat--collapsed {
+		padding: 40px 0;
+	}
 	.t-cat__head {
 		display: grid;
 		grid-template-columns: 80px 1fr auto;
 		gap: 32px;
 		align-items: baseline;
 		margin-bottom: 40px;
+	}
+	.t-cat--collapsed .t-cat__head {
+		margin-bottom: 0;
+	}
+	.t-cat__title-block {
+		min-width: 0;
 	}
 	.t-cat__num {
 		font-family: var(--font-display);
@@ -786,6 +840,14 @@
 		margin: 0;
 		max-width: 56ch;
 	}
+	.t-cat__meta {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 12px;
+		align-self: center;
+		white-space: nowrap;
+	}
 	.t-cat__count {
 		font-family: var(--font-mono);
 		font-size: 11px;
@@ -793,8 +855,6 @@
 		text-transform: uppercase;
 		color: var(--fg-3);
 		text-align: right;
-		white-space: nowrap;
-		align-self: center;
 	}
 	.t-cat__count b {
 		display: block;
@@ -802,12 +862,38 @@
 		font-size: 32px;
 		color: var(--fg-1);
 	}
+	.t-cat__toggle {
+		display: inline-flex;
+		align-items: center;
+	}
+	.t-cat__body {
+		animation: t-cat-reveal var(--dur-base, 0.3s) var(--ease-std, ease-out);
+	}
+	@keyframes t-cat-reveal {
+		from {
+			opacity: 0;
+			transform: translateY(-4px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.t-cat__body {
+			animation: none;
+		}
+	}
 
-	/* ============ Card grid — dense default ============ */
-	.t-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-		gap: 16px;
+	/* ============ Empty filter state ============ */
+	.t-empty {
+		padding: 80px 0;
+		text-align: center;
+		color: var(--fg-2);
+		border-bottom: 1px solid var(--border);
+	}
+	.t-empty p {
+		margin: 0;
 	}
 	.t-card {
 		display: flex;
@@ -916,6 +1002,15 @@
 	}
 	.t-card:hover .t-card__view .arrow {
 		transform: translateX(3px);
+	}
+	/* Slide variant: fills the slider's slide container instead of a grid cell.
+	   Hover translate is suppressed so the GSAP transforms own translate. */
+	.t-card--slide {
+		width: 100%;
+		height: 100%;
+	}
+	.t-card--slide:hover {
+		transform: none;
 	}
 
 	/* ============ How-to ============ */
@@ -1054,8 +1149,14 @@
 		.t-cat__num {
 			font-size: 40px;
 		}
-		.t-cat__count {
+		.t-cat__meta {
 			grid-column: 1 / -1;
+			flex-direction: row;
+			align-items: center;
+			justify-content: space-between;
+			gap: 16px;
+		}
+		.t-cat__count {
 			text-align: left;
 		}
 	}
