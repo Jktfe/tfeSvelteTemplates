@@ -20,19 +20,24 @@ vi.mock('$lib/gsap/context', () => ({
 }));
 
 import ComponentDirectory, {
-	type DirectoryComponentInfo,
 	selectFeaturedComponents,
 	shouldUseComponentDirectory
 } from './ComponentDirectory.svelte';
+import type { ComponentCatalogItem } from '$lib/componentCatalog';
 
-const components: DirectoryComponentInfo[] = Array.from({ length: 12 }, (_, index) => ({
+const components: ComponentCatalogItem[] = Array.from({ length: 12 }, (_, index) => ({
 	name: `Component ${index + 1}`,
 	href: `/component-${index + 1}`,
 	icon: index % 2 === 0 ? '🎬' : '📊',
 	description: `Component ${index + 1} description`,
 	screenshot: `/ComponentScreenshots/Component${index + 1}Shot.png`,
 	themeSupport: index % 2 === 0 ? 'dual' : 'light',
-	source: `src/lib/components/Component${index + 1}.svelte`
+	source: `src/lib/components/Component${index + 1}.svelte`,
+	docs: `src/lib/components/Component${index + 1}.md`,
+	demo: `src/routes/component-${index + 1}/+page.svelte`,
+	dependencies: [],
+	relatedFiles: [],
+	usage: `<Component${index + 1} />`
 }));
 
 describe('ComponentDirectory', () => {

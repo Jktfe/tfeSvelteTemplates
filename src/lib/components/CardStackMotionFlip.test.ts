@@ -21,7 +21,7 @@
  * ============================================================
  */
 
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 import CardStackMotionFlip from './CardStackMotionFlip.svelte';
 
@@ -193,5 +193,48 @@ describe('CardStackMotionFlip', () => {
 		// Should have no images
 		const images = container.querySelectorAll('.card-image');
 		expect(images).toHaveLength(0);
+	});
+
+	it('does not hijack page-level arrow keys', () => {
+		const { container } = render(CardStackMotionFlip, { props: { cards: testCards } });
+		const firstCard = container.querySelector('.card-wrapper') as HTMLElement;
+		const initialStyle = firstCard.getAttribute('style');
+		const event = new KeyboardEvent('keydown', {
+			key: 'ArrowRight',
+			bubbles: true,
+			cancelable: true
+		});
+
+		window.dispatchEvent(event);
+
+		expect(event.defaultPrevented).toBe(false);
+		expect(firstCard.getAttribute('style')).toBe(initialStyle);
+	});
+
+	it('ignores deck arrow keys when focus is outside the deck', async () => {
+		const { container } = render(CardStackMotionFlip, { props: { cards: testCards } });
+		const deck = container.querySelector('.card-deck') as HTMLElement;
+		const firstCard = container.querySelector('.card-wrapper') as HTMLElement;
+		const initialStyle = firstCard.getAttribute('style');
+		const outsideButton = document.createElement('button');
+		document.body.appendChild(outsideButton);
+
+		outsideButton.focus();
+		await fireEvent.keyDown(deck, { key: 'ArrowRight' });
+
+		expect(firstCard.getAttribute('style')).toBe(initialStyle);
+		outsideButton.remove();
+	});
+
+	it('rolls the focused deck card with arrow keys', async () => {
+		const { container } = render(CardStackMotionFlip, { props: { cards: testCards } });
+		const firstCard = screen.getByLabelText(/Card 1 of 3/) as HTMLElement;
+
+		firstCard.focus();
+		await fireEvent.keyDown(firstCard, { key: 'ArrowRight' });
+
+		expect(container.querySelector('.card-wrapper')?.getAttribute('style')).toContain(
+			'translateX(500px)'
+		);
 	});
 });

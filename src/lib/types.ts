@@ -2528,6 +2528,51 @@ export interface TimelineProps {
 	onEventClick?: (event: TimelineEvent) => void;
 }
 
+/**
+ * InteractiveCards - Scroll-driven paintings portfolio project
+ *
+ * Each project represents a single painting/product with ecommerce metadata.
+ */
+export interface InteractiveCardsProject {
+	id: number;
+	title: string;
+	artist: string;
+	medium: string;
+	description: string;
+	image: string;
+	accent: string;
+	badgeLabel: string;
+	badgeColor: string;
+	price: string;
+	sizes: string[];
+	materials: string[];
+	edition: string;
+	testimonial: string;
+	testimonialAuthor: string;
+}
+
+export interface InteractiveCardsTestimonial {
+	author: string;
+	title: string;
+	photo: string;
+	quote: string;
+}
+
+/**
+ * Props for the InteractiveCards component.
+ */
+export interface InteractiveCardsProps {
+	projects?: InteractiveCardsProject[];
+	testimonials?: InteractiveCardsTestimonial[];
+	headline?: [string, string];
+	subheading?: string;
+	wallImageLight?: string;
+	wallImageDark?: string;
+	frameImage?: string;
+	roomImage?: string;
+	scrollHeight?: string;
+}
+
 // =============================================================================
 // BENTO GRID COMPONENT TYPES
 // =============================================================================

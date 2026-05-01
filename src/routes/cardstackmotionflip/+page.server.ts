@@ -1,16 +1,3 @@
-/**
- * Server Load Function for CardStack Page
- *
- * Fetches card data from the database on the server side
- * This runs before the page loads, providing data for SSR
- *
- * BENEFITS OF SERVER-SIDE LOADING:
- * - SEO friendly (cards rendered in HTML)
- * - Faster initial page load
- * - No loading spinner needed
- * - Database credentials stay secure on server
- */
-
 import type { PageServerLoad } from './$types';
 import type { Card } from '$lib/types';
 import { loadCardsWithSource } from '$lib/server/cards';

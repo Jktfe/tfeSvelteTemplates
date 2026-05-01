@@ -46,17 +46,9 @@
 -->
 
 <script lang="ts" module>
-	export const COMPONENT_DIRECTORY_THRESHOLD = 9;
+	import type { ComponentCatalogItem } from '$lib/componentCatalog';
 
-	export interface DirectoryComponentInfo {
-		name: string;
-		href: string;
-		icon: string;
-		description: string;
-		screenshot: string;
-		themeSupport?: 'light' | 'dual';
-		source?: string;
-	}
+	export const COMPONENT_DIRECTORY_THRESHOLD = 9;
 
 	export function shouldUseComponentDirectory(
 		componentCount: number,
@@ -66,9 +58,9 @@
 	}
 
 	export function selectFeaturedComponents(
-		components: DirectoryComponentInfo[],
+		components: ComponentCatalogItem[],
 		count = 3
-	): DirectoryComponentInfo[] {
+	): ComponentCatalogItem[] {
 		return components.slice(0, Math.max(0, count));
 	}
 </script>
@@ -78,30 +70,10 @@
 		type GsapFlipGridFilter,
 		type GsapFlipGridItem
 	} from '$lib/components/GsapFlipGrid.svelte';
-
-	const ICON_COLORS: Record<string, { bg: string; text: string }> = {
-		'🎞️': { bg: '#fff1eb', text: '#ff6a3d' },
-		'🎬': { bg: '#e0f2fe', text: '#0369a1' },
-		'📊': { bg: '#dcfce7', text: '#166534' },
-		'💻': { bg: '#0d1117', text: '#79c0ff' },
-		'🃏': { bg: '#f3e8ff', text: '#7e22ce' },
-		'✨': { bg: '#fef3c7', text: '#b45309' },
-		'🧲': { bg: '#fce7f3', text: '#be185d' },
-		'🌌': { bg: '#1e1b4b', text: '#a5b4fc' },
-		'📝': { bg: '#dbeafe', text: '#1d4ed8' },
-		'🌍': { bg: '#dcfce7', text: '#15803d' }
-	};
-
-	function getIconColors(icon: string): { bg: string; text: string } {
-		return ICON_COLORS[icon] ?? { bg: '#eef2ff', text: '#4f46e5' };
-	}
-
-	function themeSupportLabel(themeSupport: DirectoryComponentInfo['themeSupport']): string {
-		return themeSupport === 'dual' ? 'Light and dark mode' : 'Light mode';
-	}
+	import { getIconColors, themeSupportLabel } from '$lib/componentCatalog';
 
 	interface Props {
-		components?: DirectoryComponentInfo[];
+		components?: ComponentCatalogItem[];
 		categoryName?: string;
 		featuredCount?: number;
 		class?: string;
@@ -121,9 +93,8 @@
 	];
 	const flipGridItems = $derived(components.map(toFlipGridItem));
 
-	function toFlipGridItem(component: DirectoryComponentInfo): GsapFlipGridItem {
+	function toFlipGridItem(component: ComponentCatalogItem): GsapFlipGridItem {
 		const colors = getIconColors(component.icon);
-		const themeSupport = component.themeSupport ?? 'light';
 		return {
 			id: component.href,
 			title: component.name,
@@ -131,9 +102,9 @@
 			href: component.href,
 			icon: component.icon,
 			image: component.screenshot,
-			meta: component.source?.replace('src/lib/components/', '') ?? component.href.replace('/', ''),
-			category: themeSupportLabel(themeSupport),
-			filter: themeSupport,
+			meta: component.source.replace('src/lib/components/', ''),
+			category: themeSupportLabel(component.themeSupport),
+			filter: component.themeSupport,
 			accent: colors.text
 		};
 	}

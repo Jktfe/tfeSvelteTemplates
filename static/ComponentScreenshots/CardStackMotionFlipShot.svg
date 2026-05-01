@@ -1,0 +1,32 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="800" fill="#F8FAFC"/>
+  <rect x="96" y="96" width="1008" height="608" rx="28" fill="#E0F2FE"/>
+  <circle cx="325" cy="206" r="190" fill="#14B8A6" fill-opacity="0.22"/>
+  <circle cx="860" cy="584" r="230" fill="#2563EB" fill-opacity="0.12"/>
+  <g filter="url(#shadow)">
+    <rect x="622" y="208" width="252" height="352" rx="22" fill="#CBD5E1"/>
+    <rect x="558" y="208" width="252" height="352" rx="22" fill="#E2E8F0"/>
+    <rect x="494" y="208" width="252" height="352" rx="22" fill="#F8FAFC"/>
+    <rect x="430" y="208" width="252" height="352" rx="22" fill="#0F172A"/>
+    <rect x="430" y="208" width="252" height="214" rx="22" fill="#38BDF8"/>
+    <rect x="430" y="354" width="252" height="206" rx="22" fill="url(#fade)"/>
+    <rect x="462" y="456" width="132" height="16" rx="8" fill="#FFFFFF"/>
+    <rect x="462" y="488" width="174" height="10" rx="5" fill="#BAE6FD"/>
+    <rect x="462" y="510" width="118" height="10" rx="5" fill="#BAE6FD"/>
+  </g>
+  <path d="M345 382 C267 348 238 285 268 224" stroke="#2563EB" stroke-width="14" stroke-linecap="round"/>
+  <path d="M260 226 L310 234 L282 275" stroke="#2563EB" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M914 382 C992 348 1021 285 991 224" stroke="#0F766E" stroke-width="14" stroke-linecap="round"/>
+  <path d="M999 226 L949 234 L977 275" stroke="#0F766E" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="96" y="62" fill="#0F172A" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="800">CardStackMotionFlip</text>
+  <text x="96" y="744" fill="#475569" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="600">Scoped keyboard deck with four-direction rolling motion</text>
+  <defs>
+    <filter id="shadow" x="390" y="178" width="524" height="432" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#0F172A" flood-opacity="0.24"/>
+    </filter>
+    <linearGradient id="fade" x1="556" y1="354" x2="556" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0F172A" stop-opacity="0"/>
+      <stop offset="1" stop-color="#0F172A" stop-opacity="0.92"/>
+    </linearGradient>
+  </defs>
+</svg>

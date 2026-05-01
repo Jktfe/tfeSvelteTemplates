@@ -32,7 +32,12 @@
         Interactive horizontal card displays with hover and swipe interactions
         for Svelte 5
       </p>
-      <DatabaseStatus usingDatabase={data.usingDatabase} class="status-badge" />
+      <DatabaseStatus
+        usingDatabase={data.usingDatabase}
+        source={data.dataSource}
+        message={data.dataSourceMessage}
+        class="status-badge"
+      />
     </header>
 
     <!-- CardStack Example -->

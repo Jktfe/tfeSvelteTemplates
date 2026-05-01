@@ -3,9 +3,9 @@
  * DatabaseStatus - Visual indicator for database connection state
  *
  * Features:
- * - Clear visual distinction between connected and fallback states
- * - Emoji icons for quick recognition (🟢 connected, 🟡 fallback)
- * - Semantic colour coding (green for connected, yellow for fallback)
+ * - Clear visual distinction between database, fixture, static, and error states
+ * - Emoji icons for quick recognition
+ * - Semantic colour coding (green for connected, yellow for fixtures, red for errors)
  * - Accessible with ARIA live region for status updates
  * - Responsive sizing for mobile and desktop
  * - Pill-shaped badge design
@@ -15,7 +15,7 @@
  * - Demo applications showing graceful degradation
  * - Development environments with optional database
  * - Showing users which data source is active
- * - Template projects with fallback patterns
+ * - Template projects with optional database-backed demos
  * - Educational examples of resilient architecture
  *
  * Technical Implementation:
@@ -26,8 +26,10 @@
  * - Scoped CSS with no external dependencies
  *
  * States:
- * - Connected: Green badge with 🟢 icon - Database is active
- * - Fallback: Yellow badge with 🟡 icon - Using constants from code
+ * - Database: Green badge with 🟢 icon - Database is active
+ * - Fixture: Yellow badge with 🟡 icon - Using demo constants from code
+ * - Error: Red badge with 🔴 icon - DB was configured but query failed
+ * - Static: Grey badge with ⚪ icon - Route intentionally uses static demo data
  *
  * @component
  * @example
@@ -49,19 +51,34 @@
  */
 -->
 <script lang="ts">
+	type DataSourceStatus = 'database' | 'fallback' | 'error' | 'static';
+
 	interface Props {
 		usingDatabase: boolean;
+		source?: DataSourceStatus;
+		message?: string;
 		class?: string;
 	}
 
-	let { usingDatabase, class: className = '' }: Props = $props();
+	let { usingDatabase, source, message = '', class: className = '' }: Props = $props();
 
-	const status = $derived(usingDatabase ? 'connected' : 'fallback');
-	const icon = $derived(usingDatabase ? '🟢' : '🟡');
-	const label = $derived(usingDatabase ? 'Database Connected' : 'Using Fallback Data');
+	const status = $derived(source ?? (usingDatabase ? 'database' : 'fallback'));
+	const statusClass = $derived(status === 'database' ? 'connected' : status);
+	const icon = $derived(
+		status === 'database' ? '🟢' : status === 'error' ? '🔴' : status === 'static' ? '⚪' : '🟡'
+	);
+	const label = $derived(
+		status === 'database'
+			? 'Database Connected'
+			: status === 'error'
+				? 'Database Error - Demo Fixtures'
+				: status === 'static'
+					? 'Static Demo Data'
+					: 'Demo Fixture Data'
+	);
 </script>
 
-<div class="database-status {status} {className}" role="status" aria-live="polite">
+<div class="database-status {statusClass} {className}" role="status" aria-live="polite" title={message}>
 	<span class="status-icon" aria-hidden="true">{icon}</span>
 	<span class="status-label">{label}</span>
 </div>
@@ -91,6 +108,18 @@
 		color: #854d0e;
 	}
 
+	.database-status.error {
+		background: #fef2f2;
+		border-color: #fca5a5;
+		color: #991b1b;
+	}
+
+	.database-status.static {
+		background: #f8fafc;
+		border-color: #cbd5e1;
+		color: #475569;
+	}
+
 	.status-icon {
 		font-size: 1rem;
 		line-height: 1;
@@ -112,7 +141,3 @@
 		}
 	}
 </style>
-
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
