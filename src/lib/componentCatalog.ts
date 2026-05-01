@@ -568,39 +568,44 @@ export const componentCategories: ComponentCatalogCategory[] = [
 	{
 		name: 'Auth & OSS Demo',
 		icon: '🔐',
-		summary: 'Authentication flows and protected-route examples for public demos.',
+		summary: 'Better Auth flows and protected-route examples for public demos.',
 		components: [
-			component('Auth Demo', '/auth', '🔐', 'Authentication sign-in, sign-up, and demo-account entry.', {
+			component('Auth Demo', '/auth', '🔐', 'Better Auth sign-in, sign-up, and demo-account entry.', {
 				screenshotFile: 'AuthShot.png',
 				source: 'src/routes/auth/+page.svelte',
 				docs: 'src/lib/components/AuthStatus.md',
-				dependencies: ['svelte-clerk'],
+				dependencies: ['better-auth'],
 				relatedFiles: [
 					'src/hooks.server.ts',
 					'src/lib/server/auth.ts',
+					'src/lib/server/betterAuth.ts',
+					'src/lib/auth-client.ts',
 					'src/lib/components/AuthStatus.svelte',
 					'src/routes/auth/sign-in/[...rest]/+page.svelte',
-					'src/routes/auth/sign-up/[...rest]/+page.svelte'
+					'src/routes/auth/sign-up/[...rest]/+page.svelte',
+					'database/schema_better_auth.sql'
 				],
 				usage: '<AuthStatus isConfigured={isConfigured} />',
 				agentHint:
-					'Copy auth server/client wiring together; do not copy only the visual auth page.'
+					'Copy the Better Auth server/client wiring together; do not copy only the visual auth page.'
 			}),
 			component('Dashboard', '/dashboard', '📊', 'Protected route example with session data.', {
 				source: 'src/routes/(protected)/dashboard/+page.svelte',
 				docs: 'src/lib/components/AuthStatus.md',
 				demo: 'src/routes/(protected)/dashboard/+page.svelte',
-				dependencies: ['svelte-clerk'],
+				dependencies: ['better-auth'],
 				usage: '<AuthStatus isConfigured={isConfigured} />',
-				agentHint: 'This is a protected route example; pair it with hooks.server.ts and auth setup.'
+				agentHint:
+					'This is a protected route example; pair it with hooks.server.ts and the Better Auth setup.'
 			}),
 			component('Profile', '/profile', '👤', 'Protected user profile view.', {
 				source: 'src/routes/(protected)/profile/+page.svelte',
 				docs: 'src/lib/components/AuthStatus.md',
 				demo: 'src/routes/(protected)/profile/+page.svelte',
-				dependencies: ['svelte-clerk'],
+				dependencies: ['better-auth'],
 				usage: '<AuthStatus isConfigured={isConfigured} />',
-				agentHint: 'This is a protected route example; pair it with hooks.server.ts and auth setup.'
+				agentHint:
+					'This is a protected route example; pair it with hooks.server.ts and the Better Auth setup.'
 			})
 		]
 	}

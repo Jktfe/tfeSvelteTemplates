@@ -52,7 +52,7 @@
 			<li>Backdrop overlay when panel is open</li>
 			<li>Keyboard accessible (Tab navigation, Escape to close, focus trap)</li>
 			<li>Sticky positioning with backdrop blur</li>
-			<li>Optional Clerk authentication UI integration</li>
+			<li>Optional Better Auth session links</li>
 		</ul>
 	</section>
 
@@ -143,10 +143,10 @@ ${'<'}/script>
 						<td>URL the logo links to</td>
 					</tr>
 					<tr>
-						<td><code>isClerkConfigured</code></td>
+						<td><code>isAuthConfigured</code></td>
 						<td><code>boolean</code></td>
 						<td><code>false</code></td>
-						<td>Show Clerk auth UI (SignIn/UserButton) or demo badge</td>
+						<td>Show Better Auth sign-in/user controls or offline badge</td>
 					</tr>
 				</tbody>
 			</table>
@@ -222,15 +222,15 @@ interface MenuItem {
 	</section>
 
 	<section class="section">
-		<h2 class="section-title">Clerk Integration</h2>
+		<h2 class="section-title">Better Auth Integration</h2>
 		<p class="section-description">
-			When <code>isClerkConfigured</code> is <code>true</code>, the navbar displays Clerk's
-			authentication UI in the right section:
+			When <code>isAuthConfigured</code> is <code>true</code>, the navbar displays Better Auth
+			session controls in the right section:
 		</p>
 		<ul class="features-list">
-			<li><strong>Signed out:</strong> Shows a "Sign in" button</li>
-			<li><strong>Signed in:</strong> Shows the UserButton avatar with dropdown menu</li>
-			<li><strong>Not configured:</strong> Shows a "Demo Mode" badge</li>
+			<li><strong>Signed out:</strong> Shows a sign-in link</li>
+			<li><strong>Signed in:</strong> Shows the user identity and sign-out button</li>
+			<li><strong>Not configured:</strong> Shows an auth offline badge</li>
 		</ul>
 	</section>
 
@@ -243,7 +243,7 @@ interface MenuItem {
 			<li><code>src/lib/components/Navbar.svelte</code> - The component file</li>
 			<li><code>src/lib/types.ts</code> - MenuCategory, MenuItem, and NavbarProps interfaces</li>
 			<li><code>src/lib/scrollLock.ts</code> - Scroll lock utility (optional, for coordination)</li>
-			<li><code>svelte-clerk</code> - Only if using Clerk auth integration</li>
+			<li><code>better-auth</code> - Only if using the auth integration</li>
 		</ul>
 	</section>
 </div>

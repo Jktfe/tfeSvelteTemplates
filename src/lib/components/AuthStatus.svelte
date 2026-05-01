@@ -1,7 +1,7 @@
 <!--
 	AuthStatus Component
 
-	Visual indicator for Clerk authentication configuration status.
+	Visual indicator for Better Auth configuration status.
 	Follows the DatabaseStatus component pattern for consistency.
 
 	Features:
@@ -16,7 +16,7 @@
 		<AuthStatus isConfigured={data.isConfigured} />
 
 	Props:
-	- isConfigured: boolean - Whether Clerk keys are configured
+	- isConfigured: boolean - Whether Better Auth is configured
 	- class: string - Additional CSS classes (optional)
 
 	@component
@@ -28,11 +28,11 @@
 
 	const status = $derived(isConfigured ? 'configured' : 'demo-mode');
 	const icon = $derived(isConfigured ? '🔐' : '🔓');
-	const label = $derived(isConfigured ? 'Auth Enabled' : 'Auth Demo Mode');
+	const label = $derived(isConfigured ? 'Auth Enabled' : 'Auth Offline');
 	const description = $derived(
 		isConfigured
-			? 'Clerk authentication is configured and active'
-			: 'Running without Clerk keys - configure in .env'
+			? 'Better Auth is configured and active'
+			: 'Set DATABASE_URL and BETTER_AUTH_SECRET to enable authentication'
 	);
 </script>
 

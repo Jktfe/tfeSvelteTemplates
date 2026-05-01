@@ -184,25 +184,6 @@ Line 3: translateY(-7px) rotate(-45deg)
 
 ---
 
-## ClerkProvider Workaround
-
-Svelte 5's reactivity can break when wrapped in ClerkProvider. The workaround:
-
-```javascript
-// Normal Svelte way (doesn't work with Clerk)
-isPanelOpen = !isPanelOpen;  // Should update DOM, but doesn't
-
-// Workaround: Manually update DOM
-if (typeof document !== 'undefined') {
-  const panel = document.getElementById('panel-menu');
-  panel?.classList.add('open');  // Force the class change
-}
-```
-
-This is temporary until svelte-clerk is updated for Svelte 5 compatibility.
-
----
-
 ## Data Format
 
 ```javascript
@@ -257,7 +238,7 @@ Categories with only one item render as direct links (no expand/collapse):
 | No active page | No category auto-expands |
 | Empty categories | Renders header but no items |
 | Single-item category | Direct link, no expand |
-| Clerk not configured | Shows "Demo Mode" badge |
+| Auth not configured | Shows "Auth Offline" badge |
 | Panel open + page nav | Panel closes automatically |
 | Rapid toggle clicks | Debounced by CSS transition |
 
@@ -275,7 +256,7 @@ Categories with only one item render as direct links (no expand/collapse):
 
 ## Dependencies
 
-**Optional: svelte-clerk** (for authentication UI)
+**Optional: better-auth** (for authentication UI)
 
 Otherwise zero external dependencies. Uses:
 - Svelte 5 runes (`$state()`, `$effect()`, `$derived()`)

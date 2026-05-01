@@ -13,9 +13,6 @@
  *   - Active page highlighting works
  *   - Single-item categories render as direct links
  *
- * Note: Some tests use manual class checking due to ClerkProvider
- * workaround that uses direct DOM manipulation.
- *
  * Run: bun run test Navbar
  * ============================================================
  */
@@ -30,12 +27,15 @@ vi.mock('$lib/scrollLock', () => ({
 	lockScroll: vi.fn(() => vi.fn())
 }));
 
-// Mock svelte-clerk components
-vi.mock('svelte-clerk', () => ({
-	SignedIn: vi.fn(),
-	SignedOut: vi.fn(),
-	SignInButton: vi.fn(),
-	UserButton: vi.fn()
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn(),
+	invalidateAll: vi.fn()
+}));
+
+vi.mock('$lib/auth-client', () => ({
+	authClient: {
+		signOut: vi.fn()
+	}
 }));
 
 // Sample menu categories for testing
@@ -112,9 +112,27 @@ describe('Navbar', () => {
 			expect(logoLink).toHaveAttribute('href', '/dashboard');
 		});
 
-		it('renders demo mode badge when Clerk not configured', () => {
-			render(Navbar, { props: { isClerkConfigured: false } });
-			expect(screen.getByText('Demo Mode')).toBeInTheDocument();
+		it('renders offline badge when auth is not configured', () => {
+			render(Navbar, { props: { isAuthConfigured: false } });
+			expect(screen.getByText('Auth Offline')).toBeInTheDocument();
+		});
+
+		it('renders sign-in link when auth is configured and user is signed out', () => {
+			render(Navbar, { props: { isAuthConfigured: true } });
+			const signInLink = screen.getByRole('link', { name: /sign in/i });
+			expect(signInLink).toHaveAttribute('href', '/auth/sign-in');
+		});
+
+		it('renders signed-in user when provided', () => {
+			render(Navbar, {
+				props: {
+					isAuthConfigured: true,
+					authUser: { id: 'user_1', name: 'Ada Lovelace', email: 'ada@example.com' }
+				}
+			});
+
+			expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
+			expect(screen.getByText('ada@example.com')).toBeInTheDocument();
 		});
 	});
 

@@ -11,12 +11,12 @@
 	import { page } from '$app/stores';
 	import { browser, dev } from '$app/environment';
 	import { inject } from '@vercel/analytics';
-	import { ClerkProvider } from 'svelte-clerk';
 	import type { LayoutData } from './$types';
 
 	let { data, children } = $props<{ data: LayoutData; children: any }>();
 
-	const isClerkConfigured = $derived(data.isClerkConfigured);
+	const isAuthConfigured = $derived(data.isAuthConfigured);
+	const authUser = $derived(data.authUser);
 
 	if (browser) {
 		inject({ mode: dev ? 'development' : 'production' });
@@ -39,52 +39,43 @@
 	});
 </script>
 
-{#snippet appShell()}
-	<div class="app">
-		<Navbar
-			{menuCategories}
-			{currentPageTitle}
-			{isClerkConfigured}
-			githubUrl="https://github.com/Jktfe/tfeSvelteTemplates"
-		/>
+<div class="app">
+	<Navbar
+		{menuCategories}
+		{currentPageTitle}
+		{isAuthConfigured}
+		{authUser}
+		githubUrl="https://github.com/Jktfe/tfeSvelteTemplates"
+	/>
 
-		<main class="main">
-			{@render children()}
-			{#if currentCatalogEntry}
-				<section class="agent-prompt-shell" aria-label="Copy this component for your local agent">
-					<AgentPromptCopy
-						name={currentCatalogEntry.item.name}
-						summary={currentCatalogEntry.item.description}
-						componentPath={currentCatalogEntry.item.source}
-						demoPath={currentCatalogEntry.item.demo}
-						deps={currentCatalogEntry.item.dependencies}
-						propsSignature={`// See ${currentCatalogEntry.item.source} for exported props and defaults.`}
-						usage={currentCatalogEntry.item.usage}
-						notes={agentPromptNotes}
-					/>
-				</section>
-			{/if}
-		</main>
+	<main class="main">
+		{@render children()}
+		{#if currentCatalogEntry}
+			<section class="agent-prompt-shell" aria-label="Copy this component for your local agent">
+				<AgentPromptCopy
+					name={currentCatalogEntry.item.name}
+					summary={currentCatalogEntry.item.description}
+					componentPath={currentCatalogEntry.item.source}
+					demoPath={currentCatalogEntry.item.demo}
+					deps={currentCatalogEntry.item.dependencies}
+					propsSignature={`// See ${currentCatalogEntry.item.source} for exported props and defaults.`}
+					usage={currentCatalogEntry.item.usage}
+					notes={agentPromptNotes}
+				/>
+			</section>
+		{/if}
+	</main>
 
-		<footer class="footer">
-			<div class="container">
-				<p class="footer-text">
-					Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
-					<a href="https://kit.svelte.dev" target="_blank" rel="noopener">SvelteKit</a> •
-					<a href="https://www.typescriptlang.org" target="_blank" rel="noopener">TypeScript</a>
-				</p>
-			</div>
-		</footer>
-	</div>
-{/snippet}
-
-{#if isClerkConfigured}
-	<ClerkProvider>
-		{@render appShell()}
-	</ClerkProvider>
-{:else}
-	{@render appShell()}
-{/if}
+	<footer class="footer">
+		<div class="container">
+			<p class="footer-text">
+				Built with <a href="https://svelte.dev" target="_blank" rel="noopener">Svelte 5</a> •
+				<a href="https://kit.svelte.dev" target="_blank" rel="noopener">SvelteKit</a> •
+				<a href="https://www.typescriptlang.org" target="_blank" rel="noopener">TypeScript</a>
+			</p>
+		</div>
+	</footer>
+</div>
 
 <style>
 	:global(*) {

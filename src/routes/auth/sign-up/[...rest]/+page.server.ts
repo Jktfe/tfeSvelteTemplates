@@ -1,21 +1,17 @@
-/**
- * Sign-Up Page Server Load
- *
- * Checks whether Clerk authentication is configured and provides
- * this information to the client for conditional UI rendering.
- *
- * @module routes/auth/sign-up/+page.server
- */
-
 import type { PageServerLoad } from './$types';
-import { env } from '$env/dynamic/public';
-import { env as privateEnv } from '$env/dynamic/private';
+import { redirect } from '@sveltejs/kit';
+import { isBetterAuthConfigured, toAuthUser } from '$lib/server/betterAuth';
 
-export const load: PageServerLoad = async () => {
-	// Check if Clerk is configured by verifying both keys exist
-	const isConfigured = !!(env.PUBLIC_CLERK_PUBLISHABLE_KEY && privateEnv.CLERK_SECRET_KEY);
+export const load: PageServerLoad = async ({ locals, url }) => {
+	const redirectUrl = url.searchParams.get('redirect_url') || '/dashboard';
+
+	if (locals.user) {
+		throw redirect(303, redirectUrl);
+	}
 
 	return {
-		isConfigured
+		isConfigured: isBetterAuthConfigured(),
+		authUser: toAuthUser(locals.user),
+		redirectUrl
 	};
 };

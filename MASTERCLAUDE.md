@@ -1483,47 +1483,57 @@ bun add @unovis/svelte @unovis/ts
 - Consider limiting initial visibility (start collapsed)
 - Test with ~100 nodes, should perform smoothly
 
-## Clerk Authentication
+## Better Auth Authentication
 
 ### Overview
 
-The project includes optional Clerk authentication integration using `svelte-clerk`. Like database integration, authentication works with graceful fallback - if Clerk keys are not configured, the app functions in "demo mode" with all existing pages remaining accessible.
+The project uses Better Auth with email/password sign-in backed by the project Postgres database. All component demo pages remain public. The protected demo pages (`/dashboard`, `/profile`) show how to gate routes with server-side session checks.
 
 **Key Features:**
 - All existing component demo pages remain **public** (no auth required)
-- New **protected demo pages** (`/dashboard`, `/profile`) demonstrate authenticated routes
-- Auth demo page (`/auth`) showcases all Clerk components
-- Graceful fallback when Clerk keys are not configured
+- Protected demo pages (`/dashboard`, `/profile`) demonstrate authenticated routes
+- Auth overview (`/auth`) links sign-in, sign-up, and protected-route examples
+- Auth UI stays offline until `DATABASE_URL`, `BETTER_AUTH_SECRET`, and `BETTER_AUTH_URL` are configured
+- Optional OSS demo login can be seeded as `tester@test.com` / `test1`
 
 ### Configuration
 
-1. Create account at [clerk.com](https://clerk.com)
-2. Create a new application in the Clerk Dashboard
-3. Navigate to API Keys and copy your keys
+1. Configure `DATABASE_URL` with a real Neon/Postgres connection string.
+2. Run `database/schema_better_auth.sql` in the database.
+3. Generate and set a real secret:
+   ```
+   openssl rand -base64 32
+   ```
 4. Add to `.env`:
    ```
-   PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-   CLERK_SECRET_KEY=sk_test_...
+   BETTER_AUTH_SECRET=your_long_random_secret
+   BETTER_AUTH_URL=http://localhost:5173
    ```
-5. Restart dev server
+5. Optional local demo account:
+   ```
+   bun run seed:demo-user
+   ```
+6. Restart dev server.
 
 ### File Structure
 
 ```
 src/
-├── hooks.server.ts              # Clerk middleware
-├── app.d.ts                     # TypeScript declarations
+├── hooks.server.ts              # Better Auth SvelteKit handler + locals
+├── app.d.ts                     # Session/user locals declarations
 ├── lib/
+│   ├── auth-client.ts           # Better Auth Svelte client
 │   ├── components/
 │   │   └── AuthStatus.svelte    # Auth status indicator
 │   └── server/
-│       └── auth.ts              # Auth utility functions
+│       ├── auth.ts              # Auth utility functions
+│       └── betterAuth.ts        # Better Auth server instance
 └── routes/
-    ├── +layout.server.ts        # SSR auth props
+    ├── +layout.server.ts        # Auth config + user for root layout
     ├── auth/                    # Auth demo pages
-    │   ├── +page.svelte         # Component showcase
-    │   ├── sign-in/[[...rest]]/ # Sign-in page
-    │   └── sign-up/[[...rest]]/ # Sign-up page
+    │   ├── +page.svelte         # Overview
+    │   ├── sign-in/[...rest]/   # Sign-in page
+    │   └── sign-up/[...rest]/   # Sign-up page
     └── (protected)/             # Protected route group
         ├── +layout.server.ts    # Auth check
         ├── dashboard/           # Protected dashboard
@@ -1532,8 +1542,8 @@ src/
 
 ### Components
 
-- **AuthStatus**: Status indicator (like DatabaseStatus) showing "Auth Enabled" or "Auth Demo Mode"
-- **Navbar**: Includes SignInButton (signed out) or UserButton (signed in) in the right section
+- **AuthStatus**: Status indicator showing "Auth Enabled" or "Auth Offline"
+- **Navbar**: Shows a sign-in link, signed-in user summary, or offline badge
 
 ### Auth Utility Functions
 
@@ -1571,55 +1581,50 @@ Use the `(protected)` route group for pages requiring authentication:
 
 ```typescript
 // src/routes/(protected)/+layout.server.ts
-import { redirect } from '@sveltejs/kit';
+import { requireAuth } from '$lib/server/auth';
+import { toAuthUser } from '$lib/server/betterAuth';
 
-export const load = async ({ locals, url }) => {
-  const auth = locals.auth();
-  if (!auth?.userId) {
-    const returnUrl = encodeURIComponent(url.pathname);
-    throw redirect(303, `/auth/sign-in?redirect_url=${returnUrl}`);
-  }
-  return { userId: auth.userId };
+export const load = async (event) => {
+  const userId = requireAuth(event);
+  return { userId, authUser: toAuthUser(event.locals.user) };
 };
 ```
 
 ### Client-Side Auth Access
 
-Use Clerk context in client components (do NOT destructure to maintain reactivity):
+Use the Better Auth client for session-aware UI and sign-out actions:
 
 ```svelte
 <script lang="ts">
-  import { useClerkContext } from 'svelte-clerk/client';
-  import { SignedIn, SignedOut, UserButton } from 'svelte-clerk';
+  import { authClient } from '$lib/auth-client';
 
-  const ctx = useClerkContext();
-  const userId = $derived(ctx.auth.userId);
-  const user = $derived(ctx.user);
+  const session = authClient.useSession();
 </script>
 
-<SignedOut>
-  <p>Please sign in</p>
-</SignedOut>
-<SignedIn>
-  <p>Welcome, {user?.firstName}</p>
-  <UserButton />
-</SignedIn>
+{#if $session.data}
+  <p>Welcome, {$session.data.user.name}</p>
+  <button onclick={() => authClient.signOut()}>Sign out</button>
+{:else}
+  <a href="/auth/sign-in">Sign in</a>
+{/if}
 ```
 
 ### Testing Checklist
 
-- [ ] App loads without Clerk keys (graceful fallback)
-- [ ] Sign In button appears in navbar
-- [ ] After sign-in, UserButton appears
-- [ ] `/auth` demo page shows components
+- [ ] App loads with auth offline when Better Auth env vars are missing
+- [ ] Sign-in link appears in navbar when auth is configured and user is signed out
+- [ ] Signed-in user summary appears after login
+- [ ] `/auth` overview page renders in offline and configured states
 - [ ] `/dashboard` redirects to sign-in when not authenticated
-- [ ] `/profile` shows UserProfile when authenticated
+- [ ] `/profile` shows current Better Auth user when authenticated
 - [ ] All existing component pages remain accessible without auth
 - [ ] SSR works correctly (page refresh maintains auth state)
 
 ## Gold Standard Guidelines
 
 This section defines the quality standards for all components in this library.
+
+> **Theming:** see [`docs/THEMING.md`](docs/THEMING.md) for the project-wide token convention — chrome flips with `prefers-color-scheme`, brand and semantic tokens stay prop-driven. Reference table covers `Tooltip`, `Slider`, `RatingStars`, `KbdShortcut`. Apply on every new component and every dark-mode pass.
 
 ### Component Documentation Template
 
@@ -1682,7 +1687,7 @@ Every component file header should include this comprehensive documentation:
 | Library | Component | Reason |
 |---------|-----------|--------|
 | Leaflet | Maps | Industry standard, would take 100+ hours to replicate |
-| Clerk | Auth | Security-critical, actively maintained |
+| Better Auth | Auth | Security-critical, database-backed, OSS-friendly |
 | Unovis | Sankey, Sunburst | Complex D3-based viz, well-optimised |
 | SVAR Grid | DataGridAdvanced | Virtual scrolling, inline editing |
 | DOMPurify | Sanitization | Security-critical |
@@ -1709,6 +1714,31 @@ Comments should be professional but approachable. The goal is to help coding nov
 - Celebrate discoveries ("The clever bit here is...")
 - No jargon without explanation
 - Add context for non-obvious decisions
+
+**No author / RFO / self-attestation markers at component sign-off.**
+Shipped source files never carry author bylines, "request-for-feedback" markers, agent handles, audit-pass stamps, or self-graded checklists in the footer. They go stale instantly, leak intra-team process to consumers copying the file out, and add nothing a downstream user can act on.
+
+Keep useful technical comments, warnings, known limitations, and audit trails — but route them appropriately:
+
+- **In the component header**: WHAT IT DOES, FEATURES, ACCESSIBILITY, DEPENDENCIES, USAGE, PROPS, KNOWN WARNINGS (those that affect consumers)
+- **Inline in code**: the "why" behind non-obvious decisions, hidden invariants, workarounds for specific bugs
+- **In the Obsidian audit vault** (`Agent Memory Vault/tfesveltetemplates/`): scoring runs, RFO markers, agent attestations, gold-standard ledger, pattern numbers
+- **In the changelog / commit message / PR description**: who shipped it, why, what changed
+- **Never in a footer comment block at the end of the file.**
+
+If a future audit needs to know whether a component was reviewed and by whom, the answer lives in git log + the Obsidian vault, not in the source. This keeps copy-paste portability clean for the OSS-template promise.
+
+**No JSDoc-style block comments inside Svelte HTML docblocks.**
+The `<!-- @component -->` docblock at the top of a `.svelte` file is parsed by Svelte's component documentation extractor. Any JSDoc-style block comment nested inside it, including ones inside fenced code examples, can silently corrupt the default-export descriptor. `bun run build` can still pass; the failure may surface only in `svelte-check`, and it reports as `Module X has no default export` against consumer files, not the broken source file.
+
+Mechanical rules for authoring docblocks:
+
+- **In fenced code examples inside the docblock**: introduce CSS or JS examples with prose intros rather than inline block comments. If a code example would normally include a comment, lift the comment into the prose above the fence.
+- **In docblock prose**: never write the literal block-comment token, even inside backticks. Refer to the syntax as "block comments" or "JSDoc-style comments" in plain English.
+- **Single-line `//` comments are fine** because they do not trigger the JSDoc parser.
+- **HTML comments inside the docblock are also fine**, though Svelte may strip them when extracting docs.
+
+When you encounter `Module X has no default export` errors against consumer files where `bun run build` passes cleanly, check the docblock of the imported component for nested block-comment markers first.
 
 ### Component Quality Checklist
 

@@ -20,7 +20,7 @@
   • Active page highlighting within categories
   • Backdrop overlay when panel is open
   • Sticky positioning with backdrop blur effect
-  • Conditional auth UI (Clerk when configured, demo badge otherwise)
+  • Conditional auth UI (Better Auth session links when configured)
 
   ♿ ACCESSIBILITY
   • Keyboard: Tab navigation, Enter to toggle, Escape to close
@@ -29,16 +29,14 @@
   • Motion: Respects prefers-reduced-motion
 
   📦 DEPENDENCIES
-  Zero external dependencies (except optional Clerk for auth)
+  Zero external dependencies
 
   ⚠️ WARNINGS
   • a11y_no_noninteractive_element_interactions: Intentional - nav element needs
     keyboard handling for Escape key and focus trap (WCAG 2.1.1, 2.4.3)
-  • CSS :global() selectors: Required because ClerkProvider breaks Svelte 5
-    reactivity, forcing manual DOM manipulation that needs unscoped CSS
 
   🎨 USAGE
-  <Navbar {menuCategories} currentPageTitle="Home" isClerkConfigured={true} />
+  <Navbar {menuCategories} currentPageTitle="Home" isAuthConfigured={true} />
 
   📋 PROPS
   | Prop             | Type            | Default           | Description                    |
@@ -49,7 +47,8 @@
   | logoIcon         | string          | '⚡'              | Logo emoji/icon                |
   | logoText         | string          | 'Svelte Templates'| Logo text                      |
   | logoHref         | string          | '/'               | Logo link destination          |
-  | isClerkConfigured| boolean         | false             | Show Clerk auth UI             |
+  | isAuthConfigured | boolean         | false             | Show Better Auth UI            |
+  | authUser         | AuthUser|null   | null              | Current signed-in user         |
   | githubUrl        | string          | ''                | GitHub repo URL (shows button) |
 
   ============================================================
@@ -62,9 +61,10 @@
 	// =========================================================================
 
 	import { untrack } from 'svelte';
+	import { goto, invalidateAll } from '$app/navigation';
 	import { SvelteSet } from 'svelte/reactivity';
 	import type { NavbarProps } from '$lib/types';
-	import { SignedIn, SignedOut, SignInButton, UserButton } from 'svelte-clerk';
+	import { authClient } from '$lib/auth-client';
 	import { lockScroll } from '$lib/scrollLock';
 
 	// =========================================================================
@@ -80,7 +80,8 @@
 		logoIcon = '⚡',          // [NTL] The emoji/icon next to the logo
 		logoText = 'Svelte Templates', // [NTL] The text in the logo
 		logoHref = '/',           // [NTL] Where clicking the logo takes you
-		isClerkConfigured = false, // [NTL] Whether authentication is enabled
+		isAuthConfigured = false, // [NTL] Whether authentication is enabled
+		authUser = null,          // [NTL] Current signed-in user, if any
 		githubUrl = ''            // [NTL] GitHub repo URL - shows button when provided
 	}: NavbarProps = $props();
 
@@ -137,9 +138,6 @@
 
 	let isPanelOpen = $state(false);
 
-	// [CR] Workaround for Svelte 5 reactivity issue with ClerkProvider
-	// [NTL] ClerkProvider sometimes breaks Svelte's automatic updates, so we
-	//       calculate the CSS class names manually to ensure they always update
 	let panelClass = $derived(isPanelOpen ? 'panel open' : 'panel');
 	let hamburgerClass = $derived(isPanelOpen ? 'hamburger-button open' : 'hamburger-button');
 
@@ -158,36 +156,21 @@
 
 	function togglePanel() {
 		isPanelOpen = !isPanelOpen;
-
-		// [CR] WORKAROUND: Force DOM update since ClerkProvider breaks Svelte 5 reactivity
-		// [NTL] Sometimes Svelte doesn't update the screen properly when Clerk is running,
-		//       so we manually add/remove CSS classes to make sure the animation works
-		if (typeof document !== 'undefined') {
-			const panel = document.getElementById('panel-menu');
-			const button = document.querySelector('.hamburger-button, [class*="hamburger-button"]');
-
-			if (isPanelOpen) {
-				panel?.classList.add('open');
-				button?.classList.add('open');
-			} else {
-				panel?.classList.remove('open');
-				button?.classList.remove('open');
-			}
-		}
 	}
 
 	function closePanel() {
 		isPanelOpen = false;
-
-		// [CR] WORKAROUND: Force DOM update (same ClerkProvider issue as togglePanel)
-		if (typeof document !== 'undefined') {
-			const panel = document.getElementById('panel-menu');
-			const button = document.querySelector('.hamburger-button, [class*="hamburger-button"]');
-
-			panel?.classList.remove('open');
-			button?.classList.remove('open');
-		}
 	}
+
+	async function signOut() {
+		await authClient.signOut();
+		await invalidateAll();
+		await goto('/auth/sign-in');
+	}
+
+	const userInitial = $derived(authUser?.name?.[0] ?? authUser?.email?.[0] ?? 'U');
+	const userLabel = $derived(authUser?.name ?? authUser?.email ?? 'Signed in');
+	const userEmail = $derived(authUser?.email ?? '');
 
 	// =========================================================================
 	// [CR] KEYBOARD ACCESSIBILITY
@@ -317,25 +300,35 @@
 				</a>
 			{/if}
 
-			{#if isClerkConfigured}
-				<!-- Clerk authentication UI when configured -->
+			{#if isAuthConfigured}
 				<div class="auth-buttons">
-					<SignedOut>
-						<SignInButton mode="modal" class="auth-button" />
-					</SignedOut>
-					<SignedIn>
-						<UserButton />
-					</SignedIn>
+					{#if authUser}
+						<a href="/profile" class="auth-user" aria-label="View profile for {userLabel}">
+							{#if authUser.image}
+								<img src={authUser.image} alt="" class="auth-avatar" />
+							{:else}
+								<span class="auth-avatar auth-avatar-fallback" aria-hidden="true">{userInitial}</span>
+							{/if}
+							<span class="auth-user-text">
+								<span class="auth-user-name">{userLabel}</span>
+								{#if userEmail}
+									<span class="auth-user-email">{userEmail}</span>
+								{/if}
+							</span>
+						</a>
+						<button type="button" class="auth-button secondary" onclick={signOut}>Sign out</button>
+					{:else}
+						<a href="/auth/sign-in" class="auth-button">Sign in</a>
+					{/if}
 				</div>
 			{:else}
-				<!-- Demo mode indicator when Clerk is not configured -->
 				<div
 					class="auth-demo-badge"
-					title="Configure Clerk to enable authentication"
-					aria-label="Authentication demo mode"
+					title="Configure Better Auth to enable authentication"
+					aria-label="Authentication offline"
 				>
 					<span class="demo-icon">🔓</span>
-					<span class="demo-text">Demo Mode</span>
+					<span class="demo-text">Auth Offline</span>
 				</div>
 			{/if}
 		</div>
@@ -633,14 +626,15 @@
 		gap: 0.5rem;
 	}
 
-	/* Style for Clerk's SignInButton - uses :global since button is rendered by Clerk */
-	.auth-buttons :global(button) {
+	.auth-button,
+	.auth-buttons button {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		padding: 0.5rem 1rem;
 		background-color: #007aff;
 		color: white;
+		text-decoration: none;
 		border: none;
 		border-radius: 0.375rem;
 		font-size: 0.875rem;
@@ -650,13 +644,78 @@
 		white-space: nowrap;
 	}
 
-	.auth-buttons :global(button:hover) {
+	.auth-button:hover,
+	.auth-buttons button:hover {
 		background-color: #0056b3;
 	}
 
-	.auth-buttons :global(button:focus) {
+	.auth-button:focus,
+	.auth-buttons button:focus {
 		outline: 2px solid #007aff;
 		outline-offset: 2px;
+	}
+
+	.auth-button.secondary {
+		background-color: #f3f4f6;
+		color: #374151;
+		border: 1px solid #d1d5db;
+	}
+
+	.auth-button.secondary:hover {
+		background-color: #e5e7eb;
+	}
+
+	.auth-user {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		max-width: 15rem;
+		color: #111827;
+		text-decoration: none;
+	}
+
+	.auth-avatar {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 9999px;
+		flex-shrink: 0;
+		object-fit: cover;
+	}
+
+	.auth-avatar-fallback {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: #111827;
+		color: #ffffff;
+		font-size: 0.875rem;
+		font-weight: 700;
+		text-transform: uppercase;
+	}
+
+	.auth-user-text {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		line-height: 1.1;
+	}
+
+	.auth-user-name,
+	.auth-user-email {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.auth-user-name {
+		font-size: 0.8125rem;
+		font-weight: 600;
+	}
+
+	.auth-user-email {
+		font-size: 0.6875rem;
+		color: #6b7280;
 	}
 
 	.auth-demo-badge {
@@ -698,6 +757,23 @@
 			padding: 0.375rem;
 		}
 
+		.auth-user {
+			max-width: 2rem;
+		}
+
+		.auth-user-text,
+		.auth-button.secondary {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
+
 		.demo-text {
 			position: absolute;
 			width: 1px;
@@ -737,6 +813,29 @@
 			background-color: #111827;
 			border-color: #334155;
 			color: #cbd5e1;
+		}
+
+		.auth-user {
+			color: #f8fafc;
+		}
+
+		.auth-user-email {
+			color: #94a3b8;
+		}
+
+		.auth-avatar-fallback {
+			background: #e2e8f0;
+			color: #0f172a;
+		}
+
+		.auth-button.secondary {
+			background-color: #111827;
+			color: #e2e8f0;
+			border-color: #334155;
+		}
+
+		.auth-button.secondary:hover {
+			background-color: #1e293b;
 		}
 
 		.panel {
@@ -1020,8 +1119,6 @@
 	}
 
 	/* Category items list (when expanded) */
-	/* Using :global() because these elements may be created dynamically via DOM manipulation
-	   (workaround for ClerkProvider breaking Svelte 5 reactivity) and need unscoped CSS */
 	:global(.panel-category-items) {
 		list-style: none;
 		margin: 0;
