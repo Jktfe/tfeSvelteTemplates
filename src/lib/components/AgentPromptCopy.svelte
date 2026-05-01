@@ -293,6 +293,29 @@
 		box-shadow: none;
 	}
 
+	/*
+	 * In compact mode, the parent (e.g. ComponentPageShell sidebar) is
+	 * already a paper card. Use the page surface tokens instead of the
+	 * standalone ink slab so the prompt body doesn't look like a "black
+	 * inset" floating in the paper card.
+	 */
+	.agent-prompt--compact .agent-prompt__body {
+		background: var(--surface-2, #f6f6f6);
+		color: var(--fg-1, #111315);
+		border: 1px solid var(--border, #e8e8e8);
+		font-family: var(--font-mono, var(--gsap-font-mono));
+		font-size: 12px;
+		padding: 12px 14px;
+		max-height: 280px;
+	}
+	.agent-prompt--compact .agent-prompt__body::-webkit-scrollbar-track {
+		background: var(--surface-2, #f6f6f6);
+	}
+	.agent-prompt--compact .agent-prompt__body::-webkit-scrollbar-thumb {
+		border-color: var(--surface-2, #f6f6f6);
+		background: color-mix(in srgb, var(--accent, var(--gsap-accent)), transparent 40%);
+	}
+
 	.agent-prompt__header {
 		display: flex;
 		align-items: flex-start;

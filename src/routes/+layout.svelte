@@ -1,14 +1,8 @@
 <script lang="ts">
 	import '../app.css';
-	import AgentPromptCopy from '$lib/components/AgentPromptCopy.svelte';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import TfeFooter from '$lib/components/TfeFooter.svelte';
-	import {
-		buildMenuCategories,
-		getCatalogEntryByHref,
-		getCatalogPageTitle,
-		themeSupportLabel
-	} from '$lib/componentCatalog';
+	import { buildMenuCategories, getCatalogPageTitle } from '$lib/componentCatalog';
 	import { page } from '$app/stores';
 	import { browser, dev } from '$app/environment';
 	import { inject } from '@vercel/analytics';
@@ -26,18 +20,6 @@
 	let currentPath = $derived($page.url.pathname);
 	const menuCategories = $derived(buildMenuCategories(currentPath));
 	const currentPageTitle = $derived(getCatalogPageTitle(currentPath));
-	const currentCatalogEntry = $derived(getCatalogEntryByHref(currentPath));
-	const agentPromptNotes = $derived.by(() => {
-		if (!currentCatalogEntry) return undefined;
-		const { item } = currentCatalogEntry;
-		const relatedFiles =
-			item.relatedFiles.length > 0
-				? `Related files:\n${item.relatedFiles.map((file) => `- ${file}`).join('\n')}`
-				: '';
-		return [`Theme support: ${themeSupportLabel(item.themeSupport)}`, item.agentHint, relatedFiles]
-			.filter(Boolean)
-			.join('\n\n');
-	});
 </script>
 
 <div class="app">
@@ -54,20 +36,6 @@
 
 	<main class="main">
 		{@render children()}
-		{#if currentCatalogEntry}
-			<section class="agent-prompt-shell" aria-label="Copy this component for your local agent">
-				<AgentPromptCopy
-					name={currentCatalogEntry.item.name}
-					summary={currentCatalogEntry.item.description}
-					componentPath={currentCatalogEntry.item.source}
-					demoPath={currentCatalogEntry.item.demo}
-					deps={currentCatalogEntry.item.dependencies}
-					propsSignature={`// See ${currentCatalogEntry.item.source} for exported props and defaults.`}
-					usage={currentCatalogEntry.item.usage}
-					notes={agentPromptNotes}
-				/>
-			</section>
-		{/if}
 	</main>
 
 	<TfeFooter />
@@ -119,12 +87,6 @@
 	.main :global(pre) {
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
-	}
-
-	.agent-prompt-shell {
-		width: min(1120px, calc(100% - 2rem));
-		margin: 3rem auto 0;
-		min-width: 0;
 	}
 
 	@media (max-width: 768px) {
