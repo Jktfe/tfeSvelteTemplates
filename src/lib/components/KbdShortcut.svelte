@@ -54,8 +54,12 @@
   - --kbd-shadow-inner  inset depth-line  (light: #d1d5db / dark: #4b5563)
   - --kbd-shadow-drop   outer drop-shadow (light: rgba(0,0,0,0.05) / dark: rgba(0,0,0,0.4))
   - --kbd-sep-color     separator colour  (light: #9ca3af / dark: #6b7280)
-  Override at :root or any ancestor to retheme without forking:
-      :root { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
+  Override the chrome tokens by targeting .kbd directly with at least
+  2-class specificity. An ancestor :root or body rule only inherits
+  the variable, so the component's own declared default still wins —
+  see docs/THEMING.md for the full mechanism. Doubled-class trick is
+  the cheapest unconditional override:
+      body .kbd.kbd { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
 
   PROPS
   | Prop      | Type                  | Default | Description |
@@ -215,8 +219,10 @@
 		 * block at the bottom of this stylesheet. All seven are chrome
 		 * (a kbd cap has no brand-tinted variants — bg/fg/border/shadow
 		 * all read fine on either scheme), so the whole set flips
-		 * together. Override at :root or any ancestor to retheme without
-		 * forking the component.
+		 * together. To retheme, target .kbd directly with ≥2-class
+		 * specificity (an ancestor :root rule only inherits, so this
+		 * declared default would still win). See docs/THEMING.md for
+		 * override patterns.
 		 */
 		--kbd-fg: #374151;
 		--kbd-bg-top: #ffffff;
@@ -287,10 +293,10 @@
 	/*
 	 * Dark mode — flip all seven chrome tokens so the cap reads on dark
 	 * surfaces. There are no brand variants on a kbd cap (Pattern #67
-	 * doesn't split), so the whole token set flips together. Consumers
-	 * who set custom tokens at :root (or any closer ancestor) win
-	 * because their values cascade after the defaults — this block only
-	 * fires when no override is present.
+	 * doesn't split), so the whole token set flips together. Consumer
+	 * overrides that target .kbd with ≥2-class specificity (e.g. body
+	 * .kbd.kbd) still win in dark mode — they cascade after this block.
+	 * See docs/THEMING.md.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.kbd {
