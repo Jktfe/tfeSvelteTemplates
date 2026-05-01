@@ -70,6 +70,7 @@
 		"animejs": "^4.2.2",
 		"clsx": "^2.1.1",
 		"fuse.js": "^7.1.0",
+		"gsap": "^3.15.0",
 		"highlight.js": "^11.11.1",
 		"isomorphic-dompurify": "^2.34.0",
 		"layerchart": "^1.0.12",
