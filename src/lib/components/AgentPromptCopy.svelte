@@ -59,6 +59,14 @@
 		inspiredBy?: string;
 		/** Notes for the receiving agent (e.g. "Client-only — wrap in onMount") */
 		notes?: string;
+		/**
+		 * When `true`, drop the outer chrome (background, border, "For your agent"
+		 * chip, "Copy this prompt to install …" heading) and render only the
+		 * copyable prompt block + a single Copy button. Use when the parent
+		 * already owns the section header — e.g. inside ComponentPageShell's
+		 * sidebar.
+		 */
+		compact?: boolean;
 	}
 
 	export function buildAgentPrompt(input: AgentPromptCopyProps): string {
@@ -119,7 +127,8 @@
 		propsSignature,
 		usage,
 		inspiredBy,
-		notes
+		notes,
+		compact = false
 	}: AgentPromptCopyProps = $props();
 
 	const prompt = $derived(
@@ -172,13 +181,14 @@
 	}
 </script>
 
-<section class="agent-prompt" aria-label="Copy this for your local agent">
-	<header class="agent-prompt__header">
-		<div class="agent-prompt__title">
-			<span class="agent-prompt__chip">For your agent</span>
-			<h3>Copy this prompt to install <code>{name}</code></h3>
-		</div>
-		<button type="button" class="agent-prompt__copy" onclick={copy} aria-live="polite">
+{#if compact}
+	<div class="agent-prompt agent-prompt--compact">
+		<button
+			type="button"
+			class="agent-prompt__copy agent-prompt__copy--compact"
+			onclick={copy}
+			aria-live="polite"
+		>
 			<svg
 				width="14"
 				height="14"
@@ -197,12 +207,43 @@
 					<path d="M2.5 11V3a1 1 0 0 1 1-1h8" />
 				{/if}
 			</svg>
-			<span>{copied ? 'Copied' : 'Copy prompt'}</span>
+			<span>{copied ? 'Copied' : 'Copy install prompt'}</span>
 		</button>
-	</header>
+		<pre class="agent-prompt__body" role="region" aria-label="Agent install prompt"><code>{prompt}</code></pre>
+	</div>
+{:else}
+	<section class="agent-prompt" aria-label="Copy this for your local agent">
+		<header class="agent-prompt__header">
+			<div class="agent-prompt__title">
+				<span class="agent-prompt__chip">For your agent</span>
+				<h3>Copy this prompt to install <code>{name}</code></h3>
+			</div>
+			<button type="button" class="agent-prompt__copy" onclick={copy} aria-live="polite">
+				<svg
+					width="14"
+					height="14"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.6"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					{#if copied}
+						<polyline points="3 8 7 12 13 4" />
+					{:else}
+						<rect x="4" y="4" width="9" height="9" rx="1.5" />
+						<path d="M2.5 11V3a1 1 0 0 1 1-1h8" />
+					{/if}
+				</svg>
+				<span>{copied ? 'Copied' : 'Copy prompt'}</span>
+			</button>
+		</header>
 
-	<pre class="agent-prompt__body" role="region" aria-label="Agent install prompt"><code>{prompt}</code></pre>
-</section>
+		<pre class="agent-prompt__body" role="region" aria-label="Agent install prompt"><code>{prompt}</code></pre>
+	</section>
+{/if}
 
 <style>
 	.agent-prompt {
@@ -218,6 +259,38 @@
 		color: var(--gsap-fg);
 		font-family: var(--gsap-font-sans);
 		container-type: inline-size;
+	}
+
+	/*
+	 * Compact variant — strip the outer chrome (no padding, no border,
+	 * no background) so the parent container (e.g. ComponentPageShell's
+	 * sidebar card) owns the framing. Renders only the code body and a
+	 * single full-width copy button so the "For your agent" section
+	 * doesn't double-up its title.
+	 */
+	.agent-prompt--compact {
+		display: grid;
+		gap: 8px;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		font-family: var(--font-sans, var(--gsap-font-sans));
+	}
+	.agent-prompt__copy--compact {
+		justify-self: stretch;
+		width: 100%;
+		justify-content: center;
+		padding: 8px 12px;
+		font-size: 12px;
+		border-radius: var(--r-2, 4px);
+		background: var(--accent, var(--gsap-accent));
+		color: #fff;
+		border-color: transparent;
+	}
+	.agent-prompt__copy--compact:hover {
+		background: var(--accent-strong, var(--gsap-accent-hover));
+		transform: none;
+		box-shadow: none;
 	}
 
 	.agent-prompt__header {
