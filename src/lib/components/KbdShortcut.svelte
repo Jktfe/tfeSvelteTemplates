@@ -55,10 +55,13 @@
   - --kbd-shadow-drop   outer drop-shadow (light: rgba(0,0,0,0.05) / dark: rgba(0,0,0,0.4))
   - --kbd-sep-color     separator colour  (light: #9ca3af / dark: #6b7280)
   Override the chrome tokens by targeting .kbd directly with at least
-  2-class specificity. An ancestor :root or body rule only inherits
-  the variable, so the component's own declared default still wins —
-  see docs/THEMING.md for the full mechanism. Doubled-class trick is
-  the cheapest unconditional override:
+  2-class specificity — required to overcome the (0,2,0) specificity
+  of the component's scoped internal styles. Svelte appends a hash
+  class to every selector, so an ancestor :root or body rule only
+  inherits the variable and lands at (0,1,0) — the component's own
+  declared default still wins. See docs/THEMING.md for the full
+  specificity arithmetic. Doubled-class trick is the cheapest
+  unconditional override:
       body .kbd.kbd { --kbd-bg-top: #fef3c7; --kbd-bg-bottom: #fde68a; }
 
   PROPS
@@ -219,10 +222,11 @@
 		 * block at the bottom of this stylesheet. All seven are chrome
 		 * (a kbd cap has no brand-tinted variants — bg/fg/border/shadow
 		 * all read fine on either scheme), so the whole set flips
-		 * together. To retheme, target .kbd directly with ≥2-class
-		 * specificity (an ancestor :root rule only inherits, so this
-		 * declared default would still win). See docs/THEMING.md for
-		 * override patterns.
+		 * together. To retheme, target .kbd with ≥2-class specificity
+		 * — required to overcome this rule's (0,2,0) scoped specificity.
+		 * An ancestor :root rule only inherits the token (lands at
+		 * (0,1,0)) and loses to this declared default. See docs/THEMING.md
+		 * for the full arithmetic.
 		 */
 		--kbd-fg: #374151;
 		--kbd-bg-top: #ffffff;
@@ -294,9 +298,10 @@
 	 * Dark mode — flip all seven chrome tokens so the cap reads on dark
 	 * surfaces. There are no brand variants on a kbd cap (Pattern #67
 	 * doesn't split), so the whole token set flips together. Consumer
-	 * overrides that target .kbd with ≥2-class specificity (e.g. body
-	 * .kbd.kbd) still win in dark mode — they cascade after this block.
-	 * See docs/THEMING.md.
+	 * overrides that reach ≥2-class specificity (e.g. body .kbd.kbd) still
+	 * win in dark mode — they clear the component's scoped (0,2,0) baseline
+	 * and cascade after this block. See docs/THEMING.md for the full
+	 * arithmetic.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.kbd {

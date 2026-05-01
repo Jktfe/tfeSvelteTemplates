@@ -32,10 +32,13 @@
 	 * - --fill-color          owned by `variant` prop, overridable
 	 * - --track-h, --thumb-size  owned by `size` prop, overridable
 	 * Override the chrome tokens by targeting .slider-wrapper directly with
-	 * at least 2-class specificity. An ancestor :root or body rule only
-	 * inherits the variable, so the component's own declared default still
-	 * wins — see docs/THEMING.md for the full mechanism. Doubled-class
-	 * trick is the cheapest unconditional override:
+	 * at least 2-class specificity — required to overcome the (0,2,0)
+	 * specificity of the component's scoped internal styles. Svelte appends
+	 * a hash class to every selector, so an ancestor :root or body rule only
+	 * inherits the variable and lands at (0,1,0) — the component's own
+	 * declared default still wins. See docs/THEMING.md for the full
+	 * specificity arithmetic. Doubled-class trick is the cheapest
+	 * unconditional override:
 	 *     body .slider-wrapper.slider-wrapper { --slider-track-bg: #fef3c7; --fill-color: #f59e0b; }
 	 *
 	 * USAGE
@@ -126,9 +129,11 @@
 		/*
 		 * Theming tokens — light defaults here, dark flip in the media
 		 * block at the bottom of this stylesheet. To retheme, target
-		 * .slider-wrapper directly with ≥2-class specificity (an ancestor
-		 * :root rule only inherits, so this declared default would still
-		 * win). See docs/THEMING.md for override patterns.
+		 * .slider-wrapper with ≥2-class specificity — required to
+		 * overcome this rule's (0,2,0) scoped specificity. An ancestor
+		 * :root rule only inherits the token (lands at (0,1,0)) and
+		 * loses to this declared default. See docs/THEMING.md for the
+		 * full arithmetic.
 		 */
 		--slider-track-bg: #e2e8f0;
 		--slider-thumb-bg: #ffffff;
@@ -316,9 +321,10 @@
 	 * bubble charcoal/white and focus ring tint so the slider stays
 	 * high-contrast on dark pages. Variant fill colours (--fill-color)
 	 * stay vivid in both modes — they read fine on either background.
-	 * Consumer overrides that target .slider-wrapper with ≥2-class
-	 * specificity (e.g. body .slider-wrapper.slider-wrapper) still win
-	 * in dark mode — they cascade after this block. See docs/THEMING.md.
+	 * Consumer overrides that reach ≥2-class specificity (e.g. body
+	 * .slider-wrapper.slider-wrapper) still win in dark mode — they
+	 * clear the component's scoped (0,2,0) baseline and cascade after
+	 * this block. See docs/THEMING.md for the full arithmetic.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.slider-wrapper {

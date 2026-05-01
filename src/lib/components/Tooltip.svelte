@@ -27,10 +27,13 @@
   - --tooltip-bg     background and arrow fill (light: #111827 / dark: #f9fafb)
   - --tooltip-shadow drop shadow under the body
   Override the chrome tokens by targeting .tooltip-wrap directly with
-  at least 2-class specificity. An ancestor :root or body rule only
-  inherits the variable, so the component's own declared default still
-  wins — see docs/THEMING.md for the full mechanism. Doubled-class
-  trick is the cheapest unconditional override:
+  at least 2-class specificity — required to overcome the (0,2,0)
+  specificity of the component's scoped internal styles. Svelte appends
+  a hash class to every selector, so an ancestor :root or body rule only
+  inherits the variable and lands at (0,1,0) — the component's own
+  declared default still wins. See docs/THEMING.md for the full
+  specificity arithmetic. Doubled-class trick is the cheapest
+  unconditional override:
       body .tooltip-wrap.tooltip-wrap { --tooltip-bg: #1e3a8a; --tooltip-fg: #fff; }
 
   ACCESSIBILITY
@@ -191,9 +194,11 @@
 		/*
 		 * Theming tokens — light defaults here, dark flip in the media
 		 * block at the bottom of this stylesheet. To retheme, target
-		 * .tooltip-wrap directly with ≥2-class specificity (an ancestor
-		 * :root rule only inherits, so this declared default would still
-		 * win). See docs/THEMING.md for override patterns.
+		 * .tooltip-wrap with ≥2-class specificity — required to
+		 * overcome this rule's (0,2,0) scoped specificity. An ancestor
+		 * :root rule only inherits the token (lands at (0,1,0)) and
+		 * loses to this declared default. See docs/THEMING.md for the
+		 * full arithmetic.
 		 */
 		--tooltip-fg: #f9fafb;
 		--tooltip-bg: #111827;
@@ -313,9 +318,10 @@
 	/*
 	 * Dark mode — invert fg/bg so the tooltip stays high-contrast on dark
 	 * pages. Heavier shadow because dark surfaces swallow light shadows.
-	 * Consumer overrides that target .tooltip-wrap with ≥2-class
-	 * specificity (e.g. body .tooltip-wrap.tooltip-wrap) still win in
-	 * dark mode — they cascade after this block. See docs/THEMING.md.
+	 * Consumer overrides that reach ≥2-class specificity (e.g. body
+	 * .tooltip-wrap.tooltip-wrap) still win in dark mode — they clear
+	 * the component's scoped (0,2,0) baseline and cascade after this
+	 * block. See docs/THEMING.md for the full arithmetic.
 	 */
 	@media (prefers-color-scheme: dark) {
 		.tooltip-wrap {
