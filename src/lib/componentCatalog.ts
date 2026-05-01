@@ -88,24 +88,158 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		icon: '☰',
 		summary: 'Application chrome, orientation, page position, and primary movement.',
 		components: [
-			component('Navbar', '/navbar', '☰', 'Responsive app navigation with a sliding panel.', 'NavBarShot.png'),
-			component('SpeedDial', '/speeddial', '⚡', 'Floating action trigger with radial shortcuts.'),
-			component('FloatingDock', '/floatingdock', '🧲', 'Dock-style navigation with proximity magnification.'),
-			component('LiquidTabBar', '/liquidtabbar', '💧', 'Gooey active-tab motion for compact navigation.'),
-			component('Drawer', '/drawer', '📥', 'Slide-in modal panel from any edge.'),
-			component('Breadcrumbs', '/breadcrumbs', '🍞', 'Hierarchical path navigation with smart truncation.'),
-			component('Pagination', '/pagination', '📑', 'Page-number navigation with ellipsis handling.'),
+			component('Navbar', '/navbar', '☰', 'Responsive app navigation with a sliding panel.', {
+				screenshotFile: 'NavBarShot.png',
+				usage: `<script lang="ts">
+  import Navbar from '$lib/components/Navbar.svelte';
+  import type { MenuCategory } from '$lib/types';
+
+  const menuCategories: MenuCategory[] = [
+    {
+      name: 'Cards',
+      icon: '🃏',
+      items: [
+        { label: 'CardStack', href: '/cardstack', icon: '🃏', active: false },
+        { label: 'MagicCard', href: '/magiccard', icon: '✨', active: false }
+      ]
+    },
+    {
+      name: 'Navigation',
+      icon: '☰',
+      items: [{ label: 'Navbar', href: '/navbar', icon: '☰', active: true }]
+    }
+  ];
+</script>
+
+<Navbar {menuCategories} logoText="Svelte Templates" logoHref="/" />`
+			}),
+			component('SpeedDial', '/speeddial', '⚡', 'Floating action trigger with radial shortcuts.', {
+				usage: `<script lang="ts">
+  import SpeedDial from '$lib/components/SpeedDial.svelte';
+  import type { SpeedDialAction } from '$lib/types';
+
+  const actions: SpeedDialAction[] = [
+    { id: 'add', label: 'Add', icon: '➕', onclick: () => console.log('add') },
+    { id: 'edit', label: 'Edit', icon: '✏️', onclick: () => console.log('edit') },
+    { id: 'delete', label: 'Delete', icon: '🗑️', onclick: () => console.log('delete') }
+  ];
+</script>
+
+<SpeedDial {actions} type="circle" direction="up" radius={90} />`
+			}),
+			component('FloatingDock', '/floatingdock', '🧲', 'Dock-style navigation with proximity magnification.', {
+				usage: `<script lang="ts">
+  import FloatingDock from '$lib/components/FloatingDock.svelte';
+  import type { FloatingDockItem } from '$lib/types';
+
+  const items: FloatingDockItem[] = [
+    { id: 1, title: 'Home', icon: '🏠', href: '/' },
+    { id: 2, title: 'Search', icon: '🔍', href: '/search' },
+    { id: 3, title: 'Settings', icon: '⚙️', href: '/settings' }
+  ];
+</script>
+
+<FloatingDock {items} magnification={2} distance={140} />`
+			}),
+			component('LiquidTabBar', '/liquidtabbar', '💧', 'Gooey active-tab motion for compact navigation.', {
+				usage: `<script lang="ts">
+  import LiquidTabBar from '$lib/components/LiquidTabBar.svelte';
+
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'specs', label: 'Specs' },
+    { id: 'reviews', label: 'Reviews' }
+  ];
+  let activeTab = $state(tabs[0].id);
+</script>
+
+<LiquidTabBar {tabs} bind:activeTab />
+
+<section>
+  {#if activeTab === 'overview'}<p>Overview content…</p>{/if}
+  {#if activeTab === 'specs'}<p>Specs content…</p>{/if}
+  {#if activeTab === 'reviews'}<p>Reviews content…</p>{/if}
+</section>`
+			}),
+			component('Drawer', '/drawer', '📥', 'Slide-in modal panel from any edge.', {
+				usage: `<script lang="ts">
+  import Drawer from '$lib/components/Drawer.svelte';
+
+  let open = $state(false);
+</script>
+
+<button type="button" onclick={() => (open = true)}>Open filters</button>
+
+<Drawer bind:open position="right" size="380px" ariaLabel="Filters">
+  <h2>Filters</h2>
+  <p>Drawer content. Press Escape or click outside to close.</p>
+</Drawer>`
+			}),
+			component('Breadcrumbs', '/breadcrumbs', '🍞', 'Hierarchical path navigation with smart truncation.', {
+				usage: `<script lang="ts">
+  import Breadcrumbs from '$lib/components/Breadcrumbs.svelte';
+  import type { Crumb } from '$lib/types';
+
+  const items: Crumb[] = [
+    { label: 'Home', href: '/' },
+    { label: 'Components', href: '/components' },
+    { label: 'Navigation', href: '/components/navigation' },
+    { label: 'Breadcrumbs' }
+  ];
+</script>
+
+<Breadcrumbs {items} separator="/" maxVisible={4} />`
+			}),
+			component('Pagination', '/pagination', '📑', 'Page-number navigation with ellipsis handling.', {
+				usage: `<script lang="ts">
+  import Pagination from '$lib/components/Pagination.svelte';
+
+  let page = $state(1);
+  const totalPages = 12;
+</script>
+
+<Pagination
+  bind:page
+  {totalPages}
+  siblings={1}
+  onChange={(p) => console.log('navigate to page', p)}
+/>`
+			}),
 			component('ReadingTOC', '/readingtoc', '📖', 'Auto-tracking document table of contents.', {
 				themeSupport: 'dual',
 				relatedFiles: [
 					'src/lib/components/ReadingTOC.test.ts',
 					'src/lib/components/ReadingTOCTestHarness.test.svelte'
 				],
-				usage: '<ReadingTOC target="#article" levels={[2, 3]} variant="rail" />',
+				usage: `<script lang="ts">
+  import ReadingTOC from '$lib/components/ReadingTOC.svelte';
+</script>
+
+<ReadingTOC target="#article" levels={[2, 3]} variant="rail" />
+
+<article id="article">
+  <h2>First section</h2>
+  <p>…</p>
+  <h3>A subsection</h3>
+  <p>…</p>
+  <h2>Second section</h2>
+  <p>…</p>
+</article>`,
 				agentHint:
 					'Use a target selector for rendered articles or pass headings for static data; keep the real anchor links for no-JS navigation.'
 			}),
-			component('ScrollProgressBar', '/scrollprogressbar', '📜', 'Viewport reading-progress indicator.')
+			component('ScrollProgressBar', '/scrollprogressbar', '📜', 'Viewport reading-progress indicator.', {
+				usage: `<script lang="ts">
+  import ScrollProgressBar from '$lib/components/ScrollProgressBar.svelte';
+</script>
+
+<ScrollProgressBar
+  target="window"
+  variant="thin"
+  position="top"
+  color="#6366f1"
+/>`
+			})
 		]
 	},
 	{
