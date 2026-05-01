@@ -15,7 +15,7 @@
 
 	const usageSnippet = `<script>
   import MembraneHero from '$lib/components/MembraneHero/MembraneHero.svelte';
-<\/script>
+</${'script'}>
 
 <MembraneHero
   palette="aurora"

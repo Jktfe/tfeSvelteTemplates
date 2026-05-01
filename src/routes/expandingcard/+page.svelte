@@ -11,7 +11,7 @@
 
 	const usageSnippet = `<script>
   import ExpandingCard from '$lib/components/ExpandingCard.svelte';
-<\/script>
+</${'script'}>
 
 <ExpandingCard
   imageSrc="https://example.com/image.jpg"

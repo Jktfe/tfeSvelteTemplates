@@ -13,7 +13,7 @@
 
 	const usageSnippet = `<script>
   import AuroraBackdrop from '$lib/components/AuroraBackdrop.svelte';
-<\/script>
+</${'script'}>
 
 <div class="hero-frame">
   <AuroraBackdrop palette="classic" intensity={1} />

@@ -7,7 +7,7 @@
 
 	const usageSnippet = `<script>
   import PerspectiveGrid from '$lib/components/PerspectiveGrid.svelte';
-<\/script>
+</${'script'}>
 
 <PerspectiveGrid intensity="standard" mode="mono">
   <div class="hero">

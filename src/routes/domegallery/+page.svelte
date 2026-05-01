@@ -59,7 +59,7 @@
     { src: '/photos/02.jpg', alt: 'Photo 2' },
     '/photos/03.jpg' // strings work too
   ];
-<\/script>
+</${'script'}>
 
 <div style="height: 70vh;">
   <DomeGallery {images} grayscale segments={35} />

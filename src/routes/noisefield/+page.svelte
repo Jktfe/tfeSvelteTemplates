@@ -7,7 +7,7 @@
 
 	const usageSnippet = `<script>
   import NoiseField from '$lib/components/NoiseField.svelte';
-<\/script>
+</${'script'}>
 
 <NoiseField intensity="medium" mode="mono" opacity={0.45}>
   <div class="hero">

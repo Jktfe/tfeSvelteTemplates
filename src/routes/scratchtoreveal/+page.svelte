@@ -15,7 +15,7 @@
 
 	const usageSnippet = `<script>
   import ScratchToReveal from '$lib/components/ScratchToReveal.svelte';
-<\/script>
+</${'script'}>
 
 <ScratchToReveal
   scratchText="Scratch Here!"

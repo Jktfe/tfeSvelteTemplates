@@ -21,7 +21,7 @@
     '$lib/components/PortfolioPhotographer/PortfolioPhotographer.svelte';
   import { SAMPLE_PHOTOS } from
     '$lib/components/PortfolioPhotographer/photos';
-<\/script>
+</${'script'}>
 
 <PortfolioPhotographer
   photos={SAMPLE_PHOTOS}

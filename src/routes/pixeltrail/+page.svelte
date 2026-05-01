@@ -11,7 +11,7 @@
 
 	const usageSnippet = `<script>
   import PixelTrail from '$lib/components/PixelTrail.svelte';
-<\/script>
+</${'script'}>
 
 <PixelTrail size="medium" palette="cyber-cyan" trailLength={20}>
   <div class="hero">…</div>

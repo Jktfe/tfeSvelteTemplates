@@ -83,7 +83,7 @@
 
 	const usageSnippet = `<script>
   import WordCloud from '$lib/components/WordCloud.svelte';
-<\/script>
+</${'script'}>
 
 <WordCloud
   words={tags}

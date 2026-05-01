@@ -7,7 +7,7 @@
 
 	const usageSnippet = `<script>
   import Divider from '$lib/components/Divider.svelte';
-<\/script>
+</${'script'}>
 
 <Divider />
 <Divider label="OR" />

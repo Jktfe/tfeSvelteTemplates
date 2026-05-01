@@ -17,7 +17,7 @@
 	const usageSnippet = `<script>
   import FolderFiles from '$lib/components/FolderFiles.svelte';
   let { data } = $props();
-<\/script>
+</${'script'}>
 
 <FolderFiles
   folders={data.folders}

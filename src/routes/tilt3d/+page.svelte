@@ -25,7 +25,7 @@
 
 	const usageSnippet = `<script>
   import Tilt3D from '$lib/components/Tilt3D.svelte';
-<\/script>
+</${'script'}>
 
 <Tilt3D maxTilt={12} glare={true}>
   <article class="card">…</article>

@@ -13,7 +13,7 @@
 
 	const usageSnippet = `<script>
   import CRTScreen from '$lib/components/CRTScreen.svelte';
-<\/script>
+</${'script'}>
 
 <CRTScreen profile="amber" density={3} aberration={1} curved>
   <pre>&gt; BOOT v3.14

@@ -9,7 +9,7 @@
 	const usageSnippet = `<script>
   import HoloCard from '$lib/components/HoloCard.svelte';
   import Tilt3D from '$lib/components/Tilt3D.svelte';
-<\/script>
+</${'script'}>
 
 <Tilt3D maxTilt={18}>
   <HoloCard intensity="iridescent" palette="rainbow">

@@ -22,7 +22,7 @@
 
 	const usageSnippet = `<script>
   import MagnetGrid from '$lib/components/MagnetGrid.svelte';
-<\/script>
+</${'script'}>
 
 <MagnetGrid cols={20} rows={12} cellSize={28} radius={150} strength={20} />`;
 

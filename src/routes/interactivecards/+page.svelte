@@ -7,7 +7,7 @@
 
 	const usageSnippet = `<script>
   import InteractiveCards from '$lib/components/InteractiveCards.svelte';
-<\/script>
+</${'script'}>
 
 <!-- The component manages its own sticky-pinned scroll region -->
 <InteractiveCards />`;

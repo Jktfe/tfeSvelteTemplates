@@ -16,7 +16,7 @@
     { image: '/path/to/image.jpg', title: 'Card Title', content: 'Card description' },
     // ...more cards
   ];
-<\/script>
+</${'script'}>
 
 <CardStack {cards} cardWidth={350} cardHeight={450} />
 

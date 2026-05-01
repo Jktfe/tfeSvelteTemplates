@@ -20,7 +20,7 @@
 
 	const usageSnippet = `<script>
   import ClickSpark from '$lib/components/ClickSpark.svelte';
-<\/script>
+</${'script'}>
 
 <ClickSpark sparkColor="#fbbf24" sparkCount={12} shape="star">
   <button>Try the demo</button>

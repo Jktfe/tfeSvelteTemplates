@@ -24,7 +24,7 @@
     { id: 'ink', name: 'Ink Mesh', hex: '#0f172a', label: 'Node A1' },
     { id: 'flame', name: 'Flame Route', hex: '#ea580c', label: 'Core 01' }
   ];
-<\/script>
+</${'script'}>
 
 <TopologyColorGrid {swatches} />`;
 

@@ -16,7 +16,7 @@
 	const usageSnippet = `<script>
   import ExplainerCanvas from '$lib/components/ExplainerCanvas/ExplainerCanvas.svelte';
   import { myCanvasData } from './data';
-<\/script>
+</${'script'}>
 
 <ExplainerCanvas
   data={myCanvasData}

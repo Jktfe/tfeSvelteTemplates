@@ -20,7 +20,7 @@
   function handleSelect(p) {
     console.log('selected', p.slug);
   }
-<\/script>
+</${'script'}>
 
 <StreamShowcase bind:active onSelect={handleSelect} />`;
 

@@ -32,7 +32,7 @@
 
 	const usageSnippet = `<script>
   import Pendulum from '$lib/components/Pendulum.svelte';
-<\/script>
+</${'script'}>
 
 <Pendulum trigger="viewport" amplitude={18} pivotOffset={{ x: 0, y: -40 }}>
   <img src="/shop-sign.png" alt="The Crown Tavern" />

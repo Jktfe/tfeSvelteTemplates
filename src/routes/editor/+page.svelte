@@ -151,7 +151,7 @@
   import Editor from '$lib/components/Editor.svelte';
   let editorOpen = $state(false);
   let editingItem = $state(null);
-<\/script>
+</${'script'}>
 
 {#if editorOpen}
   <Editor

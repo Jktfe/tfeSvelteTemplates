@@ -160,7 +160,7 @@
       formatter: (val) => '£' + val.toLocaleString('en-GB')
     }
   ];
-<\/script>
+</${'script'}>
 
 <DataGridBasic data={rows} {columns} sortable filterable pageSize={10} />`;
 

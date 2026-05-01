@@ -226,7 +226,7 @@
 							<h3 id="cp-deps-title">Dependencies</h3>
 						</header>
 						<ul class="cp-list">
-							{#each dependencies as dep}
+							{#each dependencies as dep (dep)}
 								<li>{dep}</li>
 							{/each}
 						</ul>
@@ -240,7 +240,7 @@
 						</header>
 						{#if agentSteps.length}
 							<ol class="cp-steps">
-								{#each agentSteps as step, i}
+								{#each agentSteps as step, i (step)}
 									<li><b>{String(i + 1).padStart(2, '0')}</b><span>{step}</span></li>
 								{/each}
 							</ol>
@@ -263,7 +263,7 @@
 							<h3 id="cp-res-title">Resources</h3>
 						</header>
 						<ul class="cp-list cp-list--links">
-							{#each resources as r}
+							{#each resources as r (r.href)}
 								<li>
 									<a href={r.href} rel={r.href.startsWith('http') ? 'noopener noreferrer' : undefined} target={r.href.startsWith('http') ? '_blank' : undefined}>
 										{r.label}
@@ -281,7 +281,7 @@
 							<h3 id="cp-tags-title">Tags</h3>
 						</header>
 						<div class="cp-chips">
-							{#each tags as tag}
+							{#each tags as tag (tag)}
 								<span class="cp-chip">{tag}</span>
 							{/each}
 						</div>

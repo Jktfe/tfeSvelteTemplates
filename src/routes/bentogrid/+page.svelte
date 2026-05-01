@@ -96,7 +96,7 @@
     { id: 2, title: 'Zero Deps', icon: '📦' },
     // ...
   ];
-<\/script>
+</${'script'}>
 
 <BentoGrid {items} cols={3} gap={24} />`;
 

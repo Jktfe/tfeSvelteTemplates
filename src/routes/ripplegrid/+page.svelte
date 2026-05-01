@@ -13,7 +13,7 @@
 
 	const usageSnippet = `<script>
   import RippleGrid from '$lib/components/RippleGrid.svelte';
-<\/script>
+</${'script'}>
 
 <RippleGrid
   rows={12}

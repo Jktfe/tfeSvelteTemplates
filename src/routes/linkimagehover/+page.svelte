@@ -16,7 +16,7 @@
 
 	const usageSnippet = `<script>
   import LinkImageHover from '$lib/components/LinkImageHover.svelte';
-<\/script>
+</${'script'}>
 
 <LinkImageHover
   href="https://en.wikipedia.org/wiki/Mumbai"
