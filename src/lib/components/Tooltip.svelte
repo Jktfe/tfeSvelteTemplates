@@ -17,7 +17,17 @@
   - Hover AND focus both trigger (touch and keyboard supported)
   - Escape closes the tooltip if it's open
   - Honours prefers-reduced-motion (no fade)
+  - Honours prefers-color-scheme (dark flip via CSS custom properties)
   - Pure Svelte 5 runes, zero dependencies
+
+  THEMING
+  Three CSS custom properties on .tooltip-wrap, light defaults inline,
+  flipped automatically under @media (prefers-color-scheme: dark):
+  - --tooltip-fg     foreground (light: #f9fafb / dark: #111827)
+  - --tooltip-bg     background and arrow fill (light: #111827 / dark: #f9fafb)
+  - --tooltip-shadow drop shadow under the body
+  Override at any scope to retheme without forking the component:
+      :root { --tooltip-bg: #1e3a8a; --tooltip-fg: #fff; }
 
   ACCESSIBILITY
   - Trigger gets aria-describedby pointing at the tooltip element
@@ -174,6 +184,15 @@
 
 <style>
 	.tooltip-wrap {
+		/*
+		 * Theming tokens — light defaults here, dark flip in the media block
+		 * at the bottom of this stylesheet. Override at :root or any ancestor
+		 * to retheme without forking the component.
+		 */
+		--tooltip-fg: #f9fafb;
+		--tooltip-bg: #111827;
+		--tooltip-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+
 		position: relative;
 		display: inline-block;
 	}
@@ -189,10 +208,10 @@
 		padding: 0.5rem 0.75rem;
 		font-size: 0.8125rem;
 		line-height: 1.4;
-		color: #f9fafb;
-		background-color: #111827;
+		color: var(--tooltip-fg);
+		background-color: var(--tooltip-bg);
 		border-radius: 6px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+		box-shadow: var(--tooltip-shadow);
 		white-space: normal;
 		pointer-events: none;
 		animation: tooltip-fade 0.12s ease-out;
@@ -226,7 +245,7 @@
 		position: absolute;
 		width: 8px;
 		height: 8px;
-		background-color: #111827;
+		background-color: var(--tooltip-bg);
 		transform: rotate(45deg);
 	}
 
@@ -282,6 +301,21 @@
 	@media (prefers-reduced-motion: reduce) {
 		.tooltip-body {
 			animation: none;
+		}
+	}
+
+	/*
+	 * Dark mode — invert fg/bg so the tooltip stays high-contrast on dark
+	 * pages. Heavier shadow because dark surfaces swallow light shadows.
+	 * Consumers who set custom tokens at :root (or any closer ancestor)
+	 * win because their values cascade after the defaults — this block only
+	 * fires when no override is present.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.tooltip-wrap {
+			--tooltip-fg: #111827;
+			--tooltip-bg: #f9fafb;
+			--tooltip-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
 		}
 	}
 </style>
