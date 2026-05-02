@@ -186,6 +186,7 @@
 				<tr><td><code>duration</code></td><td><code>number</code></td><td><code>1800</code></td><td>Animation duration in ms.</td></tr>
 				<tr><td><code>easing</code></td><td><code>"linear" | "quad" | "cubic" | "quart" | "expo"</code></td><td><code>"quart"</code></td><td>Easing curve.</td></tr>
 				<tr><td><code>trigger</code></td><td><code>"viewport" | "mount" | "manual"</code></td><td><code>"viewport"</code></td><td>When the run starts.</td></tr>
+				<tr><td><code>threshold</code></td><td><code>number</code></td><td><code>0.4</code></td><td>IntersectionObserver visibility ratio for the <code>'viewport'</code> trigger.</td></tr>
 				<tr><td><code>decimals</code></td><td><code>number</code></td><td><code>0</code></td><td>Decimal places (0–20).</td></tr>
 				<tr><td><code>prefix</code> / <code>suffix</code></td><td><code>string</code></td><td><code>""</code></td><td>Wraps the formatted number.</td></tr>
 				<tr><td><code>locale</code></td><td><code>string</code></td><td>browser default</td><td>Intl.NumberFormat locale.</td></tr>

@@ -157,8 +157,8 @@
 				<tr>
 					<td><code>dragDampening</code></td>
 					<td><code>number</code></td>
-					<td><code>2</code></td>
-					<td>Inertia friction — higher numbers coast longer.</td>
+					<td><code>0.8</code></td>
+					<td>Inertia friction (0–1). Higher numbers coast longer.</td>
 				</tr>
 				<tr>
 					<td><code>maxVerticalRotationDeg</code></td>

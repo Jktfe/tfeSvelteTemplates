@@ -142,6 +142,12 @@
 					<td><code>500</code></td>
 					<td>Burst lifetime in milliseconds.</td>
 				</tr>
+				<tr>
+					<td><code>easing</code></td>
+					<td><code>string</code></td>
+					<td><code>'cubic-bezier(0.25, 1, 0.5, 1)'</code></td>
+					<td>CSS easing curve applied to each particle's flight.</td>
+				</tr>
 			</tbody>
 		</table>
 	{/snippet}

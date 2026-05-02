@@ -186,6 +186,12 @@
 					<td>—</td>
 					<td>Fires when a removable chip's × is clicked.</td>
 				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Filters'</code></td>
+					<td>Accessible group label for the chip set.</td>
+				</tr>
 			</tbody>
 		</table>
 	{/snippet}

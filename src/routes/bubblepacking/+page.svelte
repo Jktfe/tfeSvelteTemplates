@@ -223,6 +223,12 @@
 					<td>—</td>
 					<td>Interaction callbacks.</td>
 				</tr>
+				<tr>
+					<td><code>tooltipFormatter</code></td>
+					<td><code>(b) =&gt; string</code></td>
+					<td>—</td>
+					<td>Custom function returning the tooltip body text.</td>
+				</tr>
 			</tbody>
 		</table>
 	{/snippet}

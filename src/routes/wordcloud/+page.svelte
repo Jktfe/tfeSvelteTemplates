@@ -210,7 +210,7 @@
 				<tr>
 					<td><code>minSize</code> / <code>maxSize</code></td>
 					<td><code>number</code></td>
-					<td><code>12</code> / <code>48</code></td>
+					<td><code>14</code> / <code>48</code></td>
 					<td>Pixel range for the linear weight scale.</td>
 				</tr>
 				<tr>
@@ -236,6 +236,12 @@
 					<td><code>boolean</code></td>
 					<td><code>false</code></td>
 					<td>Hides cloud from screen readers and emits a visually-hidden ranked table instead.</td>
+				</tr>
+				<tr>
+					<td><code>aria-label</code></td>
+					<td><code>string</code></td>
+					<td><code>'Word cloud'</code></td>
+					<td>Accessible label for the cloud region.</td>
 				</tr>
 			</tbody>
 		</table>

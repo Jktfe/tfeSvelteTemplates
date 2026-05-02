@@ -133,6 +133,18 @@
 			</thead>
 			<tbody>
 				<tr>
+					<td><code>width</code></td>
+					<td><code>number</code></td>
+					<td><code>600</code></td>
+					<td>SVG viewBox width in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>height</code></td>
+					<td><code>number</code></td>
+					<td><code>400</code></td>
+					<td>SVG viewBox height in pixels.</td>
+				</tr>
+				<tr>
 					<td><code>nodes</code></td>
 					<td><code>BeamNode[]</code></td>
 					<td><code>[]</code></td>

@@ -216,6 +216,12 @@
 					<td>—</td>
 					<td>Click handler. Cells are also keyboard-focusable.</td>
 				</tr>
+				<tr>
+					<td><code>tooltipFormatter</code></td>
+					<td><code>(date, value) =&gt; string</code></td>
+					<td>—</td>
+					<td>Custom function returning the tooltip text per cell.</td>
+				</tr>
 			</tbody>
 		</table>
 	{/snippet}

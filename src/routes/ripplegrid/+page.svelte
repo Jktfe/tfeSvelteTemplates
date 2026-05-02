@@ -119,14 +119,20 @@
 				<tr>
 					<td><code>rows</code> / <code>cols</code></td>
 					<td><code>number</code></td>
-					<td>—</td>
+					<td><code>12</code> / <code>20</code></td>
 					<td>Grid dimensions.</td>
 				</tr>
 				<tr>
-					<td><code>cellSize</code></td>
+					<td><code>cellSize</code> / <code>gap</code></td>
 					<td><code>number</code></td>
-					<td><code>28</code></td>
-					<td>Cell size in pixels.</td>
+					<td><code>24</code> / <code>2</code></td>
+					<td>Cell size and inter-cell gap in pixels.</td>
+				</tr>
+				<tr>
+					<td><code>colour</code></td>
+					<td><code>string</code></td>
+					<td><code>'#6366f1'</code></td>
+					<td>Cell pulse colour.</td>
 				</tr>
 				<tr>
 					<td><code>variant</code></td>
@@ -149,7 +155,7 @@
 				<tr>
 					<td><code>rippleDuration</code></td>
 					<td><code>number</code></td>
-					<td><code>600</code></td>
+					<td><code>700</code></td>
 					<td>Per-cell pulse duration in ms.</td>
 				</tr>
 				<tr>

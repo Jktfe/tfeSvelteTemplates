@@ -153,6 +153,30 @@
 					<td>Bindable id of the active tab.</td>
 				</tr>
 				<tr>
+					<td><code>bg</code></td>
+					<td><code>string</code></td>
+					<td><code>'#171717'</code></td>
+					<td>Track background colour.</td>
+				</tr>
+				<tr>
+					<td><code>pillColor</code></td>
+					<td><code>string</code></td>
+					<td><code>'#ffffff'</code></td>
+					<td>Sliding pill (active indicator) colour.</td>
+				</tr>
+				<tr>
+					<td><code>activeText</code></td>
+					<td><code>string</code></td>
+					<td><code>'#000000'</code></td>
+					<td>Label colour on the currently active tab.</td>
+				</tr>
+				<tr>
+					<td><code>inactiveText</code> / <code>inactiveHoverText</code></td>
+					<td><code>string</code></td>
+					<td><code>'#a3a3a3'</code> / <code>'#ffffff'</code></td>
+					<td>Idle and hover label colours for inactive tabs.</td>
+				</tr>
+				<tr>
 					<td><code>class</code></td>
 					<td><code>string</code></td>
 					<td><code>''</code></td>

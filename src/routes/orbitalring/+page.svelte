@@ -164,20 +164,26 @@
 				<tr>
 					<td><code>radius</code></td>
 					<td><code>number</code></td>
-					<td><code>200</code></td>
+					<td><code>160</code></td>
 					<td>Ring radius in pixels.</td>
 				</tr>
 				<tr>
 					<td><code>itemSize</code></td>
 					<td><code>number</code></td>
-					<td><code>72</code></td>
+					<td><code>80</code></td>
 					<td>Per-item size in pixels.</td>
 				</tr>
 				<tr>
 					<td><code>spinDurationMs</code></td>
 					<td><code>number</code></td>
-					<td><code>30000</code></td>
+					<td><code>20000</code></td>
 					<td>Time for one full revolution.</td>
+				</tr>
+				<tr>
+					<td><code>startAngleDeg</code></td>
+					<td><code>number</code></td>
+					<td><code>0</code></td>
+					<td>Angle of the first item, measured from the top.</td>
 				</tr>
 				<tr>
 					<td><code>direction</code></td>

@@ -239,6 +239,18 @@
 					<td>Background palette for the showcase canvas.</td>
 				</tr>
 				<tr>
+					<td><code>eyebrow</code></td>
+					<td><code>string</code></td>
+					<td><code>'Now browsing'</code></td>
+					<td>Small label above the headline.</td>
+				</tr>
+				<tr>
+					<td><code>topLine</code> / <code>bottomLine</code></td>
+					<td><code>string</code></td>
+					<td><code>'Queue up.'</code> / <code>'Level up.'</code></td>
+					<td>Two-line headline above the carousel.</td>
+				</tr>
+				<tr>
 					<td><code>active</code></td>
 					<td><code>number</code></td>
 					<td><code>floor(count / 2)</code></td>

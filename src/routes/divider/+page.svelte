@@ -141,6 +141,12 @@
 					<td>theme</td>
 					<td>Override the line colour with any CSS colour value.</td>
 				</tr>
+				<tr>
+					<td><code>decorative</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Hide from assistive tech with <code>role="presentation"</code>.</td>
+				</tr>
 			</tbody>
 		</table>
 	{/snippet}

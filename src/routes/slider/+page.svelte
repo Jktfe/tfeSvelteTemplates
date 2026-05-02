@@ -166,6 +166,12 @@
 					<td>Native <code>disabled</code> attribute.</td>
 				</tr>
 				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Accessible label for the range input when no visible <code>label</code> is set.</td>
+				</tr>
+				<tr>
 					<td><code>onChange</code></td>
 					<td><code>(value) =&gt; void</code></td>
 					<td>—</td>

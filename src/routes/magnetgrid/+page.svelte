@@ -139,13 +139,13 @@
 				<tr>
 					<td><code>cols</code> / <code>rows</code></td>
 					<td><code>number</code></td>
-					<td>—</td>
+					<td><code>8</code> / <code>6</code></td>
 					<td>Grid dimensions.</td>
 				</tr>
 				<tr>
 					<td><code>cellSize</code></td>
 					<td><code>number</code></td>
-					<td><code>32</code></td>
+					<td><code>36</code></td>
 					<td>Cell size in pixels.</td>
 				</tr>
 				<tr>
@@ -157,13 +157,13 @@
 				<tr>
 					<td><code>radius</code></td>
 					<td><code>number</code></td>
-					<td><code>150</code></td>
+					<td><code>140</code></td>
 					<td>Cursor influence radius.</td>
 				</tr>
 				<tr>
 					<td><code>strength</code></td>
 					<td><code>number</code></td>
-					<td><code>20</code></td>
+					<td><code>24</code></td>
 					<td>Maximum per-cell displacement in pixels.</td>
 				</tr>
 				<tr>

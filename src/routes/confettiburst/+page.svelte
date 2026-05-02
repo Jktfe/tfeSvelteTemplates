@@ -207,13 +207,13 @@
 				<tr>
 					<td><code>velocity</code></td>
 					<td><code>number</code></td>
-					<td><code>700</code></td>
+					<td><code>800</code></td>
 					<td>Initial particle speed in px/s.</td>
 				</tr>
 				<tr>
 					<td><code>gravity</code></td>
 					<td><code>number</code></td>
-					<td><code>1600</code></td>
+					<td><code>1500</code></td>
 					<td>Downward acceleration in px/s².</td>
 				</tr>
 				<tr>
@@ -227,6 +227,18 @@
 					<td><code>readonly string[]</code></td>
 					<td><code>DEFAULT_PALETTE</code></td>
 					<td>Default colours. Override per call via <code>fire({`{ palette }`})</code>.</td>
+				</tr>
+				<tr>
+					<td><code>origin</code></td>
+					<td><code>'center' | {`{ x, y }`}</code></td>
+					<td><code>'center'</code></td>
+					<td>Default burst origin. Per-shot <code>fire()</code> overrides this.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Celebration'</code></td>
+					<td>Screen-reader announcement text when a burst fires.</td>
 				</tr>
 				<tr>
 					<td><code>fire(opts?)</code></td>

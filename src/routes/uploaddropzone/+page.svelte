@@ -312,6 +312,18 @@
 					<td>Headline and helper copy shown in the dropzone.</td>
 				</tr>
 				<tr>
+					<td><code>browseLabel</code> / <code>emptyLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Browse files'</code> / <code>'No files selected'</code></td>
+					<td>Button label and empty-state text.</td>
+				</tr>
+				<tr>
+					<td><code>onChange</code></td>
+					<td><code>(items) =&gt; void</code></td>
+					<td>—</td>
+					<td>Fires whenever the file list changes (added, removed, or retried).</td>
+				</tr>
+				<tr>
 					<td><code>onFilesAdded</code></td>
 					<td><code>(items) =&gt; void</code></td>
 					<td>—</td>
