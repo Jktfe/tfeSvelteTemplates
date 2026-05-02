@@ -30,6 +30,37 @@
 		direction: (['up', 'down', 'left', 'right', 'scale', 'rotate'] as const)[i % 6]
 	}));
 
+	// ----------------------------------------------------------------------
+	// Live playground state — visitors tweak these and the playground row
+	// re-instantiates with a fresh `key` so each change replays the reveal.
+	// `replayKey` is incremented manually because IntersectionObserver-based
+	// reveal can only trigger once unless we re-mount or set replay=true.
+	// ----------------------------------------------------------------------
+	type Direction = 'up' | 'down' | 'left' | 'right' | 'scale' | 'rotate';
+	let liveDirection = $state<Direction>('up');
+	let liveDistance = $state(40);
+	let liveDuration = $state(700);
+	let liveStagger = $state(120);
+	let liveReplay = $state(true);
+	let replayKey = $state(0);
+
+	const directions: { id: Direction; label: string }[] = [
+		{ id: 'up', label: 'Up' },
+		{ id: 'down', label: 'Down' },
+		{ id: 'left', label: 'Left' },
+		{ id: 'right', label: 'Right' },
+		{ id: 'scale', label: 'Scale' },
+		{ id: 'rotate', label: 'Rotate' }
+	];
+
+	const playgroundTiles = ['Tile A', 'Tile B', 'Tile C', 'Tile D', 'Tile E', 'Tile F'];
+
+	function replay() {
+		// Bump the keyed wrapper so ScrollReveal teardown + remount fires —
+		// the simplest way to retrigger a one-shot reveal.
+		replayKey += 1;
+	}
+
 	const usageSnippet = `<script>
   import ScrollReveal from '$lib/components/ScrollReveal.svelte';
 </${'script'}>
@@ -98,6 +129,89 @@
 							</ScrollReveal>
 						{/each}
 					</div>
+				</div>
+			</section>
+
+			<!-- 4. Live playground.
+			     Every control rebinds straight into the ScrollReveal instance
+			     in the stage below. Press Replay to remount and re-trigger the
+			     entrance — the simplest way to demo direction/distance changes
+			     without scrolling away and back. -->
+			<section class="sr-section">
+				<h3>4. Live playground — tune every prop in real time</h3>
+
+				<div class="sr-controls">
+					<div class="sr-control">
+						<span class="sr-control__label">Direction</span>
+						<div class="sr-buttons">
+							{#each directions as opt (opt.id)}
+								<button
+									type="button"
+									class="sr-pill"
+									class:sr-pill--active={liveDirection === opt.id}
+									onclick={() => (liveDirection = opt.id)}
+								>{opt.label}</button>
+							{/each}
+						</div>
+					</div>
+
+					<div class="sr-control">
+						<span class="sr-control__label">Distance <strong>{liveDistance}{liveDirection === 'rotate' ? '°' : 'px'}</strong></span>
+						<input type="range" min="0" max="120" step="4" bind:value={liveDistance} aria-label="Reveal distance" />
+					</div>
+
+					<div class="sr-control">
+						<span class="sr-control__label">Duration <strong>{liveDuration}ms</strong></span>
+						<input type="range" min="100" max="1500" step="50" bind:value={liveDuration} aria-label="Reveal duration" />
+					</div>
+
+					<div class="sr-control">
+						<span class="sr-control__label">Stagger <strong>{liveStagger}ms</strong></span>
+						<input type="range" min="0" max="300" step="10" bind:value={liveStagger} aria-label="Per-child stagger" />
+					</div>
+
+					<div class="sr-control">
+						<span class="sr-control__label">Replay on exit</span>
+						<div class="sr-buttons">
+							<button
+								type="button"
+								class="sr-pill"
+								class:sr-pill--active={liveReplay}
+								onclick={() => (liveReplay = true)}
+							>On</button>
+							<button
+								type="button"
+								class="sr-pill"
+								class:sr-pill--active={!liveReplay}
+								onclick={() => (liveReplay = false)}
+							>One-shot</button>
+						</div>
+					</div>
+
+					<div class="sr-control">
+						<span class="sr-control__label">Trigger</span>
+						<button class="sr-replay" type="button" onclick={replay}>Replay</button>
+					</div>
+				</div>
+
+				<div class="sr-stage">
+					{#key replayKey}
+						<ScrollReveal
+							class="sr-cards"
+							direction={liveDirection}
+							distance={liveDistance}
+							duration={liveDuration}
+							stagger={liveStagger}
+							replay={liveReplay}
+						>
+							{#each playgroundTiles as title (title)}
+								<article class="sr-card-tile">
+									<h4>{title}</h4>
+									<p>direction={liveDirection}, distance={liveDistance}, stagger={liveStagger}ms</p>
+								</article>
+							{/each}
+						</ScrollReveal>
+					{/key}
 				</div>
 			</section>
 		</div>
@@ -263,5 +377,72 @@
 		background: var(--surface-2);
 		border-radius: 8px;
 		border: 1px solid var(--border);
+	}
+
+	.sr-controls {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 14px;
+		padding: 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		margin-bottom: 12px;
+	}
+	.sr-control {
+		display: grid;
+		gap: 8px;
+	}
+	.sr-control__label {
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.sr-control__label strong {
+		color: var(--fg-1);
+		font-weight: 600;
+		text-transform: none;
+		letter-spacing: 0;
+		font-family: var(--font-mono);
+		font-size: 12px;
+	}
+	.sr-control input[type='range'] {
+		width: 100%;
+	}
+	.sr-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.sr-pill {
+		padding: 6px 10px;
+		border: 1px solid var(--border);
+		background: var(--surface-2);
+		color: var(--fg-2);
+		border-radius: var(--r-1);
+		font: 500 12px var(--font-sans);
+		cursor: pointer;
+	}
+	.sr-pill:hover {
+		color: var(--fg-1);
+		border-color: var(--accent);
+	}
+	.sr-pill--active {
+		background: var(--accent);
+		color: var(--accent-on, #fff);
+		border-color: var(--accent);
+	}
+	.sr-replay {
+		padding: 8px 12px;
+		background: var(--accent);
+		color: var(--accent-on, #fff);
+		border: 1px solid var(--accent);
+		border-radius: var(--r-1);
+		font: 600 13px var(--font-sans);
+		cursor: pointer;
+	}
+	.sr-replay:hover {
+		filter: brightness(1.05);
 	}
 </style>
