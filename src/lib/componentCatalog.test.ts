@@ -31,7 +31,7 @@ describe('componentCatalog agent metadata', () => {
 		expect(forms?.item.docs).toBe('src/lib/components/forms/Forms.md');
 		expect(forms?.item.relatedFiles).toContain('src/lib/components/forms/TextField.svelte');
 		expect(maps?.item.dependencies).toEqual(['leaflet', '@types/leaflet']);
-		expect(maps?.item.usage).toContain('MapBasic');
+		expect(maps?.item.usage).toContain('MapLive');
 	});
 
 	it('keeps audit-priority rows explicit enough for agent copy prompts', () => {
@@ -85,7 +85,7 @@ describe('componentCatalog agent metadata', () => {
 		expect(expandingCard?.item.agentHint).toMatch(/bgColor values/i);
 		expect(editor?.item.source).toBe('src/lib/components/Editor.svelte');
 		expect(editor?.item.relatedFiles).toContain('src/lib/server/editorData.ts');
-		expect(editor?.item.usage).toContain('mode="edit"');
+		expect(editor?.item.usage).toContain("mode={editingItem ? 'edit' : 'create'}");
 	});
 
 	it('provides the metadata needed by the shared AgentPromptCopy block', () => {
