@@ -3,7 +3,7 @@
 -->
 
 <script lang="ts">
-	import ScrollReveal from '$lib/components/ScrollReveal.svelte';
+	import ScrollReveal, { type Direction } from '$lib/components/ScrollReveal.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 
@@ -30,13 +30,10 @@
 		direction: (['up', 'down', 'left', 'right', 'scale', 'rotate'] as const)[i % 6]
 	}));
 
-	// ----------------------------------------------------------------------
-	// Live playground state — visitors tweak these and the playground row
-	// re-instantiates with a fresh `key` so each change replays the reveal.
-	// `replayKey` is incremented manually because IntersectionObserver-based
-	// reveal can only trigger once unless we re-mount or set replay=true.
-	// ----------------------------------------------------------------------
-	type Direction = 'up' | 'down' | 'left' | 'right' | 'scale' | 'rotate';
+	// `replayKey` bumps force a remount of the playground stage so that
+	// distance / duration / stagger changes — which ScrollReveal reads
+	// once at mount and stamps into CSS vars — actually take effect on
+	// each Replay press. Direction is observed live; the others aren't.
 	let liveDirection = $state<Direction>('up');
 	let liveDistance = $state(40);
 	let liveDuration = $state(700);
@@ -138,7 +135,11 @@
 			     entrance — the simplest way to demo direction/distance changes
 			     without scrolling away and back. -->
 			<section class="sr-section">
-				<h3>4. Live playground — tune every prop in real time</h3>
+				<h3>4. Live playground</h3>
+				<p class="sr-section__hint">
+					Direction updates immediately. Distance, duration and stagger are read once at mount —
+					press <strong>Replay</strong> after changing them to remount the stage and see the new values.
+				</p>
 
 				<div class="sr-controls">
 					<div class="sr-control">
@@ -298,6 +299,16 @@
 		text-transform: uppercase;
 		letter-spacing: 0.02em;
 		color: var(--fg-1);
+	}
+	.sr-section__hint {
+		margin: 0;
+		color: var(--fg-2);
+		font-size: 14px;
+		line-height: 1.5;
+	}
+	.sr-section__hint strong {
+		color: var(--fg-1);
+		font-weight: 600;
 	}
 	.sr-stage {
 		padding: 24px;

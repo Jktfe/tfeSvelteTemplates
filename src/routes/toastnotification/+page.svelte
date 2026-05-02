@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onDestroy } from 'svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import ToastNotification from '$lib/components/ToastNotification.svelte';
@@ -7,16 +8,15 @@
 
 	const shell = catalogShellPropsForSlug('/toastnotification')!;
 
-	// ----------------------------------------------------------------------
-	// Live playground state — every control on the page rebinds straight into
-	// the single ToastNotification mount at the bottom. Severity buttons drop
-	// a fresh toast into the stack so users can see how the configured
-	// position, max stack, and offsets behave with multiple visible items.
-	// ----------------------------------------------------------------------
 	let livePosition = $state<ToastPosition>('top-right');
 	let liveMax = $state(5);
 	let liveOffsetY = $state(5);
 	let liveOffsetX = $state(1);
+
+	// ToastNotification's offset props are CSS strings (`5rem`), not numbers.
+	// Memoise the formatted form so unrelated state changes don't re-allocate.
+	const offsetYRem = $derived(`${liveOffsetY}rem`);
+	const offsetXRem = $derived(`${liveOffsetX}rem`);
 
 	const positionOptions: { id: ToastPosition; label: string }[] = [
 		{ id: 'top-left', label: 'Top left' },
@@ -52,13 +52,21 @@
 		});
 	}
 
+	// Track scheduled fillStack timers so navigation mid-burst doesn't leak
+	// toasts onto the next page that mounts ToastNotification.
+	let fillStackTimers: ReturnType<typeof setTimeout>[] = [];
+
 	function fillStack() {
-		// Fire a small flurry so the maxVisible slider has something to clamp.
 		const severities: ToastSeverity[] = ['info', 'success', 'warning', 'error', 'info', 'success'];
 		severities.forEach((s, i) => {
-			setTimeout(() => triggerToast(s), i * 120);
+			fillStackTimers.push(setTimeout(() => triggerToast(s), i * 120));
 		});
 	}
+
+	onDestroy(() => {
+		fillStackTimers.forEach(clearTimeout);
+		fillStackTimers = [];
+	});
 </script>
 
 <svelte:head>
@@ -156,8 +164,8 @@
 		<ToastNotification
 			position={livePosition}
 			maxVisible={liveMax}
-			offsetY={`${liveOffsetY}rem`}
-			offsetX={`${liveOffsetX}rem`}
+			offsetY={offsetYRem}
+			offsetX={offsetXRem}
 		/>
 	{/snippet}
 
