@@ -16,10 +16,16 @@ const config = {
 	preprocess: vitePreprocess(),
 
 	kit: {
-		// Vercel adapter for serverless deployment
-		// Runtime set to nodejs20.x for compatibility with Neon serverless driver
+		// Vercel adapter for serverless deployment.
+		//
+		// Node 22.x is required because `isomorphic-dompurify` (used by the
+		// component-docs markdown pipeline) pulls in `jsdom`, which does
+		// `require('parse5')`. parse5 is now pure ESM — `require()` of an
+		// ESM module is only supported from Node 22.12+. On Node 20 it fails
+		// at runtime with ERR_REQUIRE_ESM and every SSR page returns 500.
+		// Neon's serverless driver is happy on Node 22+ as well.
 		adapter: adapter({
-			runtime: 'nodejs20.x' // Required for @neondatabase/serverless compatibility
+			runtime: 'nodejs22.x'
 		})
 	}
 };
