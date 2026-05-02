@@ -18,6 +18,36 @@
 		likeCount += liked ? 1 : -1;
 	}
 
+	// ----------------------------------------------------------------------
+	// Live playground state. The ClickSpark wrapper around the playground
+	// button reads each rune below and reconfigures its burst on the fly —
+	// every click after a control change immediately reflects the new prop.
+	// ----------------------------------------------------------------------
+	type Shape = 'dot' | 'plus' | 'line' | 'star';
+	let liveShape = $state<Shape>('star');
+	let liveColor = $state('#fbbf24');
+	let liveCount = $state(8);
+	let liveSize = $state(10);
+	let liveSpread = $state(60);
+	let liveDuration = $state(500);
+	let livePlaygroundClicks = $state(0);
+
+	const shapes: { id: Shape; label: string }[] = [
+		{ id: 'dot', label: 'Dot' },
+		{ id: 'plus', label: 'Plus' },
+		{ id: 'line', label: 'Line' },
+		{ id: 'star', label: 'Star' }
+	];
+
+	const colorPresets: { hex: string; name: string }[] = [
+		{ hex: '#fbbf24', name: 'Amber' },
+		{ hex: '#f43f5e', name: 'Rose' },
+		{ hex: '#22d3ee', name: 'Cyan' },
+		{ hex: '#a855f7', name: 'Violet' },
+		{ hex: '#10b981', name: 'Emerald' },
+		{ hex: '#ffffff', name: 'White' }
+	];
+
 	const usageSnippet = `<script>
   import ClickSpark from '$lib/components/ClickSpark.svelte';
 </${'script'}>
@@ -89,6 +119,84 @@
 							<span class="cs-like__heart" aria-hidden="true">{liked ? '♥' : '♡'}</span>
 							<span>{likeCount}</span>
 						</button>
+					</ClickSpark>
+				</div>
+			</section>
+
+			<!-- Live playground.
+			     Every control rebinds straight into the ClickSpark wrapping the
+			     button below. Clicking the button after each tweak shows the
+			     new burst — no page reload, no remount needed. -->
+			<section class="cs-section">
+				<h3>Live playground — tune every prop in real time</h3>
+
+				<div class="cs-controls">
+					<div class="cs-control">
+						<span class="cs-control__label">Shape</span>
+						<div class="cs-buttons">
+							{#each shapes as opt (opt.id)}
+								<button
+									type="button"
+									class="cs-pill"
+									class:cs-pill--active={liveShape === opt.id}
+									onclick={() => (liveShape = opt.id)}
+								>{opt.label}</button>
+							{/each}
+						</div>
+					</div>
+
+					<div class="cs-control">
+						<span class="cs-control__label">Colour</span>
+						<div class="cs-swatches">
+							{#each colorPresets as preset (preset.hex)}
+								<button
+									type="button"
+									class="cs-swatch"
+									class:cs-swatch--active={liveColor === preset.hex}
+									style:background={preset.hex}
+									title={preset.name}
+									aria-label={`Use ${preset.name}`}
+									onclick={() => (liveColor = preset.hex)}
+								></button>
+							{/each}
+						</div>
+					</div>
+
+					<div class="cs-control">
+						<span class="cs-control__label">Count <strong>{liveCount}</strong></span>
+						<input type="range" min="2" max="24" step="1" bind:value={liveCount} aria-label="Spark count" />
+					</div>
+
+					<div class="cs-control">
+						<span class="cs-control__label">Size <strong>{liveSize}px</strong></span>
+						<input type="range" min="2" max="24" step="1" bind:value={liveSize} aria-label="Spark size" />
+					</div>
+
+					<div class="cs-control">
+						<span class="cs-control__label">Spread <strong>{liveSpread}px</strong></span>
+						<input type="range" min="20" max="160" step="5" bind:value={liveSpread} aria-label="Spread radius" />
+					</div>
+
+					<div class="cs-control">
+						<span class="cs-control__label">Duration <strong>{liveDuration}ms</strong></span>
+						<input type="range" min="200" max="1500" step="50" bind:value={liveDuration} aria-label="Burst duration" />
+					</div>
+				</div>
+
+				<div class="cs-stage cs-stage--centered cs-stage--dark">
+					<ClickSpark
+						sparkColor={liveColor}
+						shape={liveShape}
+						sparkCount={liveCount}
+						sparkSize={liveSize}
+						spreadRadius={liveSpread}
+						duration={liveDuration}
+					>
+						<button
+							class="cs-cta cs-cta--primary"
+							type="button"
+							onclick={() => livePlaygroundClicks++}
+						>Click anywhere on the button · {livePlaygroundClicks}</button>
 					</ClickSpark>
 				</div>
 			</section>
@@ -248,5 +356,85 @@
 		color: #f43f5e;
 		background: #fff1f2;
 		border-color: #fecdd3;
+	}
+
+	.cs-stage--dark {
+		background: #0f172a;
+		border-color: #1e293b;
+	}
+	.cs-controls {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 14px;
+		padding: 16px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		margin-bottom: 12px;
+	}
+	.cs-control {
+		display: grid;
+		gap: 8px;
+	}
+	.cs-control__label {
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.cs-control__label strong {
+		color: var(--fg-1);
+		font-weight: 600;
+		text-transform: none;
+		letter-spacing: 0;
+		font-family: var(--font-mono);
+		font-size: 12px;
+	}
+	.cs-control input[type='range'] {
+		width: 100%;
+	}
+	.cs-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.cs-pill {
+		padding: 6px 10px;
+		border: 1px solid var(--border);
+		background: var(--surface-2);
+		color: var(--fg-2);
+		border-radius: var(--r-1);
+		font: 500 12px var(--font-sans);
+		cursor: pointer;
+	}
+	.cs-pill:hover {
+		color: var(--fg-1);
+		border-color: var(--accent);
+	}
+	.cs-pill--active {
+		background: var(--accent);
+		color: var(--accent-on, #fff);
+		border-color: var(--accent);
+	}
+	.cs-swatches {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.cs-swatch {
+		width: 24px;
+		height: 24px;
+		padding: 0;
+		border: 2px solid var(--border);
+		border-radius: 999px;
+		cursor: pointer;
+		transition: transform 120ms ease, box-shadow 120ms ease;
+	}
+	.cs-swatch:hover {
+		transform: scale(1.08);
+	}
+	.cs-swatch--active {
+		border-color: var(--fg-1);
+		box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--fg-1);
 	}
 </style>

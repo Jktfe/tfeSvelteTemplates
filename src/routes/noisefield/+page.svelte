@@ -5,6 +5,31 @@
 
 	const shell = catalogShellPropsForSlug('/noisefield')!;
 
+	// ----------------------------------------------------------------------
+	// Live playground state — every control rebinds straight into the single
+	// NoiseField instance below. Useful for choosing the right grain weight
+	// without diffing screenshots.
+	// ----------------------------------------------------------------------
+	type Intensity = 'fine' | 'medium' | 'coarse';
+	type Mode = 'mono' | 'chroma' | 'retro';
+
+	let liveIntensity = $state<Intensity>('medium');
+	let liveMode = $state<Mode>('mono');
+	let liveOpacity = $state(0.45);
+	let liveAnimated = $state(true);
+
+	const intensityOptions: { id: Intensity; label: string }[] = [
+		{ id: 'fine', label: 'Fine' },
+		{ id: 'medium', label: 'Medium' },
+		{ id: 'coarse', label: 'Coarse' }
+	];
+
+	const modeOptions: { id: Mode; label: string }[] = [
+		{ id: 'mono', label: 'Mono' },
+		{ id: 'chroma', label: 'Chroma' },
+		{ id: 'retro', label: 'Retro' }
+	];
+
 	const usageSnippet = `<script>
   import NoiseField from '$lib/components/NoiseField.svelte';
 </${'script'}>
@@ -86,6 +111,80 @@ $ ant boot --mode=arcade
 					</div>
 				</NoiseField>
 			</div>
+
+			<!-- Live playground.
+			     Every value below pipes straight into the live NoiseField at
+			     the bottom — handy for picking the right grain weight against
+			     your own copy without diffing screenshots. -->
+			<section class="nf-playground">
+				<header class="nf-playground__head">
+					<h3>Live playground</h3>
+					<p>Tweak the props — they bind straight into the NoiseField below.</p>
+				</header>
+
+				<div class="nf-controls">
+					<div class="nf-control">
+						<span class="nf-control__label">Intensity</span>
+						<div class="nf-buttons">
+							{#each intensityOptions as opt (opt.id)}
+								<button
+									type="button"
+									class="nf-pill"
+									class:nf-pill--active={liveIntensity === opt.id}
+									onclick={() => (liveIntensity = opt.id)}
+								>{opt.label}</button>
+							{/each}
+						</div>
+					</div>
+
+					<div class="nf-control">
+						<span class="nf-control__label">Mode</span>
+						<div class="nf-buttons">
+							{#each modeOptions as opt (opt.id)}
+								<button
+									type="button"
+									class="nf-pill"
+									class:nf-pill--active={liveMode === opt.id}
+									onclick={() => (liveMode = opt.id)}
+								>{opt.label}</button>
+							{/each}
+						</div>
+					</div>
+
+					<div class="nf-control">
+						<span class="nf-control__label">Opacity <strong>{liveOpacity.toFixed(2)}</strong></span>
+						<input type="range" min="0" max="1" step="0.05" bind:value={liveOpacity} aria-label="Grain opacity" />
+					</div>
+
+					<div class="nf-control">
+						<span class="nf-control__label">Animated</span>
+						<div class="nf-buttons">
+							<button
+								type="button"
+								class="nf-pill"
+								class:nf-pill--active={liveAnimated}
+								onclick={() => (liveAnimated = true)}
+							>On</button>
+							<button
+								type="button"
+								class="nf-pill"
+								class:nf-pill--active={!liveAnimated}
+								onclick={() => (liveAnimated = false)}
+							>Frozen</button>
+						</div>
+					</div>
+				</div>
+
+				<NoiseField intensity={liveIntensity} mode={liveMode} opacity={liveOpacity} animated={liveAnimated}>
+					<div class="nf-stage nf-stage--live">
+						<div class="nf-content">
+							<div class="nf-eyebrow">LIVE PREVIEW</div>
+							<h3 class="nf-title">{liveIntensity} · {liveMode}</h3>
+							<p class="nf-sub">opacity {liveOpacity.toFixed(2)} · {liveAnimated ? 'animated' : 'static'}</p>
+						</div>
+					</div>
+				</NoiseField>
+			</section>
 		</div>
 	{/snippet}
 
@@ -230,5 +329,81 @@ $ ant boot --mode=arcade
 		font-size: 0.75rem;
 		color: #8c8c9c;
 		font-family: 'Fira Code', monospace;
+	}
+
+	.nf-stage--live {
+		background: radial-gradient(circle at 60% 40%, #1a2350, #0a0a14 70%);
+	}
+	.nf-playground {
+		display: grid;
+		gap: 14px;
+		padding: 18px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+	}
+	.nf-playground__head h3 {
+		margin: 0 0 4px;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 16px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
+	}
+	.nf-playground__head p {
+		margin: 0;
+		font-size: 13px;
+		color: var(--fg-2);
+		line-height: 1.5;
+	}
+	.nf-controls {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+		gap: 12px;
+	}
+	.nf-control {
+		display: grid;
+		gap: 6px;
+	}
+	.nf-control__label {
+		font: 500 11px var(--font-mono);
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.nf-control__label strong {
+		color: var(--fg-1);
+		font-weight: 600;
+		text-transform: none;
+		letter-spacing: 0;
+		font-family: var(--font-mono);
+		font-size: 12px;
+	}
+	.nf-control input[type='range'] {
+		width: 100%;
+	}
+	.nf-buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+	.nf-pill {
+		padding: 6px 10px;
+		border: 1px solid var(--border);
+		background: var(--surface-2);
+		color: var(--fg-2);
+		border-radius: var(--r-1);
+		font: 500 12px var(--font-sans);
+		cursor: pointer;
+	}
+	.nf-pill:hover {
+		color: var(--fg-1);
+		border-color: var(--accent);
+	}
+	.nf-pill--active {
+		background: var(--accent);
+		color: var(--accent-on, #fff);
+		border-color: var(--accent);
 	}
 </style>
