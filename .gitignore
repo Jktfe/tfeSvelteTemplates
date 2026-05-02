@@ -67,3 +67,4 @@ output/
 
 # Generated documentation
 HLV/
+.env*.local
