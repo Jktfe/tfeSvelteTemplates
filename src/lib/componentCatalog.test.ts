@@ -70,7 +70,7 @@ describe('componentCatalog agent metadata', () => {
 		const entry = getCatalogEntryByHref('/sankey');
 
 		expect(entry?.item.source).toBe('src/lib/components/ExpandableSankey.svelte');
-		expect(entry?.item.docs).toBe('src/lib/components/ExpandableSankey.md');
+		expect(entry?.item.docs).toBe('src/lib/components/Sankey.md');
 		expect(entry?.item.dependencies).toEqual(['@unovis/svelte', '@unovis/ts']);
 		expect(entry?.item.themeSupport).toBe('dual');
 		expect(entry?.item.agentHint).toMatch(/not implemented yet/i);

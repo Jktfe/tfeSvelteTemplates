@@ -1,122 +1,181 @@
----
-name: GlitchText
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# GlitchText — Technical Logic Explainer
 
-# GlitchText
+## What Does It Do? (Plain English)
 
-RGB-channel-split text glitch primitive. Renders text with cyan/magenta offset clones drifting behind the base layer plus an occasional clip-path "tear" band that slices a horizontal strip and shoves it sideways. Asset-free, pure CSS pseudo-elements + clip-path + minimal JS for the timing loop.
+GlitchText fakes the chromatic-aberration RGB-channel separation and tear-banding you see on glitchy CRTs, broken VHS tapes, or bad satellite feeds. The underlying text node is unchanged — two CSS pseudo-element ghost layers drift cyan and magenta either side of the glyph centres, while an occasional clipped horizontal "tear" band slices through and shoves part of the line sideways.
 
-Cyberpunk / Y2K-broadcast / VHS-tear aesthetics. Composes well with `CRTScreen` (frame the glitched headline) or any heavy-weight typeface. Pairs naturally with the wider text-effect taxonomy already shipped: `ShinyText` (shimmer pass), `ScrambledText` (glyph-shuffle reveal), `TrueFocus` (focus-ring reveal), `VariableProximity` (cursor-driven font weight), `NeonSign` (glowing tube), `Typewriter` (typing reveal).
+Three intensity profiles (`subtle`, `moderate`, `wild`) and three triggers (`auto`, `hover`, `viewport`) cover most scenes. Asset-free — no images, no SVG, no shader. Just CSS pseudo-elements, `clip-path`, and a small rAF loop driving deterministic pseudo-random offsets.
 
-## Key features
+## How It Works (Pseudo-Code)
 
-- **Three intensities** — `subtle` / `moderate` / `wild`. Each preset balances RGB-clone offset, tear cadence and opacity so a single intensity prop does the right thing without prop-soup.
-- **Three triggers** — `auto` (start on mount), `hover` (toggle on hover/focus, keyboard-parity), `viewport` (start on first IntersectionObserver entry, then disconnect).
-- **Pure helpers exported** from the module-script (`pickIntensity`, `jitterOffset`, `tearBand`, `scheduleNextTear`, `pickTrigger`, `isReducedMotion`) — all directly unit-testable without rendering.
-- **Deterministic per-seed jitter** — `jitterOffset` and `tearBand` are pure functions of an integer seed; same seed always yields the same offsets, which makes the visual stable enough not to feel like white noise.
-- **prefers-reduced-motion safe** — `start()` checks `isReducedMotion()` and refuses to spin the rAF loop; the stylesheet also hides clones and tear via `@media (prefers-reduced-motion: reduce)` as belt + braces.
-- **SR-friendly** — base text remains a real DOM text node; clones are CSS pseudo-elements (invisible to AT); tear band is `aria-hidden`.
+```
+state:
+  active            = false
+  dxCyan, dyCyan    = current cyan ghost offset (px)
+  dxMagenta, dyMag  = current magenta ghost offset (px)
+  tearTop, tearHeight, tearDx, tearVisible = tear-band parameters
 
-## Usage
+derive:
+  cfg = pickIntensity(intensity)    // { offsetMax, tearMs, jitterMs, opacity }
 
-```svelte
-<script>
-	import GlitchText from '$lib/components/GlitchText.svelte';
-</script>
+helpers (pure, exported):
+  pseudoRand(seed, salt) → 0..1     // deterministic Math.sin hash
+  jitterOffset(cfg, seed)  → { dx, dy }   ∈ [-offsetMax, +offsetMax]
+  tearBand(cfg, seed)      → { top%, height%, dx } for the clip-path slice
+  scheduleNextTear(cfg, now) → ms until next tear
 
-<GlitchText text="GLITCHED" intensity="moderate" trigger="auto" />
-<GlitchText text="HOVER ME" intensity="wild" trigger="hover" />
-<GlitchText text="ONSCREEN" intensity="subtle" trigger="viewport" />
+start():
+  if isReducedMotion: bail
+  active = true
+  rAF loop tickJitter:
+    seed = floor(now / 80)
+    a = jitterOffset(cfg, seed)
+    b = jitterOffset(cfg, seed + 7)
+    dxCyan = a.dx; dyCyan = a.dy
+    dxMagenta = -b.dx; dyMagenta = -b.dy   // mirrored = real chromatic aberration
+    rAF(tickJitter)
+  scheduleTear():
+    setTimeout(after scheduleNextTear ms):
+      seed = floor(performance.now())
+      band = tearBand(cfg, seed)
+      tearTop, tearHeight, tearDx = band.*
+      tearVisible = true
+      setTimeout(after cfg.tearMs):
+        tearVisible = false
+        if active: scheduleTear()
+
+trigger gating:
+  'auto':     start() onMount
+  'hover':    start() on mouseenter / focusin; stop() on mouseleave / focusout
+  'viewport': IntersectionObserver → start() on first intersection, then disconnect
+
+stop():
+  active = false
+  cancelAnimationFrame; clearTimeout × 2
+  reset all offsets to 0; tearVisible = false
 ```
 
-## Props
+## The Core Concept: Pseudo-Random Jitter at 60 fps
 
-| Prop        | Type                              | Default      | Notes                                                              |
-| ----------- | --------------------------------- | ------------ | ------------------------------------------------------------------ |
-| `text`      | `string`                          | _(required)_ | Visible text. Used both as the DOM text node and the clone source. |
-| `intensity` | `'subtle' \| 'moderate' \| 'wild'` | `'moderate'` | Tunes RGB-clone offset, tear cadence and clone opacity.            |
-| `trigger`   | `'auto' \| 'hover' \| 'viewport'` | `'auto'`     | When the glitch starts.                                            |
+The RGB channels need to look "alive" — pure random would feel fizzy and uniform. The component uses a `Math.sin` hash for **deterministic** pseudo-random offsets:
 
-Unknown intensity / trigger values fall back to `moderate` / `auto`.
-
-## Intensity table
-
-| Intensity  | offsetMax (px) | tearMs | jitterMs (cadence) | clone opacity |
-| ---------- | -------------- | ------ | ------------------ | ------------- |
-| `subtle`   | 1              | 80     | 700                | 0.45          |
-| `moderate` | 3              | 130    | 380                | 0.65          |
-| `wild`     | 6              | 200    | 220                | 0.85          |
-
-Tear cadence varies in `[0.5x, 1.5x]` of `jitterMs` per cycle so the tears don't beat in time.
-
-## Triggers
-
-- **`auto`** — calls `start()` on `onMount`. Effect runs continuously while the component is in the DOM.
-- **`hover`** — `start()` on `mouseenter` / `focusin`, `stop()` on `mouseleave` / `focusout`. Keyboard-parity via focus events. Resting state is clean text (no rAF, no timers).
-- **`viewport`** — uses `IntersectionObserver` to fire `start()` on first intersection, then disconnects the observer (one-shot). Useful for hero sections that should glitch into life on scroll.
-
-In all cases, `stop()` runs on component destroy to cancel rAF + clear timers + reset visuals.
-
-## Distinct from
-
-- **`ShinyText`** — shimmer-pass highlight sweep over text. GlitchText is RGB-split + clip-path tear, no shimmer.
-- **`ScrambledText`** — glyph-shuffle reveal toward target text. GlitchText preserves the text exactly; only the visual rendering distorts.
-- **`TrueFocus`** — focus-ring reveal over a word. GlitchText is whole-string distortion.
-- **`VariableProximity`** — per-glyph font-weight reactive to cursor proximity. GlitchText is timing-driven, no cursor input.
-- **`NeonSign`** — glowing neon-tube text + flicker. GlitchText is digital-distortion glitch, no glow.
-- **`Typewriter`** — character-by-character typing reveal. GlitchText is steady-state distortion of present text.
-- **`CRTScreen`** — frame wrapper with scanline + chromatic-aberration overlay. GlitchText is per-text, no frame; composes well with CRTScreen wrapping it.
-
-## Pure helpers (module-script exports)
-
-- `pickIntensity(name)` — returns `{ offsetMax, tearMs, jitterMs, opacity }`. Falls back to `moderate`.
-- `jitterOffset(intensity, seed)` — returns `{ dx, dy }` integer px offsets in `[-offsetMax, offsetMax]`. Deterministic per seed.
-- `tearBand(intensity, seed)` — returns `{ top, height, dx }` (top in `[0, 80]`%, height in `[5, 30]`%, dx in roughly `[-4*offsetMax, 4*offsetMax]` px). Deterministic per seed.
-- `scheduleNextTear(intensity, now)` — returns ms-until-next-tear, in `[0.5*jitterMs, 1.5*jitterMs]`.
-- `pickTrigger(name)` — returns `'auto' | 'hover' | 'viewport'`. Falls back to `'auto'`.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
-
-## Accessibility
-
-- The visible text is rendered as a normal DOM text node inside `.glitch-base` and is read by screen readers normally.
-- RGB clones are CSS `::before` / `::after` pseudo-elements rendered from `attr(data-text)` — invisible to assistive tech.
-- Tear band is `aria-hidden`.
-- The wrapper has `svelte-ignore a11y_no_static_element_interactions` because the hover handlers only fire when `trigger === 'hover'` and `focusin` / `focusout` provide keyboard parity. The SR-readable text content path is unaffected.
-- `prefers-reduced-motion: reduce` disables both the JS animation loop and the CSS clone/tear rendering.
-
-## Performance
-
-- One `requestAnimationFrame` loop per active component when running. Frame work is integer math and CSS variable updates — no layout thrash.
-- Tear timer is a single `setTimeout` chain with no per-frame DOM churn (the band is one absolutely-positioned span, mounted only while visible).
-- `viewport` trigger disconnects its `IntersectionObserver` on first intersection; `hover` and `auto` triggers don't allocate one at all.
-- All timers / rAF / observers are torn down in `onDestroy`.
-
-## Theming
-
-The chromatic-aberration channels are exposed as two CSS custom properties on `.glitch`. Defaults are declared inline in the component's scoped styles:
-
-| Token              | Default     | Role                                |
-| ------------------ | ----------- | ----------------------------------- |
-| `--glitch-cyan`    | `#00f5ff`   | cyan ghost-clone colour (`::before`) |
-| `--glitch-magenta` | `#ff00c8`   | magenta ghost-clone colour (`::after`) |
-
-Both tokens are treated as **brand colours** and stay vivid on light AND dark schemes — they're the signature of the chromatic-aberration effect, so flipping them per scheme would break the visual identity (mirrors the gold-star pattern in `RatingStars`). The base text uses `color: inherit`, so the underlying glyph already adapts to whatever colour the host context uses.
-
-Override the tokens by targeting `.glitch` directly with **at least 2-class specificity** — required to overcome the `(0,2,0)` specificity of the component's scoped internal styles. Svelte appends a hash class to every selector, so the component's own `.glitch.svelte-HASH` rule declares the default directly on the element. An ancestor `:root` or `body` rule sets a value that descendants would inherit, but that inherited value is **shadowed by the component's own declaration on the same element** — declared values always win over inherited values on the element where they're declared, regardless of the ancestor rule's specificity. The override therefore needs to declare on the same element with `≥(0,2,0)` specificity. See `docs/THEMING.md` for the full arithmetic. The doubled-class trick is the cheapest unconditional override:
-
-```css
-body .glitch.glitch {
-	--glitch-cyan: #fbbf24;
-	--glitch-magenta: #ef4444;
+```js
+function pseudoRand(seed, salt) {
+  const v = Math.sin(seed * 12.9898 + salt * 78.233) * 43758.5453;
+  return v - Math.floor(v);
 }
 ```
 
-## Recipes
+Each rAF tick takes `seed = floor(now / 80)` so the seed only advances every ~80ms — that gives the eye time to register each offset before it moves. Without the divisor the offsets would change every frame at 60 Hz and look like noise rather than a glitch.
 
-- **Cyberpunk hero**: `<CRTScreen profile="amber"><GlitchText text="SYSTEM ONLINE" intensity="wild" /></CRTScreen>`
-- **Tasteful brand glitch**: large display type, `intensity="subtle"`, `trigger="viewport"`. Glitches once on scroll-in, settles to clean.
-- **Hover-only headline**: nav link or button label with `trigger="hover"`. Rests clean, glitches on focus/hover for keyboard + mouse parity.
-- **Brand-tinted glitch**: override `--glitch-cyan` / `--glitch-magenta` to your brand palette for a glitch effect that still reads as on-brand.
+Cyan and magenta use the **same** seed but different salts (`1, 2` for cyan, `1, 2` shifted by `+7` for magenta), then magenta is **negated**. The mirror is what makes it look like real chromatic aberration: when the cyan ghost drifts up-left, the magenta drifts down-right, and the original glyph sits between them.
+
+```
+       ┌───────────┐
+       │  cyan     │   transform: translate(+dx, +dy)
+       │     ┌─────┴───┐
+       │     │ ORIGIN  │   real text node (z-index: 2)
+       └─────┤         │
+             │     ┌───┴───────┐
+             └─────┤ magenta   │   transform: translate(-dx, -dy)
+                   └───────────┘
+```
+
+The tear band is independent: every `~jitterMs` (with random jitter ±50%) the component samples a band — top in 0–80% of the line height, height 5–30%, horizontal shift up to `4× offsetMax`. A fresh `<span>` with that text and a `clip-path: inset(top% 0 (100% - top% - height%) 0)` renders only the slice, translated sideways. After `tearMs` (80–200ms depending on intensity) the band hides and the next one is scheduled.
+
+```
+  Tear band on a 4-line headline:
+
+  Lorem ipsum dolor sit amet
+  consectetur adipiscing elit  ← ░░░ entire band shifted +dxpx
+  ───────────────────────────
+  sed do eiusmod tempor incididunt
+  ut labore et dolore magna aliqua.
+```
+
+## CSS Animation Strategy
+
+The cyan and magenta ghosts are **CSS pseudo-elements** (`::before`, `::after`) on the inner `.glitch-base` span. Their content comes from `attr(data-text)` — so they always carry the right glyphs, no JS sync needed. Their colour is set via custom properties `--glitch-cyan` and `--glitch-magenta` (themable), and their position via `transform: translate(var(--cyan-dx), var(--cyan-dy))`. A `mix-blend-mode: difference` on the tear-band span makes the slice look like a real channel inversion rather than a flat overlay.
+
+The rAF loop only writes inline CSS custom properties on the host element. Browsers paint at their own pace; the inline-style assignment is cheap and we intentionally throttle the seed advance to ~80ms so we don't fight the compositor.
+
+```css
+.glitch.active .glitch-base::before {
+  content: attr(data-text);
+  color: var(--glitch-cyan);
+  transform: translate(var(--cyan-dx, 0), var(--cyan-dy, 0));
+  opacity: var(--clone-opacity, 0.65);
+}
+@media (prefers-reduced-motion: reduce) {
+  .glitch.active .glitch-base::before,
+  .glitch.active .glitch-base::after,
+  .glitch-tear { display: none; }
+}
+```
+
+## Performance
+
+- One rAF loop while `active`. Cancelled on `stop()` and on unmount.
+- Two `setTimeout` chains (tear-show, tear-hide) — never more than two outstanding.
+- Inline-style writes are a handful of CSS custom properties on a single span; modern engines diff these in microseconds.
+- `'viewport'` trigger uses `IntersectionObserver` and disconnects after the first intersection — the component is dormant until visible, then fires once.
+- Reduced-motion users never enter `start()`; the component renders the static base text with no jitter and the pseudo-elements stay invisible.
+
+## State Flow Diagram
+
+```
+                trigger: 'auto'
+  [mounted] ───────────────────────────────▶ [active]
+       │                                          │
+       │ trigger: 'hover'                         │ rAF tick → jitter offsets
+       │                                          │ setTimeout → tear band cycle
+       │   on mouseenter / focusin                │
+       │   on mouseleave / focusout ──────┐       │
+       │                                  ▼       │
+       │ trigger: 'viewport'         [inactive]   │
+       │   first IntersectionObserver entry       │
+       │     ──────────────────────────▶ [active] │
+       │                                          │
+       └─────────────────────────────────────────┤
+                                                  │
+                              prefers-reduced-motion
+                                                  ▼
+                                            [inactive]
+                                            ghosts hidden
+                                            tear hidden
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `text` | `string` | required | Text content (read by assistive tech as-is). |
+| `intensity` | `'subtle' \| 'moderate' \| 'wild'` | `'moderate'` | Effect amplitude — controls offset magnitude, tear duration, jitter rate, and clone opacity. |
+| `trigger` | `'auto' \| 'hover' \| 'viewport'` | `'auto'` | When the effect starts (mount, hover/focus, or first viewport entry). |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| User has `prefers-reduced-motion: reduce` | `start()` bails immediately; `@media` rule hides pseudo-elements and tear span — pure static text. |
+| `'viewport'` trigger and `IntersectionObserver` unsupported | Component falls back to `start()` onMount, never observing visibility. |
+| `'hover'` trigger with keyboard navigation | `focusin`/`focusout` mirror the mouse handlers, so Tab focus also activates the effect. |
+| Component unmounts while active | `onDestroy` runs `stop()` (cancels rAF, clears both timeouts) and `observer?.disconnect()`. |
+| Unknown `intensity` string passed in | `pickIntensity` falls back to `'moderate'`. |
+| Theming via `body .glitch.glitch { --glitch-cyan: #... }` | Doubled-class trick wins specificity over the component's own scoped declaration; see comments in source. |
+| Empty `text` prop | Empty span renders; ghosts have no `attr(data-text)` so they paint nothing. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$derived`, `onMount`, `onDestroy` for lifecycle.
+- **`IntersectionObserver`** (native) — used only for `trigger="viewport"`; component falls back to immediate start when missing.
+- Zero external dependencies otherwise — pure CSS pseudo-elements + `clip-path` + rAF loop.
+
+## File Structure
+
+```
+src/lib/components/GlitchText.svelte   # implementation
+src/lib/components/GlitchText.md       # this file (rendered inside ComponentPageShell)
+src/lib/components/GlitchText.test.ts  # vitest unit tests for the pure helpers
+src/routes/glitchtext/+page.svelte     # demo page
+```

@@ -1,143 +1,152 @@
-# ShineBorder - Technical Logic Explainer
+# ShineBorder — Technical Logic Explainer
 
 ## What Does It Do? (Plain English)
 
-ShineBorder wraps any content and adds an animated glowing border that sweeps horizontally - like a sparkle catching the light on polished chrome.
+ShineBorder wraps any block of content in a border that has a bright stripe of colour sliding across it forever — the chrome-trim glint you see on premium product cards. There is no real CSS `border` involved: the wrapper paints a wide horizontal gradient, the inner content sits on a solid background that hides the centre of that gradient, and only the padding around the edge is left exposed. Animate the gradient's horizontal position and the exposed edge appears to shimmer.
 
-**Think of it like:** Wrapping a gift with ribbon that has a glittery stripe running through it. The stripe constantly moves from left to right, catching your eye.
-
----
+Think of it like a theatre stage where the spotlight is twice as wide as the stage, sweeping in from the wings on the left and exiting through the wings on the right. The audience only sees the slice that crosses the stage — and because the spotlight enters and exits offstage, there is never a visible jump back to the start.
 
 ## How It Works (Pseudo-Code)
 
 ```
-WHEN component loads:
-  1. CREATE outer wrapper div
-  2. SET CSS variables from props (colour, speed, thickness, roundness)
-  3. CREATE inner content div
-  4. RENDER children inside the inner div
+on render:
+  read props: color, duration, borderWidth, borderRadius
+  emit outer wrapper:
+    background = linear-gradient(90deg, transparent, color, transparent)
+    background-size = 200% 100%   // gradient is twice as wide as visible area
+    padding = borderWidth          // padding becomes the visible "border" strip
+    border-radius = borderRadius
+    animation = shine-border-animation duration linear infinite
+  emit inner content:
+    background = solid (white)
+    border-radius = borderRadius - borderWidth
+    render { children }
 
-THE VISUAL TRICK:
-  - Outer div HAS a gradient background (transparent → colour → transparent)
-  - Gradient is 200% wide (twice the visible area)
-  - Animation MOVES gradient from left to right continuously
-  - Inner div HAS white background that "covers" the gradient
-  - ONLY the padding area (the "border") shows the gradient
-
-ANIMATION LOOP:
-  START: gradient positioned at -200% (off-screen left)
-  END: gradient positioned at 200% (off-screen right)
-  REPEAT: forever, at constant speed
+@keyframes shine-border-animation:
+  0%   → background-position = -200% 0   // bright band offstage left
+  100% → background-position =  200% 0   // bright band offstage right
 ```
 
----
+The component never touches JavaScript at runtime. Every shimmer you see is the browser's compositor smoothly interpolating one declarative property (`background-position`) on one element.
 
-## The Core Concept
+## The Core Concept: The "Padding-As-Border" Trick
 
-### The "Fake Border" Technique
-
-This component doesn't use a real CSS `border`. Instead, it uses a clever trick:
-
-1. **Outer div** = The gradient "border" creator
-   - Has `padding` equal to desired border width
-   - Has an animated gradient background
-
-2. **Inner div** = The content area
-   - Has solid white background
-   - Sits on top, covering the gradient except at the edges
-
-**Result:** You see the gradient only through the "frame" created by the padding!
+Most CSS borders use the actual `border` property and so cannot show a gradient (CSS `border-image` works but is a different beast). ShineBorder gets around that with a layered sandwich:
 
 ```
-┌─────────────────────────────┐
-│ GRADIENT BACKGROUND         │  ← Outer div
-│ ┌─────────────────────────┐ │
-│ │                         │ │
-│ │   WHITE BACKGROUND      │ │  ← Inner div (your content)
-│ │                         │ │
-│ └─────────────────────────┘ │
-└─────────────────────────────┘
-        ↑
-   Padding creates visible "border"
+┌────────────────────────────────────┐
+│   wrapper — gradient background    │  ← only this layer is animated
+│  ┌──────────────────────────────┐  │
+│  │                              │  │
+│  │   inner — solid background   │  ← covers the gradient's centre
+│  │      { children render }     │
+│  │                              │  │
+│  └──────────────────────────────┘  │
+└────────────────────────────────────┘
+   ↑
+   padding = borderWidth: this strip is NOT covered by the inner div,
+   so it shows the wrapper's animated gradient — i.e. the "border".
 ```
 
----
+The visible band of colour appears because the wrapper's gradient is `transparent → colour → transparent`. At any instant only one slice of that band is over the visible padding strip; sliding the gradient horizontally is what makes the slice travel around the frame.
 
-## CSS Variables Explained
+Why a `200%`-wide gradient? If the gradient were only as wide as the wrapper, animating from `0%` to `100%` would require a snap back to `0%` to repeat, which the eye reads as a stutter. Going from `-200%` to `+200%` lets the bright band enter from offstage left, cross the visible area, and exit offstage right before the next loop begins entirely offstage — the loop is invisible.
 
-| Variable | What It Controls | Example |
-|----------|-----------------|---------|
-| `--shine-color` | The sparkle colour | `#146ef5` (blue) |
-| `--shine-duration` | How long one sweep takes | `3s` |
-| `--border-width` | Thickness of the border | `2px` |
-| `--border-radius` | Corner roundness | `8px` |
+## CSS Animation Strategy
 
----
+Everything is GPU-friendly. The only animated property is `background-position`, which the compositor handles without triggering layout or paint on the inner content. The wrapper carries `will-change: background-position` so the browser hoists it to its own layer up front rather than promoting mid-animation.
 
-## The Animation Trick
+```css
+.shine-border-wrapper {
+  background: linear-gradient(90deg, transparent, var(--shine-color), transparent);
+  background-size: 200% 100%;
+  animation: shine-border-animation var(--shine-duration) linear infinite;
+  will-change: background-position;
+}
 
-The gradient is **twice as wide** as the visible area. Why?
+@keyframes shine-border-animation {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+```
+
+Reduced motion is documented in the component as a known TODO. The recommended override is:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .shine-border-wrapper { animation-duration: 0.01s; }
+}
+```
+
+This freezes the gradient at its starting offset rather than disabling it entirely — the static band still reads as a styled border for users who would otherwise lose the visual cue.
+
+## State Flow Diagram
 
 ```
-Visible area:     [====100%====]
-Actual gradient:  [====100%====][====100%====]
-                  ^-200%        ^0%          ^200%
+                  ┌──────────────────────┐
+                  │  initial render      │
+                  │  CSS vars from props │
+                  └──────────┬───────────┘
+                             │
+                             ▼
+       ┌────────────────────────────────────────┐
+       │  CSS animation begins (browser-driven) │
+       │  background-position: -200% → +200%    │
+       │  loops linearly forever                │
+       └────────────────────────────────────────┘
+                             │
+              prop changes (color / duration / width / radius)
+                             │
+                             ▼
+       ┌────────────────────────────────────────┐
+       │  CSS custom properties re-emit         │
+       │  animation continues from current pos  │
+       └────────────────────────────────────────┘
+
+       prefers-reduced-motion: reduce (recommended override)
+                             │
+                             ▼
+       ┌────────────────────────────────────────┐
+       │  duration ≈ 0s → effectively static    │
+       └────────────────────────────────────────┘
 ```
 
-- **Start (0%):** Gradient at position `-200%` (sparkle hidden on left)
-- **Middle (50%):** Gradient at position `0%` (sparkle in centre)
-- **End (100%):** Gradient at position `200%` (sparkle hidden on right)
+There is no runtime state to track — the component is a thin bag of CSS variables wrapping a `{children}` render slot.
 
-Because we go from `-200%` to `+200%`, the sparkle smoothly enters, crosses, and exits without any jarring "jump" back to start.
+## Props Reference
 
----
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `color` | `string` | `'#146ef5'` | Any CSS colour. Drives the gradient mid-stop. |
+| `duration` | `number` | `3` | Seconds for one full sweep across the visible area. |
+| `borderWidth` | `number` | `2` | Padding (px) around the inner content — this strip is the visible "border". |
+| `borderRadius` | `number` | `8` | Corner radius (px) for the wrapper. The inner div uses `radius − width`. |
+| `children` | `Snippet` | — | Wrapped content. Sits over the solid inner background. |
 
-## Performance Notes
-
-- **GPU Accelerated:** Uses `will-change: background-position` to hint at the browser
-- **No JavaScript:** Pure CSS animation runs even if JS fails
-- **Minimal Repaints:** Only `background-position` changes, not layout
-
----
-
-## Edge Cases Handled
+## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
-| No children provided | Empty bordered box displays |
-| Very small dimensions | Border still visible (may look chunky) |
-| Very large duration | Slow, subtle effect |
-| Duration of 0 | Static gradient (no animation) |
-
----
-
-## What This Component Does NOT Do
-
-- Does not support vertical or diagonal shine directions
-- Does not support multiple colours in one sweep (but you can nest!)
-- Does not pause on hover (could be added)
-- Does not yet respect `prefers-reduced-motion` (TODO)
-
----
+| `children` omitted | Empty bordered box renders. The shimmer still runs but there is no content slot. |
+| `borderWidth = 0` | The inner div fills the wrapper exactly. The gradient is fully covered and you see no shine. |
+| `borderRadius < borderWidth` | The inner radius is computed as `radius − width` and clamps to `0` in CSS — the inner corners become sharp while the outer keeps the requested radius. Content inside the inner div may sit awkwardly close to the edge; pad your child element. |
+| `duration = 0` | Browsers treat it as no animation; the gradient renders frozen at its starting offset (`-200%` — band offstage left). Visually, the border appears solid-transparent. Avoid; use the reduced-motion override instead. |
+| Very small wrapper (e.g. 24×24 px) | The 200% gradient is still wider than the wrapper — no visual problem — but the `borderRadius − borderWidth` calc may produce a tiny inner radius that looks inconsistent with the outer. |
+| `prefers-reduced-motion: reduce` | Component does not yet honour this automatically. Consumers should either layer the recommended `@media` override, or omit ShineBorder for users with the preference set. |
+| Multiple ShineBorders on one page | Each runs independently; there is no shared timer. They will drift out of phase, which usually looks better than synchronised shimmer. |
 
 ## Dependencies
 
-**Zero external dependencies.**
-
-This component uses only:
-- Svelte 5 (`$props()` rune)
-- Standard CSS features (gradients, keyframes, custom properties)
-
----
+- **Svelte 5** — `$props()` rune to read configuration; snippet slot for children.
+- **Zero external libraries** — no animation library, no icon library, no framework. Pure CSS keyframes.
+- **`$lib/types`** — `ShineBorderProps` interface for type safety across consumers.
 
 ## File Structure
 
 ```
-ShineBorder.svelte      # The component
-ShineBorder.test.ts     # Unit tests (5 tests)
-ShineBorder.md          # This explainer
+src/lib/components/ShineBorder.svelte         # implementation
+src/lib/components/ShineBorder.md             # this explainer (rendered in ComponentPageShell)
+src/lib/components/ShineBorder.test.ts        # unit tests
+src/routes/shineborder/+page.svelte           # demo page
+src/lib/types.ts                              # ShineBorderProps interface
 ```
-
----
-
-*Last updated: 26 December 2025*

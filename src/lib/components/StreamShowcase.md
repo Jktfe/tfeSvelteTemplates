@@ -1,159 +1,246 @@
----
-name: StreamShowcase
-category: Statement Sections
-author: AntClaude
-status: stable
----
+# StreamShowcase — Technical Logic Explainer
 
-# StreamShowcase
+## What Does It Do? (Plain English)
 
-An editorial streaming-platform shelf for showcasing curated playlists. A
-brush-script title dominates a short hero; a 10-card fan carousel splays
-cards around a shared pivot below the deck. Click, drag or use the keyboard
-to navigate.
+StreamShowcase is a full-bleed editorial section for "now playing" / "now browsing" style hero shelves. The top half is a brush-script title ("Queue up. / Level up.") with a staggered letter entrance; the bottom half is a fan of ten cards splayed around a shared pivot below the deck, each card a colour-gradient billboard for one of your playlists. Click a side card to bring it to centre, drag the deck to rotate it, or use the arrow keys — and Enter on the centre card fires `onSelect`.
 
-> **Milestone 1 (this release):** hero + carousel + interactions.
-> The FLIP modal, inline YouTube playback, and `?playlist=slug` URL sync
-> are reserved for M2 / M3.
+Think of it as an album-cover wall that's been arranged into a deck of cards held by an invisible hand below the page, ready to be flipped through.
 
-## When to use it
+## How It Works (Pseudo-Code)
 
-- Marketing or landing page where curated content needs editorial weight
-- Course / podcast / YouTube playlist hub
-- Founder / studio "what we're working on" shelf
-- Anywhere a primitive carousel feels too lightweight
+```
+state:
+  active     ∈ [0, count)        // which card is at centre, bindable
+  dragging   = false
+  dragStartX = 0
+  dragStartActive = 0
 
-## When **not** to use it
+derive:
+  cards = repeat(playlists, count)        // loop the input until length === count
+  fanAngle(i, active, count)              // angle in degrees per card
+  cardTransforms = map cards → translate3d + rotateZ around shared pivot
 
-- Functional content discovery (use a regular grid + search)
-- Lists longer than ~12 items (fan layout breaks down past that)
-- High-density product catalogs (the per-card real estate is small)
+events:
+  on keydown ←:        active = max(0, active - 1)
+  on keydown →:        active = min(count - 1, active + 1)
+  on keydown Home:     active = 0
+  on keydown End:      active = count - 1
+  on keydown Enter on active card:
+    onSelect?.(playlists[active % playlists.length], active)
 
-## Usage
+  on click side card[i]:        active = i
+  on click centre card[active]: onSelect?.(playlists[active % length], active)
 
-Default — five sample playlists, ten-card fan, dark theme:
+  on pointerdown deck:
+    dragging = true
+    dragStartX = e.clientX
+    dragStartActive = active
+    deck.setPointerCapture(e.pointerId)
 
-```svelte
-<script>
-	import StreamShowcase from '$lib/components/StreamShowcase/StreamShowcase.svelte';
-</script>
+  on pointermove (while dragging):
+    delta = e.clientX - dragStartX
+    spin the fan in real time using delta (CSS variable)
 
-<StreamShowcase />
+  on pointerup:
+    dragging = false
+    snap to nearest card based on travel:
+      newActive = round(dragStartActive - delta / SNAP_PX)
+      active = clamp(newActive, 0, count - 1)
 ```
 
-Pass your own playlists, react to selection:
+The hero animation and the carousel deck are independent subcomponents — `StreamShowcaseHero` and `StreamShowcaseCarousel` — each with its own state. The wrapper just provides theming, glow effects, and prop pass-through.
 
-```svelte
-<script>
-	import StreamShowcase from '$lib/components/StreamShowcase/StreamShowcase.svelte';
-	import type { Playlist } from '$lib/components/StreamShowcase/types.js';
+## The Core Concept: Fan Layout Around a Shared Pivot
 
-	const playlists: Playlist[] = [
-		{
-			slug: 'launch-week',
-			title: 'Launch Week',
-			tag: 'Founder Diary',
-			description: 'Behind-the-launch storytelling, one short episode per shipped feature.',
-			cover: { from: '#0f172a', to: '#1e293b', accent: '#fbbf24' },
-			episodeCount: 8
-		}
-		// ...
-	];
+A standard carousel translates each card horizontally by some multiple of the card width. A fan carousel **rotates** each card around a pivot point well below the deck — typically 800–1200 pixels — so cards fan out like the cards in your hand at a poker table.
 
-	let active = $state(2);
-</script>
-
-<StreamShowcase
-	{playlists}
-	count={10}
-	bind:active
-	eyebrow="Now playing"
-	topLine="Build."
-	bottomLine="Ship."
-	theme="dark"
-	onSelect={(p, i) => console.log('opened', p.slug, i)}
-/>
+```
+                      visible deck
+                     ┌──────────────┐
+                     │  ┌──────┐    │
+                     │ ┌─│┌────┐│   │
+                     │┌─│ │┌──┐││   │     ← cards splay outward
+                     ││ │ ││centre─┐│        because each is
+                     │└─│ │└──┘││  ││         rotated around
+                     │ └─│└────┘│  ││         the same pivot
+                     │   └──────┘  ││
+                     └─────────────┘│
+                              \    /
+                               \  /
+                                \/
+                              pivot
+                          (off-screen, ~1000 px below)
 ```
 
-## Props
+For a card at index `i` with `active` at centre and `count` total cards, the angle is approximately:
 
-| Prop         | Type                       | Default                    |
-| ------------ | -------------------------- | -------------------------- |
-| `playlists`  | `Playlist[]`               | `SAMPLE_PLAYLISTS` (5)     |
-| `count`      | `number`                   | `10`                       |
-| `eyebrow`    | `string`                   | `'Now browsing'`           |
-| `topLine`    | `string`                   | `'Queue up.'`              |
-| `bottomLine` | `string`                   | `'Level up.'`              |
-| `active`     | `number` (bindable)        | `floor(count / 2)`         |
-| `onSelect`   | `(p: Playlist, i) => void` | —                          |
-| `theme`      | `'light' \| 'dark'`        | `'dark'`                   |
-| `class`      | `string`                   | `''`                       |
+```
+angleDeg = (i - active) * fanSpread / (count - 1)
+```
 
-`count` controls the number of cards in the fan; the `playlists` array is
-looped, so a five-playlist input with `count=10` will repeat each playlist
-twice (matching the brief).
+where `fanSpread` is the total angle from leftmost to rightmost card (e.g. 60°). The card's transform is:
 
-The `Playlist` shape lives in `StreamShowcase/types.ts` and exports the
-helpers used internally — `fanAngle`, `wrapIndex`, `easedRotation` — so
-they can be unit-tested or reused by adjacent components.
+```
+translate3d(0, 0, 0)                              // initial
+rotate(angleDeg) at transform-origin (50%, 1000px) // rotate around pivot
+```
 
-## Interaction
+`transform-origin: 50% 1000px` is the trick. It puts the rotation centre 1000 px below the card's own top edge — invisible, but every card rotates around the *same* point because they all share that origin. The mathematical effect is identical to placing every card at the pivot, fanning them out, and only rendering the top portion.
 
-| Trigger                    | Behaviour                                       |
-| -------------------------- | ----------------------------------------------- |
-| `←` / `→`                  | Move active by 1 (clamps at edges)              |
-| `Home` / `End`             | Jump to first / last card                       |
-| `Enter` on active card     | Fire `onSelect(playlist, index)`                |
-| Click on side card         | Bring that card to centre (does not fire select) |
-| Click on centre card       | Fire `onSelect`                                 |
-| Drag horizontally          | Spin the fan in real time                       |
-| Pointer release after drag | Snap to the nearest card based on travel        |
+Easing the rotation through `easedRotation()` (a small cubic that pinches near the centre) makes the centre card rotate more slowly than the outer cards, mimicking how a real hand of cards splays.
 
-Drag uses `pointercapture`, so the fan keeps tracking the cursor even if
-you slide off the deck.
+## Letter-by-Letter Hero Entrance
 
-## Accessibility
+The hero's top and bottom lines render as a row of `<span>` letters, each with its own `transition-delay` so they animate in sequence:
 
-- The hero is a real `<h1>` with the canonical text duplicated in a
-  visually-hidden `<span>` so screen readers always read the unbroken
-  string. The animated letter spans are `aria-hidden="true"`.
-- The carousel is `role="region"` with
-  `aria-roledescription="carousel"`.
-- The active card has `aria-current="true"` and `tabindex="0"`. All other
-  cards are `tabindex="-1"` so Tab visits exactly one card per carousel.
-- Each card's `aria-label` includes the playlist title, tag and episode
-  count.
-- Keyboard handlers live on the region wrapper, so focus moves with
-  the active card automatically (no roving-tabindex bookkeeping in your
-  parent code).
+```
+<h1 class="ssh-line ssh-top">
+  <span class="visually-hidden">Queue up.</span>
+  {#each letters as char, i}
+    <span class="ssh-letter" style="--delay: {i * 35}ms" aria-hidden="true">
+      {char}
+    </span>
+  {/each}
+</h1>
+```
 
-## Reduced motion
+The visually-hidden span carries the canonical text for screen readers; the per-letter spans are decorative (`aria-hidden="true"`). On mount, a class flip triggers the CSS transition:
 
-When `prefers-reduced-motion: reduce` is detected:
+```css
+.ssh-letter {
+  opacity: 0;
+  transform: translateY(20px);
+  filter: blur(6px);
+  transition: opacity 600ms, transform 600ms, filter 400ms;
+  transition-delay: var(--delay, 0ms);
+}
 
-- The brush-script letter entrance is skipped (full opacity, no
-  translate/blur).
-- Card deal-out is skipped (cards appear in their final fan positions).
-- Drag-to-rotate is disabled (keyboard + click still work).
-- The eyebrow status dot stops pulsing.
+.ssh-hero.is-visible .ssh-letter {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+```
 
-## Asset and dependency notes
+`prefers-reduced-motion: reduce` short-circuits the entrance — the letters render at their final state with no transition. The screen-reader text is unaffected either way; the letter-stagger is purely visual sugar.
 
-- **No external images.** Card art is pure CSS gradients tinted with
-  `color-mix()`. Each playlist's `cover` prop describes its colour stops.
-- **No GSAP, no rAF physics, no third-party motion library.** All
-  motion is plain CSS transitions plus a few Svelte-driven inline
-  styles, so the runtime cost is essentially zero.
-- **Brush-script font** uses a system stack:
-  `'Caveat Brush', 'Caveat', 'Brush Script MT', 'Lucida Handwriting', cursive`.
-  For pixel-perfect rendering, install `@fontsource/caveat-brush` in
-  your application and import it in your root layout.
+## Drag-to-Rotate with Pointer Capture
 
-## Roadmap
+The deck is one big `pointermove` consumer. The drag handler maintains the current `active` index in a separate `dragStartActive` snapshot at `pointerdown`, so the calculation during drag is always relative to where the deck started rather than accumulating per-frame error.
 
-- **M2** — FLIP modal opening from the active card, with episode list.
-- **M3** — Inline YouTube playback + `?playlist=slug&episode=videoId`
-  URL sync.
+```
+on pointerdown:
+  dragging = true
+  dragStartX      = e.clientX
+  dragStartActive = active
+  deck.setPointerCapture(e.pointerId)
 
-Both will land in this same component as additive props (`onSelect` will
-become the trigger for the modal).
+on pointermove (dragging):
+  liveDelta = e.clientX - dragStartX                 // px since drag started
+  visualOffset = liveDelta / SNAP_PX                  // fractional cards
+  apply rotation = (dragStartActive - visualOffset) → CSS variable
+
+on pointerup:
+  dragging = false
+  newActive = round(dragStartActive - liveDelta / SNAP_PX)
+  active    = clamp(newActive, 0, count - 1)
+  // CSS transitions snap the deck to the new index over ~300 ms
+```
+
+`setPointerCapture` keeps events flowing to the deck even when the cursor strays off the carousel — important because users tend to drag in big arcs that overshoot the visible area.
+
+When `prefers-reduced-motion: reduce` is set, drag-to-rotate is disabled (the pointerdown handler short-circuits). Keyboard and click navigation still work, so the carousel remains fully usable without motion.
+
+## State Flow Diagram
+
+```
+                    ┌──────────────────────┐
+                    │  IDLE                │
+                    │  active = floor(n/2) │
+                    │  dragging = false    │
+                    └──────────┬───────────┘
+                               │
+        ┌──────────────────────┼─────────────────────────┐
+        │                      │                         │
+   keyboard ←→               click side card        pointerdown deck
+        │                      │                         │
+        ▼                      ▼                         ▼
+  ┌──────────────┐    ┌──────────────┐         ┌──────────────────┐
+  │ active ± 1   │    │ active = i   │         │ DRAGGING          │
+  │ clamped      │    │              │         │ pointer captured  │
+  └──────┬───────┘    └──────┬───────┘         │ deck rotates with │
+         │                   │                 │ cursor in real    │
+         └───────────┬───────┘                 │ time              │
+                     ▼                         └─────────┬─────────┘
+              ┌──────────────────┐                       │
+              │ deck animates    │              pointerup│
+              │ to new active    │                       ▼
+              │ over CSS         │              ┌──────────────────┐
+              │ transition       │              │ snap to nearest  │
+              └──────────────────┘              │ card based on    │
+                     │                          │ travel           │
+                     ▼                          └─────────┬────────┘
+              ┌──────────────────┐                        │
+              │ Enter on centre  │                        │
+              │ → onSelect(...)  │ ◄──────────────────────┘
+              └──────────────────┘
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `playlists` | `Playlist[]` | `SAMPLE_PLAYLISTS` (5) | Playlist data. Looped to fill `count` cards. |
+| `count` | `number` | `10` | Number of cards in the fan. |
+| `eyebrow` | `string` | `'Now browsing'` | Small status text above the hero. |
+| `topLine` | `string` | `'Queue up.'` | Hero line 1 (brush-script). |
+| `bottomLine` | `string` | `'Level up.'` | Hero line 2 (brush-script). |
+| `active` | `number` | `floor(count / 2)` | Which card is at centre. Bindable for parent control. |
+| `onSelect` | `(playlist: Playlist, index: number) => void` | — | Fires when the centre card is clicked or Enter is pressed on it. |
+| `theme` | `'light' \| 'dark'` | `'dark'` | Background theme — sets the radial gradient and text colour. |
+| `class` | `string` | `''` | Extra classes appended to the section wrapper. |
+
+The `Playlist` type:
+
+```typescript
+interface Playlist {
+  slug: string;
+  title: string;
+  tag: string;
+  description: string;
+  cover: { from: string; to: string; accent: string };
+  episodeCount: number;
+}
+```
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `playlists.length < count` | The array is looped — a five-playlist input with `count: 10` repeats each playlist twice. This is intentional and matches the editorial brief. |
+| `count = 1` | The fan collapses to a single card at centre. No fan splay. Keyboard nav has nothing to navigate. |
+| User has `prefers-reduced-motion: reduce` | Hero letter stagger skips (instant final state); drag-to-rotate is disabled; click and keyboard still work; eyebrow status dot stops pulsing. |
+| Drag released exactly between two cards | `Math.round(dragStartActive - delta / SNAP_PX)` rounds half-values to the nearest integer; ties go to the higher card by JS rounding rules. |
+| Active card focused, then user Tabs forward | Focus moves to the next focusable element on the page. The carousel is `role="region"` with one `tabindex=0` (the active card); other cards are `tabindex=-1`. |
+| Bound `active` set by parent to a value outside `[0, count)` | Component clamps internally before applying transforms; out-of-range writes are silently ignored. |
+| `theme="light"` background interacting with light card gradients | The card gradients are designed to work on both themes. The radial-glow accents soften on light theme to keep contrast acceptable. |
+| Brush-script font not installed | A system stack falls back to `'Caveat'`, then `'Brush Script MT'`, then `'Lucida Handwriting'`, then generic cursive. Install `@fontsource/caveat-brush` for pixel-perfect rendering. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$bindable`, `$derived`, snippets, and `bind:this` for the deck pointer-capture target.
+- Zero external dependencies — no GSAP, no rAF physics library, no third-party motion library. All motion is plain CSS transitions plus a few Svelte-driven inline styles.
+- **No external images** — card art is pure CSS gradients tinted with `color-mix()`. Each playlist's `cover` prop describes its colour stops.
+
+## File Structure
+
+```
+src/lib/components/StreamShowcase/StreamShowcase.svelte           # wrapper / theming
+src/lib/components/StreamShowcase/StreamShowcaseHero.svelte       # brush-script title
+src/lib/components/StreamShowcase/StreamShowcaseCarousel.svelte   # fan carousel
+src/lib/components/StreamShowcase/types.ts                        # Playlist + helpers
+src/lib/components/StreamShowcase/playlists.ts                    # SAMPLE_PLAYLISTS
+src/lib/components/StreamShowcase.md                              # this file
+src/lib/components/StreamShowcase.test.ts                         # vitest unit tests
+src/routes/streamshowcase/+page.svelte                            # demo page
+```

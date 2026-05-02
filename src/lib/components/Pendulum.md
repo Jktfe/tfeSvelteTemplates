@@ -1,191 +1,217 @@
----
-title: Pendulum
-description: Wrap any element to make it swing on a damped harmonic curve from a configurable offset pivot. Mount-trigger, viewport-trigger, click-to-swing, or imperative `swing()` — pure rAF + CSS transform-origin, zero animation libraries, `prefers-reduced-motion: reduce` honoured at the stylesheet level.
-category: Helpful UX
-author: Claude
----
+# Pendulum — Technical Logic Explainer
 
-# Pendulum
+## What Does It Do? (Plain English)
 
-A wrapper that gives its child a physics-grounded swing — peak amplitude at t=0, exponentially decaying envelope, sinusoidal cycle — pivoting from an offset above (or anywhere relative to) the wrapped element's bounding box. The motion comes from a single rAF loop running `θ(t) = A·exp(-decay·t)·cos(2π·freq·t)`; no animation library, no SVG, no canvas.
+Pendulum wraps any element and makes it swing back and forth on a damped harmonic curve, like a pendulum hanging from a configurable pivot point above the element. The first swing is the largest, each successive swing is smaller, and after a few seconds the motion fades to rest. Four trigger modes decide when the swing starts: on mount (immediately), on viewport entry (when the user scrolls to it), on click (tap to swing again), or fully manually (consumer calls `swing()` themselves).
 
-`Pendulum` fills the **physics-driven swing** slot in the existing taxonomy. Where `Tilt3D` rotates whole elements toward the cursor, `MagneticButton` translates them, and `MagicCard` adds a 2D spotlight, `Pendulum` rotates them around an offset pivot under their own simulated gravity-and-damping. It composes cleanly with the others — wrapping a `MagicCard` in a `Pendulum` gives you the spotlight *and* the pendular swing.
+It is the kind of small flourish that adds personality to icons, badges, or callout cards without becoming distracting — the swing happens once, settles, and stays still until something triggers the next one. Reduced-motion users see a static element; the rAF loop never starts and the CSS transform stays at identity.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Pure CSS transform**: `rotateZ` around an offset `transform-origin`. No filter, no canvas, no SVG.
-- **Four triggers**: `mount` (auto on mount), `viewport` (when scrolled into view via IntersectionObserver), `click` (tap-to-swing), `manual` (call `swing()` from outside).
-- **Imperative API**: `bind:this={pendulum}` then `pendulum.swing()` or `pendulum.stop()`.
-- **Configurable pivot**: any `{ x, y }` offset (in pixels) from element centre — typically `y: -40` to hang from "above the head".
-- **Damped harmonic motion**: peak amplitude at t=0, exponential decay, sinusoidal cycle. Tune amplitude, frequency (Hz), and decay (1/s) independently.
-- **Auto-halt**: rAF loop stops when the swing envelope drops below 0.05° or hits the duration cap, whichever comes first — never burns idle frames.
-- **prefers-reduced-motion: reduce safe**: physics loop no-ops, transform locks to identity at the stylesheet level even if the JS path didn't run.
-- **SSR-safe**: `window.matchMedia` only read inside `onMount`; server render matches the un-reduced default.
-- **Accessibility-preserving**: child stays in the DOM and accessibility tree. `click` trigger adds `role="button"` and `tabindex="0"` to the inner element with Enter/Space keyboard activation.
-- **Pure helpers exported** from the module-script for unit testing without a DOM.
-- **Zero external dependencies**.
+```
+state:
+  angle      = 0         // current swing angle in degrees
+  reduced    = false     // capability flag
+  rafId      = null      // current animation frame
+  startTs    = null      // performance.now() when the current swing began
+  observer               // IntersectionObserver for viewport trigger
 
-## Usage
+derived:
+  safeTrigger = pickTrigger(trigger)
+  originCSS   = pivotOffsetCSS(pivotOffset)        // "calc(50% + Xpx) calc(50% + Ypx)"
 
-### Default — auto-swing on mount
+tick(now):
+  if startTs === null: startTs = now
+  elapsedMs = now - startTs
+  elapsedS  = elapsedMs / 1000
+  raw       = dampedSine(elapsedS, amplitude, frequency, decay)
+  angle     = clampSwing(raw, amplitude)
 
-```svelte
-<script lang="ts">
-  import Pendulum from '$lib/components/Pendulum.svelte';
-</script>
+  envelope  = exp(-decay * elapsedS) * amplitude
+  halted    = envelope < 0.05 or elapsedMs >= duration
+  if halted:
+    angle = 0; rafId = null; startTs = null; return
+  rafId = requestAnimationFrame(tick)
 
-<Pendulum>
-  <div class="bell">🔔</div>
-</Pendulum>
+export swing():
+  if rafId: cancelAnimationFrame(rafId); rafId = null
+  startTs = null
+  if reduced: angle = 0; return
+  rafId = requestAnimationFrame(tick)
+
+export stop():
+  if rafId: cancelAnimationFrame(rafId)
+  rafId = null; startTs = null; angle = 0
+
+on mount:
+  reduced = isReducedMotion()
+  if reduced: return
+  if trigger === 'mount':    swing() (after autoStartDelay)
+  if trigger === 'viewport': observer.observe(containerEl)
+                              on intersect → swing()
+
+on click (only when trigger === 'click'):
+  swing()
+
+on destroy: cancelAnimationFrame, clearTimeout, observer.disconnect
+
+render:
+  div.pendulum style:transform-origin={originCSS}
+    div.pendulum__inner style="--pendulum-angle: {angle}deg"
+      { children }
+
+CSS:
+  .pendulum__inner {
+    transform: rotateZ(var(--pendulum-angle, 0deg));
+    transform-origin: inherit;
+    will-change: transform;
+  }
 ```
 
-### Hanging shop sign — pivot from above the head
+## The Core Concept: Damped Harmonic Motion (The Math!)
 
-```svelte
-<Pendulum
-  trigger="viewport"
-  amplitude={12}
-  frequency={0.6}
-  decay={0.8}
-  pivotOffset={{ x: 0, y: -40 }}
-  duration={6000}
->
-  <img src="/shop-sign.png" alt="The Crown Tavern" />
-</Pendulum>
+The swing curve is the analytical solution to a damped harmonic oscillator:
+
+```
+θ(t) = A · e^(-decay·t) · cos(2π · frequency · t)
+
+where:
+  A         = amplitude (peak swing in degrees, e.g. 18)
+  frequency = swing rate in Hz (e.g. 1.2 Hz = ~1.2 swings per second)
+  decay     = exponential damping (1/sec; higher = settles faster)
+  t         = elapsed time in seconds
 ```
 
-### Click-to-swing notification bell
+The cosine is the oscillation. Multiplying by `e^(-decay·t)` is what makes the amplitude shrink each cycle — at `t = 0`, the envelope is `A`; at `t = 1` with `decay = 1.4`, the envelope is `A × e^(-1.4) ≈ 0.247 × A`. After ~2 seconds the amplitude is below 5% and the motion is visually still.
 
-```svelte
-<Pendulum trigger="click" amplitude={25} frequency={2} decay={3}>
-  <span class="bell" aria-label="Ring the bell">🔔</span>
-</Pendulum>
+```
+   θ(t)
+    A   ●
+    │ ●●  ●●
+    │●     ●●
+   0│  ────────●●─────────●●─────●● ─── ─ time
+    │           ●●     ●●●  ●●●●●
+    │            ●●●●●●●
+   -A
+        ↑   ↑   ↑   ↑    ↑
+        each peak is smaller as e^(-decay·t) shrinks
 ```
 
-### Mantel-clock pendulum — slow, never stops (long duration cap)
+Three deliberate decisions in the implementation:
 
-```svelte
-<Pendulum
-  trigger="mount"
-  amplitude={20}
-  frequency={0.5}
-  decay={0.05}
-  pivotOffset={{ x: 0, y: -100 }}
-  duration={60000}
->
-  <div class="weight">⚖️</div>
-</Pendulum>
+- **Use the analytical solution, not numerical integration.** `dampedSine(t, A, f, decay)` evaluates the curve at any `t` directly — no accumulated floating-point drift, no need to integrate a differential equation. The component still uses rAF, but only to *sample* the analytical curve at the current frame's timestamp.
+- **Halt early when the envelope drops below 0.05°.** No point continuing to schedule rAF frames for sub-pixel rotations the eye can't see. The check `envelope < 0.05` exits the loop cleanly.
+- **Clamp the result.** `clampSwing(raw, amplitude)` is defensive — even though the analytical solution can never exceed `±amplitude`, a non-finite input would otherwise propagate `NaNdeg` into the inline transform.
+
+A second helper, `nextAngle(state, deltaT, gravity, damping)`, is exported for consumers who want to drive their own physics loop with Euler integration instead of the analytical solution. The component itself doesn't use it — but it's there for tests and for consumers who want to couple Pendulum's motion to a custom force model.
+
+The **pivot offset** is the other piece of geometry. By default the pivot is at `{x:0, y:-20}` — the centre of the element's bounding box, shifted 20 px upward. That makes the element swing as if hanging from a string attached 20 px above its top. `pivotOffsetCSS({x, y})` translates this into the CSS `transform-origin: calc(50% + Xpx) calc(50% + Ypx)` — anchoring rotation around that offset point.
+
+## CSS Animation Strategy
+
+The component is CSS-light. One transform, one will-change hint:
+
+```css
+.pendulum__inner {
+  display: inline-block;
+  transform: rotateZ(var(--pendulum-angle, 0deg));
+  transform-origin: inherit;            /* picks up calc(50% + ...) from the wrapper */
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pendulum__inner {
+    transform: none !important;
+    transition: none !important;
+  }
+}
 ```
 
-### Imperative `swing()` from a parent button
+`transform-origin` is set on the outer `.pendulum` via `style:transform-origin={originCSS}` and inherited into the inner — this lets the JS update the angle on the inner without recalculating the origin. The reduced-motion `@media` rule is a stylesheet-level safety net even if the JS gate is somehow bypassed.
 
-```svelte
-<script lang="ts">
-  import Pendulum from '$lib/components/Pendulum.svelte';
-
-  let bell: ReturnType<typeof Pendulum> & { swing: () => void };
-</script>
-
-<button onclick={() => bell.swing()}>Ring the bell</button>
-
-<Pendulum bind:this={bell} trigger="manual" amplitude={20}>
-  <span class="bell">🔔</span>
-</Pendulum>
-```
-
-## Props
-
-| Prop             | Type                                          | Default              | Description                                                                                          |
-| ---------------- | --------------------------------------------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
-| `trigger`        | `'mount' \| 'viewport' \| 'click' \| 'manual'`| `'mount'`            | When the swing starts. `manual` exposes `swing()` only.                                              |
-| `amplitude`      | `number`                                      | `18`                 | Peak swing in degrees (one side of zero).                                                            |
-| `frequency`      | `number`                                      | `1.2`                | Cycles per second (Hz). Lower = slower swing.                                                        |
-| `decay`          | `number`                                      | `1.4`                | Exponential damping (1/s). Higher = halts sooner. `0.05` for clock-like persistence.                 |
-| `pivotOffset`    | `{ x: number, y: number }`                    | `{ x: 0, y: -20 }`   | Offset (in px) from element centre for the rotation pivot. Negative `y` hangs from above.            |
-| `duration`       | `number`                                      | `4000`               | Hard cap on swing duration (ms). The rAF loop also halts when the envelope drops below 0.05°.        |
-| `autoStartDelay` | `number`                                      | `0`                  | Delay (ms) before auto-triggers (`mount` / `viewport`) actually fire — useful for staggered rows.    |
-| `threshold`      | `number`                                      | `0.4`                | IntersectionObserver threshold for `trigger='viewport'`.                                             |
-| `class`          | `string`                                      | `''`                 | Extra class names appended to the wrapper.                                                           |
-| `children`       | `Snippet`                                     | `undefined`          | The element to swing. Pass exactly the content you want pivoting.                                    |
-
-## Imperative API (component-level)
-
-| Method     | Returns | Description                                                                                       |
-| ---------- | ------- | ------------------------------------------------------------------------------------------------- |
-| `swing()`  | `void`  | Start (or restart) a fresh swing from the peak amplitude. Idempotent — cancels any in-flight rAF. |
-| `stop()`   | `void`  | Cancel any in-flight rAF and snap the angle back to 0 immediately.                                |
-
-Bind via `bind:this={pendulum}` to call.
-
-## Pure helpers (exported from the module-script)
-
-All helpers are pure functions that can be unit-tested without a DOM. Import them alongside the component:
-
-```typescript
-import Pendulum, {
-  dampedSine,
-  nextAngle,
-  clampSwing,
-  pickTrigger,
-  pivotOffsetCSS,
-  isReducedMotion,
-  type Trigger,
-  type PivotOffset,
-  type SwingState
-} from '$lib/components/Pendulum.svelte';
-```
-
-| Helper                                              | Returns         | Notes                                                                                            |
-| --------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------ |
-| `dampedSine(t, amplitude, frequency, decay)`        | `number`        | `θ(t) = A·exp(-decay·t)·cos(2π·freq·t)`. Returns 0 for non-finite or negative `t`.               |
-| `nextAngle(state, deltaT, gravity, damping)`        | `SwingState`    | One Euler-integration step for users who want their own physics loop.                            |
-| `clampSwing(angle, max)`                            | `number`        | Defensive clamp; non-finite or non-positive `max` returns 0.                                     |
-| `pickTrigger(name)`                                 | `Trigger`       | Validates name; falls back to `'mount'` on unknown input.                                        |
-| `pivotOffsetCSS(offset)`                            | `string`        | Converts `{ x, y }` to `transform-origin` syntax. `{ x: 0, y: 0 }` returns `'50% 50%'`.          |
-| `isReducedMotion()`                                 | `boolean`       | SSR-safe wrapper around `matchMedia('(prefers-reduced-motion: reduce)')`.                        |
-
-## How it works
-
-1. **Mount**: read `prefers-reduced-motion` once. If set, all triggers no-op and the stylesheet-level fallback locks the inner element flat.
-2. **Trigger dispatch**:
-   - `mount`: call `swing()` immediately (or after `autoStartDelay`).
-   - `viewport`: arm an `IntersectionObserver` against the wrapper; on intersection, call `swing()` once and disconnect.
-   - `click`: attach a click handler on the inner element; each tap calls `swing()` from peak.
-   - `manual`: do nothing on mount; expose `swing()` for parent code to drive.
-3. **Tick loop**: each `requestAnimationFrame` step computes elapsed time, runs `dampedSine` to get the current angle, clamps it via `clampSwing` (defensive, in case of pathological inputs), and writes it to the `--pendulum-angle` CSS custom property. The inner element's `transform: rotateZ(var(--pendulum-angle))` follows.
-4. **Halt**: the loop stops when either (a) the envelope `A·exp(-decay·t)` drops below 0.05°, or (b) elapsed time exceeds `duration`. On halt the angle is set to exactly 0.
-5. **Pivot**: `transform-origin` is set on the wrapper using `pivotOffsetCSS(pivotOffset)` and inherited by the inner element (`transform-origin: inherit`). The rotation pivots around that point, not the element centre.
-
-## Accessibility
-
-- **Semantic neutrality**: the wrapper is a plain `<div role="presentation">`. The child element keeps its own role, label, and focus behaviour.
-- **Click trigger**: the inner element gains `role="button"`, `tabindex="0"`, `aria-label="Swing pendulum"`, and Enter/Space keyboard activation. Focus ring uses `:focus-visible` (indigo, 2px, 4px offset).
-- **Screen readers**: child is in the DOM and accessibility tree at all times. The pendulum motion itself is invisible to assistive tech (no live region announcements — they would be noise).
-- **Reduced motion**: when `prefers-reduced-motion: reduce` is active, all triggers no-op (no rAF, no rotation) and a stylesheet-level `@media (prefers-reduced-motion: reduce)` override locks `transform: none` on the inner — so even if the JS hasn't run yet, the user's preference still wins.
+There is no CSS keyframe — the JS writes a fresh `--pendulum-angle` per frame, and the GPU compositor handles the rotation. This is the right call here because `dampedSine` is not a curve CSS can express in keyframes (the exponential envelope is not in `cubic-bezier`'s vocabulary). The cost is "one rAF until envelope < threshold", which is bounded by `duration` (4 s default) regardless of input.
 
 ## Performance
 
-- **Steady state with no swing**: zero work. No rAF, no scroll listeners, no observers (unless `trigger='viewport'`, which uses one IntersectionObserver that disconnects after first intersection).
-- **Per swing tick**: one `dampedSine` call (4 arithmetic ops + 2 transcendentals: `Math.exp`, `Math.cos`), one `clampSwing` (constant time), one CSS custom property write. The transform itself is GPU-composited (`rotateZ`), so swings never hit layout or paint.
-- **Auto-halt**: the loop stops once the envelope falls below 0.05° (~1/360th of typical amplitude) — well below visual perception. With default decay=1.4, that's roughly 4 seconds of motion regardless of amplitude.
-- **Mount cost**: O(1) — one `matchMedia` probe, one optional IntersectionObserver setup.
+- **Idle**: zero. No timer, no rAF, no observer (unless `viewport` trigger is in use).
+- **Per swinging frame**: one `dampedSine` evaluation (one `Math.exp`, one `Math.cos`, three multiplications), one `$state` write (`angle`), one CSS variable update. Sub-millisecond at 60 fps.
+- **Auto-halt**: when the envelope drops below 0.05° or `duration` ms is reached, the loop exits and rAF is unscheduled. No idle scheduling.
+- **Viewport trigger**: a single `IntersectionObserver` on the container. Disconnects on first intersection (one-shot).
 
-## When to reach for it
+## State Flow Diagram
 
-- **Hanging signs / tags** in marketing pages where you want a pub-sign feel without animating the SVG itself.
-- **Notification bells** where the click should feel kinetic, not just visual.
-- **Hero illustrations** with charm — swinging keys, teetering vases, dangling jewellery.
-- **Mantel-clock pendulums** for that one block of an "About" page that needs a touch of analogue.
-- **Interactive product mockups** — let users tap a price tag to make it swing.
-- **Staggered viewport reveals**: pair `trigger="viewport"` with sibling-by-sibling `autoStartDelay` to choreograph rows.
+```
+                    ┌──────────────────┐
+                    │  REST            │  ← angle = 0, rafId = null
+                    └────────┬─────────┘
+                             │
+       trigger='mount'       │   trigger='viewport'    trigger='click'   trigger='manual'
+                             │
+                             ▼
+                    autoStartDelay timer    waiting on observer    waiting on click    waiting on swing()
+                             │
+                             ▼  swing() called
+                    ┌──────────────────┐
+                    │  SWINGING        │  ← rAF loop active
+                    │  angle =          │     evaluating dampedSine
+                    │   dampedSine(t,…) │     each frame
+                    └────────┬─────────┘
+                             │ envelope < 0.05° or elapsed >= duration
+                             ▼
+                    ┌──────────────────┐
+                    │  HALTED          │  ← angle = 0, rafId = null
+                    └────────┬─────────┘
+                             │
+                             ▼  → REST  (next trigger restarts)
 
-## When *not* to reach for it
+  prefers-reduced-motion: reduce → SWINGING never entered. Stays in REST.
+  swing() while in SWINGING → cancelAnimationFrame, reset startTs, restart loop.
+```
 
-- **Body text or long-form content** — rotating paragraphs is just nausea-inducing.
-- **Form fields** or **interactive controls** — the rotation interferes with click/drag accuracy and screen reader semantics.
-- **Above-the-fold text the user must read immediately** — anything moving while you're trying to read it is friction.
-- **High-density grids** — many simultaneous swings can muddy a layout. Stagger them with `autoStartDelay` if you must.
+## Props Reference
 
-## Inspiration
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `trigger` | `'mount' \| 'viewport' \| 'click' \| 'manual'` | `'mount'` | When the swing starts. `'click'` makes the wrapper a button. `'manual'` means consumer calls `swing()`. |
+| `amplitude` | `number` | `18` | Peak swing in degrees. |
+| `frequency` | `number` | `1.2` | Swing rate in Hz (cycles per second). |
+| `decay` | `number` | `1.4` | Exponential damping (1/sec). Higher = settles faster. |
+| `pivotOffset` | `{ x: number; y: number }` | `{ x: 0, y: -20 }` | Pivot offset in pixels from the element's centre. |
+| `duration` | `number` | `4000` | Hard cap on swing duration in ms. The envelope check usually exits sooner. |
+| `autoStartDelay` | `number` | `0` | For `mount` trigger: ms to wait before starting. |
+| `threshold` | `number` | `0.4` | For `viewport` trigger: IntersectionObserver threshold. |
+| `class` | `string` | `''` | Extra wrapper classes. |
+| `children` | `Snippet` | — | The element to wrap. |
 
-The pattern shows up wherever marketing pages need a touch of physical charm — Stripe's playful product illustrations, Apple's loose-collar product shots, Awwwards pub-sign hero treatments. Most teams reach for GSAP timelines, anime.js, or hand-rolled CSS animations. `Pendulum` is the same primitive rebuilt as a portable Svelte 5 component: no animation library, no SVG, no canvas — just `transform-origin`, `rotateZ`, CSS custom properties, and ~7KB of inspectable Svelte.
+The component exports `swing()` and `stop()` for `bind:this={pendulum}` imperative control.
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `prefers-reduced-motion: reduce` | rAF loop never starts. `swing()` short-circuits with `angle = 0`. Stylesheet `@media` rule pins transform to identity. |
+| `swing()` called while already swinging | Existing rAF cancels; `startTs` resets; the loop restarts from the new `t = 0`. The user sees a fresh swing, not a continuation of the previous one. |
+| `frequency = 0` | The cosine becomes `cos(0) = 1` constant; the envelope decays an unwavering offset. Visually: the element shifts by `amplitude` and slowly returns to 0. Acceptable; useful for "lean and settle" motions. |
+| `decay = 0` | No damping. The cosine oscillates forever at full amplitude. The `duration` cap is what eventually halts it; consider raising `duration` or setting a non-zero decay for non-perpetual swings. |
+| Non-finite input to `dampedSine` | Returns 0. Guards downstream against NaN propagation. |
+| Component destroys mid-swing | `onDestroy` cancels the rAF and the autoStartDelay timer, disconnects the observer. No leaked anything. |
+| `trigger = 'click'` with keyboard user | The clickable inner wrapper is `role="button"`, `tabindex="0"`, with Enter/Space handlers — full keyboard parity. |
+| `trigger = 'viewport'` and component never enters viewport | Observer waits indefinitely. No swing fires; no resource leak. |
+| Multiple Pendulum instances on one page | Each is independent. They drift out of phase even with identical config — usually preferable to synchronised swinging. |
+| `pivotOffset = { x: 0, y: 0 }` | Pivot at element centre. Swing rotates the element about its own centroid — looks like a teetering coin rather than a hanging pendulum. |
+
+## Dependencies
+
+- **Svelte 5** — `$state`, `$derived`, `$props`, `onMount`, `onDestroy`, `Snippet`.
+- **`<script module>`** exports — `dampedSine`, `nextAngle`, `clampSwing`, `pickTrigger`, `pivotOffsetCSS`, `isReducedMotion`. All pure, deterministic, testable without a DOM.
+- **`IntersectionObserver`** — browser primitive used for the viewport trigger only.
+- **Zero external libraries** — no animation library, no physics library. The `dampedSine` curve is `Math.exp` × `Math.cos`.
+
+## File Structure
+
+```
+src/lib/components/Pendulum.svelte            # implementation
+src/lib/components/Pendulum.md                # this explainer
+src/lib/components/Pendulum.test.ts           # unit tests for exported helpers
+src/routes/pendulum/+page.svelte              # demo page
+```

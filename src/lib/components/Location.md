@@ -1,501 +1,194 @@
-# Location Components - Technical Logic Explainer
+# MapLocateMe — Technical Logic Explainer
 
-## Overview
+## What Does It Do? (Plain English)
 
-The Location component family provides three specialised mapping components built on **Leaflet.js** for location-focused use cases: geolocation, delivery tracking, and routing.
+A map with a single button labelled with a crosshair icon. Tap it, the browser asks for permission to read your location, and — if you grant it — the map pans and zooms to where you are, drops a pulsing blue dot, and draws a translucent circle showing how confident the GPS is in that position. Optionally, the dot keeps following you as you move.
 
-## Component Variants
+Think of it as the "you are here" arrow on a shopping centre map, except the arrow knows where you actually are because the browser asks the device for GPS, Wi-Fi, or cell-tower triangulation results. The accuracy circle is honesty in cartographic form: a tight 5-metre ring outdoors with GPS, a fuzzy 500-metre ring indoors on Wi-Fi alone.
 
-| Component | Purpose | Key Feature |
-|-----------|---------|-------------|
-| **MapLocateMe** | Find user location | Browser Geolocation API with accuracy circle |
-| **MapDelivery** | Track deliveries | Animated markers with status and ETA |
-| **MapRouting** | Plan routes | OSRM routing with turn-by-turn directions |
+## How It Works (Pseudo-Code)
+
+```
+state:
+  isLocating       = false
+  hasLocation      = false
+  locationError    = null            // user-facing message
+  currentLocation  = null            // GeolocationResult on success
+  watchId          = undefined       // for clearWatch()
+  isGeolocationSupported = $derived(isBrowser && 'geolocation' in navigator)
+
+mount ($effect):
+  1. Dynamic-import 'leaflet' (SSR-safe)
+  2. Read prefers-reduced-motion to gate Leaflet animations
+  3. Create map, attach OSM tiles, add zoom control bottom-right
+
+cleanup:
+  if watchId !== undefined: navigator.geolocation.clearWatch(watchId)
+  mapInstance.remove()
+
+locateMe() (called by button click or external ref):
+  1. if !isGeolocationSupported:
+       error('NOT_SUPPORTED'); return
+  2. isLocating = true; locationError = null
+  3. options = { enableHighAccuracy, timeout, maximumAge }
+  4. if watchPosition:
+       watchId = navigator.geolocation.watchPosition(success, error, options)
+     else:
+       navigator.geolocation.getCurrentPosition(success, error, options)
+
+handlePositionSuccess(position):
+  1. Build GeolocationResult { position, accuracy, altitude?, heading?, speed?, timestamp }
+  2. currentLocation = result; hasLocation = true; isLocating = false
+  3. if showAccuracyCircle:
+       create or move L.circle(latLng, radius=accuracy)
+  4. create or move L.marker with custom divIcon { pulse-ring, pulse-core }
+  5. map.setView(latLng, locateZoom)
+  6. onLocate?.(result)
+
+handlePositionError(error):
+  1. errorType = mapErrorCode(error.code)        // 1→DENIED, 2→UNAVAILABLE, 3→TIMEOUT
+  2. message  = getErrorMessage(errorType)        // human-readable
+  3. isLocating = false; locationError = message
+  4. onError?.(errorType, message)
+
+clearLocation() (exported):
+  remove marker + circle; hasLocation = false; stopWatching()
+```
+
+## The Core Concept: Accuracy Circles and Confidence
+
+The browser's Geolocation API returns a `coords.accuracy` value in metres. This is not an "average error" or a "± reading" — it is the **radius of a 95% confidence circle**. The actual position is, with 95% probability, somewhere inside that circle. So `accuracy: 12` means "we are 95% sure you are within 12 metres of the centre point we returned"; `accuracy: 1500` means "we know you are roughly in this neighbourhood, but we cannot pin you to a specific street".
+
+The component renders this honestly: a translucent blue `L.circle` with `radius: result.accuracy` (Leaflet circles take radius in metres at the equator and adjust for latitude internally). The pulsing dot in the centre is the *point estimate*; the circle is the *uncertainty*. Together they communicate "here, plus or minus this much" without forcing the user to read a number.
+
+Where does the accuracy come from? The browser combines whatever signals are available:
+
+- **GPS** — sub-10 m outdoors with clear sky, useless indoors.
+- **Wi-Fi triangulation** — Google/Apple maintain databases of Wi-Fi BSSID → physical location. 20–100 m typical, indoors-friendly.
+- **Cell tower triangulation** — 500–5000 m, last-resort fallback.
+- **IP geolocation** — city-level, only when nothing better is available.
+
+The `enableHighAccuracy: true` flag tells the browser to prefer GPS, which costs battery but yields the tightest circles. On desktops without a GPS chip, the flag has no effect — the browser just uses whatever it has.
+
+## Performance: Watch vs. One-Shot Geolocation
+
+The component supports two modes via the `watchPosition` prop:
+
+**One-shot (`watchPosition: false`, default):**
+- Calls `navigator.geolocation.getCurrentPosition(...)` once.
+- Returns a single position; no further updates.
+- Cheap on battery — the GPS chip can power back down immediately.
+- Right for "find my location" buttons that fire and forget.
+
+**Continuous (`watchPosition: true`):**
+- Calls `navigator.geolocation.watchPosition(...)` and stores the returned `watchId`.
+- The browser fires the success callback whenever the position changes meaningfully (the threshold is browser-defined, typically a few metres of movement or a confidence improvement).
+- The marker and accuracy circle move smoothly as new readings arrive.
+- The GPS chip stays warm — battery cost is real on phones, ~5–10% per hour with high accuracy.
+- Cleanup is critical: the `$effect` cleanup function calls `navigator.geolocation.clearWatch(watchId)` so a stale watcher does not survive component unmount.
+
+For battery-conscious continuous tracking, raise `maximumAge` so the browser can return cached positions when fresh GPS is not available, and lower `enableHighAccuracy` to `false` so it can fall back to network-based positioning.
+
+## Accessibility Deep-Dive: Permission UX
+
+Geolocation permission prompts are notoriously hostile to users — they appear in browser chrome (out of the page's control), dismissing them silently denies the request, and "Block" persists for the entire origin until the user manually unblocks the site in browser settings. The component cannot improve the prompt itself, but it does its best around it:
+
+- **Explicit user gesture.** The browser only allows the permission prompt to appear in response to a click — it will not trigger from `onMount` or a `setTimeout`. The component honours this by tying `locateMe()` to a button click. (Programmatic `locateMe` calls from a parent will still work *if* they are inside an event handler, e.g. on a wrapper button.)
+- **All error states are spoken.** `locationError` renders in a `[role="alert"]` div, which screen readers announce immediately. The error messages are written for humans, not developers: "Location access was denied. Please enable location permissions in your browser settings." rather than "PERMISSION_DENIED".
+- **Loading state is announced.** The button's `aria-label` flips between "Find my location", "Finding your location…", and "Re-center on your location" so AT users know what state the request is in.
+- **The dismiss button has an aria-label.** Errors can be cleared without a mouse.
+- **Keyboard fully supported.** Tab to the button, Enter/Space to trigger; Escape on the popup closes it (Leaflet default).
+
+The one thing the component cannot do is detect whether the user has previously *blocked* permission for this origin. The Permissions API (`navigator.permissions.query({name: 'geolocation'})`) can tell you if the state is `'denied'`, but support is uneven and the component treats every request as fresh — the browser will silently re-deny without re-prompting if it has been blocked.
+
+## State Flow Diagram
+
+```
+                  ┌──────────────────────┐
+                  │   IDLE               │  isLocating=false
+                  │   no marker, no ring │  hasLocation=false
+                  └──────────┬───────────┘
+                             │ button click → locateMe()
+                             ▼
+                  ┌──────────────────────┐
+                  │   PERMISSION REQUESTED│  isLocating=true
+                  │   browser prompt up   │  spinner visible
+                  └──────────┬───────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │ granted            │ denied             │ timeout / unavailable
+        ▼                    ▼                    ▼
+┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│ POSITION ACQUIRED│  │ ERROR: DENIED    │  │ ERROR: TIMEOUT/  │
+│ marker + ring    │  │ alert banner     │  │ UNAVAILABLE      │
+│ map.setView()    │  │ onError fired    │  │ alert banner     │
+│ onLocate fired   │  └──────────────────┘  └──────────────────┘
+└──────┬───────────┘
+       │ if watchPosition: position changes ──╮
+       │                                       ▼
+       │                              ┌──────────────────┐
+       │                              │ TRACKING         │
+       │                              │ marker + ring    │
+       │                              │   move on update │
+       │                              └──────────────────┘
+       │ clearLocation() (exported)
+       ▼
+┌──────────────────┐
+│   IDLE (reset)   │
+└──────────────────┘
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `center` | `LatLng` | `DEFAULT_MAP_CENTER` | Initial map centre before location is found. |
+| `zoom` | `number` | `13` | Initial zoom level. |
+| `height` | `number` | `400` | Map container height in pixels. |
+| `locateZoom` | `number` | `16` | Zoom level applied when a location is acquired. |
+| `showAccuracyCircle` | `boolean` | `true` | Render the translucent blue confidence circle. |
+| `enableHighAccuracy` | `boolean` | `true` | Hint to the browser to prefer GPS. Costs battery on mobile. |
+| `timeout` | `number` | `10000` | Milliseconds to wait before firing a TIMEOUT error. |
+| `maximumAge` | `number` | `0` | Maximum age (ms) of an acceptable cached position. `0` forces fresh. |
+| `watchPosition` | `boolean` | `false` | If true, continuously track position via `watchPosition` API. |
+| `buttonPosition` | `'topleft' \| 'topright' \| 'bottomleft' \| 'bottomright'` | `'topright'` | Corner placement of the locate button. |
+| `onLocate` | `(result: GeolocationResult) => void` | `undefined` | Fires on every successful position read (once for one-shot, repeatedly for watch). |
+| `onError` | `(error: GeolocationErrorType, message: string) => void` | `undefined` | Fires on permission denial, timeout, or unavailability. |
+| `class` | `string` | `''` | Extra classes for the container. |
+
+The component also exports `locateMe()`, `stopWatching()`, and `clearLocation()` so a parent can drive it imperatively via `bind:this`.
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| User denies permission | `onError('PERMISSION_DENIED', …)` fires; an alert banner appears with instructions to re-enable in browser settings. |
+| User dismisses the prompt without choosing | Most browsers treat dismissal as denial after a beat; the TIMEOUT error fires after the configured `timeout`. |
+| Browser does not support geolocation (very old) | `isGeolocationSupported` is `false`; clicking the button immediately fires `onError('NOT_SUPPORTED', …)` without prompting. |
+| Served over plain HTTP (not localhost) | All modern browsers refuse geolocation on insecure origins; `error.code === 1` (`PERMISSION_DENIED`) fires immediately. Deploy on HTTPS. |
+| Indoors with no GPS | The browser falls back to Wi-Fi/cell positioning; accuracy circle widens dramatically (often 500+ m). The component renders this honestly rather than hiding it. |
+| `watchPosition: true` and component unmounts | The `$effect` cleanup calls `clearWatch(watchId)` so the GPS chip powers down and the callback is detached. |
+| User scrolls / pans away after location is acquired | The marker stays at its real position; the map view does not auto-recentre on subsequent updates unless `watchPosition` is true. |
+| Multiple rapid clicks on the button | The button is `disabled` while `isLocating`; redundant clicks do nothing. |
+| Position update arrives after `clearLocation()` | The watcher was cleared in `stopWatching()`, so no stale callback fires. |
+| `prefers-reduced-motion: reduce` | The pulsing-dot animation is disabled via CSS `@media`; Leaflet's pan-to animation is disabled at map construction. |
 
 ## Dependencies
 
-All components use Leaflet.js (same as Maps components):
+- **leaflet** (~150 KB gzip) — Same justification as MapLive: industry-standard, would take 100+ hours to replicate. Dynamic-imported, SSR-safe.
+- **Browser Geolocation API** — Native, no external service. Backed by GPS, Wi-Fi, cell, and (rarely) IP-based positioning depending on hardware.
+- **Leaflet CSS** — Loaded globally; without it the location marker's custom divIcon CSS still renders correctly because it is scoped, but tile controls are unstyled.
+- **OpenStreetMap tiles** — Free public tile server; for production traffic use a paid provider as per OSM's tile usage policy.
 
-```bash
-bun add leaflet
-bun add -D @types/leaflet
-```
-
-Add Leaflet CSS in `app.html`:
-```html
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-```
-
----
-
-## MapLocateMe - Browser Geolocation
-
-### How It Works
-
-Uses the browser's Geolocation API to find the user's position:
-
-```typescript
-navigator.geolocation.getCurrentPosition(
-  handleSuccess,
-  handleError,
-  { enableHighAccuracy, timeout, maximumAge }
-);
-```
-
-### Accuracy Circle
-
-The blue circle shows position uncertainty:
-
-```typescript
-accuracyCircle = L.circle(latLng, {
-  radius: result.accuracy,  // metres
-  color: '#146ef5',
-  fillOpacity: 0.15
-}).addTo(map);
-```
-
-### Continuous Tracking
-
-Enable `watchPosition` for real-time updates:
-
-```typescript
-watchId = navigator.geolocation.watchPosition(
-  handleSuccess,
-  handleError,
-  options
-);
-
-// Cleanup on unmount
-return () => navigator.geolocation.clearWatch(watchId);
-```
-
-### Exported Functions
-
-Parent components can programmatically control the map:
-
-```svelte
-<script>
-  let mapRef;
-</script>
-
-<MapLocateMe bind:this={mapRef} />
-
-<button onclick={() => mapRef.locateMe()}>Find Me</button>
-<button onclick={() => mapRef.clearLocation()}>Clear</button>
-<button onclick={() => mapRef.stopWatching()}>Stop Tracking</button>
-```
-
-### Error Handling
-
-Geolocation errors are mapped to user-friendly messages:
-
-| Error Code | Type | User Message |
-|------------|------|--------------|
-| 1 | PERMISSION_DENIED | Location access was denied... |
-| 2 | POSITION_UNAVAILABLE | Unable to determine your location... |
-| 3 | TIMEOUT | Location request timed out... |
-
-### Theming
-
-`MapLocateMe` exposes 17 CSS custom properties for full theming control. All
-tokens flip automatically with `prefers-color-scheme: dark` (chrome-only flip,
-no brand variant API — see [`docs/THEMING.md`](../../../docs/THEMING.md)).
-
-**Override at any deeper scope** to customise without forking the component:
-
-```css
-/* Pin the focus accent to your brand colour, regardless of mode */
-.my-app .map-locate-container {
-  --mlm-accent: #6366f1;
-  --mlm-accent-soft: rgba(99, 102, 241, 0.3);
-}
-
-/* Force light chrome inside a dark page section */
-.dark-page .map-locate-container {
-  --mlm-canvas: #fafafa;
-  --mlm-surface: #ffffff;
-  --mlm-text: #1f2937;
-}
-```
-
-**Token reference:**
-
-| Group | Tokens |
-|-------|--------|
-| Surfaces | `--mlm-canvas`, `--mlm-surface`, `--mlm-surface-hover`, `--mlm-info-bg` |
-| Text | `--mlm-text`, `--mlm-text-muted` |
-| Accent (focus / pulse / has-located) | `--mlm-accent`, `--mlm-accent-soft`, `--mlm-pulse-border` |
-| Error states | `--mlm-error-bg`, `--mlm-error-border`, `--mlm-error-text`, `--mlm-error-dismiss-hover` |
-| Accuracy badge | `--mlm-accuracy-bg`, `--mlm-accuracy-text` |
-| Shadows | `--mlm-shadow-soft`, `--mlm-shadow-medium`, `--mlm-shadow-strong` |
-
-The pulse marker border is intentionally kept light in both modes — it reads
-against map tiles rather than the surrounding container chrome.
-
----
-
-## MapDelivery - Real-Time Tracking
-
-### Data Flow
+## File Structure
 
 ```
-DeliveryData[] → Component
-      ↓
-[Status change detection]
-      ↓
-[XSS escaping for popup content]
-      ↓
-Leaflet markers with custom icons
-      ↓
-Callbacks triggered on status changes
+src/lib/components/MapLocateMe.svelte     # locate-me + accuracy circle implementation
+src/lib/components/MapRouting.svelte      # related: OSRM-driven route planning
+src/lib/components/Location.md            # this file (rendered inside ComponentPageShell)
+src/routes/location/+page.svelte          # demo page (locate-me + delivery + routing)
+src/lib/types.ts                          # MapLocateMeProps, GeolocationResult,
+                                          # GeolocationErrorType, RouteResult, RouteWaypoint
+src/lib/constants.ts                      # DEFAULT_MAP_CENTER
+src/lib/mapUtils.ts                       # calculateMapBounds — fit-to-points helper
 ```
-
-### Reactivity & Dependency Tracking
-
-Svelte 5's `$effect` only re-runs when it detects reactive values being read inside it. Since `updateDeliveryMarkers()` is a function call, we must explicitly read `deliveries` to create the dependency:
-
-```typescript
-$effect(() => {
-  if (map && deliveries) {
-    // Reading deliveries.length creates the reactive dependency
-    const _ = deliveries.length;
-    updateDeliveryMarkers();
-  }
-});
-```
-
-Without this, markers would only render on mount and never update when delivery data changes.
-
-### Status Change Detection
-
-The component tracks previous status to detect changes:
-
-```typescript
-const prevStatus = previousStatuses.get(delivery.id);
-if (prevStatus && prevStatus !== delivery.status) {
-  onStatusChange?.(delivery, prevStatus);
-
-  if (delivery.status === 'delivered') {
-    onDeliveryComplete?.(delivery);
-  }
-}
-previousStatuses.set(delivery.id, delivery.status);
-```
-
-### XSS Protection
-
-All user-provided content is escaped:
-
-```typescript
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// Usage
-const safeLabel = escapeHtml(delivery.label || `Delivery ${delivery.id}`);
-const safeDriverName = escapeHtml(delivery.metadata?.driverName);
-```
-
-### Animated Movement
-
-Markers smoothly animate to new positions:
-
-```typescript
-function animateMarkerTo(marker, targetLat, targetLng, duration, id) {
-  const startPos = marker.getLatLng();
-  const startTime = performance.now();
-
-  function animate(currentTime) {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);  // Ease-out cubic
-
-    marker.setLatLng([
-      startPos.lat + (targetLat - startPos.lat) * eased,
-      startPos.lng + (targetLng - startPos.lng) * eased
-    ]);
-
-    if (progress < 1) {
-      requestAnimationFrame(animate);
-    }
-  }
-
-  requestAnimationFrame(animate);
-}
-```
-
-### Vehicle Type Icons
-
-Custom SVG icons based on vehicle type:
-
-```typescript
-function getVehicleIcon(vehicleType?: string): string {
-  switch (vehicleType) {
-    case 'bike': return /* bike SVG */;
-    case 'van': return /* van SVG */;
-    case 'walking': return /* walking SVG */;
-    default: return /* car SVG */;
-  }
-}
-```
-
----
-
-## MapRouting - OSRM Integration
-
-### OSRM API
-
-Uses the Open Source Routing Machine (free, no API key):
-
-```typescript
-const url = `${osrmApiUrl}/route/v1/${profile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true`;
-```
-
-### Custom OSRM Server
-
-For production, use your own OSRM server:
-
-```svelte
-<MapRouting
-  osrmApiUrl="https://your-osrm-server.com"
-  ...
-/>
-```
-
-### Race Condition Prevention
-
-Uses AbortController to cancel stale requests:
-
-```typescript
-// Cancel any pending request
-if (abortController) {
-  abortController.abort();
-}
-abortController = new AbortController();
-
-try {
-  const response = await fetch(url, { signal: abortController.signal });
-  // Process response...
-} catch (error) {
-  // Ignore abort errors
-  if (error.name === 'AbortError') return;
-  // Handle real errors...
-}
-```
-
-### Click-to-Set Mode
-
-Users click the map to set origin/destination:
-
-```typescript
-map.on('click', (e) => {
-  if (clickMode === 'origin') {
-    origin = { lat: e.latlng.lat, lng: e.latlng.lng };
-    clickMode = 'destination';
-  } else if (clickMode === 'destination') {
-    destination = { lat: e.latlng.lat, lng: e.latlng.lng };
-    clickMode = null;
-  }
-});
-```
-
-### Profile Mapping
-
-OSRM uses different profile names:
-
-| Our Profile | OSRM Profile |
-|-------------|--------------|
-| `driving` | `car` |
-| `cycling` | `bike` |
-| `walking` | `foot` |
-
-### Theming
-
-`MapRouting` ships with a CSS-custom-property token API. Chrome tokens flip
-automatically with `prefers-color-scheme: dark`; the two semantic tokens
-(`origin`, `destination`) stay constant in both modes — a green "start"
-pin must read as green over any base map tile, light or dark. This is
-the chrome/semantic split codified by [Pattern #67](../../../docs/THEMING.md#pattern-67).
-
-#### Token reference
-
-All tokens are scoped to `.map-routing-container` and prefixed `--mr-`.
-
-| Group | Tokens |
-|-------|--------|
-| **Surfaces** | `canvas`, `surface`, `surface-hover`, `panel-bg`, `overlay-bg` |
-| **Text** | `text`, `text-muted`, `accent-text` |
-| **Strokes** | `border-soft`, `divider`, `divider-strong` |
-| **Accent** | `accent`, `accent-soft` |
-| **Errors** | `error-bg`, `error-bg-soft`, `error-border`, `error-text` |
-| **Shadows** | `shadow-soft`, `shadow-medium`, `shadow-strong`, `marker-shadow` |
-| **Semantic** *(stay constant)* | `origin`, `destination` |
-
-#### Override recipes
-
-```css
-/* Pin the accent to your brand colour, keep semantic markers */
-.my-app .map-routing-container {
-  --mr-accent: #6366f1;
-  --mr-accent-soft: rgba(99, 102, 241, 0.9);
-}
-
-/* Force light chrome inside a dark page section */
-.dark-page .map-routing-container {
-  --mr-canvas: #fafafa;
-  --mr-surface: #ffffff;
-  --mr-text: #1f2937;
-}
-
-/* Brand the start/end pins (semantic tokens — both modes follow this) */
-.my-app .map-routing-container {
-  --mr-origin: #00875a;
-  --mr-destination: #c9372c;
-}
-```
-
-The `routeColor` prop remains the recommended surface for theming the
-polyline itself — the token API covers everything *around* the route
-(panels, controls, instructions, errors, markers).
-
-See [`docs/THEMING.md`](../../../docs/THEMING.md) for the full convention.
-
----
-
-## Props Quick Reference
-
-### MapLocateMe
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `center` | `LatLng` | London | Initial center |
-| `zoom` | `number` | `13` | Initial zoom |
-| `height` | `number` | `400` | Container height |
-| `locateZoom` | `number` | `16` | Zoom when located |
-| `showAccuracyCircle` | `boolean` | `true` | Show accuracy radius |
-| `enableHighAccuracy` | `boolean` | `true` | Use GPS |
-| `timeout` | `number` | `10000` | Geolocation timeout (ms) |
-| `watchPosition` | `boolean` | `false` | Continuous tracking |
-| `buttonPosition` | `string` | `'topright'` | Button placement |
-| `onLocate` | `function` | - | Success callback |
-| `onError` | `function` | - | Error callback |
-
-### MapDelivery
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `deliveries` | `DeliveryData[]` | `[]` | Delivery data (bindable) |
-| `center` | `LatLng` | Auto | Initial center |
-| `zoom` | `number` | `13` | Initial zoom |
-| `height` | `number` | `500` | Container height |
-| `showRoute` | `boolean` | `true` | Show route lines |
-| `showETA` | `boolean` | `true` | Show ETA badges |
-| `animateMovement` | `boolean` | `true` | Smooth position updates |
-| `animationDuration` | `number` | `1000` | Animation time (ms) |
-| `autoFitBounds` | `boolean` | `true` | Auto-zoom to show all |
-| `onDeliveryClick` | `function` | - | Marker click callback |
-| `onStatusChange` | `function` | - | Status change callback |
-| `onDeliveryComplete` | `function` | - | Delivery complete callback |
-
-### MapRouting
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `origin` | `LatLng` | - | Start point (bindable) |
-| `destination` | `LatLng` | - | End point (bindable) |
-| `center` | `LatLng` | London | Initial center |
-| `zoom` | `number` | `13` | Initial zoom |
-| `height` | `number` | `500` | Container height |
-| `profile` | `RoutingProfile` | `'driving'` | Travel mode |
-| `osrmApiUrl` | `string` | Public demo | OSRM server URL |
-| `showInstructions` | `boolean` | `true` | Show directions panel |
-| `showDistance` | `boolean` | `true` | Show distance badge |
-| `showDuration` | `boolean` | `true` | Show duration badge |
-| `routeColor` | `string` | `'#146ef5'` | Route line colour |
-| `routeWeight` | `number` | `5` | Route line width |
-| `draggableWaypoints` | `boolean` | `true` | Drag to adjust route |
-| `enableClickToSet` | `boolean` | `true` | Click to set points |
-| `onRouteCalculated` | `function` | - | Success callback |
-| `onRouteError` | `function` | - | Error callback |
-
----
-
-## Known Warnings
-
-### svelte-check Warnings (Safe to Ignore)
-
-**None currently** - All CSS selectors are correctly scoped.
-
----
-
-## Common Patterns
-
-### SSR Safety
-
-All components check for browser environment:
-
-```typescript
-const isBrowser = typeof window !== 'undefined';
-
-$effect(() => {
-  if (!isBrowser || !mapContainer) return;
-  // Map initialisation...
-});
-```
-
-### Reduced Motion Support
-
-Animations respect user preferences:
-
-```typescript
-const prefersReducedMotion = window.matchMedia(
-  '(prefers-reduced-motion: reduce)'
-).matches;
-
-if (animateMovement && !prefersReducedMotion) {
-  animateMarkerTo(...);
-} else {
-  marker.setLatLng([lat, lng]);
-}
-```
-
-### Cleanup on Unmount
-
-```typescript
-$effect(() => {
-  // Setup...
-
-  return () => {
-    if (watchId) navigator.geolocation.clearWatch(watchId);
-    animationFrames.forEach(frame => cancelAnimationFrame(frame));
-    map?.remove();
-  };
-});
-```
-
----
-
-## Use Cases
-
-| Component | Best For |
-|-----------|----------|
-| **MapLocateMe** | Check-in apps, store locators, fitness tracking |
-| **MapDelivery** | Food delivery, logistics, fleet management |
-| **MapRouting** | Navigation apps, trip planning, distance calculators |
-
----
-
-## External Dependencies
-
-| Service | Used By | Notes |
-|---------|---------|-------|
-| OpenStreetMap tiles | All | Free, no API key |
-| Browser Geolocation | MapLocateMe | Requires HTTPS |
-| OSRM | MapRouting | Free demo or self-hosted |
-
----
-
-## Security Considerations
-
-1. **XSS Protection**: All user content in popups is escaped
-2. **HTTPS Required**: Geolocation requires secure context
-3. **Rate Limiting**: OSRM demo server has usage limits - use your own for production

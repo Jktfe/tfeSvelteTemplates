@@ -1,103 +1,209 @@
----
-name: EqualizerBars
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# EqualizerBars — Technical Logic Explainer
 
-# EqualizerBars
+## What Does It Do? (Plain English)
 
-A compact "things are alive" indicator: N vertical bars that oscillate in concert via phased CSS keyframes, evoking a frozen-in-motion audio spectrum analyser. Decorative only — no input, no value semantics, no audio analysis. Good fits: streaming-now badges, agent-thinking indicators, "live" tags on dashboards, listening-state on voice UIs.
+EqualizerBars is a row of vertical bars whose heights oscillate in a coordinated wave that looks like an audio spectrum analyser frozen in motion. It is a compact "this thing is alive / streaming / processing" indicator — useful next to live audio, voice transcripts, AI generation status lights, or anywhere a static "loading…" feels too quiet. Four visual variants give different rhythms (smooth sine, peak-biased FFT, binary high/low, sparse heartbeat double-spike), and an `active` prop freezes the bars at a deterministic seeded silhouette for "idle" states.
 
-Pairs naturally with `Spinner` (different idiom: rotation vs. amplitude), `ProgressBar` (different commitment: indefinite vs. measured), `LiveDot` style indicators (different density: single vs. multi). Never a substitute for a real meter — use a value-bound primitive when you need to communicate magnitude.
+It is decorative only — no value semantics, no input, ignored by keyboard and pointer. The wrapper carries `role="img"` plus a configurable `aria-label` so screen readers can describe it as a single visual element rather than reading individual bars.
 
-## Key features
+## How It Works (Pseudo-Code)
 
-- **Four variants** — `equalizer` (smooth sine wave), `spectrum` (peak-biased FFT-style), `pulse` (binary high/low), `heartbeat` (sparse double-spike). Each is a distinct rhythm, not just a colour swap.
-- **Phase-stagger illusion** — every bar shares the same keyframe but starts at a different point via negative `animation-delay: calc(var(--eq-idx) * var(--eq-stagger) * -1)`. N independent CSS clocks render as one travelling wave with zero JS coupling.
-- **Configurable density** — bar count `1–64`, speed multiplier `0.25×–4×`, height `16–256px`, colour (`'auto'` = `currentColor` or any CSS colour). All clamped at the helper layer so malformed input degrades gracefully.
-- **Inactive state** — when `active={false}` the bars freeze at deterministic seeded heights via `seededHeights(count, seed)` (mulberry32-derived LCG, returns `[0.15, 1.0]`). Same seed → same silhouette → SSR-stable hydration.
-- **Pure CSS** — zero `requestAnimationFrame`, zero `<canvas>`, zero `ResizeObserver`. One `transform: scaleY()` keyframe per variant; GPU-composited.
-- **Pure helpers exported** — `pickVariant`, `isValidVariant`, `clampSpeed`, `clampBars`, `clampHeight`, `seededHeights`, `isReducedMotion`. Directly unit-testable without rendering (45 helper + render tests in this repo).
-- **prefers-reduced-motion safe** — `onMount` flips `runAnimation` to false when the media query matches; a CSS `@media (prefers-reduced-motion: reduce)` rule freezes any escaped keyframe at the seeded silhouette.
+```
+on render:
+  read props: bars, variant, speed, color, active, height, seed, ariaLabel
 
-## Usage
+derived:
+  safeBars   = clampBars(bars)        // [1, 64]
+  safeSpeed  = clampSpeed(speed)      // [0.25, 4]
+  safeHeight = clampHeight(height)    // [16, 256] px
+  safeVariant= pickVariant(variant)
+  safeColor  = (color === 'auto') ? 'currentColor' : color
+  heights    = seededHeights(safeBars, seed)   // deterministic [0.15, 1] per bar
 
-```svelte
-<script>
-	import EqualizerBars from '$lib/components/EqualizerBars.svelte';
-</script>
+  baseDurationS = 1.2 / safeSpeed
+  staggerStepS  = baseDurationS * 0.09
 
-<EqualizerBars />
+state:
+  runAnimation = true     // SSR default, flipped by onMount
 
-<EqualizerBars bars={16} variant="spectrum" speed={1.5} />
+on mount:
+  runAnimation = active && !isReducedMotion()
 
-<EqualizerBars variant="heartbeat" color="#ff3a6e" height={64} />
+effect:
+  if !active: runAnimation = false
 
-<EqualizerBars active={false} bars={20} ariaLabel="Idle signal meter" />
+render:
+  div.eq-wrapper role="img" aria-label
+    data-equalizerbars-variant={safeVariant}
+    data-equalizerbars-active={active && runAnimation}
+    style="--eq-color, --eq-height, --eq-duration, --eq-stagger"
+    for each height h, index i:
+      span.eq-bar.eq-running={active && runAnimation}
+        style="--eq-idx, --eq-static-h: {h * 100}%"
+
+CSS variant blocks (one keyframe per variant):
+  .eq-wrapper[data-equalizerbars-variant='equalizer'] .eq-running {
+    animation: eq-osc-equalizer var(--eq-duration) ease-in-out infinite alternate;
+    animation-delay: calc(var(--eq-idx) * var(--eq-stagger) * -1);
+  }
+  ... and similar for spectrum, pulse, heartbeat
 ```
 
-## Props
+## The Core Concept: Phased Identical Animations Look Like A Coordinated Wave
 
-| Prop        | Type                                                  | Default                  | Notes                                                  |
-| ----------- | ----------------------------------------------------- | ------------------------ | ------------------------------------------------------ |
-| `bars`      | `number`                                              | `12`                     | Clamped `[1, 64]`. Floored. Malformed → `12`.          |
-| `variant`   | `'equalizer' \| 'spectrum' \| 'pulse' \| 'heartbeat'` | `'equalizer'`            | Unknown → `'equalizer'`.                               |
-| `speed`     | `number`                                              | `1`                      | Clamped `[0.25, 4]`. Inverse of cycle time. NaN → `1`. |
-| `color`     | `string`                                              | `'auto'`                 | `'auto'` resolves to `currentColor`. Any CSS colour.   |
-| `active`    | `boolean`                                             | `true`                   | `false` freezes bars at seeded silhouette.             |
-| `height`    | `number`                                              | `48`                     | Clamped `[16, 256]` px. NaN → `48`.                    |
-| `seed`      | `number`                                              | `1`                      | Drives inactive-state silhouette. Same seed = same.    |
-| `ariaLabel` | `string`                                              | `'Audio visualisation'`  | Wrapper carries `role="img"`.                          |
-| `class`     | `string`                                              | `''`                     | Extra classes on the wrapper.                          |
+The "wave" you see across the bars is a visual side-effect of a simpler trick: every bar runs the *same* CSS keyframe, but each starts at a different phase by way of a negative `animation-delay`.
 
-## Variant table
+```
+bar 0: animation-delay = 0ms     (starts at frame 0)
+bar 1: animation-delay = -100ms  (acts as if it started 100ms ago — already 100ms into the keyframe)
+bar 2: animation-delay = -200ms  (already 200ms in)
+bar i: animation-delay = -i × stagger × 1000ms
+```
 
-| Variant     | Easing               | Shape                              | Vibe                                |
-| ----------- | -------------------- | ---------------------------------- | ----------------------------------- |
-| `equalizer` | `ease-in-out` alt.   | Smooth sine, 0.18 → 0.65 → 1.0      | Classic music-app meter             |
-| `spectrum`  | `cubic-bezier` alt.  | Peak-biased, 0.2 → 0.95 → 0.45 → 0.85 | FFT-style; reads as frequency     |
-| `pulse`     | `steps(2, jump-none)`| Binary high/low, 0.18 ↔ 1.0         | Heartbeat-monitor flatline pulse    |
-| `heartbeat` | `ease-in-out`        | Sparse double-spike then long tail | EKG / vitals indicator              |
+CSS treats negative delays as "the animation has already been playing" — the browser jumps the bar straight to the keyframe value at that offset. Because every bar is on the same loop period but at a different phase, they read as a moving wave even though there is no shared timeline anywhere.
 
-Stagger-step is `9%` of the base duration — chosen by ear so even at `bars=64` no two adjacent bars phase-lock visibly.
+```
+   bar 0 phase 0%     ▆
+   bar 1 phase 8%     ▇
+   bar 2 phase 17%    █
+   bar 3 phase 25%    ▇
+   bar 4 phase 33%    ▆
+   bar 5 phase 42%    ▄
+   bar 6 phase 50%    ▂
+   ...
+```
 
-## Distinct from
+Each variant's keyframe expresses a different waveform:
 
-- **`Spinner`** — single rotating element; communicates "working" without amplitude information. EqualizerBars communicates *rhythm*.
-- **`ProgressBar`** / **`ProgressRing`** — value-bound. EqualizerBars is *indefinite*.
-- **`Marquee`** / **`TickerTape`** — horizontal scroll of structured content. EqualizerBars is *vertical amplitude*, content-free.
-- **`Pendulum`** — single regular oscillator. EqualizerBars is *N coupled-looking oscillators*.
-- **`AudioVisualizer`-style components** — those analyse real audio. EqualizerBars is *pure decoration* — it never opens a microphone.
+- **`equalizer`** — `0% scaleY(0.18) → 50% scaleY(0.65) → 100% scaleY(1)` with `ease-in-out alternate` (so the bar bounces between low and high). Smooth sine-flavoured idle.
+- **`spectrum`** — `0% / 35% / 65% / 100%` keyframe with peak at 35% and dip at 65%. Looks like a real FFT readout where mid frequencies dominate.
+- **`pulse`** — `0% / 50% / 100%` with `steps(2, jump-none)` easing — binary high/low, no in-between values. Looks digital.
+- **`heartbeat`** — `0% / 8% / 16% / 24% / 32% / 100%` curve with a quick double-spike then a long flat dwell. EKG-style.
 
-## Pure helpers (module-script exports)
+The seeded RNG (`seededHeights`) is mulberry32-derived — small, fast, deterministic. Same seed always produces the same silhouette, important for SSR / hydration parity. The function is exported from `<script module>` so unit tests can verify exact values.
 
-- `pickVariant(name)` — returns `'equalizer' | 'spectrum' | 'pulse' | 'heartbeat'`. Falls back to `'equalizer'`.
-- `isValidVariant(name)` — type guard for variant names.
-- `clampSpeed(n)` — clamps to `[0.25, 4]`. NaN/Infinity/non-numeric → `1`.
-- `clampBars(n)` — clamps to `[1, 64]` and floors. NaN/Infinity/non-numeric → `12`.
-- `clampHeight(n)` — clamps to `[16, 256]`. NaN/Infinity/non-numeric → `48`.
-- `seededHeights(count, seed)` — deterministic mulberry32-derived array of fractions in `[0.15, 1.0]`. Same `(count, seed)` always returns the same array — required for SSR/hydration parity.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+```
+   active = true                  active = false
+   ▃▆▇█▇▆▃▂▄▆▆▄▂              ▃ ▆ ▇ █ ▇ ▆ ▃ ▂ ▄ ▆ ▆ ▄ ▂
+   ▆█▆▄▃▂▄▆█▇▆▄              (frozen at seeded heights;
+   wave moves left-to-right     no animation)
+```
 
-## Accessibility
+## CSS Animation Strategy
 
-- Wrapper carries `role="img"` and a configurable `aria-label`. The visual is announced as a single image, not as 12 unlabelled spans.
-- Each `.eq-bar` is `aria-hidden="true"` so SR users hear *only* the wrapper label.
-- No keyboard or pointer interaction — the component is decorative and ignores focus / clicks.
-- Under `prefers-reduced-motion: reduce`: `onMount` forces `runAnimation = false`, a `@media` rule freezes any escaped keyframe, and the bars render at their seeded heights — a static silhouette that still communicates "this is an indicator", just without motion.
+One keyframe per variant, attached via attribute selector on the wrapper:
+
+```css
+.eq-wrapper[data-equalizerbars-variant='equalizer'] .eq-running {
+  animation: eq-osc-equalizer var(--eq-duration, 1.2s) ease-in-out infinite alternate;
+  animation-delay: calc(var(--eq-idx) * var(--eq-stagger, 0.1s) * -1);
+}
+
+@keyframes eq-osc-equalizer {
+  0%   { transform: scaleY(0.18); }
+  50%  { transform: scaleY(0.65); }
+  100% { transform: scaleY(1);    }
+}
+```
+
+Several deliberate choices:
+
+- **`scaleY` from `transform-origin: 50% 100%`** rather than animating `height`. Scale is GPU-composited; height triggers layout. The bars all anchor to the bottom and grow upward.
+- **`infinite alternate`** so the bar bounces between the two endpoint keyframes without a snap-back stutter.
+- **Per-bar `--eq-idx` index**, multiplied into the stagger inline. This is what gives each bar its phase offset without the JS knowing about it.
+
+Inactive bars switch off the `.eq-running` class. Their height comes from `--eq-static-h` (a percentage based on the seeded RNG) and no transform is applied — so they sit at deterministic heights without any animation.
+
+```css
+.eq-bar:not(.eq-running) {
+  height: var(--eq-static-h, 50%);
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-running {
+    animation: none !important;
+    transform: none;
+    height: var(--eq-static-h, 50%);
+  }
+}
+```
+
+The `@media` rule is the catch-all — even if the JS gate didn't run (SSR-only, or an exception in matchMedia), the user's preference still wins.
 
 ## Performance
 
-- 1 DOM node per bar (`<span class="eq-bar">`). At `bars=64`, that's 64 spans + 1 wrapper.
-- Animation drives only `transform: scaleY()` on a `transform-origin: 50% 100%` element — pure GPU compositing, no layout, no paint.
-- Seeded heights are computed once per render via `$derived` and reused for the inactive state.
-- Zero `requestAnimationFrame`, zero canvas, zero `ResizeObserver`.
+- **Steady state**: zero JS work. All animation is CSS keyframes running on the GPU compositor. The `<span>` count is `bars` (max 64).
+- **Mount cost**: trivial. Compute `seededHeights` (one mulberry32 step per bar — ~64 multiplications at the cap) and read `matchMedia` once.
+- **Per render**: derived values recompute when props change. The wrapper re-emits its CSS variables; CSS picks up the new duration / colour and the running animations adopt the new values without restart.
+- **No canvas, no Web Audio** — this is a *pretend* equaliser, not a real one. Real audio reactivity would need an AudioContext + AnalyserNode wrapper component (out of scope here).
 
-## Recipes
+## State Flow Diagram
 
-- **Streaming-now badge**: `<EqualizerBars bars={4} variant="pulse" height={16} color="#10b981" />` next to the title.
-- **Agent-thinking indicator**: `<EqualizerBars bars={8} variant="equalizer" speed={1.5} color="#38bdf8" />` in the chat input row.
-- **Listening-mode mic button**: `<EqualizerBars variant="spectrum" bars={5} height={24} color="currentColor" />` inside a button that already has a mic icon.
-- **EKG vitals**: `<EqualizerBars variant="heartbeat" bars={32} color="#ff3a6e" speed={0.75} height={96} ariaLabel="Patient pulse indicator" />`.
-- **Frozen silhouette**: `<EqualizerBars active={false} bars={20} seed={7} />` for "we'll start when you do" empty states.
+```
+              ┌────────────────────────────┐
+              │  initial render (SSR)      │
+              │  runAnimation = true       │  ← optimistic; matches client default
+              │  bars render with anim     │
+              └──────────────┬─────────────┘
+                             │ onMount
+                             ▼
+              ┌────────────────────────────┐
+              │  capability check          │
+              │  active && !reducedMotion? │
+              └──────┬─────────────┬───────┘
+                     │ yes         │ no
+                     ▼             ▼
+              ┌──────────────┐  ┌──────────────────┐
+              │  ANIMATED    │  │  STATIC          │
+              │  .eq-running │  │  no .eq-running  │
+              │  CSS waves   │  │  seeded heights  │
+              └──────┬───────┘  └──────┬───────────┘
+                     │ active prop flips false       │
+                     ▼                                ▼
+                  STATIC                      ANIMATED (if active flips true)
+
+  prefers-reduced-motion: reduce → STATIC, locked by @media rule
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `bars` | `number` | `12` | Bar count. Floored, clamped to `[1, 64]`. |
+| `variant` | `'equalizer' \| 'spectrum' \| 'pulse' \| 'heartbeat'` | `'equalizer'` | Animation rhythm. Unknown → `'equalizer'`. |
+| `speed` | `number` | `1` | Multiplier; higher = faster cycle. Clamped to `[0.25, 4]`. |
+| `color` | `string` | `'auto'` | `'auto'` uses `currentColor`. Otherwise any CSS colour. |
+| `active` | `boolean` | `true` | When false, bars freeze at seeded heights — the "idle" silhouette. |
+| `height` | `number` | `48` | Wrapper height in pixels. Clamped to `[16, 256]`. |
+| `seed` | `number` | `1` | Seed for the inactive silhouette. Same seed = same shape. |
+| `ariaLabel` | `string` | `'Audio visualisation'` | Screen-reader description. |
+| `class` | `string` | `''` | Extra wrapper classes. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `bars = 0` or non-finite | `clampBars` returns the default 12. Never renders zero bars from a malformed prop. |
+| `speed = 0` | Clamped to 0.25 — bars still animate, just slowly. |
+| `active` flips at runtime | Effect drops `runAnimation` to false and the `.eq-running` class is removed; bars snap to seeded heights without restart. |
+| `prefers-reduced-motion: reduce` | Bars render at seeded heights; no animation. Stylesheet-level `@media` is the safety net. |
+| Same `seed` across instances | Same silhouette. Use `seed = Date.now()` or a per-component constant to vary. |
+| Very large `bars` (e.g. 64) | 64 spans render fine. The `gap: 3px` between bars makes them increasingly thin in a fixed-width host. |
+| Colour rapidly changes via prop | `--eq-color` updates inline; existing animations continue with the new colour. No flash, no restart. |
+| `variant` rapidly changes via prop | The selector swaps; the new keyframe takes over from the bar's current phase. There is a slight jump because the keyframes have different shapes — acceptable for occasional toggling, jarring if animated continuously. |
+
+## Dependencies
+
+- **Svelte 5** — `$state`, `$derived`, `$effect`, `$props`, `onMount`.
+- **`<script module>`** exports — `pickVariant`, `clampSpeed`, `clampBars`, `clampHeight`, `seededHeights`, `isValidVariant`, `isReducedMotion`. All pure, testable without a DOM. The mulberry32-style RNG keeps SSR / client renders identical.
+- **Zero external libraries** — no audio library, no animation library. Pure CSS keyframes.
+
+## File Structure
+
+```
+src/lib/components/EqualizerBars.svelte       # implementation
+src/lib/components/EqualizerBars.md           # this explainer
+src/lib/components/EqualizerBars.test.ts      # unit tests for exported helpers
+src/routes/equalizerbars/+page.svelte         # demo page
+```

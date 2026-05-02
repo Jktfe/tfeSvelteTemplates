@@ -1,130 +1,259 @@
----
-name: HoloCard
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# HoloCard — Technical Logic Explainer
 
-# HoloCard
+## What Does It Do? (Plain English)
 
-Holographic-foil shimmer wrapper. Cursor-driven CSS conic-gradient ring rotates with the cursor's angle from center, while a diagonal sheen overlay tracks pointer position. The classic Pokemon-card-foil look — premium, joyful, instantly recognisable. Pure CSS gradients + minimal JS for cursor angle math.
+HoloCard wraps a slot of content in a holographic-foil shimmer. As the cursor moves across the element, a multi-coloured conic-gradient ring rotates around its centre and a diagonal "sheen" highlight slides across — the same effect you've seen on rare Pokémon cards or holographic stickers. The slotted content stays underneath, fully interactive; the foil and sheen are pointer-event-none decoration on top.
 
-Composes naturally with `Tilt3D` (HoloCard handles colour-shift, Tilt3D handles 3D rotation) for the full physical-collectible-card feel. Pairs well with `MagicCard` (different aesthetic — single-color torch spotlight rather than rainbow foil), `ShineBorder` (border-only, complements the surface foil), and any premium-tile / achievement / rare-item context.
+Think of tilting a glossy collectible in your hand under a desk lamp. The light catches the foil at a different angle for every cursor position, and the rainbow only appears at the angle where the foil is briefly facing you head-on.
 
-## Key features
+## How It Works (Pseudo-Code)
 
-- **Three intensities** — `subtle` / `iridescent` / `cosmic`. Each preset balances foil opacity, sheen alpha and palette breadth so a single intensity prop does the right thing.
-- **Four palettes** — `rainbow` (full-spectrum), `pastel` (muted iridescent), `cosmic` (deep purple), `gold` (treasure). Each closes the gradient ring (first colour == last colour) so the conic gradient seam-rotates cleanly.
-- **Cursor-angle-driven** — foil rotates as you move the cursor across the wrapped element. Sheen brightens at certain angles to simulate a metallic highlight.
-- **Pure helpers exported** from the module-script (`pickIntensity`, `pickPalette`, `cursorAngle`, `hueAtAngle`, `sheenAtAngle`, `clamp01`, `isReducedMotion`) — all directly unit-testable without rendering.
-- **prefers-reduced-motion safe** — `isReducedMotion()` is read on mount and pointer handlers no-op when `true`. The stylesheet also locks foil opacity and sheen to a low static appearance via `@media (prefers-reduced-motion: reduce)` as belt + braces.
-- **SR-friendly** — slotted content is rendered as the primary content; foil and sheen overlays are absolutely-positioned, pointer-events-none, `aria-hidden`. Focus and keyboard interaction with the slotted content are unaffected.
+```
+state:
+  intensity = 'subtle' | 'iridescent' | 'cosmic'
+  palette   = 'rainbow' | 'pastel' | 'cosmic' | 'gold'
+  hue       = 0           // current foil rotation (degrees)
+  sheen     = 0           // current sheen alpha (0..sheenAlpha)
+  reduced   = false       // prefers-reduced-motion probe
 
-## Usage
+derive:
+  cfg     = pickIntensity(intensity)
+          = { saturation, sheenAlpha, paletteSize }
+  colors  = pickPalette(palette)         // string[7]
+  gradientStops = colors.join(', ')
 
-```svelte
-<script>
-	import HoloCard from '$lib/components/HoloCard.svelte';
-</script>
+events:
+  on mount:
+    reduced = isReducedMotion()
 
-<HoloCard intensity="iridescent" palette="rainbow">
-	<img src="/rare-card.png" alt="Pikachu, holographic rare" />
-</HoloCard>
+  on pointermove(e) over host (skip if reduced):
+    rect  = host.getBoundingClientRect()
+    angle = cursorAngle(e.clientX, e.clientY, rect)
+          = atan2(e.clientY - cy, e.clientX - cx) → degrees in [0, 360)
+    hue   = hueAtAngle(angle, cfg.paletteSize)
+          = (angle * paletteSize) mod 360
+    sheen = sheenAtAngle(angle, cfg)
+          = clamp01( (sin(angle°) * 0.5 + 0.5) * sheenAlpha )
 
-<HoloCard intensity="cosmic" palette="gold">
-	<span class="badge">VIP</span>
-</HoloCard>
+  on pointerleave host:
+    hue = 0
+    sheen = 0
+
+render:
+  div.holo onpointermove onpointerleave
+           style: --holo-hue, --holo-sheen, --holo-saturation
+    div.holo-content { @render children() }
+    div.holo-foil   aria-hidden
+                    style="background: conic-gradient(from {hue}deg, {gradientStops})"
+                    css: opacity: var(--holo-saturation),
+                         mix-blend-mode: color-dodge
+    div.holo-sheen  aria-hidden
+                    css: background: linear-gradient(105deg, transparent 30%,
+                                       rgba(255,255,255, 0.85*sheen) 50%,
+                                       transparent 70%),
+                         mix-blend-mode: overlay
 ```
 
-## Composition with Tilt3D
+The component does **one `getBoundingClientRect()` and a handful of trig per `pointermove` event** — no `requestAnimationFrame`, no timer, no canvas. When the pointer leaves, every value resets to zero and the GPU stops compositing animated changes.
 
-```svelte
-<script>
-	import HoloCard from '$lib/components/HoloCard.svelte';
-	import Tilt3D from '$lib/components/Tilt3D.svelte';
-</script>
+## The Core Concept: Cursor Angle → Conic Hue
 
-<Tilt3D maxTilt={18}>
-	<HoloCard intensity="cosmic" palette="rainbow">
-		<article class="card">…</article>
-	</HoloCard>
-</Tilt3D>
+The visual is two CSS effects driven by one geometric measurement.
+
+### Step 1: angle from centre
+
+```ts
+function cursorAngle(cursorX, cursorY, rect) {
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+  const dx = cursorX - cx;
+  const dy = cursorY - cy;
+  let deg = atan2(dy, dx) * 180 / π;
+  if (deg < 0) deg += 360;
+  return deg;   // [0, 360)
+}
 ```
 
-The two effects layer cleanly: Tilt3D handles X/Y rotation toward the cursor, HoloCard handles colour-shift around the cursor's angle. Together they give the full physical-collectible-card behaviour.
+`Math.atan2(dy, dx)` returns the angle of the cursor's position vector relative to the element's centre, in radians from `-π` to `π`. Convert to degrees and shift to `[0, 360)` and you have a single number that tells you "where on the clock face is the cursor right now":
 
-## Props
+```
+                    270° (north / top)
+                          │
+                          │
+        180° (west) ──────┼────── 0° (east / right)
+                          │
+                          │
+                     90° (south / bottom)
+```
 
-| Prop        | Type                                          | Default        | Notes                                                                |
-| ----------- | --------------------------------------------- | -------------- | -------------------------------------------------------------------- |
-| `intensity` | `'subtle' \| 'iridescent' \| 'cosmic'`        | `'iridescent'` | Tunes foil opacity, sheen alpha, palette stop count.                 |
-| `palette`   | `'rainbow' \| 'pastel' \| 'cosmic' \| 'gold'` | `'rainbow'`    | Colour set used in the conic gradient.                               |
-| `children`  | `Snippet`                                     | _(required)_   | Content to wrap. Stays in the DOM and a11y tree.                     |
+### Step 2: angle → foil hue
 
-Unknown intensity / palette values fall back to `iridescent` / `rainbow`.
+```ts
+function hueAtAngle(angle, paletteSize) {
+  const mult = max(1, min(paletteSize, 8));
+  return ((angle * mult) % 360 + 360) % 360;
+}
+```
 
-## Intensity table
+Multiplying by `paletteSize` makes the hue cycle multiple times as the cursor sweeps around the element. `paletteSize=3` (subtle) means the conic gradient rotates 3 full cycles for one full cursor sweep — denser shimmer. `paletteSize=7` (cosmic) gives 7 cycles per sweep — even denser. This is the parameter that takes HoloCard from "calm iridescent" to "psychedelic".
 
-| Intensity    | saturation (foil opacity) | sheenAlpha | paletteSize (cycles per rotation) |
-| ------------ | ------------------------- | ---------- | --------------------------------- |
-| `subtle`     | 0.18                      | 0.25       | 3                                 |
-| `iridescent` | 0.32                      | 0.45       | 5                                 |
-| `cosmic`     | 0.5                       | 0.6        | 7                                 |
+The hue value drives the conic gradient's `from` angle:
 
-`paletteSize` controls how many times the conic gradient cycles per cursor sweep. Higher values give a denser, more chromatic shimmer; lower values give a calmer single-rainbow look.
+```svelte
+<div
+  class="holo-foil"
+  style="background: conic-gradient(from {hue}deg, {gradientStops});"
+></div>
+```
 
-## Palette table
+A conic gradient sweeps colour around the centre — exactly the geometry you'd see on a sticker rotated in light. As the cursor moves, the `from` angle changes, and the foil appears to rotate. Every palette closes its ring (first colour == last colour) so the rotation has no visible seam.
 
-| Palette    | First colour | Last colour | Vibe                                       |
-| ---------- | ------------ | ----------- | ------------------------------------------ |
-| `rainbow`  | `#ff006e`    | `#ff006e`   | Hot pink → orange → yellow → green → blue → violet → hot pink. |
-| `pastel`   | `#ffd6e0`    | `#ffd6e0`   | Soft muted iridescent — pinks, peaches, mints, lavender.       |
-| `cosmic`   | `#0a0a23`    | `#0a0a23`   | Deep midnight → violet → lavender → midnight.                  |
-| `gold`     | `#7a4f01`    | `#7a4f01`   | Antique → bright gold → white highlight → bright gold → antique. |
+### Step 3: angle → sheen alpha
 
-Every palette is constructed so the first and last entries match — this closes the conic-gradient ring cleanly so the rotation seam is invisible.
+```ts
+function sheenAtAngle(angle, intensity) {
+  const t = sin(angle * π / 180) * 0.5 + 0.5;   // [0, 1]
+  return clamp01(t * intensity.sheenAlpha);
+}
+```
 
-## Distinct from
+`sin(angle°) * 0.5 + 0.5` is a smooth `[0, 1]` cycle as the angle goes around: 0 at `angle=0`/`180°`/`360°`, peaks at `90°`/`270°`. Multiply by the intensity's `sheenAlpha` and you get a sheen brightness that swells when the cursor is "above" or "below" centre, and fades when it's left or right.
 
-- **`MagicCard`** — single-color radial spotlight ("torch on a dark wall") that follows the cursor. HoloCard uses a multi-hue conic gradient that rotates with cursor angle. Different math, different aesthetic.
-- **`Tilt3D`** — X/Y rotation toward the cursor (3D parallax). HoloCard has no rotation, only colour-shift. They compose.
-- **`ShineBorder`** — animated border ring around an element. HoloCard fills the entire surface with foil, not the border.
-- **`ShinyText`** — one-shot diagonal shimmer pass over text. HoloCard is steady-state cursor-reactive foil over any element.
-- **`Spinner.pulse`** — concentric expanding rings (loading state). HoloCard has no rings, no loading state.
-- **`MagneticButton`** — translates the wrapped element toward the cursor. HoloCard stays put; only the colour shifts.
-- **`CRTScreen`** — frame wrapper with scanlines. HoloCard is interior surface foil; you can compose CRTScreen wrapping a HoloCard wrapping content.
-- **`GlitchText`** — RGB-channel-split distortion of text. HoloCard is steady iridescent shimmer of any element. Different category.
+The result feeds a single CSS variable used inside a fixed-direction linear gradient:
 
-## Pure helpers (module-script exports)
+```css
+.holo-sheen {
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, calc(0.85 * var(--holo-sheen, 0))) 50%,
+    transparent 70%
+  );
+  mix-blend-mode: overlay;
+}
+```
 
-- `pickIntensity(name)` — returns `{ saturation, sheenAlpha, paletteSize }`. Falls back to `iridescent`.
-- `pickPalette(name)` — returns the colour array for the named palette. Falls back to `rainbow`.
-- `clamp01(n)` — clamps to `[0, 1]`; treats `NaN` and `±Infinity` as `0`.
-- `cursorAngle(cursorX, cursorY, rect)` — returns the cursor's angle from the centre of `rect`, in degrees in `[0, 360)`. East = 0°, south = 90°, west = 180°, north = 270°.
-- `hueAtAngle(angle, paletteSize)` — returns a hue in `[0, 360)` driven by the cursor angle. `paletteSize` controls how fast the hue cycles per cursor sweep (clamped to `[1, 8]`).
-- `sheenAtAngle(angle, intensity)` — returns the diagonal sheen blend factor in `[0, sheenAlpha]`. Sin-wave around the cursor sweep gives smooth highlight cycling.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+The sheen is always at 105° — only its *intensity* changes with cursor angle. This is the single trick that distinguishes HoloCard from "the foil is the only thing happening". The diagonal highlight reads like a glossy reflection sliding across the surface, even though it's never moving.
 
-## Accessibility
+### Why two blend modes?
 
-- The slotted content is rendered as the primary content of the wrapper and is read by screen readers normally.
-- Foil and sheen overlays are absolutely-positioned, `pointer-events: none`, and `aria-hidden`. They are invisible to assistive tech.
-- Pointer event handlers (`pointermove` / `pointerleave`) are no-ops when `prefers-reduced-motion: reduce` is set.
-- The stylesheet has a CSS-layer fallback that locks foil opacity and sheen to a static low-key appearance under `prefers-reduced-motion: reduce`, so even if the JS probe misfires, the visual respects the user's preference.
-- The wrapper is role-neutral (no `role` attribute set) — it inherits whatever role makes sense from the slotted content.
-- The wrapper has `svelte-ignore a11y_no_static_element_interactions` because the pointer handlers are decorative-only; the slotted content's keyboard and screen-reader path is unaffected.
+```css
+.holo-foil  { mix-blend-mode: color-dodge; }
+.holo-sheen { mix-blend-mode: overlay;     }
+```
+
+- **`color-dodge`** brightens the underlying content based on the foil's colour. Dark content stays mostly dark; bright content saturates toward the foil's hue. This matches how holographic foil actually works — it's reflective, not opaque.
+- **`overlay`** combines `multiply` (for darks) and `screen` (for lights) — the sheen brightens highlights and darkens shadows, faking a glossy specular highlight.
+
+Layer them and the slot below reads as a foil-coated surface, not as content with stickers slapped on top.
+
+## CSS Animation Strategy
+
+There are no CSS keyframes in HoloCard. The "animation" comes entirely from the inline `--holo-hue` and `--holo-sheen` variables changing per pointer event, plus two CSS `transition` rules to smooth the change between frames:
+
+```css
+.holo-foil  { transition: opacity 200ms ease-out; }
+.holo-sheen { transition: background 80ms linear; }
+```
+
+The 200 ms foil transition is intentionally slower than the 80 ms sheen — the foil reads as "settling" into a new colour, while the sheen tracks the cursor responsively.
+
+`prefers-reduced-motion: reduce` is honoured three ways:
+1. `pointermove` returns early — `if (reduced) return;` — so `hue` and `sheen` stay at their defaults.
+2. The `.reduced` class lowers the foil opacity and replaces the sheen gradient with a static one.
+3. A `@media` block belt-and-braces those two changes in case the JS probe misfires.
 
 ## Performance
 
-- One `getBoundingClientRect()` + cheap math per `pointermove` event. No rAF loop, no timers.
-- Foil and sheen are pure CSS gradients written via inline styles and CSS custom properties. No layout thrash.
-- All work stops between `pointerleave` and the next `pointermove`. Steady-state cost is zero.
-- Conic-gradient and linear-gradient compositing is GPU-accelerated in modern browsers; `mix-blend-mode: color-dodge` / `overlay` keeps the foil keyed to the underlying content's brightness.
+- **One `getBoundingClientRect()` per `pointermove`.** Modern browsers cache rect geometry between events at the same scroll position, so this is cheap.
+- **Constant-time math per event** — one `atan2`, one `sin`, two multiplications. ~µs per event.
+- **No rAF, no timers, no canvas.** The component does no work between events.
+- **`mix-blend-mode` is GPU-composited** when the layer has `position: absolute` + `pointer-events: none` + `isolation: isolate` on the parent — all of which HoloCard sets. The compositor handles the blending without re-painting the underlying content.
+- **Steady-state cost is zero JS.** When the cursor isn't moving, no work happens. When the cursor leaves, all values reset to 0 and the layers settle to their static defaults.
+- **Stack many HoloCards on a page?** Each adds two compositor layers (`foil` + `sheen`). A grid of 50 thumbnails uses ~100 layers, which modern compositors handle fine. The pointer handler is per-instance (`onpointermove` is set on each `.holo`), so cost scales linearly with the number of *visible, hovered* instances — not with the total count.
 
-## Recipes
+## State Flow Diagram
 
-- **Rare collectible card**: `<Tilt3D max={18}><HoloCard intensity="cosmic" palette="rainbow">…</HoloCard></Tilt3D>`. Full Pokemon-card feel.
-- **Premium badge**: `<HoloCard intensity="cosmic" palette="gold"><span class="badge">VIP</span></HoloCard>`.
-- **Achievement-unlocked tile**: `<HoloCard intensity="subtle" palette="gold"><div class="achievement">…</div></HoloCard>`.
-- **Product thumb hover (calm)**: `<HoloCard intensity="subtle" palette="pastel"><figure>…</figure></HoloCard>`.
-- **Hero element with foil**: `<HoloCard intensity="iridescent" palette="rainbow"><h1>Premium</h1></HoloCard>`.
+```
+                  ┌─────────────────────────────┐
+                  │  initial / SSR              │
+                  │  hue = 0, sheen = 0         │
+                  │  foil at default opacity    │
+                  └────────────┬────────────────┘
+                               │ mount
+                               ▼
+                  ┌─────────────────────────────┐
+                  │  reduced = isReducedMotion()│
+                  └────────────┬────────────────┘
+                               │
+              ┌────────────────┼─────────────────┐
+              │                                  │
+              │ reduced = true                   │ reduced = false
+              ▼                                  ▼
+       ┌──────────────┐                  ┌──────────────────┐
+       │  static foil │                  │  idle            │
+       │  no pointer  │                  │  hue=0, sheen=0  │
+       │  reaction    │                  └────────┬─────────┘
+       └──────────────┘                           │ pointermove
+                                                  ▼
+                                         ┌──────────────────┐
+                                         │  shimmering      │
+                                         │  hue, sheen      │
+                                         │  driven by cursor│
+                                         │  angle           │
+                                         └────────┬─────────┘
+                                                  │ pointerleave
+                                                  ▼
+                                         ┌──────────────────┐
+                                         │  decay to idle   │
+                                         │  CSS transitions │
+                                         │  smooth back to 0│
+                                         └──────────────────┘
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `intensity` | `'subtle' \| 'iridescent' \| 'cosmic'` | `'iridescent'` | Tunes foil opacity (`saturation`), sheen alpha, palette stop count. Unknown names fall back to `iridescent`. |
+| `palette` | `'rainbow' \| 'pastel' \| 'cosmic' \| 'gold'` | `'rainbow'` | Colour set used in the conic gradient. Unknown names fall back to `rainbow`. |
+| `children` | `Snippet` | optional | Content to wrap. Stays in the DOM and a11y tree. |
+
+The intensity preset table:
+
+| Intensity    | saturation (foil opacity) | sheenAlpha | paletteSize |
+|--------------|---------------------------|------------|-------------|
+| `subtle`     | 0.18                      | 0.25       | 3           |
+| `iridescent` | 0.32                      | 0.45       | 5           |
+| `cosmic`     | 0.50                      | 0.60       | 7           |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Unknown `intensity` or `palette` | Falls back to `iridescent` / `rainbow` via `pickIntensity` / `pickPalette`. |
+| Cursor on a touch device (no `pointermove`) | Component renders foil and sheen at their static defaults; no shimmer, no jitter. |
+| `prefers-reduced-motion: reduce` | Pointer handlers no-op; `.reduced` class lowers foil opacity and freezes sheen to a static linear gradient. |
+| Component scrolled offscreen | Pointer events don't fire when the cursor isn't over the element; no work happens. |
+| Wrapper resized at runtime | `getBoundingClientRect()` is read fresh on each pointermove, so resize is handled implicitly. No `ResizeObserver` needed. |
+| Hi-DPI / retina | Conic gradient is resolution-independent; foil and sheen scale crisply. |
+| GPU acceleration unavailable | `mix-blend-mode` falls back to CPU compositing; performance suffers on large surfaces but the visual still works. |
+| Browser without `mix-blend-mode: color-dodge` (very old) | Foil renders opaquely on top of content instead of dodging — still recognisable, less premium. |
+| `host` ref is `undefined` | Pointer handler short-circuits at `if (!host) return;` — no errors. |
+| Multiple instances side-by-side | Each tracks its own pointer events on its own `.holo` element; no global listeners, no contention. |
+| Rapid pointer-flick across element | Each `pointermove` recomputes hue/sheen; CSS transitions smooth between frames. No flicker. |
+| `host.getBoundingClientRect()` returns 0×0 | `cursorAngle` returns the angle from a degenerate centre — typically `Math.atan2(0, 0) = 0`. Foil renders without rotation. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props`, `$state`, `$derived`, snippets, `bind:this`. Module-script exports (`pickIntensity`, `pickPalette`, `cursorAngle`, `hueAtAngle`, `sheenAtAngle`, `clamp01`, `isReducedMotion`) for unit testing.
+- Zero external dependencies — pure CSS gradients, no canvas, no animation library, no SVG.
+
+## File Structure
+
+```
+src/lib/components/HoloCard.svelte         # implementation + module-level helpers
+src/lib/components/HoloCard.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/HoloCard.test.ts        # vitest unit tests
+src/routes/holocard/+page.svelte           # demo page
+```

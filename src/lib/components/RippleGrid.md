@@ -1,177 +1,226 @@
----
-title: RippleGrid
-description: A grid of cells where clicking one sends a wave outward — each cell pulses on the wave's leading edge with arrival delay proportional to grid distance from the click.
-category: Native UI
-author: Claude
----
+# RippleGrid — Technical Logic Explainer
 
-# RippleGrid
+## What Does It Do? (Plain English)
 
-An interactive grid where clicks become waves. Tap any cell and a pulse propagates outward through its neighbours, each cell lighting up on the wavefront's leading edge with a sin-shaped intensity curve. Multiple ripples compose cleanly via `mix-blend-mode: screen` — rapid clicks layer rather than thrash. The animation is **pure CSS** (one keyframe per layer) and the steady-state cost is zero.
+RippleGrid is a grid of small clickable cells where clicking any one sends a wave outward — each cell pulses with a colour flash as the wavefront passes through it. Cells closer to the click point pulse first; cells further away pulse later, with timing proportional to grid distance from the origin. Multiple clicks in quick succession produce overlapping wavefronts that compose visually but never crowd memory because there's a hard cap on simultaneous ripples.
 
-Unlike effects that animate continuously (Marquee, Cardwall, AuroraBackdrop) or trigger from cursor proximity (VariableProximity, MagicCard), `RippleGrid` is **event-driven** — it does nothing until you interact, then runs a bounded one-shot animation per ripple. This makes it suitable for ambient interactive surfaces, hero sections, and "click anywhere" delight moments.
+It is a tactile, ambient surface — useful for music visualisers, "feel something happened" feedback in dashboards, and as an interactive backdrop for hero sections. Distance metric is configurable: Manhattan gives a diamond-shaped wavefront, Chebyshev gives a square, Euclidean gives a circle. There's also a `hex` variant that offsets odd rows by half a cell so the lattice is hexagonal rather than square. Keyboard navigation is full-fidelity — arrow keys move focus between cells, Enter/Space fires a ripple.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Three distance modes**: `manhattan` (diamond wavefront), `chebyshev` (square wavefront), `euclidean` (circular wavefront, default).
-- **Two grid variants**: `rect` (regular grid) and `hex` (offset odd rows by half a cell width).
-- **Multi-ripple composition**: per-cell layer stack with `mix-blend-mode: screen`. Concurrent ripples brighten where they overlap.
-- **maxConcurrent cap**: bounded layer count keeps rapid-fire clicking from snowballing the DOM.
-- **Pure CSS animation**: each ripple plays a one-shot `@keyframes` with `animation-delay` set per cell. No rAF, no per-frame JS in the steady state.
-- **Roving tabindex**: only one cell is in the tab order at a time. Arrow keys move focus through the grid; Enter/Space fires a ripple from the focused cell.
-- **prefers-reduced-motion safe**: a separate `rg-pulse-reduced` keyframe runs without scaling — just a brief opacity blip.
-- **SSR-safe helpers**: `isReducedMotion()` returns `false` on the server, the component mounts safely without DOM access during render.
-- **Zero external dependencies**.
+```
+state:
+  ripples[]      // active ripples; each has { id, origin: {row, col}, startedAt }
+  nextId         // monotonic
+  prefersReduced // capability flag
+  focusRow, focusCol  // for keyboard focus management
 
-## Usage
+derived:
+  lifetime = rippleLifetime(rows, cols, rippleSpeed, rippleDuration, distanceMode)
 
-### Default — 20×12 indigo grid
+on mount:
+  prefersReduced = isReducedMotion()
+  subscribe to matchMedia change events
 
-```svelte
-<script lang="ts">
-  import RippleGrid from '$lib/components/RippleGrid.svelte';
-</script>
+on cell click(row, col):
+  focusRow, focusCol = row, col
+  fireRipple(row, col)
 
-<RippleGrid />
+fireRipple(row, col):
+  id = nextId++
+  ripples = clampConcurrent([...ripples, {id, origin:{row,col}, startedAt: now}], maxConcurrent)
+  onRipple?.({row, col})
+  schedule(setTimeout, lifetime + 16):
+    ripples = ripples.filter(r => r.id !== id)
+
+on cell keydown(event, row, col):
+  if Enter or Space: fireRipple(row, col); preventDefault
+  else if Arrow{Up|Down|Left|Right}: move focus to neighbour; preventDefault
+
+render:
+  div.ripple-grid role="grid" with CSS vars (cell, gap, cols, rows, colour, duration)
+    for each row:
+      div.row role="row" (offset class for hex variant on odd rows)
+        for each col:
+          button.cell role="gridcell"
+            tabindex={isFocus ? 0 : -1}
+            for each ripple:
+              span.layer style="--rg-delay: {layerDelay(ripple, r, c)}ms;"
+
+CSS:
+  .layer {
+    background: var(--rg-colour);
+    opacity: 0; transform: scale(0.6);
+    mix-blend-mode: screen;     /* multiple ripples compose nicely */
+    animation: rg-pulse var(--rg-duration) ease-out forwards;
+    animation-delay: var(--rg-delay);
+  }
+  @keyframes rg-pulse {
+    0%   { opacity: 0;   transform: scale(0.6); }
+    35%  { opacity: 0.9; transform: scale(1.08);}
+    100% { opacity: 0;   transform: scale(1);   }
+  }
 ```
 
-### Hex variant with manhattan wavefront
+## The Core Concept: Wavefront Math, Three Distance Metrics, And Per-Cell Animation Delay
 
-```svelte
-<RippleGrid
-  rows={10}
-  cols={14}
-  variant="hex"
-  distanceMode="manhattan"
-  colour="#10b981"
-/>
+The wave illusion is a single delayed-start animation per (cell × ripple) pair. The "wave" is not a continuous mathematical surface — it is `rows × cols × ripples.length` independent CSS animations, each starting at its own offset.
+
+**Distance metrics** decide the shape of the wavefront:
+
+```
+gridDistance(a, b, mode):
+  manhattan : |dr| + |dc|              → diamond
+  chebyshev : max(|dr|, |dc|)          → square
+  euclidean : hypot(dr, dc)            → circle (default)
 ```
 
-### Dense grid with a fast wave
-
-```svelte
-<RippleGrid
-  rows={24}
-  cols={40}
-  cellSize={14}
-  rippleSpeed={24}
-  rippleDuration={400}
-  maxConcurrent={5}
-/>
+```
+   manhattan      chebyshev        euclidean
+   . . X . .      X X X X X         . . X . .
+   . X X X .      X X X X X         . X X X .
+   X X ● X X      X X ● X X         X X ● X X
+   . X X X .      X X X X X         . X X X .
+   . . X . .      X X X X X         . . X . .
 ```
 
-### Big-cell grid with click-to-log
+(● = origin, X = cells at the same "distance" under each metric.)
 
-```svelte
-<RippleGrid
-  rows={6}
-  cols={8}
-  cellSize={64}
-  gap={4}
-  onRipple={({ row, col }) => console.log(`fired at ${row},${col}`)}
-/>
+**Arrival delay** is a simple division: `delay = (distance / speed) * 1000` ms, where `speed` is in cells/sec. So with `speed = 12 cells/sec` and `mode = euclidean`, a cell 6 cells away from the click point starts pulsing at t = 500 ms. The wavefront *appears* to travel because cells closer to the origin start before cells further away — but each cell is running its own 700 ms `rg-pulse` animation, frozen until its delay expires.
+
+**Concurrent ripples compose** via `mix-blend-mode: screen`. Two overlapping ripples brighten the cell rather than darkening it (which `multiply` would do). The maximum-not-sum compositing approach in the helper `composeRipples` is a fallback for environments without screen blending — it picks the largest current intensity per cell, which keeps the colour from blowing out:
+
+```
+composeRipples = max over all active ripples of cellIntensity(ripple, cell)
+cellIntensity  = sin(π × t / duration)   for t in [0, duration]; else 0
 ```
 
-## Props
+The `sin(π × t / duration)` is the smooth in/out envelope used by the per-cell intensity helper (exported for tests and consumers building their own renderer); the actual CSS keyframes use a more practical 0/35%/100% three-stop curve with a small overshoot at 35% so the pulse has a visible peak.
 
-| Prop             | Type                                                | Default                                            | Description                                                                                                |
-| ---------------- | --------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `cols`           | `number`                                            | `20`                                               | Number of columns. Must be ≥ 0.                                                                            |
-| `rows`           | `number`                                            | `12`                                               | Number of rows. Must be ≥ 0.                                                                               |
-| `cellSize`       | `number`                                            | `24`                                               | Cell edge length in pixels.                                                                                |
-| `gap`            | `number`                                            | `2`                                                | Gap between cells in pixels.                                                                               |
-| `colour`         | `string`                                            | `'#6366f1'`                                        | Pulse accent colour. Any CSS colour value.                                                                 |
-| `rippleDuration` | `number`                                            | `700`                                              | Per-cell pulse duration in ms.                                                                             |
-| `rippleSpeed`    | `number`                                            | `12`                                               | Wavefront speed in cells/sec. Higher = faster propagation.                                                 |
-| `maxConcurrent`  | `number`                                            | `3`                                                | Hard cap on simultaneous ripples. Older ripples are dropped when exceeded.                                 |
-| `distanceMode`   | `'manhattan' \| 'chebyshev' \| 'euclidean'`         | `'euclidean'`                                      | Distance metric used to compute per-cell delays. Determines wavefront shape.                               |
-| `variant`        | `'rect' \| 'hex'`                                   | `'rect'`                                           | Grid layout. Hex offsets odd rows by half a cell.                                                          |
-| `ariaLabel`      | `string`                                            | `'Ripple grid — click any cell to send a wave'`    | Accessible name for the grid wrapper.                                                                      |
-| `onRipple`       | `(event: { row: number; col: number }) => void`     | `undefined`                                        | Callback fired when any cell is clicked or activated by keyboard.                                          |
-| `class`          | `string`                                            | `''`                                               | Extra class names appended to the wrapper. Useful for layout/sizing at the call-site.                      |
+**Concurrent cap** keeps the layer count bounded:
 
-## Types
+```
+clampConcurrent(ripples, max) = ripples.length > max
+                                ? ripples.slice(-max)
+                                : ripples
+```
 
-```typescript
-export type DistanceMode = 'manhattan' | 'chebyshev' | 'euclidean';
-export type GridVariant = 'rect' | 'hex';
+Since each cell renders one `<span>` per active ripple, the total layer count is `rows × cols × maxConcurrent`. Default `20 × 12 × 3 = 720` layers — comfortable. Push `maxConcurrent` past 5 with a 40×24 grid and you're at 4800 layers; performance drops noticeably. Document the cap.
 
-export interface Point {
-  row: number;
-  col: number;
+## CSS Animation Strategy
+
+One keyframe with one animation-delay per cell drives the whole wave:
+
+```css
+.layer {
+  position: absolute;
+  inset: 0;
+  background: var(--rg-colour);
+  opacity: 0;
+  transform: scale(0.6);
+  mix-blend-mode: screen;
+  animation: rg-pulse var(--rg-duration) ease-out forwards;
+  animation-delay: var(--rg-delay);   /* per-cell-per-ripple delay */
+  border-radius: 4px;
 }
 
-export interface Ripple {
-  id: number;
-  origin: Point;
-  startedAt: number;
+@keyframes rg-pulse {
+  0%   { opacity: 0;   transform: scale(0.6); }
+  35%  { opacity: 0.9; transform: scale(1.08); }
+  100% { opacity: 0;   transform: scale(1);    }
 }
 ```
 
-## Pure helpers (exported from the module-script)
+The `35%` peak with a `1.08` overshoot is what makes individual cell pulses visible against neighbours. A symmetric 50% peak would feel limp; the asymmetric curve gives a quick attack and a longer, more satisfying decay.
 
-All helpers are pure functions that can be unit-tested without a DOM. Import them alongside the component:
+Reduced motion swaps the keyframe for an opacity-only pulse:
 
-```typescript
-import RippleGrid, {
-  gridDistance,
-  delayForCell,
-  cellIntensity,
-  composeRipples,
-  clampConcurrent,
-  rippleLifetime,
-  isReducedMotion,
-  type DistanceMode,
-  type Ripple
-} from '$lib/components/RippleGrid.svelte';
+```css
+.ripple-grid.reduced .layer {
+  animation: rg-pulse-reduced var(--rg-duration) linear forwards;
+}
+@keyframes rg-pulse-reduced {
+  0% { opacity: 0; }  50% { opacity: 0.6; }  100% { opacity: 0; }
+}
 ```
 
-| Helper                                                                         | Returns                | Notes                                                                            |
-| ------------------------------------------------------------------------------ | ---------------------- | -------------------------------------------------------------------------------- |
-| `gridDistance(a, b, mode)`                                                     | `number`               | `manhattan`, `chebyshev`, or `euclidean`. Symmetric. Default mode `euclidean`.   |
-| `delayForCell(origin, cell, speed, mode?)`                                     | `number` (ms)          | Defensive: `speed ≤ 0` returns `0` (instant fire).                               |
-| `cellIntensity(ripple, cell, now, duration, speed, mode?)`                     | `number` in `[0, 1]`   | Sin-shaped pulse. Returns `0` outside the cell's active window.                  |
-| `composeRipples(ripples, cell, now, duration, speed, mode?)`                   | `number` in `[0, 1]`   | Max across active ripples — overlap brightens but never blows out.               |
-| `clampConcurrent(ripples, max)`                                                | `Ripple[]`             | Drops oldest when over the cap. Returns a fresh copy.                            |
-| `rippleLifetime(rows, cols, speed, duration, mode?)`                           | `number` (ms)          | Total time for a ripple to traverse the grid + the per-cell duration.            |
-| `isReducedMotion()`                                                            | `boolean`              | SSR-safe wrapper around `matchMedia('(prefers-reduced-motion: reduce)')`.        |
+The colour flash still communicates the wave; the scale animation that would feel jarring for motion-sensitive users is removed.
 
-## How it works
+## State Flow Diagram
 
-1. **Mount**: render `rows × cols` cells inside `role="grid"`, each cell a focusable `<button role="gridcell">` with a roving tabindex (only one cell tab-focusable at a time).
-2. **Click**: append a new `Ripple { id, origin, startedAt }` to a `$state` array, then `clampConcurrent` to the configured cap. Schedule a `setTimeout` to remove the ripple after `rippleLifetime` ms.
-3. **Per-cell layers**: each cell renders one `<span class="layer">` per active ripple, with `style="--rg-delay: <delayForCell>ms;"`. CSS animation `rg-pulse` plays once per layer with that delay.
-4. **Composition**: layers stack via `mix-blend-mode: screen`. Where multiple ripples overlap, the cell brightens additively (capped by alpha).
-5. **Keyboard**: arrow keys move focus through cells (handled in `handleKeyDown`). Enter/Space fires a ripple from the focused cell. Roving tabindex ensures only one cell at a time is in the tab order.
-6. **Reduced motion**: the wrapper carries a `.reduced` class that swaps the keyframe to `rg-pulse-reduced` (opacity-only, no transform). The wave still propagates but cells don't scale.
+```
+              ┌──────────────────────┐
+              │  IDLE                │
+              │  ripples = []        │
+              └──────────┬───────────┘
+                         │ click cell or Enter/Space on focused cell
+                         ▼
+              ┌──────────────────────┐
+              │  FIRING              │
+              │  push new ripple     │
+              │  clamp to maxConcur. │
+              │  ┌──────────────────┐│
+              │  │ N × M cells each ││ ← CSS animations begin,
+              │  │ scheduled by     ││   keyed by per-cell delay
+              │  │ delayForCell()   ││
+              │  └──────────────────┘│
+              └──────────┬───────────┘
+                         │ lifetime + 16ms timer
+                         ▼
+              ┌──────────────────────┐
+              │  GARBAGE COLLECT     │
+              │  filter out ripple id│
+              └──────────┬───────────┘
+                         │ ripples non-empty? → FIRING ; else → IDLE
 
-## Accessibility
+  Arrow keys → move focusRow/focusCol; cell receives focus
+  prefers-reduced-motion: reduce: opacity-only pulse, no scale
+```
 
-- **Screen readers**: the wrapper has `role="grid"` with a configurable `aria-label`. Each cell has `role="gridcell"` and an explicit `aria-label="Cell row N column M"`.
-- **Keyboard**: focus enters the grid on the active cell. Arrow keys navigate (clamped at edges), Enter/Space fires a ripple. Focus is preserved across renders via the roving tabindex pattern.
-- **Reduced motion**: when `prefers-reduced-motion: reduce` is set, the wave still works but cells pulse with opacity only — no scale transform. The propagation timing is preserved so the spatial structure of the interaction reads.
-- **Focus visibility**: focused cells get a 2px outline in the configured `colour`, with `outline-offset: 2px` so it sits clear of the cell border.
+## Props Reference
 
-## Performance
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `cols` | `number` | `20` | Columns. |
+| `rows` | `number` | `12` | Rows. |
+| `cellSize` | `number` | `24` | Cell edge length (px). |
+| `gap` | `number` | `2` | Gap between cells (px). |
+| `colour` | `string` | `'#6366f1'` | Accent colour for the pulse. Any CSS colour. |
+| `rippleDuration` | `number` | `700` | Per-cell pulse duration (ms). |
+| `rippleSpeed` | `number` | `12` | Wave speed in cells per second. Higher = faster wavefront. |
+| `maxConcurrent` | `number` | `3` | Cap on simultaneous ripples. Caps total CSS layer count. |
+| `distanceMode` | `'manhattan' \| 'chebyshev' \| 'euclidean'` | `'euclidean'` | Wavefront geometry. |
+| `variant` | `'rect' \| 'hex'` | `'rect'` | Hex offsets odd rows by half a cell. |
+| `ariaLabel` | `string` | descriptive default | Grid-level aria-label. |
+| `onRipple` | `(e: { row, col }) => void` | — | Callback per fired ripple. |
+| `class` | `string` | `''` | Extra wrapper classes. |
 
-- **Steady state**: zero. No rAF, no event listeners running unless the user is interacting.
-- **Per-ripple cost**: each cell renders one extra `<span>` per active ripple. With the default 20×12 grid and `maxConcurrent: 3`, that's at most 720 layer spans — well within frame budget.
-- **Cleanup**: ripples auto-remove after `rippleLifetime + 16ms` via `setTimeout`. No memory leaks across rapid-click sessions.
-- **Recommended bounds**: keep `rows × cols × maxConcurrent ≤ 4000` for buttery-smooth animation. For dense grids (40×24), reduce `maxConcurrent` to 2.
+## Edge Cases
 
-## When to reach for it
+| Situation | Behaviour |
+|-----------|-----------|
+| `rippleSpeed ≤ 0` | `delayForCell` returns 0 — every cell pulses simultaneously. The "wave" collapses to a flash. |
+| `maxConcurrent = 0` | `clampConcurrent` returns `[]` — clicks fire `onRipple` but no visual pulse. |
+| `rippleDuration = 0` | Animation is no-op; cells flash through their default state instantly. |
+| Hex variant with `cols = 1` | Hex offset still applies to odd rows but visually is meaningless with one column. Acceptable. |
+| Keyboard at edge | Arrow keys clamp to `[0, rows-1]` / `[0, cols-1]`. Wrap-around is not implemented. |
+| Rapid keypress / click flurry | Each fires a fresh ripple; `clampConcurrent` drops oldest beyond `maxConcurrent`. Bounded layer count. |
+| `prefers-reduced-motion: reduce` flips at runtime | `matchMedia` change listener flips `prefersReduced` reactively; subsequent ripples use the reduced keyframe. In-flight ripples finish their original animation. |
+| Component unmounts mid-ripple | `setTimeout` callbacks reference torn-down state; harmless. |
+| Very large grid (e.g. 50×30) | Layer count `rows × cols × maxConcurrent` can exceed ~3000 — keep `maxConcurrent ≤ 2` for huge grids, or pre-cap it. |
 
-- **Hero interactions** that reward exploration without explaining a button.
-- **Idle-time delight** in dashboards or empty states — clickable surfaces that come alive.
-- **Status/health grids** where individual cells represent something but the field as a whole should feel cohesive.
-- **Decorative interactive backdrops** behind copy or imagery.
+## Dependencies
 
-## When *not* to reach for it
+- **Svelte 5** — `$state`, `$derived`, `$props`, `onMount`. Snippets not used (cells are built-in `<button>`s for keyboard support).
+- **`<script module>`** exports — `gridDistance`, `delayForCell`, `cellIntensity`, `composeRipples`, `clampConcurrent`, `rippleLifetime`, `isReducedMotion`. All pure, deterministic, testable without a DOM.
+- **`performance.now()`** — for ripple `startedAt` so per-cell intensity calculations work in absolute time.
+- **Zero external libraries** — no animation library, no audio library, no SVG. Pure CSS keyframes.
 
-- **Form fields** or **data grids** — the button-per-cell pattern interferes with selection ergonomics.
-- **Touch-only contexts where every tap is meaningful** — the wave is a delight effect, not a confirmation. Pair with explicit feedback for actionable cells.
-- **Very large grids** (>2000 cells) — the layer-per-ripple cost compounds. Consider chunking into multiple smaller grids if you need a wall of pulses.
+## File Structure
 
-## Inspiration
-
-The interaction borrows from classic Apple Pages / Keynote ripple effects and reactbits.dev's grid-based delight primitives, rebuilt as a portable Svelte 5 component with no React, no Framer Motion, no canvas, and no animation library — just CSS keyframes, custom properties, and ~12KB of inspectable Svelte.
+```
+src/lib/components/RippleGrid.svelte          # implementation
+src/lib/components/RippleGrid.md              # this explainer
+src/lib/components/RippleGrid.test.ts         # unit tests for exported helpers
+src/routes/ripplegrid/+page.svelte            # demo page
+```

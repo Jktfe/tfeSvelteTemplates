@@ -1,107 +1,199 @@
----
-name: ContextMenu
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# ContextMenu — Technical Logic Explainer
 
-# ContextMenu
+## What Does It Do? (Plain English)
 
-Right-click / long-press menu primitive. Wrap any trigger content; right-click suppresses the native browser menu and opens a custom menu at the click position. Items are passed declaratively as a prop array, so the consumer never has to wire keyboard navigation, viewport clamping, or focus management themselves.
+A right-click / long-press menu primitive. Wrap any trigger content in `<ContextMenu>` and right-click on it shows a custom menu at the click position — the native browser menu is suppressed. Items are passed in declaratively as a prop array, including dividers and danger-styled destructive choices. Pointer and keyboard parity from line one: Shift+F10 and the dedicated ContextMenu key open the menu without a mouse, arrow keys navigate (skipping dividers and disabled items), Enter activates, Escape closes.
 
-Pairs naturally with `CommandPalette` (different idiom: spotlight-style search vs. positional menu), `FloatingDock` (different commitment: persistent app launcher vs. transient action menu), `Tooltip` (different intent: passive hint vs. actionable choices). Never a substitute for inline buttons — use it for actions that don't deserve permanent UI real estate.
+Think of it as the "dropdown that follows the cursor" — file-tree row actions, image overlays, table-row context menus. Where a button's dropdown is anchored to the button, this menu is anchored to the click point.
 
-## Key features
+## How It Works (Pseudo-Code)
 
-- **Pointer + keyboard parity** — Right-click opens at the click point; `Shift+F10` and the dedicated `ContextMenu` key open the menu anchored to the trigger's bottom-left corner. Once open, `ArrowUp` / `ArrowDown` navigate (skipping dividers and disabled items), `Home` / `End` jump to the first / last enabled item, `Enter` / `Space` activate, `Escape` / `Tab` close, and click-outside dismisses. No 2-step click fakery — keyboard users get a real menu, not a toolbar shim.
-- **Auto-positioning** — `clampToViewport` flips the menu when it would overflow the right or bottom edge of the viewport, with an 8 px safety padding so the menu never sits flush against the edge.
-- **Native menu suppression** — `event.preventDefault()` on the trigger's `contextmenu` event so the page never shows two menus at once.
-- **Declarative items** — items are a single prop array of `{ id, label, shortcut?, disabled?, danger? }` or `{ type: 'divider' }`. `normalizeItems` strips invalid entries, dedupes by id, and coerces optional fields to safe defaults.
-- **Reduced-motion bypass** — under `prefers-reduced-motion: reduce`, the open animation is skipped (instant render). The contract — open, navigate, select, close — is preserved.
-- **Pure helpers exported** — `normalizeItems`, `clampToViewport`, `nextEnabledIndex`, `isInteractiveItem`, `isReducedMotion`. Directly unit-testable without rendering.
+```
+state:
+  open         = boolean
+  position     = { x, y } in viewport coords
+  activeIndex  = currently-highlighted item (skips dividers/disabled)
+  reduced      = prefers-reduced-motion check (set onMount)
+  triggerEl    = ref to the wrapped content
+  menuEl       = ref to the menu (only when open)
 
-## Usage
+events:
+  on contextmenu (right-click) on trigger:
+    preventDefault                       // suppress native menu
+    openAt(event.clientX, event.clientY)
 
-```svelte
-<script>
-	import ContextMenu from '$lib/components/ContextMenu.svelte';
+  on keydown on trigger (Shift+F10 or ContextMenu key):
+    rect = triggerEl.getBoundingClientRect()
+    openAt(rect.left, rect.bottom)
 
-	const items = [
-		{ id: 'edit', label: 'Edit', shortcut: '⌘E' },
-		{ id: 'copy', label: 'Copy', shortcut: '⌘C' },
-		{ type: 'divider' },
-		{ id: 'delete', label: 'Delete', danger: true, shortcut: '⌫' }
-	];
+  openAt(x, y):
+    if disabled or no items: return
+    position = { x, y }
+    open = true
+    activeIndex = nextEnabledIndex(items, -1, +1)   // first enabled
+    tick():
+      rect = menuEl.getBoundingClientRect()
+      position = clampToViewport(x, y, rect.width, rect.height, viewW, viewH)
+      itemEls[activeIndex].focus()
 
-	function onSelect(id) {
-		console.log('selected', id);
-	}
-</script>
+  on menu keydown:
+    ArrowDown: activeIndex = nextEnabledIndex(..., +1); focus
+    ArrowUp:   activeIndex = nextEnabledIndex(..., -1); focus
+    Home:      activeIndex = nextEnabledIndex(items, -1, +1)
+    End:       activeIndex = nextEnabledIndex(items, length, -1)
+    Enter / Space: selectIndex(activeIndex)
+    Escape / Tab: close
 
-<ContextMenu {items} {onSelect}>
-	<div class="my-target">Right-click me</div>
-</ContextMenu>
+  selectIndex(i):
+    if items[i] is divider or disabled: return
+    fire onSelect(items[i].id)
+    close()
+
+  on window mousedown (svelte:window):
+    if open and target outside menu and outside trigger: close()
+
+close():
+  open = false
+  triggerEl?.focus()                     // return focus to trigger
 ```
 
-## Props
+The menu is fixed-positioned, mounted only when `open`. Closed state has zero menu DOM cost beyond the trigger wrapper.
 
-| Prop        | Type                       | Default          | Notes                                                       |
-| ----------- | -------------------------- | ---------------- | ----------------------------------------------------------- |
-| `items`     | `ContextMenuItem[]`        | required         | Validated via `normalizeItems`; invalid entries are dropped.|
-| `onSelect`  | `(id: string) => void`     | no-op            | Fires on item click / `Enter` / `Space`.                    |
-| `ariaLabel` | `string`                   | `'Context menu'` | Used as the menu's `aria-label`.                            |
-| `disabled`  | `boolean`                  | `false`          | Trigger ignores `contextmenu` and keyboard activators.      |
-| `class`     | `string`                   | `''`             | Extra classes on the trigger wrapper.                       |
-| `children`  | `Snippet`                  | default text     | Trigger content rendered inside the wrapper.                |
+## The Core Concept: Viewport Clamping
 
-## Item shape
+A right-click near the bottom-right corner of the screen would naïvely render the menu off the visible area. The fix is `clampToViewport` — a pure function that flips the menu when it would overflow:
 
-```ts
+```
+clampToViewport(x, y, menuW, menuH, viewportW, viewportH, padding=8):
+  if x + menuW + padding > viewportW: x = max(padding, x - menuW)   // flip left
+  if y + menuH + padding > viewportH: y = max(padding, y - menuH)   // flip up
+  if x < padding: x = padding                                        // clamp left
+  if y < padding: y = padding                                        // clamp top
+  return { x, y }
+```
+
+So a click at `(viewportW - 50, viewportH - 50)` doesn't open a menu that runs off the corner. It opens a menu whose *bottom-right* corner is at the click point — the menu grows up-and-left from the click. This is the macOS Finder behaviour and matches user expectation.
+
+The 8 px padding ensures the menu never sits flush against the viewport edge — small comfort margin for users who move the cursor immediately after clicking.
+
+The function is exported from the module script for unit testing — you can call `clampToViewport(990, 700, 200, 300, 1024, 768)` directly in vitest without rendering anything.
+
+## Pointer + Keyboard Parity
+
+A common shortcut is to make the menu pointer-driven and bolt keyboard support on later. This component does the opposite: keyboard support is built in from the start, exported as a pure helper:
+
+```
+nextEnabledIndex(items, current, direction):
+  for step in 1..items.length:
+    i = (current + direction * step) wrapped into [0, length)
+    if items[i] is interactive and not disabled: return i
+  return -1
+```
+
+ArrowDown calls `nextEnabledIndex(items, activeIndex, +1)`. ArrowUp passes `-1`. Home is "find first enabled from -1 going forward". End is "find last enabled from `length` going backward". Wrapping is built in — ArrowDown on the last enabled item lands on the first.
+
+Disabled items and dividers are both skipped: the type guard `isInteractiveItem` strips dividers, and the `!item.disabled` check strips disabled items. So a menu of `[Edit, divider, Copy, Delete (disabled), divider, Quit]` cycles `Edit → Copy → Quit → Edit`.
+
+## Suppression of the Native Menu
+
+The trigger wrapper has `oncontextmenu={handleContextMenu}`, which calls `event.preventDefault()` before opening the custom menu. Without this, both menus would open simultaneously — the OS menu and ours, stacked. The `preventDefault` happens unconditionally (even if the trigger is `disabled`, in which case we then bail without opening anything) because letting the native menu show on a disabled trigger is more disruptive than suppressing it.
+
+## State Flow Diagram
+
+```
+              ┌──────────────────────────────┐
+              │   CLOSED                      │
+              │   open=false, no menu in DOM  │
+              └──────────┬────────────────────┘
+                         │
+            ┌────────────┼─────────────┬─────────────┐
+            │            │              │             │
+       right-click   Shift+F10 /    keyboard:    parent passes
+       on trigger   ContextMenu     focus on     items but never
+                    key on trigger  trigger      clicks (n/a)
+            │            │              │
+            ▼            ▼              ▼
+              ┌──────────────────────────────┐
+              │   OPENING                     │
+              │   position = click coords     │
+              │   open = true                 │
+              │   activeIndex = first enabled │
+              │   tick → measure → clamp →    │
+              │     focus active item         │
+              └──────────┬────────────────────┘
+                         │
+                         ▼
+              ┌──────────────────────────────┐
+              │   OPEN                        │
+              │   ArrowKeys cycle activeIndex │
+              │   (skip dividers/disabled)    │
+              │   Enter/Space activates       │
+              └──────────┬────────────────────┘
+                         │
+        ┌────────────────┼─────────────────┐
+        │                │                  │
+    Enter / Space    Escape / Tab       click outside
+    on enabled item                    (svelte:window)
+        │                │                  │
+        ▼                ▼                  ▼
+   onSelect(id)         close → triggerEl.focus()
+        │
+        ▼
+   close() → triggerEl.focus()
+                         │
+                         ▼
+                    back to CLOSED
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `items` | `ContextMenuItem[]` | required | Menu items. Each is either `{ type: 'divider' }` or `{ id, label, shortcut?, disabled?, danger? }`. Validated via `normalizeItems`; invalid entries dropped. |
+| `onSelect` | `(id: string) => void` | no-op | Fires on item click / Enter / Space with the selected item's `id`. |
+| `ariaLabel` | `string` | `'Context menu'` | Used as the menu's `aria-label`. |
+| `disabled` | `boolean` | `false` | Trigger ignores `contextmenu` and keyboard activators. |
+| `class` | `string` | `''` | Extra classes on the trigger wrapper. |
+| `children` | `Snippet` | default text | Trigger content rendered inside the wrapper. |
+
+### Item shape
+
+```typescript
 type ContextMenuItem =
-	| { type: 'divider' }
-	| {
-			id: string;        // unique stable identifier passed to onSelect
-			label: string;     // visible label
-			shortcut?: string; // optional right-aligned hint, e.g. '⌘C'
-			disabled?: boolean; // greyed out, skipped by keyboard nav, no click effect
-			danger?: boolean;  // styled in red for destructive actions
-		};
+  | { type: 'divider' }
+  | {
+      id: string;       // unique stable identifier passed to onSelect
+      label: string;    // visible label
+      shortcut?: string; // optional right-aligned hint, e.g. '⌘C'
+      disabled?: boolean; // greyed out, skipped by keyboard nav, no click effect
+      danger?: boolean;  // styled in red for destructive actions
+    };
 ```
 
-## Pure helpers (module-script exports)
+## Edge Cases
 
-- `normalizeItems(items)` — strips invalid entries, ensures unique ids, coerces optional fields to safe defaults.
-- `clampToViewport(x, y, menuW, menuH, viewportW, viewportH, padding?)` — returns `{ x, y }` flipped when the menu would overflow.
-- `nextEnabledIndex(items, current, direction)` — keyboard nav: walks forward (`1`) or backward (`-1`) skipping dividers and disabled items, wrapping at both ends.
-- `isInteractiveItem(item)` — type guard separating dividers from action items.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+| Situation | Behaviour |
+|-----------|-----------|
+| Right-click near the bottom-right corner | `clampToViewport` flips the menu so its bottom-right corner is at the click point. Menu grows up-and-left. |
+| Right-click in the very corner with menu larger than viewport | Both axes clamp to padding (8 px from each edge). The menu may overlap the click point in extreme cases. |
+| `items` contains an entry with no `id` or no `label` | `normalizeItems` drops it silently. Invalid items never reach the render. |
+| Two items with the same `id` | First wins; second is dropped by `normalizeItems`. |
+| All items disabled | Menu opens; `nextEnabledIndex` returns `-1`; no item gets focus. Keyboard nav is a no-op. Escape closes. |
+| User has `prefers-reduced-motion: reduce` | The 120 ms scale-up open animation is replaced with instant render. The contract — open, navigate, select, close — is preserved. |
+| User clicks inside the menu but on the gap between items | No item handler fires; `svelte:window` mousedown sees the click is *inside* `menuEl` and doesn't close. |
+| User Shift-Tabs back to the trigger while menu is open | Tab handler closes the menu; focus returns to trigger. Shift+Tab moves to the previous focusable element. |
+| Menu opens, parent re-renders `items` to a different array | `safeItems = $derived(normalizeItems(items))` re-runs; the menu's contents update. `activeIndex` may now point at a different item — no crash, but the highlight may visibly jump. |
 
-## Distinct from
+## Dependencies
 
-- **`CommandPalette`** — spotlight search overlay anchored to the viewport. ContextMenu is positional and triggered by the user's right-click target.
-- **`FloatingDock`** — persistent macOS-style dock. ContextMenu is transient.
-- **`Tooltip`** — passive hover hint. ContextMenu is interactive.
-- **Native browser menu** — `event.preventDefault()` suppresses it so the page never shows two menus.
-- **`StaggeredMenu`** — animated nav menu, different idiom (page nav vs. action menu).
+- **Svelte 5.x** — `$state`, `$derived`, `$props`, `onMount`, `tick`, snippets, `svelte:window`. The pure helpers (`normalizeItems`, `clampToViewport`, `nextEnabledIndex`, `isInteractiveItem`, `isReducedMotion`) are exported from the module script for testing without a DOM.
+- Zero external dependencies. Native event handling, scoped CSS, no animation library.
 
-## Accessibility
+## File Structure
 
-- Trigger wrapper is `role="button"` with `aria-haspopup="menu"`, `aria-expanded` reflecting the open state, and `aria-disabled` mirroring the `disabled` prop. `tabindex="0"` so keyboard users can focus the trigger.
-- The menu container is `role="menu"` with `aria-orientation="vertical"` and `aria-label` (defaults to `'Context menu'`, overridable via `ariaLabel`).
-- Each enabled item is a `<button role="menuitem">` with `aria-disabled` mirroring its disabled state. Dividers are `role="separator"` + `aria-hidden="true"` so screen readers don't announce empty separators.
-- The active item gets focus via `element.focus()` so screen-reader users follow the keyboard cursor; `mouseenter` updates `activeIndex` so pointer and keyboard users converge on the same item.
-- `Shift+F10` and the `ContextMenu` key open the menu without a pointer; `Escape` / `Tab` close. The keyboard contract matches the WAI-ARIA menu pattern.
-- Under `prefers-reduced-motion: reduce`, the open animation is skipped — the contract is preserved, only the visual transition is removed.
-
-## Performance
-
-- One trigger wrapper + one fixed-positioned menu. The menu is only mounted while open, so when closed there is zero DOM cost beyond the trigger wrapper.
-- No `requestAnimationFrame`, no `ResizeObserver`. Position is computed once on open via `getBoundingClientRect` + `clampToViewport`.
-- Helpers run in pure functions for unit testing without a DOM.
-
-## Recipes
-
-- **File-tree row actions**: `<ContextMenu items={fileActions} onSelect={handleFileAction}>{file.name}</ContextMenu>`
-- **Destructive confirm flow**: combine with `HoldToConfirm` — the context menu offers `Delete`, the click navigates to a hold-to-confirm flow.
-- **Keyboard-first menu**: omit the `<children>` and use a button as the trigger; users press `Shift+F10` or the `ContextMenu` key to open.
-- **Disabled while saving**: `<ContextMenu disabled items={items} />`
+```
+src/lib/components/ContextMenu.svelte    # implementation
+src/lib/components/ContextMenu.md        # this file (rendered inside ComponentPageShell)
+src/lib/components/ContextMenu.test.ts   # vitest unit tests (uses exported helpers)
+src/routes/contextmenu/+page.svelte      # demo page
+```

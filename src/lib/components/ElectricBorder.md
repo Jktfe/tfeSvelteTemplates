@@ -1,131 +1,238 @@
----
-name: ElectricBorder
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# ElectricBorder — Technical Logic Explainer
 
-# ElectricBorder
+## What Does It Do? (Plain English)
 
-Animated electric-arc border wrapper. Wraps any element with a crackling, jagged border that pulses like a Tesla coil. Uses an SVG `feTurbulence` + `feDisplacementMap` filter to distort a stroked rectangle, with `<animate>` driving the turbulence frequency for the live crackling motion. Pure SVG + CSS — zero deps, single inline element, no rAF loop.
+ElectricBorder wraps any element with a crackling, jagged border that pulses like a Tesla coil. The slot underneath stays normal HTML — fully clickable, fully readable — and the border on top is a single SVG rectangle whose stroke is being violently displaced by an animated turbulence filter. Three intensities (`mild` / `crackling` / `lightning`) and three palettes (`electric-blue` / `plasma-purple` / `volt-yellow`) are pre-tuned, so a single component call gets you the right look.
 
-Composes naturally with any wrapped content (cards, badges, hero text, photos). Pairs well with `Tilt3D` (3D rotation + electric border = sci-fi UI panel feel), `HoloCard` (foil surface + electric border = double premium), and `MagicCard` (cursor spotlight + ambient electric ring).
+Think of it as putting a steel frame around your content and running 50,000 V through it. The frame stays where it is; the *light* it emits is what's flickering.
 
-## Key features
+## How It Works (Pseudo-Code)
 
-- **Three intensities** — `mild` / `crackling` / `lightning`. Each preset balances frequency, distortion scale, animation speed, stroke width, and glow blur. Higher intensity = denser crackling, longer arcs, brighter halo.
-- **Three palettes** — `electric-blue` (cyan + sapphire halo), `plasma-purple` (orchid + violet halo), `volt-yellow` (electric yellow + amber halo). Each closes the visual gap between stroke colour and ambient glow for the unified arc-discharge look.
-- **Pure SVG-filter math** — no canvas, no WebGL, no per-frame JS. The `<animate>` element drives the turbulence frequency up and down, and the displacement map distorts the stroked rect in real-time. Browser handles the entire animation on the GPU.
-- **Pure helpers exported** from the module-script (`pickIntensity`, `pickPalette`, `clamp01`, `clampPositive`, `nextFilterId`, `frequencyValuesString`, `isReducedMotion`) — all directly unit-testable without rendering.
-- **Per-instance filter IDs** — every render generates a unique filter ID via a module-scoped counter, so multiple ElectricBorder instances on the same page don't collide on the SVG `<defs>` namespace.
-- **prefers-reduced-motion safe** — `isReducedMotion()` is read on mount; under reduced motion the `<animate>` element is removed entirely, the displacement scale falls to zero, and the glow halo shrinks. Stylesheet has a CSS-layer fallback via `@media (prefers-reduced-motion: reduce)` as belt + braces.
-- **SR-friendly** — slotted content stays in the DOM and a11y tree. The SVG border layer is `aria-hidden`, `pointer-events: none`, and stacked on top of the content via `z-index`. Focus, click and keyboard interaction with the wrapped child are unaffected.
+```
+state:
+  intensity = 'mild' | 'crackling' | 'lightning'
+  palette   = 'electric-blue' | 'plasma-purple' | 'volt-yellow'
+  radius    = 12 (px, wrapper border-radius)
+  filterId  = 'ec-static'    // SSR placeholder
+  reduced   = false
 
-## Usage
+derive:
+  cfg              = pickIntensity(intensity)
+                   = { frequency, distortion, animSpeed, strokeWidth, glowBlur }
+  colors           = pickPalette(palette)
+                   = { stroke, glow, highlight }
+  frequencyValues  = frequencyValuesString(cfg.frequency)
+                   = `${base};${min(base*2.2, 1)};${base}`
+                   // 3 stops: low → high → low, seamless loop
 
-```svelte
-<script>
-	import ElectricBorder from '$lib/components/ElectricBorder.svelte';
-</script>
+onMount:
+  filterId = nextFilterId('ec')          // 'ec-1', 'ec-2', ... unique
+  reduced  = isReducedMotion()
 
-<ElectricBorder intensity="crackling" palette="electric-blue">
-	<article class="card">…</article>
-</ElectricBorder>
+render:
+  div.electric-wrapper with --ec-* custom properties
+    div.electric-content { @render children() }
+    svg.electric-border-svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                            aria-hidden
+      <defs>
+        <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise"
+                        baseFrequency={cfg.frequency}
+                        numOctaves="2" seed="0">
+            if !reduced:
+              <animate attributeName="baseFrequency"
+                       dur="{cfg.animSpeed}s"
+                       values={frequencyValues}
+                       repeatCount="indefinite" />
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic"
+                             scale={reduced ? 0 : cfg.distortion} />
+        </filter>
+      </defs>
+      <rect x=0 y=0 width=100 height=100 rx=3
+            fill="none"
+            stroke="var(--ec-stroke)"
+            stroke-width="2"
+            vector-effect="non-scaling-stroke"
+            filter="url(#filterId)" />
 
-<ElectricBorder intensity="lightning" palette="volt-yellow" radius={24}>
-	<button class="cta">Charge up</button>
-</ElectricBorder>
+CSS:
+  .electric-border-svg {
+    filter: drop-shadow(0 0 var(--ec-glow-blur) var(--ec-glow));
+  }
 ```
 
-## Composition with Tilt3D
+The component does **zero per-frame JavaScript**. The SMIL `<animate>` element drives the turbulence frequency up and down on the SVG renderer's clock; the displacement map distorts the stroked rectangle in real-time; the GPU composites the drop-shadow halo. The only JS is mount-time: a unique filter ID and a reduced-motion probe.
 
-```svelte
-<script>
-	import ElectricBorder from '$lib/components/ElectricBorder.svelte';
-	import Tilt3D from '$lib/components/Tilt3D.svelte';
-</script>
+## The Core Concept: Animated Turbulence + Displacement Map
 
-<Tilt3D maxTilt={14}>
-	<ElectricBorder intensity="lightning" palette="plasma-purple" radius={20}>
-		<div class="hologram-panel">…</div>
-	</ElectricBorder>
-</Tilt3D>
+The visual is one SVG `<rect>` whose stroke is being shoved around by a Perlin-noise field. As the noise field changes shape over time, the stroke wiggles into different jagged paths.
+
+### feTurbulence — the noise field
+
+```svg
+<feTurbulence type="fractalNoise" baseFrequency="0.030" numOctaves="2" seed="0" />
 ```
 
-Tilt3D handles X/Y rotation toward the cursor; ElectricBorder handles ambient crackling around the perimeter. Together they give the full sci-fi-UI-panel feel.
+`feTurbulence` generates a Perlin-noise image — a smooth, organic, randomly-shaped greyscale field. `baseFrequency=0.030` is `crackling`'s default; lower values (0.015 = `mild`) produce broader noise blobs and gentler arcs; higher values (0.060 = `lightning`) produce fine-grained chaos and dense spikes.
 
-## Props
+`seed=0` makes the noise deterministic, so server-side render and client-side first paint agree.
 
-| Prop        | Type                                                | Default            | Notes                                                          |
-| ----------- | --------------------------------------------------- | ------------------ | -------------------------------------------------------------- |
-| `intensity` | `'mild' \| 'crackling' \| 'lightning'`              | `'crackling'`      | Tunes frequency, distortion scale, animation speed, glow blur. |
-| `palette`   | `'electric-blue' \| 'plasma-purple' \| 'volt-yellow'` | `'electric-blue'` | Stroke + glow colour set.                                      |
-| `radius`    | `number`                                            | `12`               | Wrapper border-radius in pixels.                               |
-| `children`  | `Snippet`                                           | _(required)_       | Content to wrap. Stays in the DOM and a11y tree.               |
+### feDisplacementMap — push pixels by the noise
 
-Unknown intensity / palette values fall back to `crackling` / `electric-blue`.
+```svg
+<feDisplacementMap in="SourceGraphic" scale="6" />
+```
 
-## Intensity table
+`feDisplacementMap` takes a source graphic (here, the stroked rectangle) and uses an input image (the noise field) as instructions to displace each pixel. Red channel of the noise pushes pixels horizontally; green channel pushes vertically; both are scaled by `scale`.
 
-| Intensity   | frequency | distortion | animSpeed (s) | strokeWidth | glowBlur |
-| ----------- | --------- | ---------- | ------------- | ----------- | -------- |
-| `mild`      | 0.015     | 3          | 5             | 2           | 4        |
-| `crackling` | 0.030     | 6          | 3             | 2           | 8        |
-| `lightning` | 0.060     | 12         | 1.5           | 3           | 14       |
+`scale=3` (mild) gives gentle wobble. `scale=6` (crackling) gives Tesla-coil arcs. `scale=12` (lightning) gives full lightning-strike chaos. The trade-off is realism — high distortion can pull the stroke entirely outside its bounds, which is why the filter is sized `x="-20%" y="-20%" width="140%" height="140%"` to give the displaced stroke 20 % of bleed room on each side.
 
-Frequency drives `feTurbulence`'s `baseFrequency` — higher = denser noise field, more crackle. Distortion drives `feDisplacementMap`'s `scale` — higher = longer jagged arcs. animSpeed is the period of one full frequency-pump cycle (low → high → low).
+### `<animate>` — pump the frequency
 
-## Palette table
+The crackling motion comes from animating `baseFrequency`:
 
-| Palette         | Stroke    | Glow      | Highlight | Vibe                                 |
-| --------------- | --------- | --------- | --------- | ------------------------------------ |
-| `electric-blue` | `#00bfff` | `#0080ff` | `#ffffff` | Tesla-coil sapphire arc.             |
-| `plasma-purple` | `#c77dff` | `#9d00ff` | `#ff00ff` | Cyberpunk neon plasma.               |
-| `volt-yellow`   | `#ffea00` | `#ffd60a` | `#ffffff` | High-voltage caution / lightning.    |
+```svg
+<animate attributeName="baseFrequency"
+         dur="3s"
+         values="0.0300;0.0660;0.0300"
+         repeatCount="indefinite" />
+```
 
-Highlight is reserved for future inner-glow stops; current build uses only stroke + glow for the layered drop-shadow halo.
+`frequencyValuesString(base)` constructs the values: low → peak → low, where peak is `min(base * 2.2, 1)`. The first and last values match so the loop is seamless. SMIL interpolates between the three stops over 3 s (animSpeed for `crackling`), and the `feTurbulence` recomputes the noise field continuously.
 
-## Distinct from
+The visual reading: at the low frequency, the stroke wobbles broadly and slowly; at the peak frequency, it crackles into fine jagged arcs; the cycle repeats. Two octaves of noise gives enough variation that the loop never reads as obviously periodic.
 
-- **`ShineBorder`** — single linear-gradient sweeping horizontally across a static border. ElectricBorder uses an SVG `feTurbulence + feDisplacementMap` filter to jaggedly distort a stroked rect. Different math, different aesthetic — ShineBorder is "glittery chrome trim", ElectricBorder is "live electrical arc".
-- **`HoloCard`** — cursor-driven conic-gradient foil filling the entire surface. ElectricBorder is border-only and ambient (no cursor reactivity). They compose: ElectricBorder around a HoloCard gives a foiled card with a crackling perimeter.
-- **`NeonSign`** — glowing tube-letterform around _text_. ElectricBorder is border-only around _any wrapped element_. NeonSign emits a smooth steady glow; ElectricBorder emits a jagged crackling arc.
-- **`MagicCard`** — cursor-following spotlight on a single card. ElectricBorder has no cursor reactivity; it's an ambient effect.
-- **`RippleGrid`** — concentric expanding rings filling a grid. ElectricBorder is a single distorted border around one element.
-- **`AnimatedBeam`** — animated beam connecting two anchor points. ElectricBorder loops around a single element's perimeter.
-- **`MagneticButton`** — element translates toward cursor. ElectricBorder is static-position ambient effect.
-- **`Tilt3D`** — element rotates in 3D toward cursor. ElectricBorder has no rotation. They compose for the sci-fi-panel feel.
-- **`Spinner.pulse`** — concentric loading rings with no border. ElectricBorder isn't a loading state.
+### Stroke trickery: `vector-effect="non-scaling-stroke"`
 
-## Pure helpers (module-script exports)
+```svg
+<rect x="0" y="0" width="100" height="100" rx="3"
+      fill="none" stroke="var(--ec-stroke)"
+      stroke-width="2"
+      vector-effect="non-scaling-stroke" />
+```
 
-- `pickIntensity(name)` — returns `{ frequency, distortion, animSpeed, strokeWidth, glowBlur }`. Falls back to `crackling`.
-- `pickPalette(name)` — returns `{ stroke, glow, highlight }`. Falls back to `electric-blue`.
-- `clamp01(n)` — clamps to `[0, 1]`; treats `NaN` and `±Infinity` as `0`.
-- `clampPositive(n, max?)` — clamps to `[0, max]` with the same NaN/Infinity guard.
-- `nextFilterId(prefix?)` — module-scoped counter for unique SVG filter IDs across instances.
-- `frequencyValuesString(base)` — returns the 3-stop semicolon-separated string for `<animate>` `values` attribute. First and last stops match for seamless loop; peak is `~base * 2.2` capped at `1`.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+The viewBox is `0 0 100 100` and `preserveAspectRatio="none"` lets the rect stretch to fill any wrapper aspect ratio. Without `vector-effect="non-scaling-stroke"`, a wrapper twice as wide as it is tall would render the horizontal stroke segments at twice the thickness of the vertical ones — visibly broken. With the non-scaling stroke, the 2 px stroke renders at exactly 2 screen pixels regardless of wrapper geometry.
 
-## Accessibility
+### Drop-shadow halo
 
-- The slotted content is rendered as the primary content of the wrapper and is read by screen readers normally.
-- The SVG border layer is `aria-hidden`, `pointer-events: none`, stacked on top of the content via `z-index`. Invisible to assistive tech.
-- Under `prefers-reduced-motion: reduce`: the `<animate>` element is removed (no DOM-level animation), `feDisplacementMap`'s scale drops to zero (no visual jitter), the glow blur shrinks (calmer halo), and the stylesheet caps the drop-shadow at a static low-key blur.
-- The wrapper is role-neutral (no `role` attribute set) — it inherits whatever role makes sense from the slotted content.
+```css
+.electric-border-svg {
+  filter: drop-shadow(0 0 var(--ec-glow-blur, 8px) var(--ec-glow, #0080ff));
+}
+```
+
+A single CSS `drop-shadow` filter on the SVG layer, with the blur size and colour driven by intensity / palette. Because the SVG itself is what's being displaced, the drop-shadow follows the displaced stroke — the halo crackles in sync with the arc, not as a static rim around the wrapper.
+
+## CSS Animation Strategy
+
+The animation is **SMIL-driven**, not CSS-driven. SMIL (`<animate>`) runs in the SVG renderer, completely outside the CSS animation pipeline. It's hardware-accelerated when the SVG layer is GPU-promoted, and the browser doesn't pay a `requestAnimationFrame` cost in the main thread.
+
+CSS provides:
+- The `drop-shadow` halo (static, GPU-composited).
+- The `prefers-reduced-motion` belt-and-braces fallback:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .electric-border-svg {
+    filter: drop-shadow(0 0 4px var(--ec-glow));
+  }
+}
+```
+
+Reduced motion is honoured three ways:
+1. The `<animate>` element is **omitted entirely** when `reduced === true` — no SMIL animation runs.
+2. `feDisplacementMap`'s `scale` is set to `0`, so the stroke renders unwarped — a clean rectangle.
+3. The CSS halo blur shrinks from `glowBlur` (up to 14 px) to a static 4 px so the visual identity stays present without pulsing.
 
 ## Performance
 
-- Zero per-frame JS work. Animation is driven entirely by the SVG `<animate>` element, which the browser handles on the GPU.
-- Single `feTurbulence` + `feDisplacementMap` filter pair per instance. Filter is scoped to the SVG layer only, so the wrapped content is never re-rasterised.
-- Stroke uses `vector-effect="non-scaling-stroke"` so the border thickness stays consistent regardless of the wrapper's aspect ratio. Rect dimensions are in viewBox units (stretched), stroke is in screen pixels.
-- Drop-shadow halo is a single CSS `filter: drop-shadow()` on the SVG layer, GPU-composited.
-- No canvas, no WebGL, no rAF, no resize observer. Steady-state cost is whatever the SVG filter takes per frame, and browsers cache that aggressively.
+- **Zero JS per frame.** The SMIL animation runs in C++ inside the SVG renderer.
+- **One `<filter>` chain per instance.** `feTurbulence` is the only mildly-expensive primitive; `crackling` (frequency 0.03, 2 octaves) measures fine on commodity hardware.
+- **Filter is scoped to the SVG layer only**, so the wrapped content is never re-rasterised when the noise updates.
+- **`drop-shadow` is GPU-composited** when the SVG layer is positioned absolutely (which `position: absolute; inset: 0` triggers).
+- **Per-instance filter IDs** via `nextFilterId('ec')` prevent SVG `<defs>` namespace collisions when multiple ElectricBorders co-exist.
+- **No observers, no rAF, no timers.** Steady-state cost is whatever the SVG renderer charges per frame for the filter chain and drop-shadow.
+- **Stack many ElectricBorders?** Each adds one filter chain plus one drop-shadow. A page of 10 instances at `crackling` intensity is comfortable; 50 at `lightning` would saturate. The chunkiest setting is `lightning + plasma-purple` because `glowBlur=14` is the largest blur the component ships with.
 
-## Recipes
+## State Flow Diagram
 
-- **Sci-fi panel hero**: `<Tilt3D maxTilt={14}><ElectricBorder intensity="lightning" palette="plasma-purple" radius={20}><div class="panel">…</div></ElectricBorder></Tilt3D>`.
-- **Charge-up CTA**: `<ElectricBorder intensity="crackling" palette="volt-yellow" radius={28}><button class="cta">Charge up</button></ElectricBorder>`.
-- **Premium-rare card**: `<HoloCard intensity="cosmic" palette="rainbow"><ElectricBorder intensity="mild" palette="electric-blue" radius={16}><img src="/legendary.png" alt="" /></ElectricBorder></HoloCard>`.
-- **Live-status pill**: `<ElectricBorder intensity="mild" palette="electric-blue" radius={999}><span class="badge">⚡ LIVE</span></ElectricBorder>`.
-- **Hologram panel**: `<ElectricBorder intensity="lightning" palette="electric-blue" radius={4}><div class="hologram">…</div></ElectricBorder>`.
+```
+              ┌──────────────────────────────┐
+              │  SSR / first paint            │
+              │  filterId = 'ec-static'       │
+              │  reduced = false              │
+              │  <animate> rendered           │
+              │  scale = cfg.distortion       │
+              └────────────┬─────────────────┘
+                           │ onMount
+                           ▼
+              ┌──────────────────────────────┐
+              │  filterId = nextFilterId()   │
+              │  reduced = probed             │
+              └────────────┬─────────────────┘
+                           │
+              ┌────────────┴─────────────────┐
+              │                              │
+              │ !reduced                     │ reduced
+              ▼                              ▼
+       ┌──────────────┐               ┌──────────────┐
+       │  crackling   │               │  static      │
+       │  SMIL drives │               │  no <animate>│
+       │  baseFreq    │               │  scale=0     │
+       │  forever     │               │  smaller halo│
+       └──────────────┘               └──────────────┘
+
+  prefers-reduced-motion change at runtime
+    (no listener wired in current build —
+     reduced is captured at mount only)
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `intensity` | `'mild' \| 'crackling' \| 'lightning'` | `'crackling'` | Tunes turbulence frequency, displacement scale, animation speed, stroke width, and glow blur. Unknown names fall back to `crackling`. |
+| `palette` | `'electric-blue' \| 'plasma-purple' \| 'volt-yellow'` | `'electric-blue'` | Stroke and glow colours. Unknown names fall back to `electric-blue`. |
+| `radius` | `number` | `12` | Wrapper `border-radius` in pixels. The SVG rect itself uses a constant `rx=3` in viewBox units; this prop only affects the wrapper's outline. |
+| `children` | `Snippet` | optional | Content to wrap. Stays in the DOM and a11y tree. |
+
+The intensity preset table:
+
+| Intensity   | frequency | distortion | animSpeed | strokeWidth | glowBlur |
+|-------------|-----------|------------|-----------|-------------|----------|
+| `mild`      | 0.015     | 3          | 5 s       | 2 px        | 4 px     |
+| `crackling` | 0.030     | 6          | 3 s       | 2 px        | 8 px     |
+| `lightning` | 0.060     | 12         | 1.5 s     | 3 px        | 14 px    |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Unknown `intensity` or `palette` | Falls back to `crackling` / `electric-blue` via `pickIntensity` / `pickPalette`. |
+| `prefers-reduced-motion: reduce` set on mount | `<animate>` element omitted; `feDisplacementMap` `scale=0`; CSS `@media` shrinks glow halo. Border renders as a clean rectangle. |
+| `prefers-reduced-motion` flips at runtime | The current build captures `reduced` at mount via `onMount`; runtime flips don't update it. CSS `@media` rule still updates the halo. For full runtime sync, fork the component to add a `matchMedia` change listener. |
+| Multiple instances on one page | Each gets a unique filter ID via `nextFilterId('ec')`. No SVG `<defs>` collisions. |
+| Component scrolled offscreen | SMIL animation continues. Browser may throttle hidden tabs but doesn't pause SMIL inside an in-DOM SVG. If you embed many ElectricBorders, gate them behind an `IntersectionObserver` in your wrapper. |
+| Wrapper resized | SVG uses `viewBox="0 0 100 100" preserveAspectRatio="none"` plus `vector-effect="non-scaling-stroke"` — adapts to any aspect ratio without distorted stroke thickness. |
+| Hi-DPI / retina | `feTurbulence` is resolution-independent. `vector-effect="non-scaling-stroke"` keeps stroke thickness in screen pixels. Crackling renders crisply at all scales. |
+| GPU acceleration unavailable | `feTurbulence + feDisplacementMap` falls back to CPU; cost rises but the visual still works. Drop `intensity` to `mild` for cheaper noise. |
+| Browser without SVG filters (IE11) | Filter is ignored; rect renders as a plain stroked rectangle. The component still gives a coloured border, just not crackling. |
+| `radius` very large (e.g. `999`) | Wrapper rounds into a pill or circle. The SVG rect's internal `rx=3` is in viewBox units (3 % of width) so the *stroked* shape stays a rounded rectangle inside the elliptical wrapper — visible mismatch. For pill shapes, fork the component and set `rx` proportional to viewBox. |
+| Children use `position: fixed` | Fixed positioning escapes the wrapper; the border stays put, the child floats. Usually not what you want. |
+| Children with their own SVG filters | No conflict — each filter has a unique ID. The drop-shadow halo composites independently from the child's filters. |
+| Component used inside another `isolation: isolate` stacking context | Halo composites correctly; `mix-blend-mode` is not used so there's no risk of leakage. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props`, `$state`, `$derived`, snippets. Module-script exports (`pickIntensity`, `pickPalette`, `clamp01`, `clampPositive`, `nextFilterId`, `frequencyValuesString`, `isReducedMotion`) for unit testing.
+- Zero external dependencies — inline SVG filter (SMIL), CSS drop-shadow. No canvas, no WebGL, no animation library, no images.
+
+## File Structure
+
+```
+src/lib/components/ElectricBorder.svelte         # implementation + module-level helpers
+src/lib/components/ElectricBorder.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/ElectricBorder.test.ts        # vitest unit tests
+src/routes/electricborder/+page.svelte           # demo page
+```

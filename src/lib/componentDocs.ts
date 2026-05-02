@@ -11,7 +11,9 @@
 
 import { renderMarkdown } from '$lib/utils/markdown';
 
-const docsRaw = import.meta.glob('/src/lib/components/*.md', {
+// Recurses into subfolders so `forms/Forms.md`, `ExplainerCanvas/ExplainerCanvas.md`
+// and similar nested docs are picked up alongside flat ones.
+const docsRaw = import.meta.glob('/src/lib/components/**/*.md', {
 	query: '?raw',
 	import: 'default',
 	eager: true

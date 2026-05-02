@@ -1,255 +1,233 @@
-# CardStack - Technical Logic Explainer
+# CardStack — Technical Logic Explainer
 
 ## What Does It Do? (Plain English)
 
-CardStack displays a horizontal fan of overlapping cards that respond to hover and click interactions. When you hover over a card, it rises and shifts to preview itself. When you click (or use arrow keys/swipe), the card fully emerges to show its content.
+CardStack lays a small set of cards out as a horizontal fan, each card overlapping the next so only its leading edge peeks out. Hover over a card and it rises and slides sideways to give you a preview; click (or press Enter, or swipe on mobile, or arrow-key in) and it fully emerges with its title and body visible. Click again to slot it back into the stack.
 
-**Think of it like:** A hand of playing cards fanned out on a table. Hover over one to peek at it, click to fully pull it out and read it!
-
----
+Think of it like a hand of playing cards fanned out on the table — peek at one, pull it out to read it, push it back in when you're done.
 
 ## How It Works (Pseudo-Code)
 
 ```
-WHEN component mounts:
-  1. MEASURE container width
-  2. MEASURE title and content heights from first card
-  3. RUN constraint equations to calculate:
-     - Card width and height
-     - Overlap amount
-     - Hover rise distance
-     - Hover shift distance
-  4. STORE calculated layout
-  5. SET UP ResizeObserver to recalculate on resize
+state:
+  hoveredCard      = null         // { index, shiftDirection } when something is being hovered
+  selectedIndex    = null         // which card is fully emerged, if any
+  layout           = null         // computed dimensions from the constraint solver
+  containerWidth   = 0            // measured
 
-WHEN mouse ENTERS a card:
-  1. DETECT which side of the card centre the mouse entered from
-  2. IF entered from left → shift direction = right
-  3. IF entered from right → shift direction = left
-  4. LOCK this direction (won't change until mouse leaves)
-  5. APPLY hover transform: rise up + shift sideways
+derive layout (whenever container, cards, or measured text heights change):
+  solve four constraints:
+    (1) container fit:    sum(card widths) × 1.1 + hoverShift × 2 ≤ containerWidth
+    (2) title visibility: hoverUp ≥ titleHeight × 1.2
+    (3) content fit:      cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
+    (4) hover zone:       hoverZoneWidth = 0.9 × overlap × 2
 
-WHEN card is CLICKED:
-  1. IF already selected → deselect (return to stack)
-  2. IF not selected → select (fully emerge with content visible)
+events:
+  on mouseenter card[i] (relative x within card width):
+    if relative x < width / 2: shiftDirection = 'right'    // entered from left
+    else:                      shiftDirection = 'left'     // entered from right
+    hoveredCard = { index: i, shiftDirection }              // direction LOCKED until mouseleave
 
-WHEN arrow key PRESSED:
-  1. RIGHT arrow → select next card (wraps to first)
-  2. LEFT arrow → select previous card (wraps to last)
-  3. ESCAPE → deselect current card
+  on mouseleave card[i]:
+    hoveredCard = null
 
-WHEN swipe detected (mobile):
-  1. SWIPE left → select next card
-  2. SWIPE right → select previous card
+  on click card[i]:
+    selectedIndex = (selectedIndex === i) ? null : i
+
+  on keydown ArrowRight:
+    selectedIndex = (selectedIndex == null ? 0 : (selectedIndex + 1) mod cards.length)
+
+  on keydown ArrowLeft:
+    selectedIndex = (selectedIndex == null ? last : (selectedIndex - 1 + cards.length) mod cards.length)
+
+  on keydown Escape:
+    selectedIndex = null
+
+  on swipe (touch dx > 50 and dominates dy):
+    dx < 0 → ArrowRight equivalent
+    dx > 0 → ArrowLeft equivalent
+
+  on container resize (ResizeObserver):
+    re-measure → re-derive layout
 ```
 
----
+The whole layout — card width, height, overlap, hover rise, hover shift — is recomputed from container width and the measured first card's title/body heights. Nothing is hard-coded except the safety margins inside the constraint equations.
 
 ## The Core Concept: Constraint-Based Layout
 
-Instead of hard-coding card sizes, CardStack uses **constraint equations** to calculate optimal dimensions at runtime. This ensures cards always fit and look good on any screen size.
+Hard-coding card dimensions ("each card is 300×400") works until the screen narrows or the cards have unusually long titles. CardStack flips that on its head: the developer asks for an **ideal** card size, and a runtime solver hands back the **largest values that satisfy all four constraints** for the actual container and content.
 
-### The Four Constraints
-
-```
-1. Container Fit:
-   sum(card widths) × 1.1 + hoverShift × 2 ≤ containerWidth
-
-   [NTL] All cards must fit in the container with room for hover animations
-
-2. Title Visibility:
-   hoverUp ≥ titleHeight × 1.2
-
-   [NTL] When a card hovers up, the full title must be visible (with 20% margin)
-
-3. Content Fit:
-   cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
-
-   [NTL] Cards must be tall enough to show title + content without cramping
-
-4. Hover Zone:
-   hoverZoneWidth = 0.9 × overlap × 2
-
-   [NTL] The direction-detection zone is proportional to card overlap
-```
-
-### How Overlapping Cards Fit
+### The four constraints
 
 ```
-Container Width = 800px
-Card Width = 220px
-Overlap = 50px (22% of card width)
+(1) Container fit
+    sum(card widths) × 1.1 + hoverShift × 2 ≤ containerWidth
+    Cards must fit horizontally with 10% padding for breathing room and
+    enough slack on either side that a hover-shift never falls off the edge.
 
-Visual layout (4 cards):
-|← 800px →|
+(2) Title visibility
+    hoverUp ≥ titleHeight × 1.2
+    A hovered card must rise at least 20% farther than the title is tall,
+    so the title never gets clipped by the card above it in the fan.
+
+(3) Content fit
+    cardHeight ≥ 1.1 × (titleHeight + bodyHeight)
+    Every card must be tall enough to show its full content with 10%
+    margin — no clipping, no awkward truncation.
+
+(4) Hover zone
+    hoverZoneWidth = 0.9 × overlap × 2
+    The mouse-direction-detection zone is anchored to overlap so it
+    scales with the visible-leading-edge real estate.
+```
+
+### How overlap works visually
+
+```
+container width = 800 px
+card width      = 220 px
+overlap         = 50 px (≈ 22% of card width)
+
 [Card 1][ard 2][ard 3][ard 4]
-        ↑50px overlap each
+        ↑     ↑     ↑   each card overlaps its neighbour by 50 px
 
-Total visual width = 220 + (3 × 170) = 730px ✓ Fits!
-                     ↑first card  ↑3 more cards showing 170px each
+visual width = 220 + (3 × 170) = 730 px ✓ fits comfortably
+              ↑first  ↑three more cards each contribute (220 − 50)
 ```
 
----
+If the container is narrower, the solver shrinks `cardWidth` and `cardHeight` proportionally rather than overflowing. There is a hard floor of 120 × 160 px below which cards stop shrinking and accept that they'll truncate.
 
 ## Direction Detection: The "Entry Side" Trick
 
-When you hover over a card, it shifts sideways - but which way? CardStack detects where your mouse came from:
+When a card is hovered, it slides sideways — but which way? CardStack picks the direction based on **where the cursor crossed the card boundary**, not where the cursor currently is. Once chosen, the direction is locked until the cursor leaves.
 
 ```
-         Mouse enters here
-              ↓
-    ┌─────────┬─────────┐
-    │  LEFT   │  RIGHT  │
-    │  ZONE   │  ZONE   │
-    │         │         │
-    │ Shift → │ ← Shift │
-    │  RIGHT  │  LEFT   │
-    └─────────┴─────────┘
-         Card Centre
+   mouse enters here
+        ↓
+  ┌──────────┬──────────┐
+  │   LEFT   │  RIGHT   │
+  │   ZONE   │   ZONE   │
+  │          │          │
+  │  shifts  │  shifts  │
+  │  RIGHT → │  ← LEFT  │
+  └──────────┴──────────┘
+       card centre
 ```
 
-**The key insight:** Direction is **locked** when you enter. If you enter from the left and then move your mouse to the right side, the card still shifts right. This prevents "dancing" where the card rapidly flips direction as you move.
+Without locking, the card would dance — slide right when the cursor was on the left, slide left when the cursor crossed the centre, slide right again when it crossed back. Locking on entry means the card commits to one direction for the whole hover, which feels stable rather than twitchy.
 
----
+## The Hit Area / Visual Card Split
 
-## State Architecture
-
-```
-hoveredCard = {
-  index: 2,           // Which card (0-based)
-  shiftDirection: 'right'  // Locked direction
-}
-
-selectedIndex = 2     // Fully emerged card (or null)
-
-layout = {
-  cardWidth: 200,     // Calculated dimensions
-  cardHeight: 280,
-  overlap: 44,
-  hoverUp: 48,
-  hoverShift: 42,
-  hoverZoneWidth: 79
-}
-```
-
----
-
-## The Hit Area vs. Visual Card Separation
-
-A clever trick prevents "hover dancing":
+A subtle trick prevents another flavour of hover dancing — the kind where the hovered card's transform moves it out from under the cursor, which fires `mouseleave`, which removes the transform, which fires `mouseenter` again, ad infinitum.
 
 ```
-┌─────────────────────┐  ← Hit Area (receives mouse events)
-│                     │    Position: STATIC (never moves)
-│  ┌───────────────┐  │
-│  │               │  │  ← Visual Card (the pretty part)
-│  │   Card Image  │  │    Position: TRANSFORMS on hover
-│  │               │  │    pointer-events: none
-│  └───────────────┘  │
-│                     │
-└─────────────────────┘
+┌───────────────────────┐  ← Hit area: receives pointer events
+│                       │    Position: STATIC, never transforms
+│   ┌───────────────┐   │
+│   │               │   │  ← Visual card: the pretty bit
+│   │  Card image   │   │    Position: transformed on hover
+│   │               │   │    pointer-events: none
+│   └───────────────┘   │
+│                       │
+└───────────────────────┘
 ```
 
-The hit area stays in place. The visual card transforms within it. Because the hit area doesn't move, the hover state is stable!
+The hit area is a fixed-position wrapper that owns the `mouseenter`/`mouseleave` events. The visual card sits inside it and is the only thing that moves; because it has `pointer-events: none`, it cannot fire pointer events of its own. The hover state stays rock-steady regardless of what the visual card is doing.
 
----
+## Touch & Swipe Handling
 
-## Touch/Swipe Handling
+Touch needs `{ passive: false }` so the component can call `preventDefault()` and stop the page scrolling underneath a horizontal swipe.
 
-```typescript
-// Touch events need { passive: false } to allow preventDefault()
-function attachTouchListeners(node: HTMLElement) {
-  node.addEventListener('touchstart', handleTouchStart, { passive: false });
-  node.addEventListener('touchmove', handleTouchMove, { passive: false });
-  node.addEventListener('touchend', handleTouchEnd, { passive: false });
-  // ...cleanup
-}
+```
+on touchstart: record (startX, startY)
+on touchmove:  if abs(currentX − startX) > scroll-threshold AND
+                  abs(dx) > abs(dy): preventDefault()
+on touchend:   dx = endX − startX
+               if abs(dx) > 50 AND abs(dx) > abs(dy):
+                 dx < 0 → next card
+                 dx > 0 → previous card
 ```
 
-**Swipe detection:**
-1. Record start position on `touchstart`
-2. Calculate delta on `touchend`
-3. If horizontal delta > 50px AND dominates vertical → it's a swipe!
+The "horizontal dominates vertical" test is what stops a near-vertical scroll being misread as a swipe — only when the user clearly intends horizontal motion does the component grab the gesture.
 
----
+## State Flow Diagram
+
+```
+                     ┌─────────────────────┐
+                     │   IDLE              │
+                     │   hovered  = null   │
+                     │   selected = null   │
+                     └────────┬────────────┘
+                              │
+        mouseenter card[i] ───┤
+                              ▼
+                     ┌─────────────────────┐
+                     │   HOVERED           │
+                     │   hovered = {i,dir} │ ──┐
+                     │   selected may be   │   │ click card[i]
+                     │   null or some j    │   │
+                     └────────┬────────────┘   │
+                              │ mouseleave     ▼
+                              ▼          ┌─────────────────────┐
+                     ┌─────────────────────┐ │ SELECTED            │
+                     │   IDLE              │ │ selected = i        │
+                     └─────────────────────┘ │                     │
+                                             │ click again         │
+                                             │ → selected = null   │
+                                             │ Escape              │
+                                             │ → selected = null   │
+                                             │ ArrowLeft / Right   │
+                                             │ → selected = (i±1)  │
+                                             │   mod length        │
+                                             └─────────────────────┘
+
+ ResizeObserver fires ─► layout re-derived (no state change to hovered/selected)
+```
 
 ## Props Reference
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `cards` | `Card[]` | `[]` | Array of cards with image, title, content |
-| `cardWidth` | `number` | `300` | Base width (may be scaled down) |
-| `cardHeight` | `number` | `400` | Base height (may be scaled down) |
-| `partialRevealSide` | `'left'│'right'` | `'right'` | Which side stays hidden on hover |
+| `cards` | `Card[]` | `[]` | The cards to display. Each needs `image`, `title`, and `content`. |
+| `cardWidth` | `number` | `300` | Ideal card width in pixels. The solver may shrink it to satisfy the container-fit constraint. |
+| `cardHeight` | `number` | `400` | Ideal card height in pixels. The solver may shrink it to satisfy the content-fit constraint. |
+| `partialRevealSide` | `'left' \| 'right'` | `'right'` | Which side of each card stays visible in the fan. Defaults to right (cards fan right-to-left). |
 
----
-
-## Keyboard Controls
+### Keyboard
 
 | Key | Action |
 |-----|--------|
-| `→` Right Arrow | Select next card (wraps) |
-| `←` Left Arrow | Select previous card (wraps) |
-| `Escape` | Deselect current card |
-| `Enter`/`Space` | Toggle selection on focused card |
-| `Tab` | Move focus between cards |
-
----
-
-## Mobile Behaviour
-
-On screens < 768px:
-- Hover effects are reduced (less movement)
-- Selected card expands to fixed position in viewport centre
-- Swipe hint appears at bottom
-
----
+| `→` | Select next card (wraps). |
+| `←` | Select previous card (wraps). |
+| `Enter` / `Space` | Toggle selection on the focused card. |
+| `Escape` | Deselect. |
+| `Tab` | Move focus between cards. |
 
 ## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
-| Single card | Takes up to 80% of available width |
-| Zero cards | Empty container, no errors |
-| Very narrow container | Cards shrink to minimum sizes (120×160px) |
-| Fast hover switching | Direction locks immediately, no flicker |
-| Keyboard + mouse together | Both work, last interaction wins |
-
----
-
-## Performance Considerations
-
-- **ResizeObserver** for responsive recalculation (more efficient than window resize)
-- **will-change: transform** on card wrapper for GPU acceleration
-- **pointer-events: none** on visual card prevents double event handling
-- **requestAnimationFrame** for initial measurement (allows DOM to render first)
-
----
-
-## Known Warnings (Safe to Ignore)
-
-| Warning | Reason |
-|---------|--------|
-| `a11y_no_noninteractive_tabindex` | Container needs tabindex for keyboard nav |
-| `a11y_no_noninteractive_element_interactions` | Touch handlers required for swipe |
-
----
+| Single card | Card takes up to 80% of container width; fan layout collapses gracefully. |
+| Zero cards | Renders an empty container, no errors. |
+| Very narrow container | Solver shrinks card dimensions to a hard floor of 120 × 160 px before tolerating clipping. |
+| Container resized at runtime | `ResizeObserver` re-measures and re-derives layout; hovered/selected state preserved. |
+| Fast hover-switching between adjacent cards | Direction lock fires on each `mouseenter`; no flicker, no dancing. |
+| Keyboard and mouse used together | Both feed the same `selectedIndex`; whichever happens last wins, no conflict. |
+| Touch swipe on a near-vertical motion | Vertical-dominates-horizontal test rejects the gesture; page scroll is preserved. |
+| User has `prefers-reduced-motion: reduce` | Hover transforms are dampened to a fraction of their normal distance. |
 
 ## Dependencies
 
-- **$lib/types**: CardStackProps, CardLayoutConfig, CalculatedCardLayout
-- **Zero external dependencies**: Pure Svelte + CSS
-
----
+- **Svelte 5.x** — `$state`, `$derived`, `$effect`, snippets, and `bind:this` underpin the layout and hover state.
+- Zero external dependencies — the layout solver, hover detection, swipe handling, and animations are all hand-rolled and pure CSS / pure DOM.
 
 ## File Structure
 
 ```
-CardStack.svelte      # The component
-CardStack.test.ts     # Unit tests
-CardStack.md          # This explainer
+src/lib/components/CardStack.svelte         # implementation
+src/lib/components/CardStack.md             # this file
+src/lib/components/CardStack.test.ts        # vitest unit tests
+src/routes/cardstack/+page.svelte           # demo page
+src/routes/cardstack/+page.server.ts        # SSR data loader
+src/lib/types.ts                            # CardStackProps, Card, CalculatedCardLayout
 ```
-
----
-
-*Last updated: 26 December 2025*

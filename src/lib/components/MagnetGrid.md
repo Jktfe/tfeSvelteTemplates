@@ -1,180 +1,207 @@
----
-name: MagnetGrid
-slug: magnetgrid
-category: Helpful UX
-status: shipped
-since: 2026-04-29
----
+# MagnetGrid — Technical Logic Explainer
 
-# MagnetGrid
+## What Does It Do? (Plain English)
 
-A cursor-driven displacement field. A grid of arbitrary cells (dots,
-icons, glyphs, anything) where every cell shifts toward (or away
-from) the pointer with a smooth quadratic falloff. Move the cursor
-across a hero panel and the grid bows under it like a sheet of iron
-filings under a magnet; lift the cursor and the field returns to
-rest.
+MagnetGrid lays out a regular grid of small cells and then deforms it in response to the cursor — every cell within an influence radius around the pointer slides toward (or away from) it, with the displacement falling off smoothly to zero at the edge of the radius. The result feels like a sheet of iron filings rippling under a moving magnet, or like a fluid surface dimpling under fingertip contact.
 
-Useful for hero accents, "kinetic" backdrops behind a headline,
-empty-state panels that reward exploration, or anywhere you want
-quiet ambient motion that responds to the user without demanding
-their attention.
+It is a decorative-only layout, intended for hero backgrounds, ambient cursor responsiveness, and visual punctuation between content sections. The default cell renders a small dot, but consumers can pass any snippet so the grid can be made of letters, icons, or even animated sub-components. Reduced-motion users see the static grid; touch devices that don't emit `pointermove` see the static grid too.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **N×M grid of arbitrary content** — pass a `cell` snippet and you
-  control what each square renders. Default is a styled dot.
-- **Cursor-driven displacement** — pointer position drives a per-
-  cell offset via CSS custom properties, so the GPU composites
-  every transform.
-- **Smoothstep falloff** — `(1 - clamp(d/r))²` curve so cells near
-  the cursor warp strongly while distant cells stay perfectly
-  still.
-- **Attract or repel** — `policy="attract"` (default) pulls cells
-  toward the cursor; `policy="repel"` pushes them away.
-- **Settle-on-leave** — pointer leaves the grid and every cell
-  returns to rest with a CSS transition, no JS lerp loop required.
-- **prefers-reduced-motion** — flat grid, zero displacement,
-  enforced at the stylesheet level.
+```
+state:
+  containerEl   // bound DOM div
+  reduced       // capability flag
+  pointerActive // true while cursor is over the grid
 
-## Usage
+derived:
+  safePolicy = pickPolicy(policy)              // 'attract' or 'repel'
+  safeCols   = max(1, floor(cols))
+  safeRows   = max(1, floor(rows))
+  cells      = gridIndices(safeCols, safeRows)  // [{row, col}, ...]
 
-### Default dot field
+on mount:
+  reduced = isReducedMotion()
 
-```svelte
-<script>
-  import MagnetGrid from '$lib/components/MagnetGrid.svelte';
-</script>
+on pointermove(event):
+  if !containerEl or reduced: return
+  rect = containerEl.getBoundingClientRect()
+  cx   = event.clientX - rect.left
+  cy   = event.clientY - rect.top
+  pointerActive = true
+  stride = cellSize + gap
+  for each cell el:
+    r, c   = el.dataset.row, el.dataset.col
+    centre = cellCenter(r, c, stride, stride)        // (col + .5) * stride, (row + .5) * stride
+    d      = displacement(centre.x, centre.y, cx, cy, radius, strength, safePolicy)
+    el.style.setProperty('--cell-dx', d.dx + 'px')
+    el.style.setProperty('--cell-dy', d.dy + 'px')
 
-<MagnetGrid />
+on pointerleave:
+  pointerActive = false
+  for each cell el:
+    el.style.setProperty('--cell-dx', '0px')
+    el.style.setProperty('--cell-dy', '0px')
+
+CSS:
+  .magnet-grid__cell {
+    transform: translate(var(--cell-dx, 0), var(--cell-dy, 0));
+    transition: transform 240ms cubic-bezier(.22, 1, .36, 1);
+  }
+  .magnet-grid[data-active='true'] .magnet-grid__cell {
+    transition: transform 60ms linear;       /* tight tracking while pointer is over */
+  }
 ```
 
-### Custom cell content (icon grid)
+## The Core Concept: Smoothstep Falloff On A Cell-To-Cursor Vector
 
-```svelte
-<script>
-  import MagnetGrid from '$lib/components/MagnetGrid.svelte';
+The displacement of each cell is a unit vector (cell → cursor) scaled by a smoothstep falloff and the strength prop. Three pure helpers compose:
 
-  const icons = ['★', '◆', '◯', '▲', '✦'];
-</script>
+**1. `cellCenter(row, col, cellW, cellH)`** — `(col + 0.5) * cellW` puts the centre inside the cell regardless of size. So a 100 px cell at column 0 returns x=50.
 
-<MagnetGrid cols={10} rows={6} cellSize={48} radius={180} strength={28}>
-  {#snippet cell(row, col)}
-    <span class="icon">{icons[(row + col) % icons.length]}</span>
-  {/snippet}
-</MagnetGrid>
+**2. `falloff(dist, radius)`** — a quadratic smoothstep:
+
+```
+t   = clamp(dist / radius, 0, 1)
+inv = 1 - t
+return inv * inv      // squared so the curve flattens at both ends
 ```
 
-### Repel mode (cursor pushes cells away)
-
-```svelte
-<MagnetGrid
-  cols={12}
-  rows={8}
-  policy="repel"
-  radius={200}
-  strength={32}
-/>
+```
+  falloff
+   1.0 │●
+       │ ●●
+       │   ●
+       │    ●●
+       │      ●●●
+   0.0 │         ●●●●●●●● dist (px)
+       └─────────────────────
+       0       radius/2     radius
 ```
 
-## Props
+`(1 - t)²` is the second-cheapest smoothstep available (true smoothstep is `t² × (3 - 2t)`, slightly more expensive and visually similar at this sample density). Both endpoints are differentiable — meaning cells right at the radius and cells right under the cursor blend in/out without snap.
 
-| Prop        | Type                              | Default     | Description                                              |
-| ----------- | --------------------------------- | ----------- | -------------------------------------------------------- |
-| `cols`      | `number`                          | `8`         | Number of columns (clamped to ≥1, floored)               |
-| `rows`      | `number`                          | `6`         | Number of rows (clamped to ≥1, floored)                  |
-| `radius`    | `number`                          | `140`       | Influence radius in px — cells inside warp, outside rest |
-| `strength`  | `number`                          | `24`        | Maximum displacement at distance 0 (px)                  |
-| `policy`    | `'attract' \| 'repel'`            | `'attract'` | Cells pull toward cursor or push away                    |
-| `cellSize`  | `number`                          | `36`        | Width and height of each cell in px                      |
-| `gap`       | `number`                          | `0`         | Gap between cells in px                                  |
-| `class`     | `string`                          | `''`        | Extra classes on the host                                |
-| `cell`      | `Snippet<[number, number]>`       | —           | Optional render snippet — receives (row, col)            |
+**3. `displacement(cellX, cellY, cursorX, cursorY, radius, strength, policy)`** — combines the above:
 
-## Pure helpers (module-script exports)
+```
+dx0  = cursorX - cellX
+dy0  = cursorY - cellY
+dist = hypot(dx0, dy0)
+f    = falloff(dist, radius)
+if f === 0 or dist === 0: return (0, 0)
+ux, uy = dx0 / dist, dy0 / dist               // unit vector
+sign   = policy === 'repel' ? -1 : 1
+return (sign * ux * f * strength, sign * uy * f * strength)
+```
 
-| Function                                                 | Returns          | Purpose                                                |
-| -------------------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| `gridIndices(cols, rows)`                                | `CellIndex[]`    | Row-major flat list of `{row, col}` pairs              |
-| `cellCenter(row, col, cellW, cellH)`                     | `Vec2`           | Pixel-coordinate centre of a cell                      |
-| `falloff(dist, radius)`                                  | `number`         | Smoothstep `(1 - clamp(d/r))²` curve, 0–1              |
-| `displacement(cellX, cellY, curX, curY, r, str, pol?)`   | `Displacement`   | Vector offset for a cell relative to cursor            |
-| `pickPolicy(name)`                                       | `Policy`         | Validates / defaults a policy string                   |
-| `isReducedMotion()`                                      | `boolean`        | SSR-safe matchMedia probe                              |
+The unit vector decouples direction from magnitude — cells very close to the cursor still travel "toward it" by a small *direction* but a large *amount* (because `f` is near 1). Cells at the boundary travel hardly at all (`f` near 0) but in the correct direction.
 
-## How it works
+```
+   neutral grid                       under cursor (attract)
+   · · · · · · · ·                    · · · · · · · ·
+   · · · · · · · ·                    · ·   · ·   · ·
+   · · · · · · · ·                       · · ╲ · · 
+   · · · · · · · ·   ─────►            · · · ●● · · ·       ← cursor
+   · · · · · · · ·                       · · ╱ · ·
+   · · · · · · · ·                    · ·   · ·   · ·
+   · · · · · · · ·                    · · · · · · · ·
+```
 
-The host renders a CSS grid: `grid-template-columns: repeat(cols,
-cellSize)`, `grid-auto-rows: cellSize`. Each cell carries two CSS
-custom properties — `--cell-dx` and `--cell-dy` — and applies them
-through `transform: translate(var(--cell-dx), var(--cell-dy))`.
+`policy = 'repel'` flips the sign so cells are pushed *away* — useful for "magnetic field" backgrounds where you want the cursor to look like it's parting the grid.
 
-A single `pointermove` handler walks every cell on the host,
-computes the cell's centre relative to the host's bounding rect,
-runs `displacement()` against the cursor coords, and writes the
-resulting `dx`/`dy` to the cell's inline style. No rAF — pointer
-events fire fast enough on their own (60-120 Hz), and writing to a
-custom property only invalidates the GPU's transform layer, not
-layout.
+## CSS Animation Strategy
 
-`pointerleave` resets every cell's CSS variables to `0px`. The
-cell's CSS transition (`transform 240ms cubic-bezier(...)`) handles
-the settle animation — that's the `[data-active="true"]` rule
-swapping to a faster 60ms timing while the pointer is over the grid,
-so motion feels responsive while active and softly easing on exit.
+Two transition durations swap based on a `data-active` flag on the wrapper.
 
-The `gridIndices`, `cellCenter`, `falloff`, and `displacement`
-helpers live in module scope so the test suite can verify the
-distribution and vector maths without rendering.
+```css
+.magnet-grid__cell {
+  transform: translate(var(--cell-dx, 0px), var(--cell-dy, 0px));
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);  /* slow, eases home */
+  will-change: transform;
+}
 
-## Accessibility
+.magnet-grid[data-active='true'] .magnet-grid__cell {
+  transition: transform 60ms linear;  /* fast, tracks the cursor */
+}
+```
 
-- The host is `role="presentation"` — MagnetGrid is purely a visual
-  effect, not interactive content. Wrap it inside meaningful
-  semantics if you put real UI in the cells.
-- prefers-reduced-motion: reduce → cells render in their grid
-  positions with `transform: none !important` and no transition,
-  ignoring pointer movement entirely.
-- No keyboard interaction in M1. If consumers put focusable content
-  inside cells, normal Tab order applies and the displacement
-  effect runs only on pointer input.
+Why two durations?
 
-## Performance
+- **240 ms ease** when the pointer leaves: cells should *settle* back to rest, not snap. The smoothstep curve makes it feel weighty.
+- **60 ms linear** while the pointer is over the grid: each pointermove writes a new `(dx, dy)` per cell, and we want the visible position to follow the cursor without lag. A long ease here would make the field rubbery and laggy.
 
-- **One pointer event** per move (60-120 Hz), one DOM walk over the
-  cell list, one custom-property write per cell. At 8×6 = 48 cells
-  this is invisible; tested smooth up to ~250 cells.
-- **No rAF loop** — pointer events drive the writes directly. Cells
-  outside `radius` get `{0, 0}` displacement so they don't
-  re-composite.
-- **Settle animation** runs on the GPU via CSS transition, no JS.
-- **Reduced motion** disables transforms and transitions at the
-  stylesheet level — zero animation cost.
+The flag flip is a single attribute write per pointer enter/leave — `data-active='true' / 'false'` — so the cascade selector toggles cleanly.
 
-## When to reach for it
+`@media (prefers-reduced-motion: reduce) { .magnet-grid__cell { transform: none !important; transition: none !important; } }` is the catch-all override.
 
-- Hero accents and atmosphere — quiet motion that follows the user
-  without commanding attention.
-- Empty-state panels that reward exploration ("hover me").
-- Background fields behind headlines, with the headline z-indexed
-  on top.
-- "Iron filings under a magnet" demos for portfolio sites.
+## State Flow Diagram
 
-## When not to
+```
+              ┌──────────────────────┐
+              │  IDLE                │  ← cells at (0, 0)
+              │  data-active=false   │
+              │  transition: 240ms   │
+              └──────────┬───────────┘
+                         │ pointermove
+                         ▼
+              ┌──────────────────────┐
+              │  ACTIVE              │
+              │  data-active=true    │
+              │  transition: 60ms    │
+              │  every cell's dx/dy  │
+              │  recomputed per move │
+              └──────────┬───────────┘
+                         │ pointerleave
+                         ▼
+              ┌──────────────────────┐
+              │  RETURNING           │
+              │  cells dx/dy = 0     │
+              │  data-active=false   │
+              │  240ms ease back     │
+              └──────────────────────┘
 
-- For pointer-on-a-single-element warps (avatars, buttons), reach
-  for **VariableProximity** (per-letter font variation) or
-  **Tilt3D** (single-element parallax) — MagnetGrid is overkill for
-  one target.
-- For continuously animating fields without a cursor, reach for
-  **RippleGrid** or **ScrollReveal**.
-- For real cursor-driven UI controls (snap targets, magnetic
-  buttons), reach for **MagneticButton** — MagnetGrid is decoration,
-  not affordance.
+   prefers-reduced-motion: reduce → all transforms locked to identity, no transitions.
+```
 
-## Inspiration
+## Props Reference
 
-A nod to the iron-filings-under-a-magnet demos that floated around
-ReactBits and Awwwards portfolios circa 2024. Pure CSS transforms
-with no canvas, no SVG, and no per-frame JS — the GPU does the
-heavy lifting and the helpers stay pure for testing.
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `cols` | `number` | `8` | Columns. Floored, clamped to `≥ 1`. |
+| `rows` | `number` | `6` | Rows. Floored, clamped to `≥ 1`. |
+| `radius` | `number` | `140` | Influence radius in pixels. |
+| `strength` | `number` | `24` | Peak displacement in pixels (a cell exactly under the cursor moves by `strength`). |
+| `policy` | `'attract' \| 'repel'` | `'attract'` | Direction of pull. Unknown → `'attract'` via `pickPolicy`. |
+| `cellSize` | `number` | `36` | Cell edge length in pixels. The grid's outer size scales linearly. |
+| `gap` | `number` | `0` | Pixels of gap between cells. Affects `stride` used for cell centres. |
+| `class` | `string` | `''` | Extra wrapper classes. |
+| `cell` | `Snippet<[number, number]>` | — | Per-cell snippet receiving `(row, col)`. Defaults to a small currentColor dot. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `cols × rows = 0` | `gridIndices` returns `[]`. Empty wrapper renders. |
+| Non-finite cols/rows | Coerced to defaults via `Math.max(1, Math.floor(...))`. No NaN propagation. |
+| Cursor exactly at cell centre (dist === 0) | `displacement` short-circuits to `(0, 0)` to avoid divide-by-zero. The cell stays put. |
+| `radius ≤ 0` | `falloff` returns 0 for everything. The grid is inert; consumers should keep `radius > 0`. |
+| `policy = 'repel'` | Sign flip on the final dx/dy. Cells flee the cursor instead of chasing it. |
+| Touch device, no pointer events | Without `pointermove`, `pointerActive` never flips and dx/dy stay 0. The grid is static — same as reduced-motion. |
+| `prefers-reduced-motion: reduce` | Pointer handler bails before touching cell styles; CSS `@media` locks transforms to identity. |
+| Resize during interaction | `getBoundingClientRect` is read every pointermove, so the grid follows window resizes without lag. The strides used for cell centres are derived from props (`cellSize + gap`), not actual layout — keep those in sync if you customise the cell snippet. |
+| Component unmounts mid-interaction | Svelte tears down the listeners with the wrapper. No global handlers were registered. |
+
+## Dependencies
+
+- **Svelte 5** — `$state`, `$derived`, `$props`, `Snippet`, `onMount`.
+- **`<script module>`** exports — `gridIndices`, `cellCenter`, `falloff`, `displacement`, `pickPolicy`, `isReducedMotion`. All pure, testable without a DOM.
+- **Zero external libraries** — no animation library, no physics library. The "physics" is one quadratic smoothstep.
+
+## File Structure
+
+```
+src/lib/components/MagnetGrid.svelte          # implementation
+src/lib/components/MagnetGrid.md              # this explainer
+src/lib/components/MagnetGrid.test.ts         # unit tests for exported helpers
+src/routes/magnetgrid/+page.svelte            # demo page
+```

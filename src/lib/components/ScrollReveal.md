@@ -1,161 +1,221 @@
----
-title: ScrollReveal
-description: Wrap any container, its direct children animate in (translate + fade) as they cross the viewport threshold — per-child stagger creates a cascading reveal driven by IntersectionObserver, not rAF.
-category: Helpful UX
-author: Claude
----
+# ScrollReveal — Technical Logic Explainer
 
-# ScrollReveal
+## What Does It Do? (Plain English)
 
-A wrapper that animates its direct children in as they enter the viewport. The cascade comes from a per-child delay (`index × stagger × intensity`) so a row of cards appears to "tuck in" with rhythm instead of all flashing on at once. The observer is the OS-level `IntersectionObserver`, so there are no scroll listeners, no `requestAnimationFrame` loop, and zero steady-state cost — between reveals, the component does nothing.
+ScrollReveal wraps any container and animates its direct children into view as they cross into the viewport. The first child fires immediately, each subsequent child is delayed by a configurable stagger so the row "tucks in" with rhythm rather than flashing on all at once. It is the most common animation request on real marketing pages — the kind of cascade Apple, Stripe, Linear, and Vercel ship by default — rebuilt as a portable Svelte 5 component with no animation library, no scroll listener, and no `requestAnimationFrame` loop.
 
-`ScrollReveal` fills the **viewport-entry** slot in the existing interaction taxonomy. Where `ClickSpark` and `RippleGrid` are click-driven, `VariableProximity` and `MagicCard` are cursor-driven, `SplitFlap` is value-change-driven, and `AuroraBackdrop` / `Cardwall` are idle-ambient, `ScrollReveal` is the primitive for *progress through the page* — the most common animation request on real marketing and docs surfaces.
+The reveal is driven by `IntersectionObserver`, the browser's compositor-side primitive for "did this element enter the viewport". Once a child has revealed, the observer stops watching it (one-shot mode), so steady-state cost is literally zero — the component does nothing between reveals. Reduced-motion users see all content instantly, in-place; screen readers see all content at all times because we animate via opacity and transform only, never `display: none`.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **IntersectionObserver-based**: zero rAF, zero scroll listeners, zero steady-state cost.
-- **Six directions**: `up` / `down` / `left` / `right` / `scale` / `rotate`.
-- **Per-child stagger**: `delayForChild(index, stagger, intensity)` computed at mount, written to `--sr-delay`. CSS handles the rest.
-- **One-shot or replay**: defaults to a single reveal per child; opt-in `replay` re-animates on scroll back.
-- **prefers-reduced-motion: reduce safe**: instant reveal, no transform, `--sr-duration` clamped to 0ms. Stylesheet-level fallback even if JS hasn't run.
-- **SSR-safe**: `IntersectionObserver` is created in `onMount` only. The server renders the wrapper + children inert; the first paint matches the un-reduced default.
-- **Accessibility-preserving**: children are *visually* hidden via `opacity` + `transform`, never via `display: none` or `visibility: hidden` — screen readers see all content regardless of viewport state.
-- **Pure helpers exported** from the module-script for unit testing without a DOM.
-- **Zero external dependencies**.
+```
+state:
+  containerEl    // bound DOM div
+  observer       // IntersectionObserver, created on mount
 
-## Usage
+on mount:
+  reduced = isReducedMotion()
+  mode    = replay ? 'replay' : 'one-shot'
+  childEls = Array.from(containerEl.children)
 
-### Default — vertical fade-up cascade
+  for each child at index i:
+    set data-sr-index = i
+    set data-revealed = reduced ? 'true' : 'false'
+    set --sr-delay        = delayForChild(i, stagger, intensity) ms
+    set --sr-duration     = reduced ? 0 : duration ms
+    set --sr-tx-hidden    = transformAtProgress(direction, distance, 0)
+    set --sr-tx-revealed  = transformAtProgress(direction, distance, 1)
 
-```svelte
-<script lang="ts">
-  import ScrollReveal from '$lib/components/ScrollReveal.svelte';
-</script>
+  if reduced:
+    return (no observer; everything visible immediately)
 
-<ScrollReveal>
-  {#each items as item}
-    <Card {item} />
-  {/each}
-</ScrollReveal>
+  observer = new IntersectionObserver((entries) ⇒ {
+    for entry in entries:
+      target = entry.target
+      if entry.isIntersecting:
+        target.dataset.revealed = 'true'
+        if mode === 'one-shot':
+          observer.unobserve(target)
+      else if mode === 'replay':
+        target.dataset.revealed = 'false'
+  }, { threshold, rootMargin })
+
+  for each child: observer.observe(child)
+
+  return () => observer.disconnect()
+
+CSS:
+  [data-sr-index] {
+    opacity: 0;
+    transform: var(--sr-tx-hidden);
+    transition: opacity var(--sr-duration) cubic-bezier(.22,.61,.36,1) var(--sr-delay),
+                transform var(--sr-duration) cubic-bezier(.22,.61,.36,1) var(--sr-delay);
+  }
+  [data-sr-index][data-revealed='true'] {
+    opacity: 1;
+    transform: var(--sr-tx-revealed);
+  }
 ```
 
-### Horizontal slide-from-left
+The component does its work once on mount (stamp children with attributes and CSS variables), creates one observer, and then sleeps until intersection state changes. The observer disconnects on destroy.
 
-```svelte
-<ScrollReveal direction="left" distance={48} stagger={120}>
-  {#each features as f}
-    <FeatureRow {f} />
-  {/each}
-</ScrollReveal>
+## The Core Concept: Per-Child Delay Plus Variable-Driven Transforms
+
+Two ideas conspire to give cheap, well-cadenced cascades.
+
+**1. Per-index delay** is computed once at mount and written into a CSS variable on each child:
+
+```
+delayForChild(index, stagger, intensity) = index * stagger * intensity
 ```
 
-### Hero — one-shot crossfade with no transform
+So with `stagger = 80` and `intensity = 1`, child 0 has 0 ms delay, child 1 has 80 ms, child 2 has 160 ms, and so on. The CSS `transition-delay` reads from `var(--sr-delay)` — when the `data-revealed` attribute flips, the transition fires, but each child's transition starts at its own pre-computed offset. The cascade is implicit in the CSS engine's transition scheduling; no JS loop is involved.
 
-```svelte
-<ScrollReveal direction="scale" distance={0} stagger={0} duration={900}>
-  <h1>Welcome.</h1>
-  <p>The product copy.</p>
-</ScrollReveal>
+**2. Direction is encoded as a transform** rather than baked into a keyframe. `transformAtProgress(direction, distance, progress)` returns a single CSS transform string for `progress = 0` (hidden) and `progress = 1` (revealed), and CSS interpolates between them.
+
+```
+direction='up'    → translate3d(0, distance px, 0)  →  translate3d(0, 0, 0)
+direction='left'  → translate3d(distance px, 0, 0)  →  translate3d(0, 0, 0)
+direction='scale' → scale(0.95)                     →  scale(1)
+direction='rotate'→ rotate(5deg)                    →  rotate(0deg)
 ```
 
-### Replay-on-leave (re-animates on scroll back)
+The function is exported from the module-script so the maths can be unit-tested without a DOM, and so consumers driving their own scroll-progress logic can call it with a continuous progress value.
 
-```svelte
-<ScrollReveal replay direction="up" stagger={60}>
-  {#each highlights as h}
-    <Highlight {h} />
-  {/each}
-</ScrollReveal>
+```
+                  reveal cascade (stagger = 100ms)
+   t=0   ┌──────┐
+         │card 0│ ← starts revealing immediately
+         └──────┘
+   t=100        ┌──────┐
+                │card 1│ ← starts 100ms later
+                └──────┘
+   t=200               ┌──────┐
+                       │card 2│ ← 200ms later
+                       └──────┘
+   t=300                      ┌──────┐
+                              │card 3│
+                              └──────┘
 ```
 
-### Targeting individual children with CSS
+## CSS Animation Strategy
 
-Children get `data-sr-index` and `data-revealed` attributes automatically, so you can fine-tune from the consumer side:
+Two `:global()` selectors and one `@media` block carry the entire visual implementation:
 
 ```css
-[data-sr-index='0'][data-revealed='true'] {
-  /* extra punch on the first child */
-  transition-duration: 1100ms;
+.scroll-reveal :global([data-sr-index]) {
+  opacity: 0;
+  transform: var(--sr-tx-hidden, none);
+  transition:
+    opacity   var(--sr-duration, 700ms) cubic-bezier(0.22, 0.61, 0.36, 1) var(--sr-delay, 0ms),
+    transform var(--sr-duration, 700ms) cubic-bezier(0.22, 0.61, 0.36, 1) var(--sr-delay, 0ms);
+  will-change: opacity, transform;
+}
+
+.scroll-reveal :global([data-sr-index][data-revealed='true']) {
+  opacity: 1;
+  transform: var(--sr-tx-revealed, none);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-reveal :global([data-sr-index]) {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 ```
 
-## Props
+`:global()` is needed because Svelte's CSS scoping would otherwise prefix `[data-sr-index]` with a hash that the children — rendered through the snippet — don't carry. The selectors are still bounded by the parent `.scroll-reveal` class, so the rules can't leak across the page.
 
-| Prop         | Type                                                            | Default    | Description                                                                                                |
-| ------------ | --------------------------------------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------- |
-| `stagger`    | `number`                                                        | `80`       | Milliseconds between consecutive child reveals.                                                            |
-| `direction`  | `'up' \| 'down' \| 'left' \| 'right' \| 'scale' \| 'rotate'`    | `'up'`     | Which direction children enter from. `scale` and `rotate` ignore `distance`.                               |
-| `distance`   | `number`                                                        | `32`       | Translation distance in pixels. Ignored for `scale` / `rotate`.                                            |
-| `threshold`  | `number`                                                        | `0.15`     | IntersectionObserver threshold (0..1) — the share of the child that must be visible to trigger reveal.     |
-| `duration`   | `number`                                                        | `700`      | Per-child reveal duration in milliseconds.                                                                 |
-| `intensity`  | `number`                                                        | `1`        | Multiplier on the per-step stagger gap. `0.5` halves the cascade tempo, `2` doubles it.                    |
-| `replay`     | `boolean`                                                       | `false`    | If `true`, children re-hide when they leave the viewport and re-animate on next entry.                     |
-| `rootMargin` | `string`                                                        | `'0px'`    | IntersectionObserver `rootMargin` — useful for triggering early (e.g. `'-100px 0px'`).                     |
-| `class`      | `string`                                                        | `''`       | Extra class names appended to the wrapper. Use this for layout (`grid`, `flex`, etc).                      |
-| `children`   | `Snippet`                                                       | `undefined`| Direct children to animate. Each becomes one reveal target.                                                |
+The `cubic-bezier(0.22, 0.61, 0.36, 1)` is a soft "ease-out-quint"-flavoured curve — fast at the start, slow at the end. Reveals feel light because the bulk of the visual change happens early in the transition, then it gracefully settles. Linear easing on a cascade looks wooden by comparison.
 
-## Pure helpers (exported from the module-script)
-
-All helpers are pure functions that can be unit-tested without a DOM. Import them alongside the component:
-
-```typescript
-import ScrollReveal, {
-  thresholdForChild,
-  delayForChild,
-  transformAtProgress,
-  shouldReplay,
-  isReducedMotion,
-  type Direction,
-  type RevealMode
-} from '$lib/components/ScrollReveal.svelte';
-```
-
-| Helper                                              | Returns                  | Notes                                                                  |
-| --------------------------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
-| `thresholdForChild(index, total, base)`             | `number` in `[0, 1]`     | Clamps base threshold; hook for future progressive-threshold logic.    |
-| `delayForChild(index, baseStagger, intensity?)`     | `number` (ms)            | `index * baseStagger * intensity`. Defensive against bad inputs.       |
-| `transformAtProgress(direction, distance, progress)`| `string` (CSS transform) | progress 0..1. Returns `none` for unknown directions.                  |
-| `shouldReplay(currentlyVisible, mode)`              | `boolean`                | True for `'replay'`, false for `'one-shot'`. Guards re-hide branch.    |
-| `isReducedMotion()`                                 | `boolean`                | SSR-safe wrapper around `matchMedia('(prefers-reduced-motion: reduce)')`. |
-
-## How it works
-
-1. **Mount**: snapshot `containerEl.children` into an array. For each child, set `data-sr-index="N"`, `data-revealed="false"`, and four CSS custom properties (`--sr-delay`, `--sr-duration`, `--sr-tx-hidden`, `--sr-tx-revealed`).
-2. **Reduced motion check**: if `prefers-reduced-motion: reduce` is set, immediately mark every child `data-revealed="true"` with `--sr-duration: 0ms` and *skip creating the IntersectionObserver entirely*. There is nothing animating to throttle.
-3. **Observe**: a single `IntersectionObserver` is created with the configured `threshold` and `rootMargin`. Every child is added via `observer.observe(child)`.
-4. **Intersect**: when a child crosses the threshold, the callback flips `data-revealed="true"`. CSS picks up the change and runs the transition with the child's pre-computed `--sr-delay`.
-5. **One-shot vs replay**: in one-shot mode (default), `observer.unobserve(target)` is called immediately after reveal — the child is permanently revealed and the observer drops it. In `replay` mode, the child remains under observation; on exit (`isIntersecting: false`) the attribute flips back to `"false"` and the transition reverses.
-6. **Cleanup**: on `onDestroy`, the observer disconnects.
-
-## Accessibility
-
-- **Semantic neutrality**: the wrapper is a plain `<div>` with no `role`. Use the `class` prop to layer on layout classes from your design system.
-- **Screen readers**: children remain in the DOM and accessibility tree at all times. Animations only affect `opacity` and `transform`. Users on screen readers experience the page identically regardless of viewport state.
-- **Reduced motion**: when `prefers-reduced-motion: reduce` is active, every child mounts with `data-revealed="true"` and `--sr-duration: 0ms`. A stylesheet-level `@media (prefers-reduced-motion: reduce)` override also forces `opacity: 1; transform: none; transition: none` on every `[data-sr-index]` — so even if JS is delayed or the matchMedia probe fails, the user's preference still wins.
-- **Focus**: focus order, tab indices, and `:focus-visible` styles are untouched. The wrapper does not interfere with keyboard navigation through its children.
+The reduced-motion `@media` block is a stylesheet-level safety net: even if the JS path was skipped (SSR-only delivery, matchMedia exception), the user's preference still wins. `transition: none` is explicit so we don't accidentally animate `opacity: 0 → 1` instantly with a 0-duration transition (which some browsers handle inconsistently).
 
 ## Performance
 
-- **Steady state**: zero. No `rAF`, no scroll listeners. The `IntersectionObserver` lives on the compositor thread and only fires when intersection state actually changes.
-- **Per-reveal cost**: one CSS transition per child. Both the animated properties (`opacity`, `transform`) are GPU-composited, so reveals never trigger layout or paint on the affected element.
-- **Mount cost**: O(n) where n is the number of direct children — five property writes per child plus one `observer.observe` call.
-- **Recommended bounds**: tested to ~200 children per wrapper on a single viewport without frame drops. For very long lists (a thousand+ rows), partition into sub-wrappers per logical section so the observer payload stays bounded per-IO instance.
+- **Mount cost**: O(n) where n is the number of direct children. Five property writes per child plus one `observer.observe(child)` call.
+- **Steady state**: zero. No `requestAnimationFrame`, no scroll listener. The `IntersectionObserver` lives on the compositor thread and only fires when intersection state actually changes.
+- **Per reveal cost**: one CSS transition per child. The transitioned properties (`opacity`, `transform`) are GPU-composited — the browser does not trigger layout or paint on the affected element.
+- **Recommended bounds**: tested to ~200 children per wrapper without frame drops. For very long lists, partition into sub-wrappers per logical section so each observer's callback payload stays bounded.
 
-## When to reach for it
+## State Flow Diagram
 
-- **Marketing / landing-page sections** that should reveal in rhythm as the user scrolls.
-- **Dashboards** that should fade into life as the user navigates between views.
-- **Product feature lists** where each row "introduces itself" with a short stagger.
-- **Image grids** where a scattered scale/rotate reveal feels editorial.
-- **Hero sections** where a single one-shot crossfade lands the brand.
+```
+                  ┌────────────────────────┐
+                  │  on mount              │
+                  │  stamp data-sr-index   │
+                  │  set CSS variables     │
+                  └──────────┬─────────────┘
+                             │
+                if reduced motion → skip observer
+                             │
+                             ▼
+                  ┌────────────────────────┐
+                  │  ALL HIDDEN            │
+                  │  data-revealed=false   │
+                  └──────────┬─────────────┘
+                             │ child crosses threshold
+                             ▼
+                  ┌────────────────────────┐
+                  │  REVEALING child i     │ ← CSS transition fires
+                  │  data-revealed=true    │   with index*stagger delay
+                  └──────────┬─────────────┘
+                             │
+              one-shot mode  │  replay mode
+                             │
+                             ▼
+                  ┌────────────────────────┐
+                  │  REVEALED              │
+                  │  observer.unobserve(c) │  (one-shot only)
+                  └────────────────────────┘
+                             │ child leaves viewport
+                             ▼ (replay only)
+                  ┌────────────────────────┐
+                  │  HIDDEN AGAIN          │
+                  │  data-revealed=false   │
+                  └────────────────────────┘
+```
 
-## When *not* to reach for it
+## Props Reference
 
-- **Form fields** or **interactive controls** where any reveal animation delays meaningful interaction.
-- **Critical above-the-fold copy** that the user must read immediately — fade-in delays time-to-content.
-- **Long virtualised lists** (tables, infinite scrollers) — the per-child observer cost is small but non-zero and you don't want to observer-spam thousands of rows.
-- **Print stylesheets** — there is no scrolling in print; transitions are wasted. (`prefers-reduced-motion` covers this on most browsers; explicit `@media print` overrides are still a good idea for production.)
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `stagger` | `number` | `80` | Milliseconds between consecutive child reveals. |
+| `direction` | `'up' \| 'down' \| 'left' \| 'right' \| 'scale' \| 'rotate'` | `'up'` | Which way children enter from. `scale` and `rotate` ignore `distance`. |
+| `distance` | `number` | `32` | Translation distance in pixels. Ignored for scale/rotate. |
+| `threshold` | `number` | `0.15` | IntersectionObserver threshold (0..1). Share of the child that must be visible to trigger reveal. |
+| `duration` | `number` | `700` | Per-child reveal duration in ms. |
+| `intensity` | `number` | `1` | Multiplier on the per-step stagger. `0.5` halves the cascade tempo, `2` doubles it. |
+| `replay` | `boolean` | `false` | If true, children re-hide on viewport exit and re-animate on next entry. |
+| `rootMargin` | `string` | `'0px'` | IntersectionObserver `rootMargin`. `-100px 0px` triggers earlier. |
+| `class` | `string` | `''` | Extra classes on the wrapper. Use this for layout (`grid`, `flex`). |
+| `children` | `Snippet` | — | Direct children to animate. Each becomes one reveal target. |
 
-## Inspiration
+## Edge Cases
 
-The interaction is the most common animation pattern across modern marketing pages — Apple, Stripe, Linear, Vercel — and most teams reach for AOS, GSAP ScrollTrigger, or Framer Motion to ship it. `ScrollReveal` is the same primitive rebuilt as a portable Svelte 5 component with no animation library, no dependency surface, and no rAF loop — just `IntersectionObserver`, CSS custom properties, and ~7KB of inspectable Svelte.
+| Situation | Behaviour |
+|-----------|-----------|
+| `prefers-reduced-motion: reduce` | All children mount with `data-revealed='true'` and `--sr-duration: 0ms`. Observer is never created. The `@media` rule is the stylesheet-level safety net. |
+| SSR delivery, no JS hydration | Server-rendered children carry no data attributes. They render visible in their natural position via the `@media` reduced-motion rule (which clamps opacity to 1) — graceful fallback. |
+| Children added after mount | The observer was set up against children present at mount. New children are not observed automatically. Re-key the wrapper or call your own observer if dynamic children are required. |
+| Duplicate `:global()` selector hits | The `data-sr-index` attribute is enough to disambiguate. The parent `.scroll-reveal` class prevents the rule from leaking to other ScrollReveal-less elements that happen to share the attribute. |
+| Long list, observer entry storm on first paint | IntersectionObserver batches entries; the callback handles them in one pass. No throttle is required. |
+| `threshold = 0` with tall children | Reveal fires the moment any pixel enters. Combined with `rootMargin: '-200px'`, this gives an "anticipate the scroll" feel. |
+| `replay = true` and rapid scroll | Children flip `data-revealed` between `true` and `false` on each crossing. The transition reverses smoothly because both directions are CSS interpolations. |
+| Print stylesheets | `prefers-reduced-motion` handles most cases. For belt-and-braces, layer your own `@media print { [data-sr-index] { opacity: 1; transform: none; } }`. |
+
+## Dependencies
+
+- **Svelte 5** — `$props`, `Snippet`, `onMount`. Module-scope helpers (`thresholdForChild`, `delayForChild`, `transformAtProgress`, `shouldReplay`, `isReducedMotion`) exported for unit tests.
+- **`IntersectionObserver`** — broadly supported (Safari 12.1+, Chrome 51+, Firefox 55+). No polyfill ships with the component.
+- **Zero external libraries** — no AOS, no GSAP ScrollTrigger, no Framer Motion.
+
+## File Structure
+
+```
+src/lib/components/ScrollReveal.svelte        # implementation
+src/lib/components/ScrollReveal.md            # this explainer
+src/lib/components/ScrollReveal.test.ts       # unit tests covering exported helpers
+src/routes/scrollreveal/+page.svelte          # demo page
+```

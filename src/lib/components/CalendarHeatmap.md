@@ -1,177 +1,198 @@
-# CalendarHeatmap - Technical Logic Explainer
+# CalendarHeatmap — Technical Logic Explainer
 
 ## What Does It Do? (Plain English)
 
-CalendarHeatmap displays a year's worth of activity as coloured squares - just like GitHub's contribution graph! Each day is a small square, and the colour intensity shows how much activity happened on that day.
+The GitHub contribution calendar, rebuilt from first principles. Pass it an array of `{ date, value }` records and it renders a 7-row × N-week SVG grid where each cell's colour intensity reflects its value. Hover any cell for a tooltip with the formatted date and count. Tab into the grid and arrow-key around it. The whole thing is one SVG, zero external dependencies, and copy-paste portable.
 
-**Think of it like:** A calendar where instead of dates, each day is coloured from light grey (no activity) to dark green (maximum activity). Hover over any day to see the exact date and value.
-
----
+Think of it as a year-at-a-glance heat ribbon: weeks march left-to-right, days run top-to-bottom (Sunday at the top), and colour scales from "nothing happened" through five discrete shades to "lots happened". Useful for activity calendars, streak trackers, traffic dashboards, or any time-series where the eye benefits from spatial periodicity (you can immediately spot weekday vs weekend patterns).
 
 ## How It Works (Pseudo-Code)
 
 ```
-WHEN component loads:
-  1. CALCULATE start and end dates (default: past 365 days)
-  2. BUILD grid of weeks (52 columns) and days (7 rows)
-  3. MAP activity data to each cell
-  4. GENERATE colour for each cell based on value
+state:
+  tooltip      = { visible: false, x: 0, y: 0, text: '' }
+  focusedCell  = null                      // { weekIndex, dayIndex } when keyboard-active
 
-FOR each day in the range:
-  1. FIND the matching data point (if any)
-  2. CALCULATE which "level" (0-4) it belongs to
-  3. ASSIGN colour from the gradient
-  4. POSITION in the correct week column and day row
+derive dataMap (from data):
+  for each entry in data: map.set(entry.date, entry.value)
+  // O(1) lookup by ISO date string
 
-WHEN user hovers over a cell:
-  1. SHOW tooltip with date and value
-  2. HIGHLIGHT the cell
+derive maxValue (from data):
+  return max(data.map(d => d.value), 1)    // 1 floor avoids divide-by-zero
 
-WHEN user clicks a cell:
-  1. CALL the onCellClick handler with date and value
+derive colorPalette (from colorLow, colorHigh, levels):
+  palette = [colorLow]                     // level 0
+  for i from 1 to levels-1:
+    factor = i / (levels-1)
+    palette.push(interpolateColor(colorLow, colorHigh, factor))
+  return palette                           // length === levels
 
-WHEN user navigates with keyboard:
-  1. Arrow keys MOVE between cells
-  2. Enter/Space SELECT the current cell
+derive calendarWeeks (from startDate, endDate, dataMap):
+  firstDay = nearest Sunday on or before startDate
+  weeks = []
+  while currentDate <= endDate:
+    week = []
+    for d from 0 to 6:
+      if currentDate in [startDate, endDate]:
+        week.push({ date, value: dataMap.get(toISODate(date)) ?? 0 })
+      else:
+        week.push(null)                    // padding for partial start/end weeks
+      currentDate += 1 day
+    weeks.push(week)
+  return weeks                             // 2D grid
+
+derive monthLabels (from calendarWeeks):
+  walk weeks left-to-right; emit a label whenever the month flips
+
+render:
+  <svg>
+    {#each monthLabels} <text> {/each}              // top row: Jan, Feb, …
+    {#each WEEKDAY_LABELS} <text> {/each}           // left column: Mon, Wed, Fri
+    {#each calendarWeeks as week, weekIndex}        // 52 columns
+      {#each week as cell, dayIndex}                // 7 rows
+        <rect fill={getCellColor(cell.value)}> with mouse + keyboard handlers
+  </svg>
+  {#if tooltip.visible} absolute-positioned div {/if}
+  {#if showLegend} Less <swatches> More {/if}
+
+events:
+  on cell mouseenter: position tooltip near cursor, format text
+  on cell mouseleave: hide tooltip
+  on cell click: onCellClick?.(isoDate, value)
+  on Arrow keys: shift focusedCell within grid bounds
+  on Enter / Space on focused cell: same as click
 ```
 
----
+## Core Concept: The Grid Algorithm + Discrete Colour Banding
 
-## The Core Concept
+Two algorithms make this component work, and both are simple but easy to get wrong.
 
-### Grid Layout
+### Building the grid
 
-The calendar is arranged as a grid where:
-- **Columns** = Weeks (52-53 per year)
-- **Rows** = Days of the week (Sunday to Saturday)
-- **Cells** = Individual days
+GitHub's calendar always starts a column on Sunday and always shows full weeks, even if the date range begins mid-week. The algorithm:
 
-```
-       Week 1   Week 2   Week 3   ...   Week 52
-Sun    [  ]     [  ]     [  ]           [  ]
-Mon    [  ]     [  ]     [##]           [  ]
-Tue    [  ]     [  ]     [  ]           [##]
-Wed    [  ]     [##]     [  ]           [  ]
-Thu    [  ]     [  ]     [##]           [  ]
-Fri    [##]     [  ]     [  ]           [##]
-Sat    [  ]     [  ]     [  ]           [  ]
+1. Take the `startDate` and walk **backwards** to the nearest Sunday — that's the top-left cell of column 0.
+2. Walk forward seven days at a time, building each column as an array of seven `{ date, value }` cells. Out-of-range cells (before `startDate` or after `endDate`) become `null` so the grid remains rectangular but doesn't render fake data.
+3. Stop when the current date exceeds `endDate` and the in-progress column is full.
 
-[  ] = Empty/low activity
-[##] = High activity
-```
+This means the **first and last columns are often padded** with `null` cells. The `{#if cell}` check in the template skips those slots, leaving visual gaps that match GitHub's behaviour exactly.
 
----
+### Colour banding
 
-## Colour Calculation
-
-The component uses a **discrete level system** (not a continuous gradient):
+Linear gradient interpolation produces 256 shades per channel — way too many for the eye to distinguish at 12 px square. We band them into discrete levels (default 5):
 
 ```
-Value Range → Level → Colour
-───────────────────────────────
-0           → 0     → #ebedf0 (empty)
-1-2         → 1     → #9be9a8 (light green)
-3-5         → 2     → #40c463 (medium green)
-6-8         → 3     → #30a14e (dark green)
-9+          → 4     → #216e39 (darkest green)
+level(value) = value === 0 ? 0
+             : min(ceil((value / maxValue) × (levels - 1)), levels - 1)
 ```
 
-The thresholds are calculated dynamically based on the maximum value in your data.
+Then map each level to a colour by interpolating `colorLow → colorHigh` at `factor = level / (levels - 1)`. The interpolation is straight RGB linear blend per channel — no gamma correction, no LCH, just `r1 + factor × (r2 - r1)`. For the small gamut shifts in a typical heatmap (light grey → dark green), linear RGB looks correct enough that fancier colour spaces aren't worth the bytes.
 
----
+The `value === 0` short-circuit is intentional: zero activity should always be the lowest colour, regardless of the rest of the dataset's distribution. Without it, a single huge spike could push every other day into level 0 and obliterate visual contrast.
 
-## Position Calculation
+`colorLow` and `colorHigh` are parsed by a small dispatcher that handles `#fff`, `#ffffff`, `#ffffff80` (alpha discarded), `rgb(...)`, `rgba(...)`, and a short list of named colours (`black`, `white`, `red`, …). Anything else returns `null` and the interpolation gracefully falls back to `colorLow`.
 
-Each cell's position is calculated using:
+## Performance
+
+The whole component runs at **render time and never animates**. There's no rAF loop, no resize observer, no force simulation. Everything is a `$derived` computed once when its inputs change.
+
+Cost per render with the default 365-day range:
+
+- `dataMap` build: O(n) where n = `data.length` — typically <365.
+- `calendarWeeks` build: O(weeks × 7) ≈ O(52 × 7) = 364 cells. Each is a Date construction and a Map lookup. Sub-millisecond.
+- `colorPalette` build: O(levels) — 5 RGB blends.
+- DOM render: ~365 `<rect>` elements + month/weekday labels + legend. SVG handles this in a single paint.
+
+The visible bottleneck (if there is one) is the **mouseenter/mouseleave** firing on every cell — 364 elements × two listeners per cell. We attach handlers per-rect rather than using event delegation; with a few hundred elements the difference is invisible. If you push to multi-year ranges (1 000+ cells) and notice tooltip jank, switch to a single delegated listener on the `<svg>` and look up the cell from the event target — but for typical use, the per-cell handler model is simpler and identical-feeling.
+
+`SvelteMap` and `SvelteDate` are used for the data map and the iteration cursor — these are the reactive equivalents from `svelte/reactivity`. They cost slightly more than native `Map` / `Date` but keep the `$derived` chain reactive when the underlying state changes (e.g., if the parent passes a different `data` array).
+
+## State Flow Diagram
 
 ```
-WEEK_NUMBER = (daysSinceStart / 7) rounded down
-DAY_OF_WEEK = date.getDay() (0 = Sunday, 6 = Saturday)
-
-X_POSITION = leftMargin + (WEEK_NUMBER × (cellSize + cellGap))
-Y_POSITION = topMargin + (DAY_OF_WEEK × (cellSize + cellGap))
+                ┌──────────────────────┐
+                │  empty / no data     │  data === []
+                │  grid renders, all   │
+                │  cells level 0       │
+                └──────────┬───────────┘
+                           │
+                           │ parent passes data
+                           ▼
+                ┌──────────────────────┐
+                │  rendered            │
+                │  cells coloured by   │
+                │  level(value)        │
+                └──────────┬───────────┘
+                           │
+              ┌────────────┼─────────────────┐
+              │ hover cell │ click cell      │ Tab into grid
+              ▼            ▼                 ▼
+       ┌──────────┐  ┌──────────────┐  ┌────────────────┐
+       │ tooltip  │  │ onCellClick  │  │ focusedCell =  │
+       │ visible  │  │ fired        │  │ {0,0}          │
+       └────┬─────┘  └──────┬───────┘  └────────┬───────┘
+            │ mouseleave    │                   │ arrow keys
+            ▼               │                   ▼
+       ┌──────────┐         │            ┌────────────────┐
+       │ tooltip  │         │            │ focusedCell    │
+       │ hidden   │         │            │ updated within │
+       └──────────┘         │            │ grid bounds    │
+                            │            └────────┬───────┘
+                            │                     │ Enter/Space
+                            │                     ▼
+                            │              ┌──────────────┐
+                            └─────────────►│ onCellClick  │
+                                           │ fired        │
+                                           └──────────────┘
 ```
 
----
+## Props Reference
 
-## Data Format
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `CalendarDataPoint[]` | `[]` | Array of `{ date: string, value: number }` records. Dates are ISO `YYYY-MM-DD`. |
+| `startDate` | `Date` | 365 days before `endDate` | First date to display. Grid is padded back to the previous Sunday. |
+| `endDate` | `Date` | today | Last date to display. |
+| `colorLow` | `string` | `'#ebedf0'` | Colour for empty / level-0 cells. Hex, rgb, rgba, or named. |
+| `colorHigh` | `string` | `'#216e39'` | Colour for the highest level. Same formats as `colorLow`. |
+| `cellSize` | `number` | `12` | Pixel size of each square. |
+| `cellGap` | `number` | `3` | Pixel gap between squares. |
+| `showWeekLabels` | `boolean` | `true` | Render `Mon`, `Wed`, `Fri` on the left axis. |
+| `showMonthLabels` | `boolean` | `true` | Render month abbreviations along the top. |
+| `showLegend` | `boolean` | `true` | Render the `Less … More` swatch row below the grid. |
+| `levels` | `number` | `5` | Number of discrete colour bands. Includes level 0 (empty). |
+| `tooltipFormatter` | `(date: string, value: number) => string` | `undefined` | Custom tooltip text. Defaults to `"{full date}: {n} contribution(s)"`. |
+| `onCellClick` | `(date: string, value: number) => void` | `undefined` | Fires on click and on Enter/Space when the cell is keyboard-focused. |
+| `class` | `string` | `''` | Extra classes appended to the container. |
 
-The component expects data in this simple format:
-
-```javascript
-[
-  { date: "2024-01-15", value: 5 },
-  { date: "2024-01-16", value: 0 },
-  { date: "2024-01-17", value: 12 },
-  // ... more days
-]
-```
-
-Missing dates are treated as value `0`.
-
----
-
-## Keyboard Navigation
-
-| Key | Action |
-|-----|--------|
-| Arrow Up | Move to previous day (same week) |
-| Arrow Down | Move to next day (same week) |
-| Arrow Left | Move to same day, previous week |
-| Arrow Right | Move to same day, next week |
-| Enter/Space | Select focused cell |
-
----
-
-## Performance Notes
-
-- **SVG Rendering:** Uses SVG `<rect>` elements for crisp rendering at any size
-- **Virtual Grid:** Only renders visible cells (empty weeks are skipped)
-- **CSS Transitions:** Hover effects use CSS for 60fps smoothness
-- **Data Lookup:** Uses a Map for O(1) date-to-value lookups
-
----
-
-## Edge Cases Handled
+## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
-| No data provided | All cells render as empty (level 0) |
-| Missing dates | Missing days show as empty |
-| Future dates | Still rendered if within range |
-| Leap years | February 29 correctly handled |
-| Timezone issues | Dates parsed in local timezone |
-
----
-
-## What This Component Does NOT Do
-
-- Does not fetch data (you provide it)
-- Does not animate cell colour changes
-- Does not support multiple years in one view
-- Does not have zoom/drill-down features
-
----
+| `data === []` | Grid renders, all cells are `colorLow`. Legend still shows. No errors. |
+| Single datum | Grid renders with one coloured cell at level `levels - 1` (since `value === maxValue`). Every other cell is level 0. |
+| Date in `data` outside the `startDate`–`endDate` range | Silently ignored. The `dataMap` still stores it, but no grid cell looks it up. |
+| Duplicate dates in `data` | Last entry wins (Map semantics). |
+| `startDate > endDate` | Grid renders empty (the while-loop exits immediately). No exception. |
+| `colorLow` or `colorHigh` is unparseable | Interpolation returns `colorLow` for every level — grid appears flat. Use a hex colour to be safe. |
+| Multi-year range (e.g. 1 095 days) | Grid grows wide; container has `overflow-x: auto` and `-webkit-overflow-scrolling: touch` so it scrolls horizontally on mobile. |
+| User has `prefers-reduced-motion: reduce` | Hover stroke transition is disabled; everything else (which is already non-animated) is unchanged. |
+| Tooltip near right edge | Positioned by raw `clientX/Y - container.left/top` minus 10 px. May clip on the right; if you need clamping, add a max-width to `.tooltip` or compute clamp logic. |
+| Cell with no data (value defaults to 0) | Renders at level 0; ARIA label still says `"YYYY-MM-DD: 0 contributions"`. |
 
 ## Dependencies
 
-**Zero external dependencies.**
-
-This component uses only:
-- Svelte 5 (`$props()`, `$state()`, `$derived()` runes)
-- Standard SVG elements
-- CSS custom properties
-
----
+- **Svelte 5.x** — `$state`, `$derived.by` for the calendar grid pipeline.
+- **`svelte/reactivity`** — `SvelteMap`, `SvelteDate` keep the date iteration and lookup map reactive when the parent passes new data.
+- Zero external runtime dependencies. The grid is one `<svg>`, the tooltip is one `<div>`, the colour parser is hand-rolled in ~30 lines.
 
 ## File Structure
 
 ```
-CalendarHeatmap.svelte      # The component
-CalendarHeatmap.test.ts     # Unit tests
-CalendarHeatmap.md          # This explainer
+src/lib/components/CalendarHeatmap.svelte    # implementation
+src/lib/components/CalendarHeatmap.test.ts   # unit tests
+src/lib/components/CalendarHeatmap.md        # this file
+src/routes/calendarheatmap/+page.svelte      # demo page
+src/lib/types.ts                             # CalendarHeatmapProps, CalendarDataPoint
+src/lib/constants.ts                         # sample data fixtures (where applicable)
 ```
-
----
-
-*Last updated: 26 December 2025*

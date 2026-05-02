@@ -1,114 +1,278 @@
----
-title: CRTScreen
-description: Retro CRT-monitor frame for arbitrary content. Repeating-gradient scanlines, RGB chromatic aberration on the inner content via channel-split text-shadow, optional vertical tracking roll, and a corner vignette. Four named profiles (amber / green-phosphor / broadcast / modern), pure CSS, asset-free, prefers-reduced-motion safe.
-category: Statement Sections
-author: antclaude
-status: stable
----
+# CRTScreen — Technical Logic Explainer
 
-# CRTScreen
+## What Does It Do? (Plain English)
 
-Wraps any content in a CRT-monitor frame. The trick is layered overlays on top of a slot — a `repeating-linear-gradient` at 0deg paints horizontal scanlines, a `text-shadow` channel-split fakes RGB phosphor misalignment on the inner glyphs, an optional vertical-band keyframe drifts a "tracking roll" down the screen, and a `radial-gradient` darkens the corners. No SVG filters, no canvas, no images. Whole effect is GPU-composited and cheap enough to nest several on a page.
+CRTScreen wraps any slot of content in a retro cathode-ray-tube monitor frame. The slotted content stays normal HTML — text, paragraphs, headings, even other components — and the wrapper paints horizontal scanlines, RGB chromatic aberration on the inner glyphs, an optional vertical "tracking roll" band, and a soft corner vignette on top of it. Four named profiles bundle the colours: `amber` (1980s terminal), `green` (lab phosphor), `broadcast` (TV news), and `modern` (slate + pink/cyan ghosting).
 
-Four named profiles preset the foreground / background / scanline / aberration / vignette colours together so you don't have to hand-tune every overlay: `amber` (classic terminal), `green` (lab phosphor), `broadcast` (TV news off-white on dark slate), and `modern` (clean slate with pink/cyan aberration for fashion-style retro).
+Think of it as a transparent vinyl sticker of a CRT monitor that you stick over real HTML. Click-throughs, focus, copy-paste — everything still works underneath.
 
-The component is a wrapper, not a text effect. Whatever you put in the default slot is what gets framed — headings, monospace logs, an entire ASCII art block, even other components.
+## How It Works (Pseudo-Code)
 
-## Key Features
+```
+state:
+  profileName = 'amber' | 'green' | 'broadcast' | 'modern'
+  density     = 3                  // scanline cycle height (px)
+  intensity   = 1                  // scanline alpha multiplier
+  aberration  = 1                  // RGB ghost offset (px)
+  roll        = false | true | 0..10
+  vignette    = true
+  curved      = false
 
-- **Pure-CSS scanlines** — `repeating-linear-gradient(0deg, …)` painted as a `mix-blend-mode: multiply` overlay. `density` prop controls the cycle height in pixels (smaller = tighter lines, larger = chunky CRT). `intensity` clamps to `[0, 1]` and modulates the dark-stop alpha multiplier.
-- **Chromatic aberration via text-shadow channel-split** — content slot inherits a `text-shadow` that offsets the R channel one way and the B channel the other. `aberration` prop scales the offset in pixels; `0` removes the shadow entirely.
-- **Optional vertical tracking roll** — single static `@keyframes crt-roll` keyframe drifts a soft white band from top to bottom. `roll` accepts `boolean | number`; `true` gets a default speed, a number 1-10 maps to a 18s → 1.8s duration, `false`/`0` disables.
-- **Corner vignette** — `vignette` prop toggles a `radial-gradient` darkening overlay. Each profile has its own vignette opacity.
-- **Curved-glass option** — `curved={true}` rounds the inner screen corners and adds an inset shadow for a more glassy, perspective-y feel.
-- **Reduced-motion safe** — `prefers-reduced-motion: reduce` disables the roll animation and removes the aberration text-shadow at the CSS layer. Scanlines + vignette stay so the frame still reads as a CRT.
-- **Accessible** — overlay layers carry `aria-hidden`; slot content is announced exactly as written. No special role on the wrapper.
-- **Zero dependencies** — single `.svelte` file, scoped CSS, no fonts loaded, no images.
+derive:
+  profile           = pickProfile(profileName) ?? PROFILES.amber
+  scanGradient      = buildScanlineGradient(intensity, density, profile)
+                    = repeating-linear-gradient(0deg,
+                        profile.scan 0px,
+                        profile.scan {lineHeight}px,
+                        transparent {lineHeight}px,
+                        transparent {density}px)
+  aberrationShadow  = buildAberrationShadow(aberration, profile)
+                    = `${a}px 0 0 profile.aberrationR,
+                       -${a}px 0 0 profile.aberrationB`
+  rollSpeed         = typeof roll === 'number' ? roll : roll ? 3 : 0
+  rollCfg           = rollSchedule(rollSpeed)
+                    = rollSpeed === 0
+                        ? { duration: '0s', animationName: 'none' }
+                        : { duration: `${18/rollSpeed}s`,
+                            animationName: 'crt-roll' }
 
-## Usage
+render:
+  div.crt-root with --crt-* custom properties
+    div.crt-screen
+      div.crt-content { @render children() }
+                       // inherits text-shadow: var(--crt-aberration)
+      div.crt-overlay.crt-scanlines  (mix-blend-mode: multiply)
+      div.crt-overlay.crt-roll       (animated translateY)
+      div.crt-overlay.crt-vignette-layer  [if vignette]
 
-```svelte
-<script lang="ts">
-  import CRTScreen from '$lib/components/CRTScreen.svelte';
-</script>
-
-<!-- Amber terminal banner -->
-<CRTScreen profile="amber" density={3}>
-  <pre>&gt; LOADING&hellip; OK</pre>
-</CRTScreen>
-
-<!-- Green phosphor lab readout, with tracking roll -->
-<CRTScreen profile="green" density={2} roll={4}>
-  <h2>SYS::HEALTH</h2>
-  <p>cpu 42% &middot; mem 1.8GB &middot; net OK</p>
-</CRTScreen>
-
-<!-- Broadcast NEWS card, curved-glass effect -->
-<CRTScreen profile="broadcast" density={4} curved aberration={1.5}>
-  <h2>BREAKING</h2>
-  <p>Markets close higher on tech rally.</p>
-</CRTScreen>
-
-<!-- Modern aesthetic without aberration -->
-<CRTScreen profile="modern" density={5} aberration={0} vignette={false}>
-  <p>Clean retro frame — no chromatic split, no vignette.</p>
-</CRTScreen>
+CSS:
+  .crt-scanlines { background: var(--crt-scan-gradient) }
+  .crt-roll {
+    background: linear-gradient(180deg, /* white band, soft top+bottom */);
+    background-size: 100% 200%;
+    background-position: 0 -100%;
+    animation: var(--crt-roll-name) var(--crt-roll-duration) linear infinite;
+  }
+  @keyframes crt-roll {
+    0%   { background-position: 0 -100%; }
+    100% { background-position: 0  100%; }
+  }
 ```
 
-To override colours, set the CSS custom properties on the root: `--crt-fg`, `--crt-bg`, `--crt-scan-gradient`, `--crt-aberration`, `--crt-vignette-color`. The roll animation reads `--crt-roll-name` and `--crt-roll-duration`.
+The component does **zero work after mount**. All `$derived` values are functions of props; CSS handles every frame.
 
-## Props
+## The Core Concept: Stacked Overlays Over a Slot
 
-| Prop         | Type                                                | Default     | Description                                                                                |
-|--------------|-----------------------------------------------------|-------------|--------------------------------------------------------------------------------------------|
-| `profile`    | `'amber' \| 'green' \| 'broadcast' \| 'modern'`     | `'amber'`   | Named colour profile. Unknown names fall back to `amber`.                                  |
-| `density`    | `number`                                            | `3`         | Scanline cycle height in pixels. Clamped to `>= 1` and rounded to a positive integer.       |
-| `intensity`  | `number`                                            | `1`         | Scanline alpha multiplier, clamped to `[0, 1]`. `0` flattens the lines to invisible.        |
-| `aberration` | `number`                                            | `1`         | Chromatic-aberration offset in pixels. `0` removes the text-shadow entirely.                |
-| `roll`       | `boolean \| number`                                 | `false`     | Tracking-roll speed. `true` = speed 3, `false` = disabled, `1-10` = explicit speed.         |
-| `vignette`   | `boolean`                                           | `true`      | Whether to render the corner-darkening radial overlay.                                      |
-| `curved`     | `boolean`                                           | `false`     | Round the inner screen corners and add an inset shadow for a glassy CRT feel.               |
-| `class`      | `string`                                            | `''`        | Extra CSS classes appended to `.crt-root`.                                                  |
-| `children`   | `Snippet`                                           | —           | Default slot — the content being framed.                                                    |
+The visual is the sum of four overlays. Each overlay is a single `<div>` with a single CSS rule. Read together they reproduce a CRT.
 
-## Profiles
+### 1. Scanlines via repeating-linear-gradient
 
-| Name        | Foreground | Background | Use for                                                  |
-|-------------|------------|------------|----------------------------------------------------------|
-| `amber`     | `#ffb84d`  | `#160d05`  | Classic 80s terminal, BIOS banner, retro REPL output.    |
-| `green`     | `#7dff8a`  | `#031208`  | Phosphor lab readouts, oscilloscope-style telemetry.     |
-| `broadcast` | `#f8f8f8`  | `#1a1428`  | TV news lower-third, "BREAKING" cards, broadcast bumpers.|
-| `modern`    | `#e2e8f0`  | `#0f172a`  | Clean retro for design systems — slate + pink/cyan ghost.|
+```css
+background: repeating-linear-gradient(
+  0deg,
+  rgba(0, 0, 0, 0.42) 0px,
+  rgba(0, 0, 0, 0.42) 1px,
+  transparent 1px,
+  transparent 3px
+);
+mix-blend-mode: multiply;
+```
 
-## Distinct From
+`repeating-linear-gradient` is the cheapest way to paint stripes — a single CSS expression produces an arbitrary number of lines. `0deg` means the lines run horizontally. The four colour stops form one cycle: dark from 0 to 1 px, transparent from 1 to 3 px (= one 3 px cycle, repeated forever).
 
-- **`NeonSign`** — per-character glowing tube text. CRTScreen wraps arbitrary content in a monitor frame; NeonSign is a typography effect.
-- **`AuroraBackdrop` / `MembraneHero`** — full-page ambient backdrops. CRTScreen is a content frame with overlays sized to its slot.
-- **`ShinyText` / `ScrambledText` / `TrueFocus` / `VariableProximity`** — per-character text mechanics. CRTScreen treats its slot as opaque content and draws on top.
-- **`RippleGrid` / `ClickSpark`** — interactive primitives that respond to pointer events. CRTScreen is purely presentational.
-- **`SplitFlap`** — mechanical character flip. Different effect surface entirely.
-- **`ScrollReveal`** — viewport-trigger stagger. CRTScreen is steady-state, no scroll dependency.
+`buildScanlineGradient` constructs this string at render time:
 
-## Helpers
+```ts
+const lineHeight = safeI === 0 ? 0 : Math.max(1, Math.round(safeI * 1.2));
+return `repeating-linear-gradient(0deg,
+  ${profile.scan} 0px,
+  ${profile.scan} ${lineHeight}px,
+  transparent ${lineHeight}px,
+  transparent ${safeD}px)`;
+```
 
-Module-script exports for unit tests and advanced consumers:
+`density` controls the cycle height (smaller = tighter lines, larger = chunky CRT). `intensity` modulates the dark-stop alpha *and* the line height — at intensity 1 the dark band is `1.2px` thick; at intensity 0 it collapses to 0 and the gradient becomes pure transparency.
 
-| Export                      | Returns         | Notes                                                                              |
-|-----------------------------|-----------------|------------------------------------------------------------------------------------|
-| `pickProfile(name)`         | `CRTProfile`    | Resolve a profile by name; unknown names fall back to `amber`.                     |
-| `buildScanlineGradient(intensity, density, profile)` | `string` | Compute the CSS `repeating-linear-gradient` value used by `--crt-scan-gradient`. |
-| `buildAberrationShadow(amount, profile)` | `string` | Compute the CSS `text-shadow` value used by `--crt-aberration`. Returns `'none'` at `0`. |
-| `rollSchedule(speed)`       | `RollSchedule`  | Map a 0-10 speed knob to `{ duration, animationName }`. `0` returns `'none'`.       |
-| `isReducedMotion()`         | `boolean`       | SSR-safe wrapper over `matchMedia('(prefers-reduced-motion: reduce)')`.            |
+`mix-blend-mode: multiply` darkens everything beneath rather than overlaying solid black, so the scanlines bleed through the content rather than crushing it.
 
-## Accessibility
+### 2. Chromatic aberration via channel-split text-shadow
 
-- Overlay layers (`.crt-scanlines`, `.crt-roll`, `.crt-vignette-layer`) all carry `aria-hidden="true"` so they don't pollute the accessibility tree.
-- The wrapper itself has no `role` — slot content is announced as it would be without the frame.
-- `prefers-reduced-motion: reduce` disables the roll animation and removes the chromatic aberration text-shadow. Static scanlines and vignette remain so the visual identity holds.
+Real CRTs misalign the R, G, B electron beams slightly, producing colour fringes around glyph edges. Implemented as:
+
+```css
+.crt-content {
+  text-shadow: 1.00px 0 0 rgba(255, 80, 40, 0.7),  /* R offset right */
+              -1.00px 0 0 rgba(40, 200, 255, 0.55); /* B offset left */
+}
+```
+
+`buildAberrationShadow` builds this at render time. Two zero-blur shadows at horizontally opposite offsets create the channel-split — a red ghost to the right, a blue ghost to the left. The original glyph is in the middle, untouched.
+
+`aberration={0}` short-circuits to `'none'` so the text renders crisply when the effect isn't wanted (e.g. for accessibility or for a cleaner look).
+
+The choice of channel colours per profile matters — `amber` uses warm-orange and cool-cyan offsets; `modern` uses pink and sky for a fashion-magazine retro look that doesn't sit on the orange/green axis.
+
+### 3. Vertical tracking roll
+
+A faulty CRT shows a pale band slowly drifting down the screen — the "tracking roll" caused by misaligned vertical sync. Implemented as a single keyframe animating `background-position`:
+
+```css
+.crt-roll {
+  background: linear-gradient(180deg,
+    transparent 0%, transparent 40%,
+    rgba(255,255,255,0.05) 48%,
+    rgba(255,255,255,0.10) 50%,
+    rgba(255,255,255,0.05) 52%,
+    transparent 60%, transparent 100%);
+  background-size: 100% 200%;        /* twice as tall as the screen */
+  background-position: 0 -100%;       /* start above viewport */
+  animation: crt-roll var(--crt-roll-duration) linear infinite;
+  mix-blend-mode: screen;
+}
+@keyframes crt-roll {
+  0%   { background-position: 0 -100%; }
+  100% { background-position: 0  100%; }
+}
+```
+
+The gradient is twice as tall as the overlay (`background-size: 100% 200%`). The `from` position `-100%` puts the white band entirely above the visible area; the `to` position `100%` puts it entirely below. Linear easing means the band drifts at constant speed, top to bottom, over `--crt-roll-duration`. `mix-blend-mode: screen` lightens the underlying content where the band passes — the inverse of the scanline overlay's `multiply`.
+
+`rollSchedule(speed)` maps the 0-10 knob to a duration: speed 1 → 18 s (slow drift), speed 10 → 1.8 s (rapid roll). Speed 0 returns `{ animationName: 'none' }`, removing the animation entirely.
+
+### 4. Vignette via radial-gradient
+
+```css
+background: radial-gradient(ellipse at center,
+  transparent 50%,
+  rgba(0, 0, 0, 0.6) 100%);
+```
+
+A single ellipse-shaped radial gradient — fully transparent for the inner 50 % of the radius, ramping to 60 % black at the corners. Each profile picks its own end-stop alpha. Cheap, GPU-composited, no animation.
+
+### 5. Curved-glass option
+
+`curved={true}` rounds the inner screen corners (`border-radius: 1.5rem`) and adds an inset box-shadow:
+
+```css
+.crt-curved::before {
+  border-radius: 1.5rem;
+  box-shadow: inset 0 0 6rem rgba(0, 0, 0, 0.5);
+}
+```
+
+The inset shadow darkens the perimeter from the inside, faking the way a curved CRT bezel falls into shadow at its edges.
+
+## CSS Animation Strategy
+
+Only one keyframe in the entire component — `crt-roll`. The scanlines, vignette, and aberration are static CSS rules that don't animate at all.
+
+The roll animation runs on a single `background-position` shift. `background-position` is GPU-composited in modern browsers when the element has a stable layout, so the animation is essentially free.
+
+`mix-blend-mode` is the cheap trick that makes the overlays composite correctly without separate render passes:
+- `multiply` on scanlines darkens the content beneath
+- `screen` on the roll lightens it
+- `mix-blend-mode` is hardware-accelerated when the layer is GPU-promoted (which `position: absolute` + `inset: 0` triggers).
+
+`prefers-reduced-motion: reduce` is honoured by:
+
+```css
+@media (prefers-reduced-motion: reduce) {
+  .crt-roll       { animation: none; }
+  .crt-content    { text-shadow: none; }
+}
+```
+
+The roll stops, the chromatic aberration disappears (some users find the channel split actively painful). Scanlines and vignette remain — they're appearance, not motion.
 
 ## Performance
 
-- Single repeating-gradient + radial-gradient + one keyframe — total of three GPU-composited layers per instance. Several CRTScreens on a page do not measurably slow paint.
-- No JavaScript runs after mount; all derived state is `$derived` over props.
-- No fonts loaded, no images, no SVG, no canvas — everything ships in the component CSS.
+- **Three or four overlay layers per instance** — scanlines (always), roll (always, may be `animation: none`), vignette (optional), curved-glass `::before` (optional).
+- **All four are GPU-composited.** The repeating-linear-gradient and radial-gradient compute once per layout, not per frame.
+- **One animated keyframe per instance** if `roll > 0`. Otherwise zero.
+- **No JS per frame.** All derived state is `$derived` over props.
+- **No measurement, no observers.** The wrapper sizes to its content; overlays use `inset: 0` and adapt naturally.
+- **Stack many CRTScreens?** Each one adds 3-4 compositor layers. A page of 20 instances uses ~80 layers, which modern compositors handle but is on the higher end. For a list of CRTScreens, consider gating the heavier (`curved`, `aberration`, `roll`) features behind a `is-visible` IntersectionObserver in your wrapper.
+
+## State Flow Diagram
+
+```
+                  ┌─────────────────────────────┐
+                  │  render with props          │
+                  │  derived: profile, scan,    │
+                  │  aberration, rollCfg        │
+                  └────────────┬────────────────┘
+                               │ mount (no JS work)
+                               ▼
+              ┌────────────────┬─────────────────┐
+              │                │                 │
+              │ roll > 0       │ roll = 0/false  │
+              ▼                ▼                 │
+       ┌──────────────┐ ┌──────────────┐        │
+       │  rolling     │ │  steady      │        │
+       │  band drifts │ │  no anim     │        │
+       │  top→bottom  │ │  on roll     │        │
+       │  forever     │ │  layer       │        │
+       └──────────────┘ └──────────────┘        │
+                               │                 │
+              ┌────────────────┼─────────────────┘
+              ▼                ▼
+       ┌──────────────┐ ┌──────────────┐
+       │ aberration=0 │ │ aberration>0 │
+       │ → text-shadow│ │ → R/B ghost  │
+       │   'none'     │ │   on content │
+       └──────────────┘ └──────────────┘
+
+  prefers-reduced-motion: reduce
+    → roll animation: none
+    → text-shadow: none on content
+    → scanlines + vignette stay
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `profile` | `'amber' \| 'green' \| 'broadcast' \| 'modern'` | `'amber'` | Named colour profile. Unknown values fall back to `amber`. |
+| `density` | `number` | `3` | Scanline cycle height in pixels. Clamped to `>= 1` and rounded to a positive integer. |
+| `intensity` | `number` | `1` | Scanline alpha multiplier. Clamped to `[0, 1]`; `0` flattens the lines to invisible. |
+| `aberration` | `number` | `1` | Chromatic-aberration offset in pixels. `0` removes the text-shadow entirely. |
+| `roll` | `boolean \| number` | `false` | Tracking-roll speed. `true` → 3, `false`/`0` → off, `1`–`10` → explicit speed mapped to 18s → 1.8s duration. |
+| `vignette` | `boolean` | `true` | Render the corner-darkening radial overlay. |
+| `curved` | `boolean` | `false` | Round the inner screen corners and add an inset shadow for a glassy feel. |
+| `class` | `string` | `''` | Extra CSS classes on `.crt-root`. |
+| `children` | `Snippet` | optional | The content being framed. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Unknown `profile` name | `pickProfile` falls back to `amber`. |
+| `density` < 1 / `NaN` | Clamped to `1` and rounded; `density=0` would mean "every pixel is a scanline" which would just black out the content. |
+| `intensity` outside `[0, 1]` | Clamped at the helper level; CSS receives a sane value. |
+| `intensity` = 0 | Scanlines become transparent (invisible); other overlays remain. |
+| `aberration` = 0 | `buildAberrationShadow` returns `'none'`; content renders crisply. |
+| `aberration` very large (e.g. 20) | Text-shadow renders huge ghosts; layout doesn't shift, but legibility drops. Practical max ~3 px. |
+| `roll` = `Infinity` / `NaN` | `Math.max(0, Math.min(10, speed))` returns `NaN`; `rollSchedule` returns `{ animationName: 'none' }` and the animation doesn't run. |
+| `prefers-reduced-motion: reduce` | Roll animation killed; aberration `text-shadow` disabled. Scanlines + vignette stay. |
+| Component scrolled offscreen | Browser throttles compositor layer. Roll animation pauses naturally on hidden tabs. |
+| Wrapper resized | Overlays use `inset: 0` and `repeating-linear-gradient` is layout-independent — adapts naturally without `ResizeObserver`. |
+| Hi-DPI / retina | `repeating-linear-gradient` lines render at CSS pixels; on retina a 1 px line is sub-pixel and may anti-alias. Increase `intensity` to push the line height to 2+ px on retina screens. |
+| GPU acceleration unavailable | Mix-blend-modes fall back to CPU compositing; rolling band may stutter. Drop `roll` to `false` if frame-rate suffers. |
+| Content slot uses `position: absolute` | Escapes the screen frame; usually not what you want. Wrap the absolute child in a relative container. |
+| Content overflow | `.crt-root` has `overflow: hidden`; long slots crop at the screen edges. Add a scroll container inside the slot if you need vertical scrolling. |
+| Browser without `mix-blend-mode` (very old) | Scanlines and roll render at full opacity instead of blending — cosmetically uglier, still functional. Modern browsers all support it. |
+| Multiple instances, same `roll` value | They all roll in lockstep — same keyframe, same duration. Add per-instance `animation-delay` via the `class` prop if you want staggered rolls. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props`, `$derived`, snippets. Module-script exports (`pickProfile`, `buildScanlineGradient`, `buildAberrationShadow`, `rollSchedule`, `isReducedMotion`) for unit testing.
+- Zero external dependencies — pure CSS gradients and one keyframe. No fonts loaded, no images, no SVG, no canvas.
+
+## File Structure
+
+```
+src/lib/components/CRTScreen.svelte         # implementation + module-level helpers
+src/lib/components/CRTScreen.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/CRTScreen.test.ts        # vitest unit tests
+src/routes/crtscreen/+page.svelte           # demo page
+```

@@ -1,144 +1,188 @@
----
-name: TickerTape
-category: Helpful UX
-author: tfeclaude
-status: shipped
----
+# TickerTape — Technical Logic Explainer
 
-# TickerTape
+## What Does It Do? (Plain English)
 
-A horizontal infinite-scroll display of **structured** data points. Each item is a tuple of `{label, value, delta?, trend?, href?}` rather than arbitrary content — Bloomberg / airport-info-board energy, but as a portable Svelte 5 primitive.
+TickerTape is a horizontal infinite-scroll display of structured data points — Bloomberg's stock crawl, a sports score crawl, an airport status board. Each item is a tuple of `{label, value, delta?, trend?}` rather than arbitrary content, so colour and glyph cues (▲ green for up, ▼ red for down) can be inferred consistently.
 
-The track holds two copies of the items list back-to-back; a single CSS keyframe translates the track by exactly `-50%` so the wrap seam is always off-screen. Hover pauses via `animation-play-state` — that's it. Zero `requestAnimationFrame`, zero canvas, zero JS frame loop, zero resize observer.
+The whole thing is one CSS `@keyframes` animating `translateX(-50%)` on a track that holds **two copies** of the items list back-to-back. When the first copy has slid fully off-screen, the duplicate has just slid into the same position — the seam is always off-screen and the loop is invisible. Pause-on-hover toggles `animation-play-state` only.
 
-## Key features
-
-- **Four named variants** — `default` (slate mono), `finance` (dark navy + amber numerals + green/red deltas), `sports` (deep teal scoreboard), `minimal` (transparent, hairline-bordered for light dashboards). Each carries its own colour grammar, weight and tabular numeral treatment.
-- **Trend chevrons** — `up` / `down` / `flat`. Inferred from `delta` sign automatically (`>0` → up, `<0` → down, `=0` → flat) or set explicitly per item via the `trend` field. Glyphs: green ▲, red ▼, grey ▬.
-- **Delta formatting** — `formatDelta(n)` produces `+1.20%` / `-0.43%` / `0.00%` (no leading sign on zero). Empty string for `undefined` / `NaN` / `±Infinity`.
-- **Pure CSS keyframe scroll** — single GPU compositor effect on `transform: translate3d(...)` with `will-change: transform`. Pause-on-hover via `animation-play-state: paused`, no JS handler.
-- **Configurable speed** (px/s, default 60, clamped `[1, 1000]`) and **direction** (`left` / `right` via `animation-direction: reverse`).
-- **Edge fade** via `mask-image: linear-gradient(...)` so items slide in/out softly on both ends — no hard cut at the viewport edge.
-- **Optional `href` per item** wraps it as a focus-visible anchor. Without `href`, items render as `<span>`.
-- **prefers-reduced-motion: reduce** → animation off via CSS `@media`, strip stays readable as a static row.
-- **SR-friendly** — outer wrapper is `role="marquee"` with `aria-live="off"` (animated content shouldn't announce per cycle). Pass `aria-label` to describe the strip's purpose. The duplicated second copy is `aria-hidden="true"` so screen readers see each item once.
-- **Pure helpers exported from the module-script** (`pickVariant`, `pickDirection`, `clampSpeed`, `inferTrend`, `formatDelta`, `trendGlyph`, `isValidVariant`, `isValidDirection`, `isReducedMotion`) — directly unit-testable without rendering.
-
-## Usage
-
-```svelte
-<script lang="ts">
-	import TickerTape from '$lib/components/TickerTape.svelte';
-	import type { TickerItem } from '$lib/components/TickerTape.svelte';
-
-	const stocks: TickerItem[] = [
-		{ label: 'AAPL', value: '$187.42', delta: 1.24 },
-		{ label: 'MSFT', value: '$418.05', delta: -0.43 },
-		{ label: 'GOOGL', value: '$142.66', delta: 0.87, href: '/stocks/googl' }
-	];
-</script>
-
-<!-- Default mono -->
-<TickerTape items={stocks} />
-
-<!-- Finance variant, faster, no pause-on-hover -->
-<TickerTape items={stocks} variant="finance" speed={120} pauseOnHover={false} />
-
-<!-- Custom separator, right-to-left -->
-<TickerTape items={stocks} variant="minimal" direction="right" separator="·" />
-```
-
-## Props
-
-| Prop           | Type                                                    | Default     | Notes                                                                       |
-| -------------- | ------------------------------------------------------- | ----------- | --------------------------------------------------------------------------- |
-| `items`        | `TickerItem[]`                                          | `[]`        | Empty array → renders nothing (no track, no animation).                     |
-| `variant`      | `'default' \| 'finance' \| 'sports' \| 'minimal'`       | `'default'` | Unknown values fall back to `default`.                                      |
-| `direction`    | `'left' \| 'right'`                                     | `'left'`    | Unknown values fall back to `left`.                                         |
-| `speed`        | `number` (px/s)                                         | `60`        | Clamped to `[1, 1000]`. NaN / ±Infinity / non-numeric → fallback `60`.      |
-| `pauseOnHover` | `boolean`                                               | `true`      | Toggles `animation-play-state: paused` on hover/focus.                      |
-| `separator`    | `string`                                                | `'•'`       | Glyph rendered between items. Set `''` to omit.                             |
-| `class`        | `string`                                                | `''`        | Extra classes on the outer wrapper.                                         |
-
-### `TickerItem` shape
-
-| Field   | Type                          | Required | Notes                                                                       |
-| ------- | ----------------------------- | -------- | --------------------------------------------------------------------------- |
-| `label` | `string`                      | yes      | Ticker symbol / category / short caption.                                   |
-| `value` | `string \| number`            | yes      | The headline figure. Number values render with tabular numerals.            |
-| `delta` | `number`                      | no       | Signed percent. Drives chevron + colour when `trend` is unset.              |
-| `trend` | `'up' \| 'down' \| 'flat'`    | no       | Explicit trend. Wins over `delta` sign — useful for categorical states.     |
-| `href`  | `string`                      | no       | If present, the item renders as `<a href>` (focus-visible).                 |
-
-## How it works
-
-The component renders a wrapper, an inner track, and the items list — twice, back-to-back:
+## How It Works (Pseudo-Code)
 
 ```
-.tickertape (wrapper, mask-image fade, role="marquee")
-  └ .tickertape__track (animated translateX)
-      ├ items copy 0 (live)
-      └ items copy 1 (aria-hidden)
+state:
+  none — every behaviour is encoded in CSS
+
+derive (sanitised):
+  safeVariant   = 'default' | 'finance' | 'sports' | 'minimal'
+  safeDirection = 'left' | 'right'
+  safeSpeed     = clamp(speed, 1..1000)            // px/s
+  trackWidth    = items.length * 220               // estimated avg item width
+  durationSec   = trackWidth / safeSpeed
+
+helpers (pure, exported):
+  pickVariant(name), pickDirection(name)           → safe defaults
+  clampSpeed(n, fallback=60)                        → 1..1000
+  inferTrend(item) → 'up' | 'down' | 'flat'
+    explicit item.trend wins
+    else: delta > 0 → up, delta < 0 → down, else → flat
+  formatDelta(delta) → '+1.23%' | '-0.45%' | ''
+  trendGlyph(trend) → '▲' | '▼' | '▬'
+
+render:
+  <div class="tickertape" style="--tickertape-duration: {durationSec}s">
+    <div class="tickertape__track">
+      {#each [0, 1] as copy}                       // double the items
+        {#each items as item}
+          ...label, value, delta...
+          <span class="tickertape__sep">{separator}</span>
+        {/each}
+      {/each}
+    </div>
+  </div>
+
+CSS:
+  @keyframes tickertape-scroll {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }    // exactly half = one full items copy
+  }
+  .tickertape__track { animation: tickertape-scroll var(--tickertape-duration) linear infinite; }
+  .tickertape--right .tickertape__track { animation-direction: reverse; }
+  .tickertape--pause-on-hover:hover .tickertape__track { animation-play-state: paused; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tickertape__track { animation: none !important; transform: translate3d(0,0,0); }
+  }
 ```
 
-A single CSS keyframe `tickertape-scroll` translates the track from `0` to `-50%` over a duration computed from `items.length × ITEM_WIDTH / speed`. Because copy 1 is identical to copy 0, the wrap seam at `-50%` is invisible — it loops cleanly and the strip appears infinite.
+## The Core Concept: 50% Translate Across a Doubled Track
 
-`direction="right"` flips the keyframe via `animation-direction: reverse` (no separate keyframe needed).
+Naive marquee implementations either re-mount items on a JS interval (jitters) or `translateX(-100%)` and snap (visible seam). TickerTape duplicates the items list and translates by exactly `-50%` — the second copy occupies the exact same pixel space the first copy did at `0%`, so when the keyframe restarts there is no jump.
 
-`pauseOnHover` adds a class that sets `animation-play-state: paused` on `:hover`. This costs nothing — the GPU compositor freezes the transform, no JS runs.
+```
+  items = [A, B, C, D]    — 4 items
+  track DOM = [A, B, C, D, A, B, C, D]   — 8 items, 2× width
 
-## Pure helpers (module-script exports)
+  At t=0:    track is at 0%
+   ┌─────────────────────────────────────────────────┐
+   │ A   B   C   D   A   B   C   D                   │
+   └─────────────────────────────────────────────────┘
+   ◀── visible window ──▶
 
-- `pickVariant(name)` → `TickerVariant`. Falls back to `'default'`.
-- `pickDirection(name)` → `TickerDirection`. Falls back to `'left'`.
-- `clampSpeed(n, fallback?)` → `number` in `[1, 1000]`. NaN / ±Infinity / non-numeric → fallback (default 60).
-- `inferTrend(item)` → `'up' | 'down' | 'flat'`. Explicit `trend` wins; otherwise from `delta` sign.
-- `formatDelta(delta)` → `string`. `+1.20%` / `-0.43%` / `0.00%` / `''` for nullish/non-finite.
-- `trendGlyph(trend)` → `'▲' | '▼' | '▬'`.
-- `isValidVariant(name)` / `isValidDirection(name)` — type guards.
-- `isReducedMotion()` → `boolean`. Returns `false` outside the browser.
+  At t=duration/2:  track is at -25%
+   ┌─────────────────────────────────────────────────┐
+   │       A   B   C   D   A   B   C   D             │
+   └─────────────────────────────────────────────────┘
+       ◀── visible window ──▶
 
-## Accessibility
+  At t=duration:    track is at -50%
+   ┌─────────────────────────────────────────────────┐
+   │             A   B   C   D   A   B   C   D       │
+   └─────────────────────────────────────────────────┘
+                ◀── visible window ──▶
+   keyframe restarts at 0% — visible content has not moved
+   because the second copy of A,B,C,D was sitting at exactly
+   the position the first copy occupied at t=0.
+```
 
-- The outer wrapper is `role="marquee"` with `aria-live="off"` — animated, looping content should not be re-announced on each cycle. Pass `aria-label="Live stock prices"` (or similar) so screen readers describe the strip's purpose once.
-- Each rendered copy of the items list contains the same data; the second copy is `aria-hidden="true"` so SR users see each item exactly once.
-- Items with `href` render as `<a>` with default focus-visible styling. They participate in tab order and are keyboard-activatable.
-- Under `prefers-reduced-motion: reduce`, a CSS `@media` rule freezes the keyframe — the strip displays the first frame statically. Content remains fully readable; a horizontal-scroll-on-tab fallback is **not** added (the static frame is the contract under reduced-motion).
-- Trend chevrons (▲ / ▼ / ▬) sit alongside the formatted delta string; the colour is decorative and the percent sign carries the semantic information.
+The first copy is fully in view; the duplicate is purely structural to bridge the wrap. `aria-hidden="true"` is set on the second-copy items so screen readers don't announce them twice.
+
+`durationSec = (items.length * 220) / safeSpeed` gives a stable `px/s` velocity regardless of item count. The 220 px estimate is an average — real layout governs visuals; this is just a reasonable knob mapping speed to duration.
+
+## CSS Animation Strategy
+
+Three things make the scroll feel right.
+
+**One — `linear` easing.** Any other curve would visibly accelerate or decelerate; a ticker should crawl at constant speed.
+
+**Two — `translate3d` (not `translateX`).** Forces a GPU layer; the compositor handles the animation without invalidating layout.
+
+**Three — `mask-image` on the wrapper.** A linear gradient fades the leftmost and rightmost 4% of the strip to transparent, so items don't pop into view at the edges:
+
+```css
+.tickertape {
+  mask-image: linear-gradient(to right, transparent 0, #000 4%, #000 96%, transparent 100%);
+}
+```
+
+Pause-on-hover is `animation-play-state: paused` — no JS, no event listener. Reverse direction is `animation-direction: reverse`. Both compose with the same single keyframe.
 
 ## Performance
 
-- One keyframe animates a single `transform: translate3d(...)` on the track — the cheapest possible GPU compositor effect.
-- The track renders 2× the items (just enough for a seamless wrap); no resize observer, no measurement loop, no rAF.
-- `will-change: transform` hints the GPU once.
-- Pause-on-hover costs nothing — `animation-play-state` flips, no JS handler.
-- The `mask-image` fade is a static gradient applied to the wrapper — no per-frame work.
+- Zero rAF, zero `setInterval`, zero `ResizeObserver`. Every scroll is paint-only and runs on the GPU compositor.
+- Track renders 2× items — that's the **only** duplication. No 4×, no measurement loop, no responsive re-render.
+- `will-change: transform` hints the browser to keep the track on its own layer.
+- Pause cost: a single CSS property flip on `:hover`. Resume: same.
+- `<TickerTape items={...} variant="finance" />` is safe to drop multiple instances on the same page; they all share the GPU compositor pipeline.
 
-## Distinct from
+## State Flow Diagram
 
-- **`Marquee`** / **`MarqueeDraggable`** — those scroll arbitrary children; TickerTape scrolls a *structured* `TickerItem[]` with built-in label/value/delta/trend grammar.
-- **`Typewriter`** / **`SplitFlap`** / **`KineticHeadline`** — single-string text effects. TickerTape is a *strip* of structured items.
-- **`StatCard`** — single static KPI card. TickerTape is the moving multi-item version.
-- **`AnimatedCounter`** / **`CountUp`** — animate the numeric value of a single figure. TickerTape doesn't animate the values themselves; it scrolls the strip.
+```
+  [mounted with items.length > 0]
+        │
+        │  CSS animation starts immediately on render
+        ▼
+  [scrolling] ── translate3d(0) → translate3d(-50%) ── loops forever
+        │
+        │  hover, pauseOnHover = true
+        ▼
+  [paused]
+        │
+        │  hover ends
+        ▼
+  [scrolling]
 
-## When to use
+  prefers-reduced-motion: reduce
+        │
+        ▼
+  [static]   animation: none; track at translate3d(0)
+              first copy fully readable as a static row
+```
 
-- **Stock / crypto / FX prices** with deltas — the flagship case. The `finance` variant is purpose-built.
-- **Live sports scores** along the top of a broadcast page or scoreboard.
-- **Status feeds** — system health, deployment state, build status. Use the `default` or `minimal` variant with `trend` set explicitly per item (categorical states).
-- **Key metrics in a dashboard hero** — the `minimal` variant slots quietly above the fold.
-- **Airport / station info boards** — flight numbers, gate, status.
+## Props Reference
 
-## When _not_ to use
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `items` | `TickerItem[]` | `[]` | Array of `{ label, value, delta?, trend?, href? }`. Empty array hides the track. |
+| `speed` | `number` | `60` | Pixels per second. Clamped to `1..1000`. |
+| `direction` | `'left' \| 'right'` | `'left'` | Scroll direction. `'right'` flips `animation-direction: reverse`. |
+| `pauseOnHover` | `boolean` | `true` | Stop the scroll while the pointer is over the wrapper. |
+| `separator` | `string` | `'•'` | Glyph rendered between items. |
+| `variant` | `'default' \| 'finance' \| 'sports' \| 'minimal'` | `'default'` | Theme tokens — colour grammar, padding, font size. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+| `aria-label` | `string` | `'Ticker tape'` | Region label for screen readers. |
 
-- For free-form scrolling content (logos, testimonials, images) — use `Marquee` / `MarqueeDraggable` instead. TickerTape's data shape is structured tuples.
-- For single-value emphasis — use `StatCard` or `CountUp` for one figure with a label.
-- For high-frequency updating data where each tick should re-announce — TickerTape sets `aria-live="off"` deliberately. If you need announcements, layer a separate visually-hidden `aria-live="polite"` region.
+`TickerItem`:
+| Field | Type | Notes |
+|-------|------|-------|
+| `label` | `string` | Uppercased, muted colour. |
+| `value` | `string \| number` | Bold, brand-coloured. |
+| `delta` | `number` (optional) | Used to infer `trend` if not set; rendered as `+1.23%` / `-0.45%`. |
+| `trend` | `'up' \| 'down' \| 'flat'` (optional) | Explicit override; otherwise inferred from `delta` sign. |
+| `href` | `string` (optional) | Wraps the item in an `<a>` with focus-visible styles. |
 
-## Recipes
+## Edge Cases
 
-- **Live stock board**: `<TickerTape items={prices} variant="finance" speed={70} aria-label="Live stock prices" />`
-- **Scoreboard**: `<TickerTape items={scores} variant="sports" speed={55} aria-label="Live scores" />`
-- **Status feed**: `<TickerTape items={statusItems} variant="default" speed={45} aria-label="System status" />`
-- **Dashboard hero metrics**: `<TickerTape items={metrics} variant="minimal" speed={50} />`
-- **Bidirectional rows** (one left, one right): two stacked TickerTapes with opposite `direction` props for visual variety.
+| Situation | Behaviour |
+|-----------|-----------|
+| `items` is `[]` | Track is not rendered; wrapper still exposes `role="marquee"`. |
+| `speed = 0` or non-finite | `clampSpeed` returns the fallback `60`. |
+| `items` very long | `durationSec` scales linearly, so `px/s` stays constant — the scroll just takes longer to repeat. |
+| Item with `delta` but no `trend` | `inferTrend` reads delta sign — positive → up, negative → down, zero → flat. |
+| `href` on an item | Renders as `<a>` with focus-visible outline; AT can Tab to it. The duplicate copy is `aria-hidden="true"` so it isn't announced or focused twice. |
+| User has `prefers-reduced-motion: reduce` | Animation cancelled; track sits at `translate3d(0)` — the first copy reads as a static, readable row. |
+| `variant` unknown string | `pickVariant` falls back to `'default'`. |
+| Surrogate-pair glyph in label/value (emoji, CJK) | Rendered as a single token — no string-based slicing happens. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$derived`, `$props`.
+- Zero external dependencies — pure Svelte 5 + scoped CSS.
+
+## File Structure
+
+```
+src/lib/components/TickerTape.svelte   # implementation
+src/lib/components/TickerTape.md       # this file (rendered inside ComponentPageShell)
+src/lib/components/TickerTape.test.ts  # vitest unit tests for the pure helpers
+src/routes/tickertape/+page.svelte     # demo page
+```

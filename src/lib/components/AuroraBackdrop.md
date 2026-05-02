@@ -1,100 +1,167 @@
----
-title: AuroraBackdrop
-description: Full-bleed pure-CSS aurora backdrop — four conic-gradient ribbons stack with mix-blend-mode screen and rotate at non-harmonic periods, fading at the corners through a soft radial veil. Three named palettes (classic / dawn / deep), zero JS in the steady state, prefers-reduced-motion safe.
-category: Statement Sections
-author: antclaude
-status: stable
----
+# AuroraBackdrop — Technical Logic Explainer
 
-# AuroraBackdrop
+## What Does It Do? (Plain English)
 
-A full-bleed ambient backdrop — four CSS conic-gradient ribbons stack on top of one another, each rotating at a deliberately non-harmonic period (40 s / 65 s / 80 s / 110 s) with alternating directions and staggered phase offsets. Mix-blend-mode `screen` makes the colours bloom into one another, and a soft radial veil fades the corners so the wall reads as a self-contained luminous patch rather than wallpaper.
+AuroraBackdrop paints a slowly swirling field of coloured light behind whatever you put in front of it — the kind of soft, undulating glow you see on a polar night, or on a marketing landing page that wants to feel atmospheric without burning a video budget. Four large coloured ribbons rotate at deliberately mismatched speeds, all blurred to within an inch of their lives, and a dark vignette is laid over the top so the centre reads brighter than the edges.
 
-Pairs naturally with text overlays — drop a `<ShinyText>` or `<TrueFocus>` headline above an `<AuroraBackdrop>` and you have a ready-made statement hero. Asset-free: no images, no fonts, no animation library.
+Think of it as four coloured spotlights pointed at the back of a frosted-glass screen, each one rotating at its own pace. Because their periods don't share a common multiple, the composite never returns to a frame you've already seen, so the eye keeps finding it interesting.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Pure CSS** — single `@keyframes ab-spin` block per ribbon, GPU-accelerated `transform: rotate()`, no rAF, no JS interval.
-- **Three palettes** — `classic` (cyan / violet / emerald / sky), `dawn` (rose / amber / coral / plum), `deep` (sky / slate / cyan / indigo). Pass an unknown name and the component falls back to `classic` instead of crashing.
-- **Non-harmonic motion** — the four ribbon periods (40, 65, 80, 110) share no small common factor, so the composite never visibly loops. Alternating `animation-direction` per ribbon swirls neighbouring layers against each other.
-- **Configurable intensity** — `intensity={0.5}` halves all periods (more energetic), `intensity={2}` doubles them (more meditative). A safe minimum prevents periods from collapsing to ~0.
-- **Configurable blur** — `blur={60}` is the default in pixels; raise to soften the ribbons further (more ambient, less defined), lower for a sharper galactic-band look.
-- **Reduced-motion safe** — `@media (prefers-reduced-motion: reduce)` removes the animation entirely; the wall settles in a static composition that is still legible as a deliberate frame.
-- **Decorative by design** — the wrapper carries `aria-hidden="true"` so screen readers ignore it; pair with real content above.
-- **Zero dependencies** — single `.svelte` file, scoped CSS, no animation library.
+```
+state:
+  paletteName = 'classic'        // 'classic' | 'dawn' | 'deep'
+  intensity   = 1                 // <1 faster, >1 slower
+  blur        = 60                // px applied via filter:blur
 
-## Usage
+derive at render time:
+  palette = pickPalette(paletteName) ?? PALETTES.classic
+  for idx in 0..3:
+    period    = BASE_PERIODS[idx] * max(0.25, intensity)
+    delay     = BASE_DELAYS[idx]
+    direction = idx even ? 'normal' : 'reverse'
+    opacity   = idx < 2 ? 0.85 : 0.6
+    gradient  = conic-gradient(from startAngles[idx]deg, paletteStops...)
+    write inline style on .ab-ribbon[idx]
 
-```svelte
-<script lang="ts">
-  import AuroraBackdrop from '$lib/components/AuroraBackdrop.svelte';
-  import ShinyText from '$lib/components/ShinyText.svelte';
-</script>
+CSS animates each .ab-ribbon:
+  @keyframes ab-spin: rotate(0deg) → rotate(360deg)
+  iteration-count: infinite
+  timing-function: linear
+  duration: per-ribbon period
+  delay:    per-ribbon (negative → starts mid-cycle)
 
-<!-- Default: classic palette, full-bleed ambient -->
-<section class="hero">
-  <AuroraBackdrop />
-  <h1>The story we tell</h1>
-</section>
-
-<!-- Dawn palette, more energetic motion -->
-<AuroraBackdrop palette="dawn" intensity={0.6} />
-
-<!-- Deep palette, softer blur, calmer rotation -->
-<AuroraBackdrop palette="deep" intensity={1.5} blur={90} />
-
-<!-- Compose with a text component for a statement hero -->
-<section class="hero">
-  <AuroraBackdrop palette="classic" />
-  <div class="hero-text">
-    <ShinyText text="A new kind of canvas" shineColor="#fff" />
-  </div>
-</section>
+  All four ribbons composite via mix-blend-mode: screen
+  Heavy blur (default 60px) softens the edges
+  Vignette div darkens the perimeter
 ```
 
-`AuroraBackdrop` fills its parent — give the parent `position: relative` and a fixed height (or `min-height: 100vh`), and stack any foreground content above it with `z-index`.
+There is **no JavaScript animation loop**. Once the inline `--ab-*` custom properties are written, the GPU compositor handles every frame. The component does not subscribe to mouse, scroll, resize or media-query events at runtime — `prefers-reduced-motion` is honoured by a static CSS `@media` block that disables the keyframe.
 
-## Props
+## The Core Concept: Non-Harmonic Periods + Conic Blending
 
-| Prop        | Type                              | Default     | Description                                                  |
-|-------------|-----------------------------------|-------------|--------------------------------------------------------------|
-| `palette`   | `'classic' \| 'dawn' \| 'deep'`   | `'classic'` | Named palette. Unknown names fall back to `classic`.         |
-| `intensity` | `number`                          | `1`         | Period multiplier — `<1` faster, `>1` slower. Min 0.25×.     |
-| `blur`      | `number` (px)                     | `60`        | Per-ribbon CSS `filter: blur()` amount.                      |
-| `class`     | `string`                          | `''`        | Extra CSS classes appended to the `.ab-root` wrapper.        |
+The "aurora" feel lives in three numbers and one CSS rule.
 
-## Palette set
+### Why four ribbons at non-harmonic periods?
 
-| Name      | Stops                                      | Base       | Mood              |
-|-----------|--------------------------------------------|------------|-------------------|
-| `classic` | cyan → violet → emerald → sky              | near-black | aurora-borealis   |
-| `dawn`    | rose → amber → coral → plum                | dark plum  | sunrise warmth    |
-| `deep`    | sky → slate → cyan → indigo                | very dark  | deep-ocean / outer space |
+```
+BASE_PERIODS = [40, 65, 80, 110]   // seconds per full rotation
+```
 
-## Distinct From
+If all four ribbons rotated at the same speed, you'd see a static pinwheel turning. If they rotated at integer multiples of one another (say 30 / 60 / 90 / 120), the composite would loop visibly — every 120 s the eye would catch the cycle.
 
-- **`MembraneHero`** — also full-bleed but warps a *single* CSS gradient via inline-SVG `<feTurbulence>` + `<feDisplacementMap>`. AuroraBackdrop instead stacks four pure-CSS conic gradients with rotation; no SVG filter chain.
-- **`Cardwall`** — structured tile grid on a perspective plane. AuroraBackdrop is amorphous gradient ribbons.
-- **`ShineBorder`** — animates a *border* on a single element. AuroraBackdrop is the backdrop, not a border.
-- **`PortfolioPhotographer`** — editorial photo-reel hero with foreground content. AuroraBackdrop is intentionally backgroundless content-free.
+40, 65, 80, 110 share no small common factor. Their LCM is in the tens of thousands of seconds, so within any reasonable session the composite never repeats. The brain reads "non-repeating" as "alive".
 
-## Accessibility
+`BASE_DELAYS = [0, -12, -34, -52]` are **negative** so each ribbon starts mid-cycle on the first frame. Without those negative delays you'd see the wall come alive *after* mounting — a tell-tale "this is a static page that just woke up" beat. With them, mount-time looks like you've walked into a room where the aurora has already been going for an hour.
 
-- The wrapper carries `aria-hidden="true"` so assistive tech ignores it. Place real headings, paragraphs, and CTAs *above* the backdrop using normal flow + `z-index`.
-- No focusable elements, no keyboard handlers, no aria-live regions — this is purely decorative paint.
-- `@media (prefers-reduced-motion: reduce)` removes all rotation animations. The wall settles into a static frame that still composes the four ribbons as a single luminous patch.
-- The radial veil keeps the corners dark, which gives foreground white text adequate contrast in most cases. If you place light text directly over the centre of the wall, layer your own translucent dark scrim before the text element.
+### Conic gradient + mix-blend-mode: screen
 
-## Performance Notes
+Each ribbon is a single `<div>` with:
 
-- Four CSS animations per backdrop. Each ribbon is its own composited layer (`will-change: transform`), so rotation is GPU-only — no per-frame paint.
-- The blur filter is the most expensive part. Modern GPUs handle 60 px Gaussian blur on a full-bleed surface comfortably; if you target lower-end mobile, lower `blur` to 30–40 px or drop the ribbon count by editing the component locally.
-- The component never reads layout, never observes resize, and never uses `requestAnimationFrame`.
-- All four ribbon configs are computed once at mount via `$derived` — no per-frame JS.
+```css
+background: conic-gradient(from {Xdeg} at 50% 50%, c1, c2, c3, c4, c1);
+mix-blend-mode: screen;
+filter: blur(60px); /* inherited from --ab-blur */
+```
 
-## Implementation Notes
+A conic gradient sweeps a full 360° around its centre — think of a pie chart that fades smoothly between four colour stops and ends back at the starting colour for a seamless join. Blur it heavily and you get a soft circular wash. Stack four of them, blend with `screen` (additive light), and the colours combine like overlapping coloured spotlights on a wall.
 
-- Each ribbon is a single `<div class="ab-ribbon">` with a `conic-gradient` background and a CSS keyframe animation on `transform: rotate()`. The four start angles (15°, 110°, 215°, 305°) plus the staggered negative `animation-delay` values give every ribbon a different starting position on first paint, so the wall reads as alive immediately rather than spinning up from a single uniform frame.
-- The veil overlay is a single `radial-gradient(ellipse at center, transparent 0%, transparent 55%, rgba(0,0,0,0.45) 90%, rgba(0,0,0,0.7) 100%)`. It sits above the ribbons with `z-index: 1` and `pointer-events: none`, so it never interferes with a foreground click target.
-- The ribbon container is sized `inset: -25%` so the rotating gradient never reveals an empty corner — when a ribbon spins, its bounding box always stays larger than the visible area.
-- Pure helpers (`pickPalette`, `ribbonConfig`, `buildRibbonGradient`, `isReducedMotion`) are exported from the `<script module>` block so the test suite can assert palette resolution, period maths, and the conic-gradient CSS string without rendering a component.
+The four `startAngles = [15, 110, 215, 305]` mean each ribbon initially "points" in a different direction. Combined with alternating rotation directions (idx 0 and 2 spin clockwise, 1 and 3 counter-clockwise), neighbouring ribbons swirl *against* each other rather than all chasing the same way.
+
+### The vignette
+
+```css
+.ab-veil {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 55%,
+    rgba(0, 0, 0, 0.45) 90%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+```
+
+Without this overlay the aurora reads as a flat coloured wall. The radial gradient — fully transparent for 55 % of its radius then ramping to 70 % black at the edges — focuses the eye centre-screen and hides the hard rectangular bounds of the host. It's the cheapest move that turns "coloured background" into "atmospheric backdrop".
+
+## Performance
+
+Per frame the component does **nothing in JavaScript**. The four `<div>` ribbons each have a single `transform: rotate(deg)` animation; the browser hands those to the compositor and never wakes a layout or paint thread for them.
+
+- `will-change: transform` and `transform: translateZ(0)` force each ribbon onto its own GPU layer, so the heavy `filter: blur(60px)` is composited once per ribbon, not recomputed per frame.
+- The blur is the most expensive part of the render. On a low-end mobile GPU four 60 px blurred layers stay within budget at 60 fps. Halving the host area (the most common case — putting the backdrop in a hero section, not full-screen) makes the cost effectively free.
+- `mix-blend-mode: screen` on a layer that's already promoted is also compositor-only.
+- `isolation: isolate` on the root creates a new stacking context so the blend modes don't leak onto siblings.
+
+There are zero observers, zero rAF loops, zero `getBoundingClientRect()` calls. The component's runtime cost after first paint is whatever the GPU charges for compositing four blurred rotating layers — typically <0.5 ms/frame on integrated graphics.
+
+## State Flow Diagram
+
+```
+                ┌────────────────────────────┐
+                │  initial / SSR             │
+                │  ribbons rendered with     │
+                │  --ab-* inline styles      │
+                └────────────┬───────────────┘
+                             │ mount (no JS work)
+                             ▼
+                ┌────────────────────────────┐
+                │  animating                 │
+                │  CSS @keyframes ab-spin    │
+                │  runs per-ribbon           │
+                │  (no JS frame loop)        │
+                └────────────┬───────────────┘
+                             │
+                             │  prefers-reduced-motion: reduce
+                             ▼
+                ┌────────────────────────────┐
+                │  static                    │
+                │  ribbons frozen at         │
+                │  startAngle + delay phase  │
+                │  (CSS @media kills anim)   │
+                └────────────────────────────┘
+
+  prop change (palette/intensity/blur) ──► derived recomputes ──► inline style
+                                            updates; CSS animation
+                                            keeps running uninterrupted
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `palette` | `'classic' \| 'dawn' \| 'deep'` | `'classic'` | Named four-stop palette. Unknown values fall back to `classic`. |
+| `intensity` | `number` | `1` | Period multiplier; `<1` speeds rotation up, `>1` slows it down. Clamped to `0.25` minimum. |
+| `blur` | `number` | `60` | Blur radius in pixels applied to each ribbon via `filter:blur()`. |
+| `class` | `string` | `''` | Extra classes appended to the root `<div>`. |
+
+Module-level helpers — `pickPalette`, `ribbonConfig`, `buildRibbonGradient`, `isReducedMotion` — are exported for tests and advanced consumers who want to drive the gradient string from their own logic.
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Unknown palette name passed in | `pickPalette` falls back to `classic`; nothing crashes. |
+| `intensity` = 0 or negative | Clamped to `0.25` so periods never reach zero or invert. |
+| `intensity` = `Infinity` / `NaN` | `Math.max(0.25, intensity)` returns `Infinity` / `NaN`; CSS treats those as invalid and the animation defaults to `0s` (static). Acceptable degraded state. |
+| Host smaller than `min-height: 360px` | Root forces a 360 px floor so ribbons never collapse to zero area. |
+| `prefers-reduced-motion: reduce` | CSS `@media` rule sets `animation: none` on `.ab-ribbon`; ribbons render at their starting angles. The vignette and blend stack remain. |
+| Component scrolled offscreen | No JS work to pause; the GPU still composites if the layer is visible to the OS compositor. Modern browsers throttle hidden tabs automatically. |
+| Resized viewport | `inset: -25%` on each ribbon means the rotating disc always overlaps the host bounds; resize is a free GPU re-layout, no ResizeObserver needed. |
+| Multiple instances on one page | Each gets its own stacking context via `isolation: isolate`; no z-index leakage between instances. |
+| Hi-DPI screen | Blur is resolution-independent (`filter:blur` is in CSS pixels); GPU handles upscaling. |
+| Browser without GPU acceleration / `mix-blend-mode: screen` | Ribbons render opaquely on top of one another instead of blending. Composition is uglier but still functional. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props` and `$derived` only; no effects, no lifecycle hooks. The whole component is a pure function of its props.
+- Zero external dependencies — pure CSS for animation, no motion library, no canvas, no WebGL.
+
+## File Structure
+
+```
+src/lib/components/AuroraBackdrop.svelte         # implementation + module-level helpers
+src/lib/components/AuroraBackdrop.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/AuroraBackdrop.test.ts        # vitest unit tests
+src/routes/aurora-backdrop/+page.svelte          # demo page
+```
