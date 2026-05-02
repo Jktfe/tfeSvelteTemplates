@@ -222,6 +222,12 @@
 					<td>Group label for assistive tech.</td>
 				</tr>
 				<tr>
+					<td><code>name</code></td>
+					<td><code>string</code></td>
+					<td>auto</td>
+					<td>Form name for the underlying radio group. Auto-generated if omitted.</td>
+				</tr>
+				<tr>
 					<td><code>onChange</code></td>
 					<td><code>(value) =&gt; void</code></td>
 					<td>—</td>

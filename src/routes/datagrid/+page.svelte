@@ -363,6 +363,12 @@
 					<td>Visual options on DataGridBasic.</td>
 				</tr>
 				<tr>
+					<td><code>compact</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Tighter row padding for dense tables (DataGridBasic).</td>
+				</tr>
+				<tr>
 					<td><code>editable</code> / <code>selectable</code> / <code>exportable</code></td>
 					<td><code>boolean</code></td>
 					<td><code>false</code></td>

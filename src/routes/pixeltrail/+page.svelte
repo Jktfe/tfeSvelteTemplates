@@ -129,20 +129,14 @@ $ ant deploy --target=mainnet
 				<tr>
 					<td><code>trailLength</code></td>
 					<td><code>number</code></td>
-					<td><code>20</code></td>
+					<td><code>16</code></td>
 					<td>Maximum live pixels (FIFO eviction).</td>
 				</tr>
 				<tr>
 					<td><code>duration</code></td>
 					<td><code>number</code></td>
-					<td><code>800</code></td>
+					<td><code>700</code></td>
 					<td>Per-pixel lifetime in milliseconds.</td>
-				</tr>
-				<tr>
-					<td><code>throttlePx</code></td>
-					<td><code>number</code></td>
-					<td>(size-derived)</td>
-					<td>Cursor distance between spawns.</td>
 				</tr>
 			</tbody>
 		</table>

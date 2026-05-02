@@ -173,10 +173,10 @@
 					<td>Backdrop blur in pixels.</td>
 				</tr>
 				<tr>
-					<td><code>dialogWidth</code></td>
+					<td><code>dialogWidth</code> / <code>dialogHeight</code></td>
 					<td><code>string</code></td>
-					<td><code>'560px'</code></td>
-					<td>Maximum dialog width.</td>
+					<td><code>'560px'</code> / <code>'auto'</code></td>
+					<td>Dialog dimensions. Pass any CSS length.</td>
 				</tr>
 				<tr>
 					<td><code>borderRadius</code></td>

@@ -129,7 +129,7 @@
 				<tr>
 					<td><code>duration</code></td>
 					<td><code>number</code></td>
-					<td><code>650</code></td>
+					<td><code>700</code></td>
 					<td>Per-child transition duration (ms).</td>
 				</tr>
 				<tr>
@@ -149,6 +149,18 @@
 					<td><code>number</code></td>
 					<td><code>0.15</code></td>
 					<td>IntersectionObserver visibility ratio that triggers the reveal.</td>
+				</tr>
+				<tr>
+					<td><code>rootMargin</code></td>
+					<td><code>string</code></td>
+					<td><code>'0px'</code></td>
+					<td>IntersectionObserver root margin — push triggers earlier or later.</td>
+				</tr>
+				<tr>
+					<td><code>intensity</code></td>
+					<td><code>number</code></td>
+					<td><code>1</code></td>
+					<td>Multiplier applied to <code>distance</code> for fine-tuning the travel.</td>
 				</tr>
 			</tbody>
 		</table>

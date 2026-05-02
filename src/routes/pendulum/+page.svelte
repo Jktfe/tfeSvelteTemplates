@@ -198,7 +198,7 @@
 				<tr>
 					<td><code>amplitude</code></td>
 					<td><code>number</code></td>
-					<td><code>20</code></td>
+					<td><code>18</code></td>
 					<td>Maximum swing angle in degrees.</td>
 				</tr>
 				<tr>
@@ -216,13 +216,13 @@
 				<tr>
 					<td><code>pivotOffset</code></td>
 					<td><code>{`{ x: number; y: number }`}</code></td>
-					<td><code>{`{ x: 0, y: 0 }`}</code></td>
+					<td><code>{`{ x: 0, y: -20 }`}</code></td>
 					<td>Pivot point relative to the wrapped element centre.</td>
 				</tr>
 				<tr>
 					<td><code>duration</code></td>
 					<td><code>number</code></td>
-					<td><code>5000</code></td>
+					<td><code>4000</code></td>
 					<td>Hard cap on swing duration in ms.</td>
 				</tr>
 				<tr>
@@ -230,6 +230,12 @@
 					<td><code>number</code></td>
 					<td><code>0</code></td>
 					<td>Delay before auto-triggers fire (ms).</td>
+				</tr>
+				<tr>
+					<td><code>threshold</code></td>
+					<td><code>number</code></td>
+					<td><code>0.4</code></td>
+					<td>IntersectionObserver visibility ratio for the <code>'viewport'</code> trigger.</td>
 				</tr>
 				<tr>
 					<td><code>swing()</code> / <code>stop()</code></td>

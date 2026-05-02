@@ -119,20 +119,20 @@
 				<tr>
 					<td><code>bars</code></td>
 					<td><code>number</code></td>
-					<td><code>16</code></td>
+					<td><code>12</code></td>
 					<td>Bar count. Clamped to <code>[1, 64]</code>.</td>
 				</tr>
 				<tr>
 					<td><code>height</code></td>
 					<td><code>number</code></td>
-					<td><code>96</code></td>
+					<td><code>48</code></td>
 					<td>Container height in pixels.</td>
 				</tr>
 				<tr>
 					<td><code>color</code></td>
 					<td><code>string</code></td>
-					<td><code>'currentColor'</code></td>
-					<td>Bar fill colour. Use <code>'auto'</code> for currentColor inheritance.</td>
+					<td><code>'auto'</code></td>
+					<td>Bar fill colour. <code>'auto'</code> inherits via currentColor.</td>
 				</tr>
 				<tr>
 					<td><code>speed</code></td>
@@ -151,6 +151,12 @@
 					<td><code>number</code></td>
 					<td><code>1</code></td>
 					<td>Deterministic silhouette seed for the inactive state.</td>
+				</tr>
+				<tr>
+					<td><code>ariaLabel</code></td>
+					<td><code>string</code></td>
+					<td><code>'Audio visualisation'</code></td>
+					<td>Screen-reader label for the animated graphic.</td>
 				</tr>
 			</tbody>
 		</table>

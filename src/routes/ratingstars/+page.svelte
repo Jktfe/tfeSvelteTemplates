@@ -119,6 +119,12 @@
 					<td>Group label announced by screen readers.</td>
 				</tr>
 				<tr>
+					<td><code>name</code></td>
+					<td><code>string</code></td>
+					<td>—</td>
+					<td>Form name. Renders hidden radio inputs for native form submission.</td>
+				</tr>
+				<tr>
 					<td><code>onChange</code></td>
 					<td><code>(value) =&gt; void</code></td>
 					<td>—</td>

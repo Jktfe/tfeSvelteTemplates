@@ -168,7 +168,9 @@
 			<tbody>
 				<tr><td><code>duration</code></td><td><code>number</code></td><td><code>40</code></td><td>Loop duration in seconds.</td></tr>
 				<tr><td><code>reverse</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Flip scroll direction.</td></tr>
-				<tr><td><code>pauseOnHover</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Static variant only — pause on hover.</td></tr>
+				<tr><td><code>vertical</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Scroll vertically instead of horizontally.</td></tr>
+				<tr><td><code>repeat</code></td><td><code>number</code></td><td><code>4</code></td><td>How many copies of the children to render — bump up for very short content.</td></tr>
+				<tr><td><code>pauseOnHover</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Static variant only — pause on hover.</td></tr>
 				<tr><td><code>dragEnabled</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Draggable variant only — enable click-and-drag.</td></tr>
 				<tr><td><code>dragMomentum</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Draggable variant only — apply momentum after release.</td></tr>
 			</tbody>

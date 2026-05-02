@@ -238,6 +238,36 @@
 					<td><code>undefined</code></td>
 					<td>Callback fired with scratch percentage (0–100).</td>
 				</tr>
+				<tr>
+					<td><code>width</code> / <code>height</code></td>
+					<td><code>string</code></td>
+					<td><code>'auto'</code></td>
+					<td>Container size. <code>'auto'</code> measures from the children.</td>
+				</tr>
+				<tr>
+					<td><code>disabled</code></td>
+					<td><code>boolean</code></td>
+					<td><code>false</code></td>
+					<td>Block scratch interaction (still renders the overlay).</td>
+				</tr>
+				<tr>
+					<td><code>progressColor</code></td>
+					<td><code>string</code></td>
+					<td><code>'#3b82f6'</code></td>
+					<td>Fill colour for the optional progress bar.</td>
+				</tr>
+				<tr>
+					<td><code>scratchTextColor</code> / <code>scratchTextSize</code></td>
+					<td><code>string</code></td>
+					<td><code>'#ffffff'</code> / <code>'24px'</code></td>
+					<td>Styling for the optional <code>scratchText</code> overlay.</td>
+				</tr>
+				<tr>
+					<td><code>allowReset</code> / <code>resetButtonText</code> / <code>skipText</code></td>
+					<td><code>boolean</code> / <code>string</code> / <code>string</code></td>
+					<td><code>true</code> / <code>'Reset'</code> / <code>'Skip'</code></td>
+					<td>Enable and label the reset and skip controls.</td>
+				</tr>
 			</tbody>
 		</table>
 	{/snippet}

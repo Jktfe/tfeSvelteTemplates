@@ -185,7 +185,8 @@
 				<tr><td><code>speed</code></td><td><code>number</code></td><td><code>60</code></td><td>Scroll speed in px/s, clamped 1–1000.</td></tr>
 				<tr><td><code>direction</code></td><td><code>"left" | "right"</code></td><td><code>"left"</code></td><td>Scroll direction.</td></tr>
 				<tr><td><code>pauseOnHover</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Pauses via animation-play-state.</td></tr>
-				<tr><td><code>separator</code></td><td><code>string</code></td><td><code>"·"</code></td><td>Glyph between items.</td></tr>
+				<tr><td><code>separator</code></td><td><code>string</code></td><td><code>"•"</code></td><td>Glyph between items.</td></tr>
+				<tr><td><code>aria-label</code></td><td><code>string</code></td><td><code>'Ticker tape'</code></td><td>Accessible label for the scrolling region.</td></tr>
 			</tbody>
 		</table>
 	{/snippet}
