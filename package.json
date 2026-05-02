@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "Production-ready Svelte 5 component templates with extensive documentation and examples",
 	"private": true,
-	"author": "James King <james@newmodel.vc>",
+	"author": "Jktfe (https://github.com/Jktfe)",
 	"license": "MIT",
 	"repository": {
 		"type": "git",

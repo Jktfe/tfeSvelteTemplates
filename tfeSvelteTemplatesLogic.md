@@ -374,4 +374,4 @@ Example format:
 ---
 
 **Last Updated**: 2026-01-07
-**Maintainer**: @Jktfe (James King)
+**Maintainer**: [@Jktfe](https://github.com/Jktfe)
