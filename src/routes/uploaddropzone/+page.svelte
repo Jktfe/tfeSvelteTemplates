@@ -141,7 +141,7 @@
 	{#snippet demo()}
 		<div class="upload-demo-stack">
 			<section>
-				<h3>Default · drag, drop, paste</h3>
+				<h4>Default · drag, drop, paste</h4>
 				<div class="upload-demo">
 					<div class="demo-main">
 						<UploadDropzone
@@ -160,7 +160,7 @@
 
 					<aside class="demo-side">
 						<section>
-							<h3>Activity</h3>
+							<h4>Activity</h4>
 							<ul class="activity-list">
 								{#each activityLog as item, i (i)}
 									<li>{item}</li>
@@ -170,7 +170,7 @@
 
 						{#if rejectedFiles.length}
 							<section class="rejections">
-								<h3>Rejected</h3>
+								<h4>Rejected</h4>
 								<ul>
 									{#each rejectedFiles as rejection, i (i)}
 										<li>
@@ -186,7 +186,7 @@
 			</section>
 
 			<section>
-				<h3>Custom row snippet · icon + name + size</h3>
+				<h4>Custom row snippet · icon + name + size</h4>
 				<p class="hint">
 					Pass a <code>fileItem</code> snippet to swap out the default progress row. Here we render a slim icon-name-size strip — handy for finished uploads or read-only listings.
 				</p>
@@ -218,7 +218,7 @@
 			</section>
 
 			<section>
-				<h3>Validation rejection · <code>maxSize=100</code> bytes</h3>
+				<h4>Validation rejection · <code>maxSize=100</code> bytes</h4>
 				<p class="hint">
 					maxSize is deliberately set to 100 bytes, so any real file fails the size check. The component never adds them to the list — it routes the failure through <code>onFilesRejected</code> with a typed reason, which we render below.
 				</p>
@@ -355,7 +355,7 @@
 		border-radius: 8px;
 	}
 
-	.demo-side h3 {
+	.demo-side h4 {
 		margin: 0 0 0.5rem;
 		font-size: 0.95rem;
 		color: var(--fg-1);
@@ -401,13 +401,13 @@
 		gap: 2rem;
 	}
 
-	.upload-demo-stack > section > h3 {
+	.upload-demo-stack > section > h4 {
 		margin: 0 0 0.5rem;
 		font-size: 0.95rem;
 		color: var(--fg-1);
 	}
 
-	.upload-demo-stack > section > h3 code {
+	.upload-demo-stack > section > h4 code {
 		background: var(--surface-2, var(--surface));
 		padding: 0.1rem 0.35rem;
 		border-radius: 0.25rem;

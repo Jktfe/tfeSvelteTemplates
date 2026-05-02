@@ -175,9 +175,9 @@
 	{#snippet demo()}
 		<div class="forms-demo">
 			<p class="forms-demo__lede">
-				A three-step playground exercising the field primitives. The Stepper at the top mirrors the
-				active step; clicking a completed step jumps back to it. Validation runs at each
-				&ldquo;Next&rdquo; before letting you advance.
+				A three-step wizard built from the field primitives. The Stepper at the top mirrors the
+				active step; click a completed step to jump back. Each &ldquo;Next&rdquo; runs validation
+				before letting you advance.
 			</p>
 
 			<div class="forms-stepper">

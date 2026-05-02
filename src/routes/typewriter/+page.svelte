@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import Typewriter from '$lib/components/Typewriter.svelte';
@@ -18,13 +19,15 @@
 
 	const speedSamples = ['Type me at this speed.'];
 
-	// Live state — show what the user just experienced.
-	// We tick a one-second clock so we can sample the cycle cheaply
-	// without piping reactivity in/out of the component itself.
+	// Live state — sample the hero cycle once a second so we can show which
+	// phrase is currently visible without piping reactivity through Typewriter.
+	// onMount keeps the timer client-side and gives us a tidy cleanup hook so
+	// navigating away doesn't leave the interval running.
 	let clock = $state(0);
-	if (typeof window !== 'undefined') {
-		setInterval(() => (clock = (clock + 1) % 1_000_000), 1000);
-	}
+	onMount(() => {
+		const id = setInterval(() => (clock = (clock + 1) % 1_000_000), 1000);
+		return () => clearInterval(id);
+	});
 
 	// Hero typewriter cycle: each phrase gets pauseDuration + (typeSpeed * len)
 	// so we can guess which phrase is showing without reading internal state.
@@ -56,8 +59,8 @@
 	{#snippet demo()}
 		<div class="tw-demo">
 			<p class="tw-demo__lede">
-				A four-phase state machine — type, pause, delete, wait — wrapped in a single span. Each
-				section below demonstrates a different prop combination, all running concurrently.
+				A four-phase state machine — type, pause, delete, wait — wrapped in a single span. Every
+				section below mounts a different prop combination, all running at once.
 			</p>
 
 			<section class="tw-section">

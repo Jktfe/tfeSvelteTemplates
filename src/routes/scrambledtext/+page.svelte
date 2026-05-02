@@ -22,8 +22,8 @@
 	{#snippet demo()}
 		<div class="sc-demo">
 			<p class="sc-demo__lede">
-				Each section below mounts a different combination of <code>order</code>, <code>pool</code>,
-				and <code>replayOnHover</code>. The auto-start variants run on mount; the hover one waits
+				Each section mounts a different combination of <code>order</code>, <code>pool</code>,
+				and <code>replayOnHover</code>. Auto-start variants run on mount; the hover one waits
 				for your cursor.
 			</p>
 
@@ -124,10 +124,10 @@
 			</section>
 
 			<section class="sc-section">
-				<h4>Staggered countdown · loop=false (auto) · staged delays</h4>
+				<h4>Staggered countdown · staged delays</h4>
 				<p class="sc-section__hint">
-					Three left-to-right scrambles each with their own start delay, simulating a manual
-					sequence reveal.
+					Three left-to-right scrambles, each with their own <code>delay</code>. ScrambledText
+					runs once per mount, so the trio fires in sequence and settles.
 				</p>
 				<div class="sc-card sc-card--centered sc-staged">
 					<span class="sc-display-2"><ScrambledText text="Ready." duration={900} /></span>
