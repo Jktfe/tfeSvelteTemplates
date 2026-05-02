@@ -194,7 +194,7 @@ When you add a new component, register it in `componentCatalog.ts` so it appears
 ```
 src/
 ├── lib/
-│   ├── components/         # 143 .svelte files + sibling .md docs + .test.ts (some *TestHarness.test.svelte)
+│   ├── components/         # 159 .svelte files + sibling .md docs + .test.ts (some *TestHarness.test.svelte)
 │   ├── server/             # auth, betterAuth, dataSource, cards, dataGrid, editorData,
 │   │                       # expandingCards, linkPreviews, testimonials, sankeyData,
 │   │                       # calendarData, folderFiles, maps
@@ -216,11 +216,12 @@ src/
 │   ├── browser.ts
 │   ├── types.ts
 │   └── utils.ts            # cn (clsx + tailwind-merge), sanitiseHTML
-├── routes/                 # ~112 demo routes
+├── routes/                 # ~108 demo routes
 │   ├── (protected)/        # Auth-required (dashboard, profile)
 │   ├── auth/               # sign-in, sign-up, account
 │   ├── api/                # REST endpoints
 │   ├── storyboard/[component]/  # Dynamic ExplainerCanvas per component
+│   ├── navbar/sandbox/     # Iframe sandbox for embedded preview (root layout suppresses chrome)
 │   └── <component>/        # Per-component demo (uses ComponentPageShell)
 ├── hooks.server.ts         # Better Auth middleware
 ├── app.d.ts                # App.Locals (Session | null, User | null)
@@ -243,11 +244,13 @@ docs/                       # THEMING.md, DATAGRID_FORMATTING.md,
 3. Add fallback data to `src/lib/constants.ts` (if data-driven)
 4. Add server utility to `src/lib/server/` returning `DataSourceResult<T>` (if DB-backed)
 5. Add a schema file under `database/` (if needed) using the established conventions: `id SERIAL`, `display_order`, `is_active`, `created_at`/`updated_at` triggers
-6. Create `src/lib/components/ComponentName.md` (sibling docs)
+6. Create `src/lib/components/ComponentName.md` (sibling docs — copy `docs/COMPONENT_DOC_TEMPLATE.md`)
 7. Create `src/lib/components/ComponentName.test.ts` (or a `ComponentNameTestHarness.test.svelte` if the component needs DOM mounting)
-8. Create demo at `src/routes/componentname/+page.svelte`, wrapping content in `<ComponentPageShell>` snippets
-9. Register in `src/lib/componentCatalog.ts` so it shows up in directories and shelves
-10. Add storyboard data at `src/lib/data/storyboards/componentname.ts` (used by `/storyboard/[component]`)
+8. Create demo at `src/routes/componentname/+page.svelte`, wrapping content in `<ComponentPageShell>` snippets, with a real Live Demo block (see "Demo conventions")
+9. Register in `src/lib/componentCatalog.ts` — **the `usage:` field must be real copy-pasteable Svelte 5 code** (script + sample data + the actual mount), not the `<Foo />` placeholder. Multi-line is fine; consumers paste this verbatim into a `+page.svelte`.
+10. Add the doc path to `GOLD_STANDARD_DOCS` in `src/lib/componentDocs.test.ts` so the structural test pins it (902 assertions enforce the 7 required H2 sections + no YAML)
+11. Add storyboard data at `src/lib/data/storyboards/componentname.ts` (used by `/storyboard/[component]`)
+12. Verify the API table in the demo page matches the actual `$props()` block — every documented prop must exist on the component, every common config prop should have a row (omit the universal `class` forwarding prop unless it does something special)
 
 ## Conventions
 
@@ -306,6 +309,33 @@ honour, colour, organisation, etc.
 
 ### Source-file hygiene
 Per `docs:` convention upstream — **do not add author / RFO / self-attestation markers** to shipped source. Provenance lives in `BadgeProvenance` metadata and the catalog, not inline comments.
+
+### Demo conventions (Live Demo / section 01)
+
+Every demo page mounts the component multiple times with distinct prop combinations, matching the "Gold" reference set by `/speeddial`, `/drawer`, `/scrollprogressbar`, `/readingtoc`, `/pagination`. Patterns:
+
+- **Mounted-variant gallery** — 3+ `<section class="<prefix>-section">` blocks, each with an `<h4>` caption naming the variant + a one-sentence hint. Wrap multiple instances in `<div class="<prefix>-stage">`.
+- **Live state strip** — for any component with a bindable value, show the current state below: `Active: <code>{value}</code>`. SpeedDial's "last action" toast is the model.
+- **Interactive playground** — for components with rich prop surfaces, expose a control surface (button rows, sliders, colour swatches) above one live instance. `/scrollprogressbar`, `/readingtoc`, `/scrollreveal`, `/clickspark`, `/noisefield`, `/toastnotification` are templates. The playground pattern beats N static mounts when the component has 3+ orthogonal axes (variant × size × position).
+- **CSS-isolated stages** for components using `position: fixed` (FloatingDock, etc.) — wrap the demo stage in a containing-block trick so descendants resolve to the wrapper, not the viewport:
+  ```css
+  .<comp>-stage {
+    position: relative;
+    contain: layout paint;
+    transform: translateZ(0);  /* new containing block */
+  }
+  ```
+- **One-shot animations** (ScrollReveal, ConfettiBurst, ScratchToReveal) — wrap in `{#key replayKey}` and bump `replayKey` on a Replay button to force a remount-and-retrigger cycle.
+
+### Sandbox iframe pattern (for components with global side effects)
+
+Components that take over global state (`document.body.style.overflow`, viewport-anchored `position: fixed`, focus traps keyed to body) cannot be naïvely mounted twice on the same page — the demo instance fights the global one. The pattern:
+
+- A standalone route at `/<component>/sandbox/+page.svelte` mounts the component in its own document context with sample content
+- The root layout (`src/routes/+layout.svelte`) checks `currentPath.endsWith('/sandbox')` and **suppresses the global navbar + footer** when true, giving the sandbox route a clean slate
+- The demo page on `/<component>/+page.svelte` embeds the sandbox via `<iframe src="/<component>/sandbox">` wrapped in faux browser-window chrome (traffic-light dots + URL bar) so readers immediately understand it's an isolated environment
+
+Currently used for `/navbar/sandbox`. Same pattern applies to any future "global navigation" component or anything that conflicts with the page shell.
 
 ### Component documentation (sibling `.md` files)
 
@@ -402,6 +432,7 @@ Each component has an interactive storyboard at `/storyboard/[component]`. Data 
 - **Don't install additional animation libraries** without weighing portability impact (see Native vs external library).
 - **Keep components self-contained** — they must work when copied to another project.
 - **Document the why**, not the what. No author/RFO/self-attestation markers in source.
+- **OSS hygiene** — this repo is public. Personal details (real names, private email addresses, internal company emails) live in `.env` (gitignored) or environment variables, never in committed source, sample data, package metadata, or HTML meta tags. The GitHub handle `@Jktfe` is fine (already public via the repo URL); the maintainer's email and full name are not.
 - **Maintain type safety** — every prop, every server utility, every shared shape.
 - **Test without database** — fallback paths must work.
 - **UK English** in user-facing text.

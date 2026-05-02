@@ -1191,8 +1191,8 @@ export const componentCategories: ComponentCatalogCategory[] = [
     { id: 'hireDate', header: 'Hire Date', type: 'date' }
   ];
   const data = [
-    { id: 1, name: 'Sarah Johnson', salary: 95000, hireDate: '2020-03-15' },
-    { id: 2, name: 'James King',     salary: 78000, hireDate: '2021-09-01' }
+    { id: 1, name: 'Ada Lovelace',  salary: 95000, hireDate: '2020-03-15' },
+    { id: 2, name: 'Grace Hopper',  salary: 78000, hireDate: '2021-09-01' }
   ];
 </script>
 
