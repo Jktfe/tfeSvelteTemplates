@@ -13,6 +13,48 @@
 	let activityLog = $state<string[]>(['Ready for files']);
 	const timers = new SvelteMap<string, ReturnType<typeof setInterval>>();
 
+	// Custom-row variant: parent owns a smaller list and renders each item with a
+	// minimal "icon · name · size" row via the fileItem snippet.
+	let customFiles = $state<UploadDropzoneItem[]>([]);
+
+	// Size-validation variant: maxSize is set absurdly low (100 bytes) so any
+	// real file is rejected. We surface every rejection reason live below.
+	let strictRejections = $state<UploadDropzoneRejection[]>([]);
+
+	function handleCustomAdded(items: UploadDropzoneItem[]) {
+		customFiles = [
+			...customFiles,
+			...items.map((item) => ({ ...item, status: 'success' as const, progress: 100 }))
+		];
+	}
+
+	function handleCustomRemove(item: UploadDropzoneItem) {
+		customFiles = customFiles.filter((current) => current.id !== item.id);
+	}
+
+	function handleStrictRejected(rejections: UploadDropzoneRejection[]) {
+		strictRejections = [...rejections, ...strictRejections].slice(0, 8);
+	}
+
+	function clearStrictRejections() {
+		strictRejections = [];
+	}
+
+	function fileEmoji(type: string) {
+		if (type.startsWith('image/')) return '🖼️';
+		if (type.startsWith('video/')) return '🎬';
+		if (type.startsWith('audio/')) return '🎧';
+		if (type.includes('pdf')) return '📄';
+		if (type.includes('zip') || type.includes('compressed')) return '🗜️';
+		return '📎';
+	}
+
+	function formatSize(bytes: number) {
+		if (bytes < 1024) return `${bytes} B`;
+		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+	}
+
 	function handleFilesAdded(items: UploadDropzoneItem[]) {
 		rejectedFiles = [];
 		const uploading = items.map((item) => ({ ...item, status: 'uploading' as const, progress: 8 }));
@@ -97,46 +139,122 @@
 	{codeExplanation}
 >
 	{#snippet demo()}
-		<div class="upload-demo">
-			<div class="demo-main">
+		<div class="upload-demo-stack">
+			<section>
+				<h3>Default · drag, drop, paste</h3>
+				<div class="upload-demo">
+					<div class="demo-main">
+						<UploadDropzone
+							files={liveFiles}
+							accept="image/*,.pdf"
+							maxFiles={5}
+							maxSize={5 * 1024 * 1024}
+							title="Upload campaign assets"
+							description="Drop, paste, or browse. Images and PDFs only."
+							onFilesAdded={handleFilesAdded}
+							onFilesRejected={handleRejected}
+							onRemove={handleRemove}
+							onRetry={handleRetry}
+						/>
+					</div>
+
+					<aside class="demo-side">
+						<section>
+							<h3>Activity</h3>
+							<ul class="activity-list">
+								{#each activityLog as item, i (i)}
+									<li>{item}</li>
+								{/each}
+							</ul>
+						</section>
+
+						{#if rejectedFiles.length}
+							<section class="rejections">
+								<h3>Rejected</h3>
+								<ul>
+									{#each rejectedFiles as rejection, i (i)}
+										<li>
+											<strong>{rejection.file.name}</strong>
+											<span>{rejection.message}</span>
+										</li>
+									{/each}
+								</ul>
+							</section>
+						{/if}
+					</aside>
+				</div>
+			</section>
+
+			<section>
+				<h3>Custom row snippet · icon + name + size</h3>
+				<p class="hint">
+					Pass a <code>fileItem</code> snippet to swap out the default progress row. Here we render a slim icon-name-size strip — handy for finished uploads or read-only listings.
+				</p>
 				<UploadDropzone
-					files={liveFiles}
-					accept="image/*,.pdf"
+					files={customFiles}
+					accept="*/*"
+					maxFiles={6}
+					title="Custom file rows"
+					description="Drop anything. Each row is rendered by your snippet."
+					onFilesAdded={handleCustomAdded}
+					onRemove={handleCustomRemove}
+				>
+					{#snippet fileItem(item)}
+						<div class="custom-row">
+							<span class="custom-icon" aria-hidden="true">{fileEmoji(item.type)}</span>
+							<span class="custom-name">{item.name}</span>
+							<span class="custom-size">{formatSize(item.size)}</span>
+							<button
+								type="button"
+								class="custom-remove"
+								onclick={() => handleCustomRemove(item)}
+								aria-label="Remove {item.name}"
+							>
+								×
+							</button>
+						</div>
+					{/snippet}
+				</UploadDropzone>
+			</section>
+
+			<section>
+				<h3>Validation rejection · <code>maxSize=100</code> bytes</h3>
+				<p class="hint">
+					maxSize is deliberately set to 100 bytes, so any real file fails the size check. The component never adds them to the list — it routes the failure through <code>onFilesRejected</code> with a typed reason, which we render below.
+				</p>
+				<UploadDropzone
+					accept="*/*"
 					maxFiles={5}
-					maxSize={5 * 1024 * 1024}
-					title="Upload campaign assets"
-					description="Drop, paste, or browse. Images and PDFs only."
-					onFilesAdded={handleFilesAdded}
-					onFilesRejected={handleRejected}
-					onRemove={handleRemove}
-					onRetry={handleRetry}
+					maxSize={100}
+					title="Strict size limit"
+					description="Drop any file. It will be rejected with a typed reason."
+					onFilesRejected={handleStrictRejected}
 				/>
-			</div>
 
-			<aside class="demo-side">
-				<section>
-					<h3>Activity</h3>
-					<ul class="activity-list">
-						{#each activityLog as item, i (i)}
-							<li>{item}</li>
-						{/each}
-					</ul>
-				</section>
-
-				{#if rejectedFiles.length}
-					<section class="rejections">
-						<h3>Rejected</h3>
-						<ul>
-							{#each rejectedFiles as rejection, i (i)}
+				<div class="strict-feedback">
+					<div class="strict-header">
+						<span>Live rejection log</span>
+						{#if strictRejections.length > 0}
+							<button class="strict-clear" onclick={clearStrictRejections} type="button">
+								Clear
+							</button>
+						{/if}
+					</div>
+					{#if strictRejections.length === 0}
+						<p class="strict-empty">No rejections yet — drop a file above to trigger one.</p>
+					{:else}
+						<ul class="strict-list">
+							{#each strictRejections as rejection, i (i)}
 								<li>
 									<strong>{rejection.file.name}</strong>
-									<span>{rejection.message}</span>
+									<span class="strict-reason">{rejection.reason}</span>
+									<span class="strict-msg">{rejection.message}</span>
 								</li>
 							{/each}
 						</ul>
-					</section>
-				{/if}
-			</aside>
+					{/if}
+				</div>
+			</section>
 		</div>
 	{/snippet}
 
@@ -276,5 +394,161 @@
 		.upload-demo {
 			grid-template-columns: 1fr;
 		}
+	}
+
+	.upload-demo-stack {
+		display: grid;
+		gap: 2rem;
+	}
+
+	.upload-demo-stack > section > h3 {
+		margin: 0 0 0.5rem;
+		font-size: 0.95rem;
+		color: var(--fg-1);
+	}
+
+	.upload-demo-stack > section > h3 code {
+		background: var(--surface-2, var(--surface));
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.25rem;
+		font-size: 0.85em;
+	}
+
+	.hint {
+		margin: 0 0 0.75rem;
+		font-size: 0.88rem;
+		color: var(--fg-2);
+		line-height: 1.55;
+	}
+
+	.hint code {
+		background: var(--surface-2, var(--surface));
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.25rem;
+		font-size: 0.875em;
+	}
+
+	.custom-row {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto auto;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.55rem 0.75rem;
+		background: var(--surface-2, var(--surface));
+		border: 1px solid var(--border);
+		border-radius: 6px;
+		font-size: 0.88rem;
+		color: var(--fg-1);
+	}
+
+	.custom-icon {
+		font-size: 1.15rem;
+	}
+
+	.custom-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.custom-size {
+		color: var(--fg-2);
+		font-size: 0.82rem;
+	}
+
+	.custom-remove {
+		width: 1.5rem;
+		height: 1.5rem;
+		font-size: 1.05rem;
+		line-height: 1;
+		color: var(--fg-2);
+		background: transparent;
+		border: 1px solid var(--border);
+		border-radius: 50%;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.custom-remove:hover {
+		color: #b91c1c;
+		border-color: #fca5a5;
+		background: #fef2f2;
+	}
+
+	.strict-feedback {
+		margin-top: 0.85rem;
+		padding: 0.85rem 1rem;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 8px;
+	}
+
+	.strict-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		font-size: 0.85rem;
+		color: var(--fg-2);
+		margin-bottom: 0.6rem;
+	}
+
+	.strict-clear {
+		padding: 0.2rem 0.55rem;
+		font-size: 0.78rem;
+		color: var(--fg-2);
+		background: transparent;
+		border: 1px solid var(--border);
+		border-radius: 4px;
+		cursor: pointer;
+	}
+
+	.strict-empty {
+		margin: 0;
+		font-size: 0.85rem;
+		color: var(--fg-2);
+		font-style: italic;
+	}
+
+	.strict-list {
+		display: grid;
+		gap: 0.5rem;
+		padding: 0;
+		margin: 0;
+		list-style: none;
+	}
+
+	.strict-list li {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.25rem 0.75rem;
+		padding: 0.55rem 0.7rem;
+		background: #fff1f2;
+		color: #9f1239;
+		border-radius: 6px;
+		font-size: 0.85rem;
+	}
+
+	.strict-list li strong {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.strict-reason {
+		justify-self: end;
+		text-transform: uppercase;
+		font-size: 0.7rem;
+		letter-spacing: 0.05em;
+		padding: 0.1rem 0.4rem;
+		background: rgba(159, 18, 57, 0.15);
+		border-radius: 999px;
+	}
+
+	.strict-msg {
+		grid-column: 1 / -1;
+		color: rgba(159, 18, 57, 0.85);
+		font-size: 0.78rem;
 	}
 </style>

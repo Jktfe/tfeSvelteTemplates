@@ -21,49 +21,229 @@
 >
 	{#snippet demo()}
 		<div class="st-demo">
-			<div class="st-card st-card--centered">
-				<span class="st-display-1"><ShinyText text="Premium" /></span>
-			</div>
+			<p class="st-demo__lede">
+				A single CSS keyframe slides a brighter band across each text element. Each section below
+				demonstrates a different colour pairing or duration — the captions list the exact
+				<code>baseColor</code> and <code>shineColor</code> so you can copy them directly.
+			</p>
 
-			<div class="st-card st-card--centered">
-				<button class="st-cta" type="button">
-					<ShinyText text="Get Started →" baseColor="#ffffff" shineColor="#fbbf24" duration={2.5} />
-				</button>
-			</div>
-
-			<div class="st-card st-card--row">
-				<div class="st-direction-cell">
-					<span class="st-hint-label">lr</span>
-					<span class="st-display-2">
-						<ShinyText text="→" baseColor="#cbd5e1" shineColor="#0ea5e9" duration={1.6} direction="lr" />
+			<section class="st-section">
+				<h4>Premium · silver shine on charcoal</h4>
+				<p class="st-section__hint">
+					The default look — a neutral grey resting state with a near-white sweep. Works on any
+					light or dark surface.
+				</p>
+				<div class="st-card st-card--centered">
+					<span class="st-display-1">
+						<ShinyText text="Premium" />
 					</span>
 				</div>
-				<div class="st-direction-cell">
-					<span class="st-hint-label">rl</span>
-					<span class="st-display-2">
-						<ShinyText text="←" baseColor="#cbd5e1" shineColor="#0ea5e9" duration={1.6} direction="rl" />
+				<div class="st-meta">
+					<code>baseColor="#94a3b8"</code> · <code>shineColor="#ffffff"</code> · <code>duration=3</code>
+				</div>
+			</section>
+
+			<section class="st-section">
+				<h4>Gold on charcoal · luxury CTA</h4>
+				<p class="st-section__hint">
+					Warm gold sweeping over a near-white base sat inside a deep gradient button. Faster
+					duration (2.5s) keeps the eye anchored on the call-to-action.
+				</p>
+				<div class="st-card st-card--centered">
+					<button class="st-cta" type="button">
+						<ShinyText
+							text="Get Started →"
+							baseColor="#ffffff"
+							shineColor="#fbbf24"
+							duration={2.5}
+						/>
+					</button>
+				</div>
+				<div class="st-meta">
+					<code>baseColor="#ffffff"</code> · <code>shineColor="#fbbf24"</code> ·
+					<code>duration=2.5</code>
+				</div>
+			</section>
+
+			<section class="st-section">
+				<h4>Brand blue · sky shine on slate</h4>
+				<p class="st-section__hint">
+					A cool brand-leaning combination. The slate base reads as static type until the cyan band
+					passes through.
+				</p>
+				<div class="st-card st-card--centered">
+					<span class="st-display-1">
+						<ShinyText
+							text="Build with us"
+							baseColor="#475569"
+							shineColor="#0ea5e9"
+							duration={3}
+						/>
 					</span>
 				</div>
-			</div>
+				<div class="st-meta">
+					<code>baseColor="#475569"</code> · <code>shineColor="#0ea5e9"</code> ·
+					<code>duration=3</code>
+				</div>
+			</section>
 
-			<div class="st-card st-card--centered">
-				<h3 class="st-headline">
-					Build something
-					<ShinyText text="extraordinary" baseColor="#1e293b" shineColor="#a78bfa" duration={3.5} />
-				</h3>
-			</div>
+			<section class="st-section">
+				<h4>Success green · status badge</h4>
+				<p class="st-section__hint">
+					Emerald shine on a darker green base — perfect for "live" or "operational" indicators.
+				</p>
+				<div class="st-card st-card--centered">
+					<span class="st-display-2">
+						<ShinyText
+							text="ALL SYSTEMS GO"
+							baseColor="#065f46"
+							shineColor="#34d399"
+							duration={2.2}
+						/>
+					</span>
+				</div>
+				<div class="st-meta">
+					<code>baseColor="#065f46"</code> · <code>shineColor="#34d399"</code> ·
+					<code>duration=2.2</code>
+				</div>
+			</section>
 
-			<div class="st-card st-card--centered st-staged">
-				<span class="st-display-2">
-					<ShinyText text="Ready." baseColor="#1e293b" shineColor="#22d3ee" loop={false} duration={1.4} />
-				</span>
-				<span class="st-display-2">
-					<ShinyText text="Set." baseColor="#1e293b" shineColor="#a78bfa" loop={false} duration={1.4} delay={0.4} />
-				</span>
-				<span class="st-display-2">
-					<ShinyText text="Go." baseColor="#1e293b" shineColor="#fbbf24" loop={false} duration={1.4} delay={0.8} />
-				</span>
-			</div>
+			<section class="st-section">
+				<h4>Danger red · attention copy</h4>
+				<p class="st-section__hint">
+					Bright crimson shine over a maroon base. Fast duration (1.6s) creates urgency without
+					feeling aggressive.
+				</p>
+				<div class="st-card st-card--centered">
+					<span class="st-display-2">
+						<ShinyText
+							text="LIMITED TIME"
+							baseColor="#7f1d1d"
+							shineColor="#f87171"
+							duration={1.6}
+						/>
+					</span>
+				</div>
+				<div class="st-meta">
+					<code>baseColor="#7f1d1d"</code> · <code>shineColor="#f87171"</code> ·
+					<code>duration=1.6</code>
+				</div>
+			</section>
+
+			<section class="st-section">
+				<h4>Dark mode · light sweep on midnight</h4>
+				<p class="st-section__hint">
+					On dark surfaces, an off-white base with a pure-white shine reads beautifully. Slower
+					duration (5s) feels meditative.
+				</p>
+				<div class="st-card st-card--centered st-card--dark">
+					<span class="st-display-1">
+						<ShinyText
+							text="extraordinary"
+							baseColor="#cbd5e1"
+							shineColor="#ffffff"
+							duration={5}
+						/>
+					</span>
+				</div>
+				<div class="st-meta">
+					<code>baseColor="#cbd5e1"</code> · <code>shineColor="#ffffff"</code> ·
+					<code>duration=5</code>
+				</div>
+			</section>
+
+			<section class="st-section">
+				<h4>Mono purple · fast loop · 1.5s</h4>
+				<p class="st-section__hint">
+					A high-energy violet shine over slate. The shorter duration suits hero animations where
+					attention is the goal.
+				</p>
+				<div class="st-card st-card--centered">
+					<span class="st-display-1">
+						<ShinyText text="Move fast." baseColor="#1e293b" shineColor="#a78bfa" duration={1.5} />
+					</span>
+				</div>
+				<div class="st-meta">
+					<code>baseColor="#1e293b"</code> · <code>shineColor="#a78bfa"</code> ·
+					<code>duration=1.5</code>
+				</div>
+			</section>
+
+			<section class="st-section">
+				<h4>Direction · lr vs rl · same colours, mirrored sweep</h4>
+				<p class="st-section__hint">
+					Toggling <code>direction</code> between <code>lr</code> and <code>rl</code> reverses the
+					sweep without altering the gradient — useful for arrow indicators.
+				</p>
+				<div class="st-card st-card--row">
+					<div class="st-direction-cell">
+						<span class="st-hint-label">lr</span>
+						<span class="st-display-2">
+							<ShinyText
+								text="→"
+								baseColor="#cbd5e1"
+								shineColor="#0ea5e9"
+								duration={1.6}
+								direction="lr"
+							/>
+						</span>
+					</div>
+					<div class="st-direction-cell">
+						<span class="st-hint-label">rl</span>
+						<span class="st-display-2">
+							<ShinyText
+								text="←"
+								baseColor="#cbd5e1"
+								shineColor="#0ea5e9"
+								duration={1.6}
+								direction="rl"
+							/>
+						</span>
+					</div>
+				</div>
+				<div class="st-meta">
+					<code>direction="lr"</code> · <code>direction="rl"</code>
+				</div>
+			</section>
+
+			<section class="st-section">
+				<h4>Staged delays · loop=false · run once in sequence</h4>
+				<p class="st-section__hint">
+					Three separate ShinyText instances with staggered <code>delay</code> and
+					<code>loop=false</code>. Each plays exactly one shine then settles.
+				</p>
+				<div class="st-card st-card--centered st-staged">
+					<span class="st-display-2">
+						<ShinyText
+							text="Ready."
+							baseColor="#1e293b"
+							shineColor="#22d3ee"
+							loop={false}
+							duration={1.4}
+						/>
+					</span>
+					<span class="st-display-2">
+						<ShinyText
+							text="Set."
+							baseColor="#1e293b"
+							shineColor="#a78bfa"
+							loop={false}
+							duration={1.4}
+							delay={0.4}
+						/>
+					</span>
+					<span class="st-display-2">
+						<ShinyText
+							text="Go."
+							baseColor="#1e293b"
+							shineColor="#fbbf24"
+							loop={false}
+							duration={1.4}
+							delay={0.8}
+						/>
+					</span>
+				</div>
+			</section>
 		</div>
 	{/snippet}
 
@@ -88,7 +268,50 @@
 <style>
 	.st-demo {
 		display: grid;
-		gap: 16px;
+		gap: 24px;
+	}
+	.st-demo__lede {
+		margin: 0;
+		font-size: 0.95rem;
+		color: var(--fg-2);
+		line-height: 1.6;
+	}
+	.st-demo__lede code,
+	.st-meta code {
+		font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
+		font-size: 0.825em;
+		padding: 2px 6px;
+		background: color-mix(in srgb, var(--fg-1) 8%, var(--surface));
+		border-radius: 4px;
+	}
+	.st-section {
+		display: grid;
+		gap: 0.625rem;
+	}
+	.st-section h4 {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--fg-1);
+	}
+	.st-section__hint {
+		margin: 0;
+		font-size: 0.875rem;
+		color: var(--fg-2);
+		line-height: 1.5;
+		max-width: 70ch;
+	}
+	.st-section__hint code {
+		font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
+		font-size: 0.825em;
+		padding: 1px 5px;
+		background: color-mix(in srgb, var(--fg-1) 8%, var(--surface));
+		border-radius: 4px;
+	}
+	.st-meta {
+		font-size: 0.8rem;
+		color: var(--fg-2);
+		font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
 	}
 	.st-card {
 		background: var(--surface);
@@ -102,6 +325,10 @@
 		justify-content: center;
 		align-items: center;
 		min-height: 160px;
+	}
+	.st-card--dark {
+		background: #0f172a;
+		border-color: #1e293b;
 	}
 	.st-card--row {
 		display: flex;
@@ -136,13 +363,6 @@
 		font-size: 2rem;
 		font-weight: 700;
 		letter-spacing: -0.02em;
-	}
-	.st-headline {
-		margin: 0;
-		font-size: 1.75rem;
-		font-weight: 700;
-		text-align: center;
-		line-height: 1.2;
 	}
 	.st-cta {
 		padding: 1rem 1.75rem;

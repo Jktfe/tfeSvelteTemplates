@@ -19,25 +19,37 @@
 		{ label: 'JPM', value: '$197.50', delta: 1.41 }
 	];
 
-	const scores: TickerItem[] = [
-		{ label: 'TIGERS', value: '24', delta: 7, trend: 'up' },
-		{ label: 'SARACENS', value: '17', delta: 0, trend: 'flat' },
-		{ label: 'HARLEQUINS', value: '31', delta: 14, trend: 'up' },
-		{ label: 'CHIEFS', value: '12', delta: -3, trend: 'down' },
-		{ label: 'BATH', value: '28', delta: 5, trend: 'up' },
-		{ label: 'BRISTOL', value: '21', delta: -7, trend: 'down' },
-		{ label: 'NORTHAMPTON', value: '19', delta: 2, trend: 'up' },
-		{ label: 'GLOUCESTER', value: '14', delta: -10, trend: 'down' }
+	const news: TickerItem[] = [
+		{ label: 'BREAKING', value: 'Bank of England holds rates steady at 4.5%', trend: 'flat' },
+		{
+			label: 'TECH',
+			value: 'OpenAI launches new model with multimodal reasoning',
+			trend: 'up'
+		},
+		{ label: 'MARKETS', value: 'FTSE 100 closes at record high', trend: 'up' },
+		{
+			label: 'WORLD',
+			value: 'EU summit reaches consensus on energy strategy',
+			trend: 'flat'
+		},
+		{ label: 'WEATHER', value: 'Storm warning issued for Scotland', trend: 'down' },
+		{ label: 'SPORT', value: 'England wins Six Nations opener 24-17', trend: 'up' },
+		{
+			label: 'CULTURE',
+			value: 'Tate Modern announces 2026 retrospective programme',
+			trend: 'flat'
+		}
 	];
 
-	const status: TickerItem[] = [
-		{ label: 'API', value: 'Operational', trend: 'flat' },
-		{ label: 'Auth', value: 'Operational', trend: 'flat' },
-		{ label: 'Database', value: 'Degraded', trend: 'down' },
-		{ label: 'CDN', value: 'Operational', trend: 'flat' },
-		{ label: 'Webhooks', value: 'Operational', trend: 'flat' },
-		{ label: 'Search', value: 'Restored', trend: 'up' },
-		{ label: 'Email', value: 'Operational', trend: 'flat' }
+	const brands: TickerItem[] = [
+		{ label: 'Trusted by', value: 'ACME', trend: 'flat' },
+		{ label: 'Trusted by', value: 'GLOBEX', trend: 'flat' },
+		{ label: 'Trusted by', value: 'INITECH', trend: 'flat' },
+		{ label: 'Trusted by', value: 'UMBRELLA', trend: 'flat' },
+		{ label: 'Trusted by', value: 'WAYNE', trend: 'flat' },
+		{ label: 'Trusted by', value: 'STARK', trend: 'flat' },
+		{ label: 'Trusted by', value: 'PIED PIPER', trend: 'flat' },
+		{ label: 'Trusted by', value: 'MASSIVE DYN.', trend: 'flat' }
 	];
 
 	const minimal: TickerItem[] = [
@@ -65,45 +77,100 @@
 >
 	{#snippet demo()}
 		<div class="tt-demo">
-			<div class="tt-block">
+			<p class="tt-demo__lede">
+				A single CSS keyframe scrolls a doubled-up content track. Each row below mounts a different
+				<code>variant</code>, <code>direction</code>, or <code>pauseOnHover</code> setting. Hover any
+				strip with <code>pauseOnHover</code> on to freeze it.
+			</p>
+
+			<section class="tt-block">
 				<div class="tt-head">
-					<h3>Finance · stock prices with deltas</h3>
-					<p>Trend chevrons inferred from the delta sign. Tabular numerals keep the alignment crisp as the strip scrolls.</p>
+					<h4>Finance · stock prices with deltas · variant="finance"</h4>
+					<p>
+						Trend chevrons inferred from the delta sign — green up, red down, grey flat. Tabular
+						numerals keep alignment crisp as the strip scrolls.
+					</p>
 				</div>
 				<TickerTape items={stocks} variant="finance" speed={70} aria-label="Live stock prices" />
-			</div>
+			</section>
 
-			<div class="tt-block">
+			<section class="tt-block">
 				<div class="tt-head">
-					<h3>Sports · scoreboard with explicit trends</h3>
-					<p>0-delta draws still register as flat thanks to explicit trend per item.</p>
+					<h4>News · headlines with category labels · variant="default"</h4>
+					<p>
+						Long-form values work fine — the keyframe is duration-relative so longer items just
+						mean a slower visual cycle. Category labels stay short and uppercase.
+					</p>
 				</div>
-				<TickerTape items={scores} variant="sports" speed={55} aria-label="Live rugby scores" />
-			</div>
+				<TickerTape items={news} variant="default" speed={50} aria-label="News headlines" />
+			</section>
 
-			<div class="tt-block">
+			<section class="tt-block">
 				<div class="tt-head">
-					<h3>Status · system health feed</h3>
-					<p>Categorical states drive the trend explicitly without numeric deltas.</p>
+					<h4>Brand logos · text-only mark wall · variant="minimal"</h4>
+					<p>
+						Brand identity strips don't need deltas. The minimal variant uses a transparent
+						background and hairline borders so it sits naturally inside marketing layouts.
+					</p>
 				</div>
-				<TickerTape items={status} variant="default" speed={45} aria-label="System status" />
-			</div>
+				<TickerTape
+					items={brands}
+					variant="minimal"
+					speed={40}
+					separator="◆"
+					aria-label="Customer brands"
+				/>
+			</section>
 
-			<div class="tt-block">
+			<section class="tt-block">
 				<div class="tt-head">
-					<h3>Minimal · light dashboard strip</h3>
-					<p>Hairline-bordered, transparent background — quiet enough for a hero embed.</p>
+					<h4>Reverse direction · direction="right" · variant="finance"</h4>
+					<p>
+						Same finance data, scrolling the other way. Useful for parallel rows where opposing
+						motion creates depth — pair it with a faster forward strip above.
+					</p>
 				</div>
-				<TickerTape items={minimal} variant="minimal" speed={50} aria-label="Key metrics" />
-			</div>
+				<TickerTape
+					items={stocks}
+					variant="finance"
+					direction="right"
+					speed={120}
+					aria-label="Reverse stock ticker"
+				/>
+			</section>
 
-			<div class="tt-block">
+			<section class="tt-block">
 				<div class="tt-head">
-					<h3>Direction · right-to-left, faster</h3>
-					<p>direction="right" with a 120 px/s scroll for variety alongside another row.</p>
+					<h4>Minimal dashboard · pauseOnHover false · always scrolling</h4>
+					<p>
+						<code>pauseOnHover=false</code> keeps the strip moving even when the cursor is over it
+						— useful for purely decorative rows that shouldn't react to interaction above.
+					</p>
 				</div>
-				<TickerTape items={stocks} variant="finance" direction="right" speed={120} />
-			</div>
+				<TickerTape
+					items={minimal}
+					variant="minimal"
+					speed={50}
+					pauseOnHover={false}
+					aria-label="Live key metrics, always scrolling"
+				/>
+			</section>
+
+			<section class="tt-block">
+				<div class="tt-head">
+					<h4>Slow scroll · variant="default" · speed 30 · pauseOnHover true</h4>
+					<p>
+						A relaxed pace for editorial copy or status feeds. Hovering pauses via
+						<code>animation-play-state</code> — no JS handler runs in the steady state.
+					</p>
+				</div>
+				<TickerTape
+					items={news}
+					variant="default"
+					speed={30}
+					aria-label="Slow news ticker, hover to pause"
+				/>
+			</section>
 		</div>
 	{/snippet}
 
@@ -129,19 +196,33 @@
 		display: grid;
 		gap: 2rem;
 	}
+	.tt-demo__lede {
+		margin: 0;
+		font-size: 0.95rem;
+		color: var(--fg-2);
+		line-height: 1.6;
+	}
+	.tt-demo__lede code,
+	.tt-head p code {
+		font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
+		font-size: 0.825em;
+		padding: 1px 5px;
+		background: color-mix(in srgb, var(--fg-1) 8%, var(--surface));
+		border-radius: 4px;
+	}
 	.tt-block {
 		display: grid;
 		gap: 0.75rem;
 	}
-	.tt-head h3 {
+	.tt-head h4 {
 		margin: 0 0 0.25rem;
-		font-size: 1.05rem;
+		font-size: 1rem;
 		font-weight: 600;
 		color: var(--fg-1);
 	}
 	.tt-head p {
 		margin: 0;
-		font-size: 0.9rem;
+		font-size: 0.875rem;
 		color: var(--fg-2);
 		line-height: 1.5;
 		max-width: 70ch;

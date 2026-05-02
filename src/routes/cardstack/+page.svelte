@@ -4,10 +4,28 @@
 	import DatabaseStatus from '$lib/components/DatabaseStatus.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import type { PageData } from './$types';
+	import type { Card } from '$lib/types';
 
 	let { data }: { data: PageData } = $props();
 
 	const shell = catalogShellPropsForSlug('/cardstack')!;
+
+	// A trimmed three-card subset for the narrow stack — keeps the layout
+	// readable in a 600px container without overflow.
+	const trio: Card[] = $derived((data.cards ?? []).slice(0, 3));
+
+	// A single card to verify the component degrades gracefully when the
+	// caller only has one item to show (no fan, just the centred card).
+	const solo: Card[] = $derived((data.cards ?? []).slice(0, 1));
+
+	// Portrait sample: tall, narrow cards with hand-picked photography that
+	// flatters a 240×420 frame. We pull from the loaded cards so titles match
+	// whatever data source is active (DB or fallback).
+	const portrait: Card[] = $derived(
+		(data.cards ?? []).slice(0, 4).map((c) => ({
+			...c
+		}))
+	);
 
 	const usageSnippet = `<script>
   import CardStack from '$lib/components/CardStack.svelte';
@@ -49,9 +67,75 @@
 				message={data.dataSourceMessage}
 			/>
 		</div>
-		<div class="cs-stage">
-			<CardStack cards={data.cards} />
-		</div>
+
+		<section class="cs-section">
+			<header class="cs-section__header">
+				<h3>Default — full width, right reveal</h3>
+				<p>The flagship configuration: cards splay rightward as you hover left to right.</p>
+			</header>
+			<div class="cs-stage">
+				<CardStack cards={data.cards} />
+			</div>
+		</section>
+
+		<section class="cs-section">
+			<header class="cs-section__header">
+				<h3>Three-card narrow stack</h3>
+				<p>
+					Constrained to a 600px container with a smaller card footprint (240×340) — useful inside
+					side-bars or split-pane layouts.
+				</p>
+			</header>
+			<div class="cs-stage cs-stage--narrow">
+				<div class="cs-narrow">
+					<CardStack cards={trio} cardWidth={240} cardHeight={340} />
+				</div>
+			</div>
+		</section>
+
+		<section class="cs-section">
+			<header class="cs-section__header">
+				<h3>Reverse partial reveal — <code>partialRevealSide="left"</code></h3>
+				<p>
+					Mirrors the entrance direction. Handy for right-to-left readers or when the stack lives
+					on the right edge of a layout.
+				</p>
+			</header>
+			<div class="cs-stage">
+				<CardStack cards={trio} partialRevealSide="left" />
+			</div>
+		</section>
+
+		<section class="cs-section">
+			<header class="cs-section__header">
+				<h3>Portrait orientation — 240×420</h3>
+				<p>
+					Tall, narrow proportions for poster / cover art use cases. The component
+					recalculates spacing and hover-shift to suit the new aspect ratio.
+				</p>
+			</header>
+			<div class="cs-stage cs-stage--tall">
+				<CardStack cards={portrait} cardWidth={240} cardHeight={420} />
+			</div>
+		</section>
+
+		<section class="cs-section">
+			<header class="cs-section__header">
+				<h3>Single-card edge case</h3>
+				<p>
+					When only one card is supplied, there is no fan to hover through — the card simply
+					sits centred. This verifies the layout maths handles <code>cards.length === 1</code>
+					without divide-by-zero or overflow glitches.
+				</p>
+			</header>
+			<div class="cs-stage cs-stage--solo">
+				{#if solo.length > 0}
+					<CardStack cards={solo} cardWidth={300} cardHeight={400} />
+				{:else}
+					<p class="cs-empty">No cards available to render the edge-case demo.</p>
+				{/if}
+			</div>
+		</section>
 	{/snippet}
 
 	{#snippet api()}
@@ -98,6 +182,35 @@
 	.cs-status {
 		margin-bottom: 16px;
 	}
+	.cs-section {
+		display: grid;
+		gap: 12px;
+	}
+	.cs-section + .cs-section {
+		margin-top: 28px;
+	}
+	.cs-section__header h3 {
+		margin: 0 0 4px;
+		font-family: var(--font-display);
+		font-weight: 400;
+		font-size: 18px;
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
+	}
+	.cs-section__header p {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--fg-2);
+	}
+	.cs-section__header code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 6px;
+		border-radius: var(--r-1);
+	}
 	.cs-stage {
 		display: grid;
 		place-items: center;
@@ -106,5 +219,23 @@
 		border-radius: var(--r-2);
 		background: var(--surface-2);
 		border: 1px solid var(--border);
+	}
+	.cs-stage--narrow {
+		min-height: 400px;
+	}
+	.cs-narrow {
+		width: 100%;
+		max-width: 600px;
+	}
+	.cs-stage--tall {
+		min-height: 500px;
+	}
+	.cs-stage--solo {
+		min-height: 460px;
+	}
+	.cs-empty {
+		margin: 0;
+		font-size: 13px;
+		color: var(--fg-3);
 	}
 </style>
