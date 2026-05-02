@@ -14,6 +14,16 @@
 
 	let { data } = $props();
 
+	// Subset a few folders for the compact variant — shows the component
+	// gracefully handles smaller data sets without rebalancing the layout.
+	const compactFolders = $derived(data.folders.slice(0, 3));
+	const compactFiles = $derived(
+		data.files.filter((f) => compactFolders.some((cf) => cf.id === f.folderId))
+	);
+
+	// Single-folder variant for the empty / sparse state — folder with no items.
+	const sparseFolder = $derived(data.folders.length ? [data.folders[0]] : []);
+
 	const usageSnippet = `<script>
   import FolderFiles from '$lib/components/FolderFiles.svelte';
   let { data } = $props();
@@ -50,9 +60,38 @@
 				then drag items between the “Selected” and “All Items” panels.
 			</p>
 
-			<div class="ff-stage">
-				<FolderFiles folders={data.folders} files={data.files} />
-			</div>
+			<section class="ff-section">
+				<h4>Full data · {data.folders.length} folders, {data.files.length} files</h4>
+				<p class="ff-section__hint">
+					Server-loaded folders and items from the database, falling back to constants when
+					<code>DATABASE_URL</code> is unset.
+				</p>
+				<div class="ff-stage">
+					<FolderFiles folders={data.folders} files={data.files} />
+				</div>
+			</section>
+
+			<section class="ff-section">
+				<h4>Compact · first 3 folders, scoped items</h4>
+				<p class="ff-section__hint">
+					Smaller data set — useful for sidebars or constrained surfaces where the full cabinet
+					would feel busy.
+				</p>
+				<div class="ff-stage">
+					<FolderFiles folders={compactFolders} files={compactFiles} />
+				</div>
+			</section>
+
+			<section class="ff-section">
+				<h4>Sparse · single folder, no files</h4>
+				<p class="ff-section__hint">
+					Edge case — one folder with zero items. Verifies the empty-state rendering and that the
+					folder still opens cleanly.
+				</p>
+				<div class="ff-stage">
+					<FolderFiles folders={sparseFolder} files={[]} />
+				</div>
+			</section>
 		</div>
 	{/snippet}
 
@@ -79,32 +118,12 @@
 					<td><code>[]</code></td>
 					<td>File items linked to a folder via <code>folderId</code>; carry <code>title</code>, optional <code>subtitle</code>, and <code>previewText</code>.</td>
 				</tr>
-				<tr>
-					<td><code>initialFolderId</code></td>
-					<td><code>number</code></td>
-					<td>—</td>
-					<td>Open a specific folder on first render.</td>
-				</tr>
-				<tr>
-					<td><code>viewMode</code></td>
-					<td><code>'single' | 'spread'</code></td>
-					<td><code>'single'</code></td>
-					<td>Single-panel inspector or two-panel drag surface.</td>
-				</tr>
-				<tr>
-					<td><code>showMetadata</code></td>
-					<td><code>boolean</code></td>
-					<td><code>true</code></td>
-					<td>Show item counts and folder descriptions in tooltips.</td>
-				</tr>
-				<tr>
-					<td><code>enable3DEffect</code></td>
-					<td><code>boolean</code></td>
-					<td><code>true</code></td>
-					<td>Toggle the depth/shadow transforms on folder stacks.</td>
-				</tr>
 			</tbody>
 		</table>
+		<p class="ff-api-note">
+			Display behaviour (3D depth, hover-reveal, drag-and-drop layout) is fixed inside the
+			component — adjust by editing <code>FolderFiles.svelte</code> directly rather than via props.
+		</p>
 	{/snippet}
 </ComponentPageShell>
 
@@ -137,5 +156,55 @@
 		overflow: hidden;
 		background: var(--surface);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+	}
+
+	.ff-section {
+		display: grid;
+		gap: 10px;
+		padding: 18px 0 0;
+		border-top: 1px solid var(--border);
+	}
+	.ff-section:first-of-type {
+		padding-top: 0;
+		border-top: none;
+	}
+	.ff-section h4 {
+		margin: 0;
+		font-family: var(--font-mono);
+		font-size: 12px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		font-weight: 500;
+	}
+	.ff-section__hint {
+		margin: 0;
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--fg-2);
+	}
+	.ff-section__hint code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 5px;
+		border-radius: var(--r-1);
+	}
+	.ff-api-note {
+		margin: 14px 0 0;
+		padding: 10px 12px;
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: var(--r-1);
+		font-size: 13px;
+		line-height: 1.5;
+		color: var(--fg-2);
+	}
+	.ff-api-note code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface);
+		padding: 1px 5px;
+		border-radius: var(--r-1);
 	}
 </style>

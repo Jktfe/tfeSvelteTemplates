@@ -22,8 +22,8 @@
 	{#snippet demo()}
 		<div class="st-demo">
 			<p class="st-demo__lede">
-				A single CSS keyframe slides a brighter band across each text element. Each section below
-				demonstrates a different colour pairing or duration — the captions list the exact
+				A single CSS keyframe slides a brighter band across each text element. Each section
+				pairs a different colour and duration — the captions list the exact
 				<code>baseColor</code> and <code>shineColor</code> so you can copy them directly.
 			</p>
 

@@ -22,7 +22,7 @@
 	{#snippet demo()}
 		<div class="tf-demo">
 			<p class="tf-demo__lede">
-				Each section below mounts TrueFocus with a different combination of <code>cycleDuration</code>,
+				Each section mounts TrueFocus with a different combination of <code>cycleDuration</code>,
 				<code>pauseOnHover</code>, padding, and <code>glow</code>. Click any word to pin focus —
 				click again (or click another) to release.
 			</p>
