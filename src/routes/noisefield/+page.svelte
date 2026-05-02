@@ -1,30 +1,25 @@
 <script lang="ts">
-	import NoiseField from '$lib/components/NoiseField.svelte';
+	import NoiseField, {
+		type NoiseFieldIntensity,
+		type NoiseFieldMode
+	} from '$lib/components/NoiseField.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 
 	const shell = catalogShellPropsForSlug('/noisefield')!;
 
-	// ----------------------------------------------------------------------
-	// Live playground state — every control rebinds straight into the single
-	// NoiseField instance below. Useful for choosing the right grain weight
-	// without diffing screenshots.
-	// ----------------------------------------------------------------------
-	type Intensity = 'fine' | 'medium' | 'coarse';
-	type Mode = 'mono' | 'chroma' | 'retro';
-
-	let liveIntensity = $state<Intensity>('medium');
-	let liveMode = $state<Mode>('mono');
+	let liveIntensity = $state<NoiseFieldIntensity>('medium');
+	let liveMode = $state<NoiseFieldMode>('mono');
 	let liveOpacity = $state(0.45);
 	let liveAnimated = $state(true);
 
-	const intensityOptions: { id: Intensity; label: string }[] = [
+	const intensityOptions: { id: NoiseFieldIntensity; label: string }[] = [
 		{ id: 'fine', label: 'Fine' },
 		{ id: 'medium', label: 'Medium' },
 		{ id: 'coarse', label: 'Coarse' }
 	];
 
-	const modeOptions: { id: Mode; label: string }[] = [
+	const modeOptions: { id: NoiseFieldMode; label: string }[] = [
 		{ id: 'mono', label: 'Mono' },
 		{ id: 'chroma', label: 'Chroma' },
 		{ id: 'retro', label: 'Retro' }

@@ -3,7 +3,7 @@
 -->
 
 <script lang="ts">
-	import ClickSpark from '$lib/components/ClickSpark.svelte';
+	import ClickSpark, { type SparkShape } from '$lib/components/ClickSpark.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 
@@ -18,21 +18,14 @@
 		likeCount += liked ? 1 : -1;
 	}
 
-	// ----------------------------------------------------------------------
-	// Live playground state. The ClickSpark wrapper around the playground
-	// button reads each rune below and reconfigures its burst on the fly —
-	// every click after a control change immediately reflects the new prop.
-	// ----------------------------------------------------------------------
-	type Shape = 'dot' | 'plus' | 'line' | 'star';
-	let liveShape = $state<Shape>('star');
+	let liveShape = $state<SparkShape>('star');
 	let liveColor = $state('#fbbf24');
 	let liveCount = $state(8);
 	let liveSize = $state(10);
 	let liveSpread = $state(60);
 	let liveDuration = $state(500);
-	let livePlaygroundClicks = $state(0);
 
-	const shapes: { id: Shape; label: string }[] = [
+	const shapes: { id: SparkShape; label: string }[] = [
 		{ id: 'dot', label: 'Dot' },
 		{ id: 'plus', label: 'Plus' },
 		{ id: 'line', label: 'Line' },
@@ -192,11 +185,9 @@
 						spreadRadius={liveSpread}
 						duration={liveDuration}
 					>
-						<button
-							class="cs-cta cs-cta--primary"
-							type="button"
-							onclick={() => livePlaygroundClicks++}
-						>Click anywhere on the button · {livePlaygroundClicks}</button>
+						<button class="cs-cta cs-cta--primary" type="button">
+							Click anywhere on the button
+						</button>
 					</ClickSpark>
 				</div>
 			</section>
