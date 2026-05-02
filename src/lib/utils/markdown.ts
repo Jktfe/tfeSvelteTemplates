@@ -4,13 +4,19 @@
  * Used by ExplainerCanvas (tooltips, card bodies) and by ComponentPageShell
  * (sibling .md docs surfaced as the "Logic explainer" section).
  *
- * Pipeline: marked (GFM) → highlight.js (code blocks) → DOMPurify (XSS).
+ * Pipeline: marked (GFM) → highlight.js (code blocks) → sanitize-html (XSS).
+ *
+ * NOTE: We use `sanitize-html` rather than `isomorphic-dompurify` because
+ * the latter pulls in `jsdom`, whose `html.js` does `require('parse5')`.
+ * parse5 v8 is pure ESM, and Vercel's Node 22 runtime (Rust launcher)
+ * still throws ERR_REQUIRE_ESM on it. sanitize-html is pure JS with its
+ * own HTML parser — no jsdom, no parse5, runs cleanly on every Node
+ * version we target.
  */
 
 import { marked, type Renderer, type Tokens } from 'marked';
 import hljs from 'highlight.js';
-import DOMPurify from 'isomorphic-dompurify';
-import type { Config } from 'dompurify';
+import sanitizeHtml from 'sanitize-html';
 import { escapeHtml } from '$lib/htmlUtils';
 
 const renderer: Partial<Renderer> = {
@@ -40,8 +46,11 @@ marked.use({
 	renderer
 });
 
-const DOMPURIFY_CONFIG: Config = {
-	ALLOWED_TAGS: [
+// sanitize-html allow-list — same surface as the previous DOMPurify config.
+// Tags + attrs cover GFM markdown output, code-block highlighting, and
+// the `data-definition` hook used by ExplainerCanvas tooltip triggers.
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+	allowedTags: [
 		'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
 		'p', 'br', 'hr',
 		'ul', 'ol', 'li',
@@ -52,19 +61,35 @@ const DOMPURIFY_CONFIG: Config = {
 		'span', 'div',
 		'sup', 'sub', 'mark', 'abbr', 'kbd'
 	],
-	ALLOWED_ATTR: [
-		'href', 'target', 'rel', 'title', 'alt', 'src',
-		'class', 'id', 'data-definition', 'data-*',
-		'width', 'height', 'colspan', 'rowspan'
-	],
-	ALLOW_DATA_ATTR: true,
-	ADD_ATTR: ['target', 'rel'],
-	ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i
+	allowedAttributes: {
+		'*': ['class', 'id', 'data-definition', 'title'],
+		a: ['href', 'target', 'rel'],
+		img: ['src', 'alt', 'width', 'height'],
+		td: ['colspan', 'rowspan', 'align'],
+		th: ['colspan', 'rowspan', 'align', 'scope']
+	},
+	allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+	allowedSchemesByTag: {
+		img: ['http', 'https', 'data']
+	},
+	allowProtocolRelative: false,
+	transformTags: {
+		// Force every external link to open safely in a new tab. Match the
+		// previous DOMPurify ADD_ATTR behaviour.
+		a: (tagName, attribs) => {
+			const next: Record<string, string> = { ...attribs };
+			if (next.href && /^https?:/i.test(next.href)) {
+				next.target = '_blank';
+				next.rel = 'noopener noreferrer';
+			}
+			return { tagName, attribs: next };
+		}
+	}
 };
 
 function sanitiseHtml(html: string): string {
 	try {
-		return DOMPurify.sanitize(html, DOMPURIFY_CONFIG) as string;
+		return sanitizeHtml(html, SANITIZE_OPTIONS);
 	} catch {
 		return escapeHtml(html);
 	}
