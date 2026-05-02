@@ -7,14 +7,27 @@
 
 	const checkout = ['Cart', 'Shipping', 'Payment', 'Review'];
 	const onboarding = ['Account', 'Verify email', 'Profile', 'Preferences', 'Done'];
+	const release = ['Build', 'Test', 'Stage', 'Ship'];
 
 	let step = $state(1);
+
+	// Pushing currentStep past the final index marks every step as 'done' —
+	// that's our cue to render the success card alongside the completed strip.
+	let releaseStep = $state(release.length);
+	let allDone = $derived(releaseStep >= release.length);
 
 	function next() {
 		step = Math.min(checkout.length - 1, step + 1);
 	}
 	function prev() {
 		step = Math.max(0, step - 1);
+	}
+
+	function resetRelease() {
+		releaseStep = 0;
+	}
+	function completeRelease() {
+		releaseStep = release.length;
 	}
 
 	const codeExplanation =
@@ -75,6 +88,49 @@
 						doneColor="#7c3aed"
 						pendingColor="#e9d5ff"
 					/>
+				</div>
+			</section>
+
+			<section>
+				<div class="row-between">
+					<h3>All-done success state</h3>
+					<div class="actions">
+						<button onclick={resetRelease} class="btn-ghost">Reset</button>
+						<button onclick={completeRelease} class="btn-primary" disabled={allDone}>
+							{allDone ? 'Completed' : 'Mark complete'}
+						</button>
+					</div>
+				</div>
+				<p class="note">
+					Setting <code>currentStep</code> past the final index marks every step done — useful for the &ldquo;wizard finished&rdquo; screen.
+				</p>
+				<div class="frame">
+					<Stepper steps={release} currentStep={releaseStep} />
+					{#if allDone}
+						<div class="success-card" role="status">
+							<svg
+								viewBox="0 0 24 24"
+								width="32"
+								height="32"
+								aria-hidden="true"
+								class="success-icon"
+							>
+								<circle cx="12" cy="12" r="11" fill="#22c55e" />
+								<path
+									d="M7 12l3.5 3.5L17 9"
+									fill="none"
+									stroke="#fff"
+									stroke-width="2.5"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								/>
+							</svg>
+							<div>
+								<strong>Release shipped.</strong>
+								<p>All four stages have completed. Good work, team.</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 			</section>
 		</div>
@@ -196,5 +252,32 @@
 		margin: 0.5rem 0 0;
 		font-size: 0.85rem;
 		color: var(--fg-2);
+	}
+
+	.success-card {
+		margin-top: 1rem;
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.85rem 1rem;
+		background: rgba(34, 197, 94, 0.08);
+		border: 1px solid rgba(34, 197, 94, 0.35);
+		border-radius: 0.6rem;
+	}
+
+	.success-card strong {
+		color: var(--fg-1);
+		display: block;
+		font-size: 0.95rem;
+	}
+
+	.success-card p {
+		margin: 0.15rem 0 0;
+		color: var(--fg-2);
+		font-size: 0.85rem;
+	}
+
+	.success-icon {
+		flex-shrink: 0;
 	}
 </style>

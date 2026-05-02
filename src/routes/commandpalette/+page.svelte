@@ -8,13 +8,138 @@
 	const shell = catalogShellPropsForSlug('/commandpalette')!;
 
 	let paletteOpen = $state(false);
+	let controlledOpen = $state(false);
+	let groupedOpen = $state(false);
 	let selectedLog = $state<string[]>([]);
+	let lastGroupedSelection = $state<CommandPaletteItem | null>(null);
 
 	function handleSelect(item: CommandPaletteItem) {
 		selectedLog = [`Selected: ${item.icon ?? ''} ${item.label}`, ...selectedLog.slice(0, 9)];
 	}
 
+	function handleGroupedSelect(item: CommandPaletteItem) {
+		lastGroupedSelection = item;
+	}
+
 	const items = FALLBACK_COMMAND_PALETTE_ITEMS;
+
+	// A richer item list with four groups and lots of keyword aliases. The fuzzy
+	// matcher weighs label > keyword > description, so typing a keyword still
+	// surfaces the right item even when it's nowhere in the visible label.
+	const groupedItems: CommandPaletteItem[] = [
+		// File group
+		{
+			id: 'file-new',
+			label: 'New File',
+			description: 'Start a fresh document',
+			icon: '📄',
+			group: 'File',
+			shortcut: '⌘N',
+			keywords: ['create', 'add', 'blank']
+		},
+		{
+			id: 'file-open',
+			label: 'Open…',
+			description: 'Open a recent file',
+			icon: '📂',
+			group: 'File',
+			shortcut: '⌘O',
+			keywords: ['load', 'browse', 'recent']
+		},
+		{
+			id: 'file-save',
+			label: 'Save',
+			description: 'Persist current document',
+			icon: '💾',
+			group: 'File',
+			shortcut: '⌘S',
+			keywords: ['store', 'write', 'commit']
+		},
+		// Edit group
+		{
+			id: 'edit-undo',
+			label: 'Undo',
+			description: 'Reverse last change',
+			icon: '↶',
+			group: 'Edit',
+			shortcut: '⌘Z',
+			keywords: ['back', 'revert', 'rewind']
+		},
+		{
+			id: 'edit-redo',
+			label: 'Redo',
+			description: 'Replay last reversed change',
+			icon: '↷',
+			group: 'Edit',
+			shortcut: '⇧⌘Z',
+			keywords: ['forward', 'repeat']
+		},
+		{
+			id: 'edit-find',
+			label: 'Find in File',
+			description: 'Search the current document',
+			icon: '🔍',
+			group: 'Edit',
+			shortcut: '⌘F',
+			keywords: ['search', 'locate', 'grep']
+		},
+		// View group
+		{
+			id: 'view-zoom-in',
+			label: 'Zoom In',
+			description: 'Increase viewport scale',
+			icon: '🔎',
+			group: 'View',
+			shortcut: '⌘=',
+			keywords: ['enlarge', 'bigger', 'magnify']
+		},
+		{
+			id: 'view-toggle-sidebar',
+			label: 'Toggle Sidebar',
+			description: 'Hide or show the file tree',
+			icon: '📐',
+			group: 'View',
+			shortcut: '⌘B',
+			keywords: ['panel', 'rail', 'navigation']
+		},
+		{
+			id: 'view-settings',
+			label: 'Settings',
+			description: 'Open editor preferences',
+			icon: '⚙️',
+			group: 'View',
+			shortcut: '⌘,',
+			// Try typing "preferences" or "config" — the keyword alias matches
+			// even though neither word is in the visible label.
+			keywords: ['preferences', 'config', 'options', 'gear']
+		},
+		// Help group
+		{
+			id: 'help-docs',
+			label: 'Documentation',
+			description: 'Open the docs site',
+			icon: '📚',
+			group: 'Help',
+			keywords: ['manual', 'guide', 'reference', 'help']
+		},
+		{
+			id: 'help-shortcuts',
+			label: 'Keyboard Shortcuts',
+			description: 'View all keybindings',
+			icon: '⌨️',
+			group: 'Help',
+			shortcut: '⌘/',
+			keywords: ['hotkeys', 'bindings', 'keys']
+		},
+		{
+			id: 'help-feedback',
+			label: 'Send Feedback',
+			description: 'Tell us what you think',
+			icon: '💬',
+			group: 'Help',
+			keywords: ['contact', 'support', 'bug', 'report']
+		}
+	];
 
 	const codeExplanation =
 		'CommandPalette wires CMD/Ctrl+K to a global keydown listener and traps focus inside the dialog while open. Each result is scored against the query (label > description > hidden keywords) using a tiny in-file fuzzy ranker that exits early once enough matches are found, so even hundreds of items stay snappy. Up/Down arrows roll over, Enter activates, Escape closes — the underlying state is a single bindable isOpen so parents can open the palette programmatically.';
@@ -33,7 +158,7 @@
 	{#snippet demo()}
 		<div class="cmd-demo">
 			<section>
-				<h3>Try it</h3>
+				<h3>Default · keyboard or click</h3>
 				<p class="note">
 					Press <kbd>⌘K</kbd> (Mac) or <kbd>Ctrl+K</kbd> (Windows/Linux), or click the button below.
 				</p>
@@ -50,6 +175,44 @@
 				</button>
 			</section>
 
+			<section>
+				<h3>Controlled state · <code>bind:isOpen</code></h3>
+				<p class="note">
+					The bound boolean below is the single source of truth. Toggle it from anywhere and the palette obeys.
+				</p>
+				<div class="controls-row">
+					<button class="open-btn" onclick={() => (controlledOpen = !controlledOpen)}>
+						{controlledOpen ? 'Close palette' : 'Open palette'}
+					</button>
+					<div class="state-badge" class:state-on={controlledOpen}>
+						isOpen = <code>{controlledOpen}</code>
+					</div>
+				</div>
+			</section>
+
+			<section>
+				<h3>Grouped + keyword fuzzy-match</h3>
+				<p class="note">
+					Four groups (File / Edit / View / Help) with keyword aliases. Try typing
+					<kbd>preferences</kbd> — &ldquo;Settings&rdquo; matches via its hidden keyword. Or try
+					<kbd>hotkeys</kbd>, <kbd>magnify</kbd>, or <kbd>grep</kbd>.
+				</p>
+				<button class="open-btn" onclick={() => (groupedOpen = true)}>
+					<span aria-hidden="true">🗂️</span>
+					Open grouped palette
+				</button>
+				{#if lastGroupedSelection}
+					<p class="note last-pick">
+						Last pick:
+						<strong>
+							{lastGroupedSelection.icon ?? ''}
+							{lastGroupedSelection.label}
+						</strong>
+						<span class="muted">in {lastGroupedSelection.group}</span>
+					</p>
+				{/if}
+			</section>
+
 			{#if selectedLog.length > 0}
 				<section>
 					<h3>Selection log</h3>
@@ -63,6 +226,22 @@
 		</div>
 
 		<CommandPalette {items} bind:isOpen={paletteOpen} onSelect={handleSelect} />
+		<!-- Controlled palette: parent fully owns isOpen and there is no shortcutKey conflict
+		     because we use a unique key here. -->
+		<CommandPalette
+			{items}
+			bind:isOpen={controlledOpen}
+			shortcutKey="j"
+			onSelect={handleSelect}
+		/>
+		<!-- Grouped palette: distinct shortcut so opening one doesn't trip the others. -->
+		<CommandPalette
+			items={groupedItems}
+			bind:isOpen={groupedOpen}
+			shortcutKey="g"
+			placeholder="Search commands or try a keyword (preferences, magnify, grep)…"
+			onSelect={handleGroupedSelect}
+		/>
 	{/snippet}
 
 	{#snippet api()}
@@ -202,5 +381,41 @@
 		border: 1px solid var(--border);
 		border-radius: 6px;
 		font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
+	}
+
+	.controls-row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+
+	.state-badge {
+		padding: 0.45rem 0.85rem;
+		font-size: 0.85rem;
+		color: var(--fg-2);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 999px;
+	}
+
+	.state-badge.state-on {
+		color: #166534;
+		background: #dcfce7;
+		border-color: #86efac;
+	}
+
+	.state-badge code {
+		font-family: 'SF Mono', SFMono-Regular, Menlo, monospace;
+	}
+
+	.last-pick strong {
+		color: var(--fg-1);
+	}
+
+	.last-pick .muted {
+		color: var(--fg-2);
+		font-size: 0.85em;
+		margin-left: 0.35rem;
 	}
 </style>

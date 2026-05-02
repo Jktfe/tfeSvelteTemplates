@@ -9,6 +9,10 @@
 	let range = $state<'1d' | '1w' | '1m' | '1y'>('1w');
 	let theme = $state<'auto' | 'light' | 'dark'>('auto');
 	let plan = $state<'starter' | 'pro' | 'team'>('pro');
+	let align = $state<'left' | 'center' | 'right' | 'justify'>('left');
+	let density = $state<'compact' | 'comfortable' | 'roomy' | 'expansive ultra-wide' | 'auto'>(
+		'comfortable'
+	);
 
 	const viewOptions = [
 		{ value: 'list', label: 'List', icon: '☰' },
@@ -33,6 +37,25 @@
 		{ value: 'starter', label: 'Starter' },
 		{ value: 'pro', label: 'Pro' },
 		{ value: 'team', label: 'Team' }
+	];
+
+	// Icons-only: pass an empty label so the segment renders the glyph alone.
+	// Crucial bit: the icon is enough on its own here, but ariaLabel still
+	// names the control for screen readers.
+	const alignOptions = [
+		{ value: 'left', label: '', icon: '⇤' },
+		{ value: 'center', label: '', icon: '↔' },
+		{ value: 'right', label: '', icon: '⇥' },
+		{ value: 'justify', label: '', icon: '☰' }
+	];
+
+	// Wildly varying label widths to prove equalWidth=false truly fits content.
+	const densityOptions = [
+		{ value: 'compact', label: 'XS' },
+		{ value: 'comfortable', label: 'Comfortable' },
+		{ value: 'roomy', label: 'Roomy default' },
+		{ value: 'expansive ultra-wide', label: 'Expansive ultra-wide' },
+		{ value: 'auto', label: 'Auto' }
 	];
 
 	const items = [
@@ -119,6 +142,34 @@
 					ariaLabel="Plan tier"
 				/>
 				<p class="note">Plan: <strong>{plan}</strong></p>
+			</section>
+
+			<section>
+				<h3>Icons-only · narrow toolbar</h3>
+				<p class="note">Glyph-only segments for compact toolbars. The label is empty, so each pill collapses to just the icon.</p>
+				<div class="seg-narrow">
+					<SegmentedControl
+						options={alignOptions}
+						bind:value={align}
+						size="sm"
+						ariaLabel="Text alignment"
+					/>
+				</div>
+				<p class="note">Alignment: <strong>{align}</strong></p>
+			</section>
+
+			<section>
+				<h3>Content-fit with mixed widths</h3>
+				<p class="note">
+					<code>equalWidth=&#123;false&#125;</code> lets each segment hug its label, so &ldquo;XS&rdquo; stays tight while &ldquo;Expansive ultra-wide&rdquo; gets the room it needs.
+				</p>
+				<SegmentedControl
+					options={densityOptions}
+					bind:value={density}
+					equalWidth={false}
+					ariaLabel="Layout density"
+				/>
+				<p class="note">Density: <strong>{density}</strong></p>
 			</section>
 		</div>
 	{/snippet}
@@ -252,5 +303,9 @@
 		font-size: 0.92rem;
 		font-weight: 500;
 		color: var(--fg-1);
+	}
+
+	.seg-narrow {
+		max-width: 14rem;
 	}
 </style>

@@ -38,6 +38,34 @@
 		{ id: 'permadelete', label: 'Delete Permanently', danger: true }
 	];
 
+	const cornerItems: ContextMenuItem[] = [
+		{ id: 'view-details', label: 'View details', shortcut: '⌘I' },
+		{ id: 'rename-corner', label: 'Rename', shortcut: '⏎' },
+		{ id: 'tag', label: 'Add tag…' },
+		{ type: 'divider' },
+		{ id: 'archive', label: 'Archive' },
+		{ id: 'delete-corner', label: 'Delete', shortcut: '⌫', danger: true }
+	];
+
+	// We need the trigger element so the synthetic Shift+F10 lands on the right
+	// node — focus first, then dispatch the keydown event the component listens for.
+	let programmaticTrigger = $state<HTMLDivElement | null>(null);
+
+	function fireShiftF10() {
+		if (!programmaticTrigger) return;
+		// Focus the trigger so the keydown is delivered to a focused element,
+		// matching how a real keyboard user would open the menu.
+		programmaticTrigger.focus();
+		const event = new KeyboardEvent('keydown', {
+			key: 'F10',
+			code: 'F10',
+			shiftKey: true,
+			bubbles: true,
+			cancelable: true
+		});
+		programmaticTrigger.dispatchEvent(event);
+	}
+
 	const codeExplanation =
 		'ContextMenu intercepts the contextmenu event on its trigger and renders the menu only while open, so when closed there is zero DOM cost beyond the wrapper. Right-click opens at the click point; Shift+F10 and the dedicated menu key open anchored to the trigger. ↑/↓ navigate (skipping dividers and disabled items), Home/End jump to the ends, Enter activates, Esc closes — full WAI-ARIA menu pattern. clampToViewport flips the menu after mount when it would overflow, with an 8px safety padding.';
 </script>
@@ -97,6 +125,53 @@
 							<span class="file-meta">Trashed 5 days ago</span>
 						</div>
 					</ContextMenu>
+				</div>
+			</section>
+
+			<section>
+				<h3>Programmatic Shift+F10 trigger</h3>
+				<p class="note">
+					Clicking the button below focuses the row and dispatches a synthetic
+					<kbd>Shift</kbd>+<kbd>F10</kbd> keyboard event — the same path screen-reader users take to open a menu.
+				</p>
+				<div class="surface programmatic-row">
+					<ContextMenu items={fileItems} onSelect={record} ariaLabel="Programmatic file actions">
+						<div
+							class="file-row"
+							bind:this={programmaticTrigger}
+							tabindex="0"
+							role="button"
+							aria-label="Focusable trigger for keyboard-only.txt"
+						>
+							<span class="file-icon">⌨️</span>
+							<span class="file-name">keyboard-only.txt</span>
+							<span class="file-meta">Focusable trigger</span>
+						</div>
+					</ContextMenu>
+					<button class="trigger-btn" onclick={fireShiftF10}>
+						Open via Shift+F10
+					</button>
+				</div>
+			</section>
+
+			<section>
+				<h3>Viewport-edge clamping</h3>
+				<p class="note">
+					The trigger lives in the bottom-right corner of a constrained box. The menu measures itself after mount and shifts back into the visible area, so it never gets clipped.
+				</p>
+				<div class="clamp-stage">
+					<div class="clamp-anchor">
+						<ContextMenu
+							items={cornerItems}
+							onSelect={record}
+							ariaLabel="Corner item actions"
+						>
+							<div class="corner-tile">
+								<span aria-hidden="true">📍</span>
+								<span>Right-click here</span>
+							</div>
+						</ContextMenu>
+					</div>
 				</div>
 			</section>
 
@@ -278,5 +353,56 @@
 		color: var(--fg-2);
 		font-size: 0.85em;
 		margin-left: 0.5rem;
+	}
+
+	.programmatic-row {
+		flex-direction: column;
+		gap: 0.85rem;
+	}
+
+	.trigger-btn {
+		padding: 0.45rem 0.9rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: #fff;
+		background: var(--brand, #146ef5);
+		border: none;
+		border-radius: 6px;
+		cursor: pointer;
+	}
+
+	.trigger-btn:hover {
+		filter: brightness(0.95);
+	}
+
+	/* Clamp stage: a relatively-positioned box that anchors the trigger to the
+	   bottom-right. The component's clampToViewport call measures and shifts the
+	   menu back into the visible viewport so it never clips off-screen. */
+	.clamp-stage {
+		position: relative;
+		min-height: 280px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		overflow: hidden;
+	}
+
+	.clamp-anchor {
+		position: absolute;
+		bottom: 0.85rem;
+		right: 0.85rem;
+	}
+
+	.corner-tile {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.65rem 0.95rem;
+		background: var(--surface-2, var(--surface));
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		font-size: 0.88rem;
+		color: var(--fg-1);
+		cursor: context-menu;
 	}
 </style>

@@ -36,6 +36,26 @@
 	];
 	let iconActive = $state('home');
 
+	// Sidebar-style nav: vertical orientation + pill variant. Useful for
+	// settings or admin shells where the rail lives next to the content.
+	const sidebarTabs = [
+		{ id: 'profile', label: 'Profile', icon: '👤' },
+		{ id: 'security', label: 'Security', icon: '🔐' },
+		{ id: 'integrations', label: 'Integrations', icon: '🔌' },
+		{ id: 'archived', label: 'Archived', icon: '📦', disabled: true }
+	];
+	let sidebarActive = $state('profile');
+
+	// Plan tabs with a single disabled option to show the keyboard handler skipping
+	// it during arrow navigation.
+	const planTabs = [
+		{ id: 'free', label: 'Free' },
+		{ id: 'pro', label: 'Pro' },
+		{ id: 'team', label: 'Team' },
+		{ id: 'enterprise', label: 'Enterprise', disabled: true }
+	];
+	let planActive = $state('free');
+
 	const codeExplanation =
 		'Tabs implements the WAI-ARIA tablist pattern: each trigger is a button with role="tab", the panels carry role="tabpanel", and a roving tabindex keeps only the active trigger reachable by Tab. Arrow keys (←/→ or ↑/↓ depending on orientation) move between tabs, Home/End jump to the ends, and Enter activates. Disabled tabs are skipped automatically by the keyboard handler.';
 </script>
@@ -146,6 +166,56 @@
 					</Tabs>
 				</div>
 			</section>
+
+			<section>
+				<h3>Vertical pill · sidebar nav</h3>
+				<p class="hint">Combine <code>orientation=&quot;vertical&quot;</code> with <code>variant=&quot;pill&quot;</code> for a settings-style rail. Arrow keys move ↑/↓; the disabled item is skipped automatically.</p>
+				<div class="frame">
+					<Tabs
+						tabs={sidebarTabs}
+						bind:active={sidebarActive}
+						orientation="vertical"
+						variant="pill"
+						ariaLabel="Account settings"
+					>
+						{#snippet panel(id)}
+							{#if id === 'profile'}
+								<h4>Profile</h4>
+								<p>Avatar, display name, public bio. Public to everyone in your workspace.</p>
+							{:else if id === 'security'}
+								<h4>Security</h4>
+								<p>Two-factor authentication, recovery codes, active sessions.</p>
+							{:else if id === 'integrations'}
+								<h4>Integrations</h4>
+								<p>GitHub, Slack, Linear and 24 other connectors. Manage scopes here.</p>
+							{/if}
+						{/snippet}
+					</Tabs>
+				</div>
+			</section>
+
+			<section>
+				<h3>Disabled tab item</h3>
+				<p class="hint">
+					Active tab: <strong>{planActive}</strong>. Try arrow-keying onto the Enterprise tab — the keyboard handler will jump over it because <code>disabled: true</code> removes it from the rotation.
+				</p>
+				<div class="frame">
+					<Tabs tabs={planTabs} bind:active={planActive} variant="pill" ariaLabel="Plan tier">
+						{#snippet panel(id)}
+							{#if id === 'free'}
+								<h4>Free</h4>
+								<p>Up to 3 projects, 5 GB storage. Community support.</p>
+							{:else if id === 'pro'}
+								<h4>Pro</h4>
+								<p>Unlimited projects, 100 GB storage. Email support.</p>
+							{:else if id === 'team'}
+								<h4>Team</h4>
+								<p>Roles, audit log, SSO. Priority support.</p>
+							{/if}
+						{/snippet}
+					</Tabs>
+				</div>
+			</section>
 		</div>
 	{/snippet}
 
@@ -251,5 +321,18 @@
 	.bug-list.muted {
 		text-decoration: line-through;
 		opacity: 0.7;
+	}
+
+	.hint {
+		margin: 0 0 0.6rem;
+		font-size: 0.85rem;
+		color: var(--fg-2);
+	}
+
+	.hint code {
+		background: var(--surface-2, var(--surface));
+		padding: 0.1rem 0.35rem;
+		border-radius: 0.25rem;
+		font-size: 0.875em;
 	}
 </style>
