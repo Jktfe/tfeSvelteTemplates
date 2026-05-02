@@ -1,121 +1,193 @@
----
-name: PixelTrail
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# PixelTrail — Technical Logic Explainer
 
-# PixelTrail
+## What Does It Do? (Plain English)
 
-Cursor-tracked decaying pixel-trail wrapper. Wrap any region (hero, card, page section) and small square "pixels" follow the cursor as it moves, fading + scaling + drifting on a CSS keyframe before self-cleaning. Pure CSS animation with a self-clean `setTimeout` per pixel — no `requestAnimationFrame` loop, no resize observer, zero per-frame JS.
+PixelTrail wraps any region — a hero section, a card, a whole page — and emits a chain of small coloured pixels that follow the cursor as it moves. Each pixel fades, scales down, and drifts upward on a CSS keyframe before self-cleaning, so the visible trail looks like a comet tail behind the pointer. The density is throttled by distance (one pixel per ~size pixels of cursor travel) so a fast drag and a slow drag produce visually similar trails.
 
-Distance-throttled spawn (one pixel per ~`throttlePx` units of cursor travel) means trail density stays consistent at any mouse speed: slow drags don't pile pixels at one point, fast flicks don't leave gaps.
+It is a decoration only. The wrapped content keeps its native click and focus semantics; the trail layer is `aria-hidden` and has `pointer-events: none`. Reduced-motion users see a static wrapper, no movement.
 
-Composes naturally with hero text, dark canvases, and other ambient primitives — pair with `MeshGradient` (drifting blob backdrop + cursor pixel trail) or `ElectricBorder` (border arcs + interior trail) for layered ambient interactivity.
+## How It Works (Pseudo-Code)
 
-## Key features
+```
+state:
+  pixels[]   = []             // active pixel sprites
+  lastX, lastY                // last cursor position (for throttle)
+  hasLast    = false
+  colorIndex = 0              // walks through palette colours
+  reducedMotion              // capability flag
 
-- **Three sizes** — `small` (4px) / `medium` (8px) / `large` (16px). Each preset bundles the pixel size and the per-spawn distance threshold so density and grain scale together.
-- **Three palettes** — `mono-white` (clean editorial), `cyber-cyan` (cool sci-fi neon), `sunset-warm` (warm yellow→orange→pink gradient cycle). Each palette has a coordinated `box-shadow` colour for the per-pixel halo.
-- **Distance-throttled spawn** — `distanceSquared` against the last spawn point, comparing against `throttlePx²` to skip spawn when the cursor hasn't travelled far enough. No sqrt cost.
-- **Trail-length cap** — oldest pixels are evicted (FIFO `shift`) when `pixels.length` exceeds the cap. Prevents memory growth on long uninterrupted drags.
-- **Self-cleaning pixels** — each pixel registers a `setTimeout` for `duration + 60ms` to remove itself from state once the CSS keyframe finishes. No global cleanup loop.
-- **Pure helpers exported** from the module-script (`pickSize`, `pickPalette`, `clamp01`, `clampPositive`, `distanceSquared`, `nextTrailId`, `isReducedMotion`) — directly unit-testable without rendering.
-- **Per-instance unique pixel IDs** — module-scoped counter via `nextTrailId()` keeps Svelte `{#each}` keys stable across mounts/unmounts without crypto or `Math.random()`.
-- **prefers-reduced-motion safe** — `isReducedMotion()` is read on mount; under reduced motion, the mousemove handler short-circuits before allocating any state, and the stylesheet has a CSS-layer fallback hiding any pixel that somehow lands in the DOM.
-- **SR-friendly** — slotted content stays in the DOM and a11y tree. The trail layer is `aria-hidden`, `pointer-events: none`, stacked on top of the content via `z-index: 1`. Focus, click and keyboard interaction with the wrapped child are unaffected.
+derived:
+  sizeConfig    = pickSize(size)         // {px, throttlePx}
+  paletteConfig = pickPalette(palette)   // {colors[], shadow}
+  cappedLength  = round(clamp trailLength to [0, 64])
+  safeDuration  = round(clamp duration  to [0, 2000])
 
-## Usage
+on mount:
+  reducedMotion = isReducedMotion()
 
-```svelte
-<script>
-	import PixelTrail from '$lib/components/PixelTrail.svelte';
-</script>
+on mousemove(event):
+  if reducedMotion: return
+  rect = wrapper.getBoundingClientRect()
+  x    = event.clientX - rect.left
+  y    = event.clientY - rect.top
 
-<PixelTrail>
-	<section class="hero">…</section>
-</PixelTrail>
+  if hasLast:
+    threshold² = throttlePx²
+    if distanceSquared(lastX, lastY, x, y) < threshold²:  return    // throttle
+  lastX, lastY, hasLast = x, y, true
 
-<PixelTrail size="large" palette="cyber-cyan" trailLength={32}>
-	<article>…</article>
-</PixelTrail>
+  color = paletteConfig.colors[colorIndex % colors.length]
+  colorIndex++
+  id = nextTrailId()                // module-scoped counter
 
-<PixelTrail size="small" palette="sunset-warm" duration={1000}>
-	<div class="dark-canvas">…</div>
-</PixelTrail>
+  pixels.push({ id, x, y, color })
+  while pixels.length > cappedLength: pixels.shift()    // drop oldest
+
+  schedule(setTimeout, safeDuration + 60):
+    pixels = pixels.filter(p => p.id !== id)            // self-clean
+
+on mouseleave:
+  hasLast = false                                        // reset throttle anchor
+
+render:
+  wrapper { onmousemove, onmouseleave }
+    { children }
+    div.trail-layer aria-hidden
+      for each pixel:
+        span.pixel
+          left, top, --color, --shadow, --size, --duration
+
+CSS:
+  .pixel { animation: pixel-fade var(--duration) cubic-bezier(.32, 0, .67, 0) forwards; }
+  @keyframes pixel-fade {
+    0%   { transform: scale(1) translateY(0);   opacity: 1; }
+    60%  { opacity: 0.8; }
+    100% { transform: scale(0.2) translateY(-6px); opacity: 0; }
+  }
 ```
 
-## Props
+## The Core Concept: Distance-Throttled Spawning Plus Self-Cleaning Sprites
 
-| Prop          | Type                                            | Default        | Notes                                                              |
-| ------------- | ----------------------------------------------- | -------------- | ------------------------------------------------------------------ |
-| `size`        | `'small' \| 'medium' \| 'large'`                | `'medium'`     | Pixel size + spawn-distance threshold.                             |
-| `palette`     | `'mono-white' \| 'cyber-cyan' \| 'sunset-warm'` | `'mono-white'` | Cycled colour set + shadow halo.                                   |
-| `trailLength` | `number`                                        | `16`           | FIFO cap on live pixels. Clamped to `[0, 64]`.                     |
-| `duration`    | `number`                                        | `700`          | Pixel lifetime in ms. Clamped to `[0, 2000]`.                      |
-| `class`       | `string`                                        | `''`           | Extra classes on the wrapper.                                      |
-| `children`    | `Snippet`                                       | _(required)_   | Content to wrap. Stays interactive.                                |
+Two bits of logic make the trail feel right and stay cheap.
 
-Unknown size / palette values fall back to `medium` / `mono-white`.
+**1. Distance throttling.** A naïve "spawn one pixel per mousemove" implementation produces a thick clump on slow drags and a sparse line on fast drags — opposite to the desired behaviour. Throttling by *distance travelled* (rather than by *time*) decouples the visible density from cursor speed:
 
-## Size table
+```
+if distanceSquared(lastX, lastY, x, y) < throttlePx²: skip
+```
 
-| Size     | px  | throttlePx |
-| -------- | --- | ---------- |
-| `small`  | 4   | 6          |
-| `medium` | 8   | 10         |
-| `large`  | 16  | 18         |
+`distanceSquared` is used in preference to `Math.hypot` because we only need a comparison — squaring both sides of `dist < threshold` avoids the `sqrt`. With the medium preset (`throttlePx = 10`), a slow cursor barely beating the threshold spawns ~100 pixels per second; a fast flick of 800 px in 16 ms spawns ~80 pixels — visually similar.
 
-`throttlePx` is the minimum cursor travel between two spawns. Slightly larger than `px` so adjacent pixels overlap a touch — gives the trail a continuous appearance instead of a dotted line.
+**2. Self-cleaning sprites.** Each pixel carries a unique id (`nextTrailId()` from a module-scoped counter), and a `setTimeout` removes it from `pixels[]` after `duration + 60 ms`. The 60 ms cushion absorbs rAF jitter at the tail end so a pixel finishing late doesn't briefly render at scale 0.2 before being garbage-collected.
 
-## Palette table
+The `pixels.shift()` cap on `cappedLength` is the second guardrail: even if the cursor moves so fast that timeouts haven't fired yet, the array never grows past 64 entries (the hard cap), so memory stays bounded under any cursor pattern.
 
-| Palette        | Colours                                | Shadow                       | Vibe                                |
-| -------------- | -------------------------------------- | ---------------------------- | ----------------------------------- |
-| `mono-white`   | `#ffffff`, `#f0f0f5`, `#dcdce6`        | `rgba(255, 255, 255, 0.6)`   | Clean editorial, dark-canvas pairs.  |
-| `cyber-cyan`   | `#00f0ff`, `#00bfff`, `#0080ff`        | `rgba(0, 191, 255, 0.7)`     | Sci-fi terminal, Tron neon.          |
-| `sunset-warm`  | `#ffea00`, `#ff8c00`, `#ff3d6e`        | `rgba(255, 140, 0, 0.7)`     | Warm gradient cycle, marketing.      |
+```
+   slow cursor                fast cursor
+   ●●●●●●●●●●●●               ●  ●  ●  ●  ●  ●
+   │ density throttled        │  spacing matches throttlePx
+   │ to ≥ throttlePx between  │
+   │ consecutive spawns       │
+```
 
-Colours cycle through the array via `colorIndex % colors.length` so a single drag traverses the gradient.
+The visible *colour* walks through the palette one entry at a time per spawn, so a stationary cursor that emits one pixel will use one colour; a moving cursor cycles through the palette in order, giving the trail a chromatic wash rather than a uniform stripe.
 
-## Distinct from
+## CSS Animation Strategy
 
-- **`ClickSpark`** — radial particle burst on `click`. PixelTrail follows the cursor continuously on `mousemove`. Different trigger, different motion shape.
-- **`MagnetGrid`** — force-field grid where dots shift toward/away from the cursor. PixelTrail spawns transient pixels that fade out — no persistent grid.
-- **`MagneticButton`** — single element translates toward cursor. PixelTrail spawns a stream of independent ephemeral elements.
-- **`MagicCard`** — cursor-following spotlight on a single card surface. PixelTrail emits discrete pixels rather than a smooth gradient.
-- **`MeshGradient`** — ambient blob backdrop with no input. PixelTrail is purely input-driven.
-- **`ElectricBorder`** — ambient SVG-filter perimeter crackle. PixelTrail is interior-area cursor-trail.
+The pixel itself is a single `<span>` with five CSS variables. The keyframe runs once per pixel — `forwards` means the final keyframe sticks, but we self-remove before it would matter visually.
 
-## Pure helpers (module-script exports)
+```css
+.pixel {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  margin-left: calc(var(--size) / -2);   /* centred on the cursor */
+  margin-top:  calc(var(--size) / -2);
+  background: var(--color);
+  box-shadow: 0 0 calc(var(--size) * 1.25) var(--shadow);
+  animation: pixel-fade var(--duration) cubic-bezier(0.32, 0, 0.67, 0) forwards;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
 
-- `pickSize(name)` — returns `{ px, throttlePx }`. Falls back to `medium`.
-- `pickPalette(name)` — returns `{ colors, shadow }`. Falls back to `mono-white`.
-- `clamp01(n)` — clamps to `[0, 1]`; treats `NaN`/`±Infinity` as `0`.
-- `clampPositive(n, max?)` — clamps to `[0, max]` with the same guard.
-- `distanceSquared(x1, y1, x2, y2)` — squared Euclidean distance; squared form skips the sqrt for threshold comparisons.
-- `nextTrailId(prefix?)` — module-scoped counter for unique per-pixel IDs across instances.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+@keyframes pixel-fade {
+  0%   { transform: scale(1)   translateY(0);   opacity: 1; }
+  60%  { opacity: 0.8; }
+  100% { transform: scale(0.2) translateY(-6px); opacity: 0; }
+}
+```
 
-## Accessibility
+The cubic-bezier `(0.32, 0, 0.67, 0)` is a deliberately ugly-feeling ease — fast in, slow out, with a held middle. It makes the pixel *linger* visibly before it dies, which is what gives the trail its presence. A linear or ease-out curve makes the pixels look like they're being deleted on a timer rather than fading.
 
-- The slotted content is rendered as the primary content of the wrapper and is read by screen readers normally.
-- The trail layer is `aria-hidden`, `pointer-events: none`, stacked via `z-index: 1`. Invisible to assistive tech.
-- Under `prefers-reduced-motion: reduce`: the mousemove handler short-circuits before any allocation, no pixels are spawned, and the stylesheet has a CSS-layer fallback that hides any pixel that would somehow reach the DOM.
-- The wrapper is role-neutral (no `role` attribute set) — it inherits whatever role the slotted content has.
+The translateY offset (`0 → -6px`) is small but important — the pixel drifts upward as it dies, so the trail has a slight buoyancy. Without it the pixels would just fade in place, which reads as static.
 
-## Performance
+`@media (prefers-reduced-motion: reduce) { .pixel { display: none; } }` is the safety net; the JS handler also short-circuits before any pixel is created.
 
-- Zero per-frame JS. The mousemove handler does a single comparison against the squared distance threshold and either spawns one DOM node or returns immediately.
-- Each pixel is one `<span>` with a CSS keyframe animation. No JS animation loop.
-- FIFO eviction keeps live pixel count bounded at `trailLength` (default 16), so the trail layer is always small.
-- `box-shadow` is the only mildly-expensive CSS — measured fine on commodity hardware at default sizes. Drop palette to `mono-white` and size to `small` if running on weaker GPUs.
-- No canvas, no WebGL, no rAF, no resize observer. Steady-state cost is whatever the browser pays to composite ~16 small spans.
+## State Flow Diagram
 
-## Recipes
+```
+                ┌────────────────────────┐
+                │  IDLE                  │
+                │  pixels = []           │
+                │  hasLast = false       │
+                └──────────┬─────────────┘
+                           │ mousemove enters wrapper
+                           ▼
+                ┌────────────────────────┐
+                │  THROTTLE CHECK        │
+                │  dist² >= threshold² ? │
+                └─┬──────────────┬───────┘
+                  │ no (skip)    │ yes
+                  │              ▼
+                  │     ┌────────────────────────┐
+                  │     │  SPAWN PIXEL           │
+                  │     │  push { id, x, y, c }  │
+                  │     │  cap to cappedLength   │
+                  │     │  schedule self-clean   │
+                  │     └──────────┬─────────────┘
+                  │                │ duration + 60ms timer
+                  ▼                ▼
+                ◄────  back to THROTTLE CHECK or IDLE  ────►
 
-- **Hero ambient trail**: `<PixelTrail size="medium" palette="mono-white"><section class="hero">…</section></PixelTrail>`.
-- **Cyber CTA panel**: `<PixelTrail size="small" palette="cyber-cyan" trailLength={32}><article class="terminal-panel">…</article></PixelTrail>`.
-- **Marketing landing**: `<PixelTrail size="large" palette="sunset-warm" duration={1000}><div class="hero-warm">…</div></PixelTrail>`.
-- **Composed with MeshGradient**: `<MeshGradient palette="dawn"><PixelTrail palette="mono-white"><div class="hero">…</div></PixelTrail></MeshGradient>`.
-- **Composed with ElectricBorder**: `<ElectricBorder intensity="mild" palette="electric-blue"><PixelTrail size="small" palette="cyber-cyan"><div class="card">…</div></PixelTrail></ElectricBorder>`.
+  mouseleave: hasLast = false (next move starts fresh)
+  prefers-reduced-motion: reduce: handler bails immediately; pixels[] never populated
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `size` | `'small' \| 'medium' \| 'large'` | `'medium'` | Pixel size preset. Maps to `{px, throttlePx}` via `pickSize`. small=4/6, medium=8/10, large=16/18. |
+| `palette` | `'mono-white' \| 'cyber-cyan' \| 'sunset-warm'` | `'mono-white'` | Colour palette. Pixels cycle through the palette in spawn order. |
+| `trailLength` | `number` | `16` | Maximum live pixels at once. Clamped to `[0, 64]`. |
+| `duration` | `number` | `700` | Per-pixel lifetime in ms. Clamped to `[0, 2000]`. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+| `children` | `Snippet` | required | Wrapped content. Trail floats over it but does not intercept events. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Very fast cursor flick | Distance throttle limits spawn rate; old pixels are dropped via `pixels.shift()` once `cappedLength` is hit. Memory stays bounded. |
+| Cursor stops for several seconds | No more `mousemove` events fire; existing pixels finish their animation and self-clean. The trail dissolves. |
+| Cursor leaves and re-enters quickly | `mouseleave` resets `hasLast`. The next move spawns immediately rather than throttling against a stale anchor on the other side of the wrapper. |
+| `trailLength = 0` | `cappedLength` falls back to 16 via the `|| 16` guard. To truly disable, omit the component. |
+| Wrapped element internal scrolling | The wrapper's bounding rect doesn't move with the inner scroll, so the trail lands on cursor-position relative to the wrapper, not the scrolled content. Usually correct for hero/card use cases. |
+| `prefers-reduced-motion: reduce` | Mousemove handler bails before touching state. CSS `@media` rule additionally hides `.pixel` if any somehow leak into the DOM. |
+| Touch device with no mouse events | Mousemove never fires; trail layer stays empty. Wrapper renders as plain children. |
+| Component unmounts mid-trail | Active timeouts reference state owned by the unmounted instance — they no-op when they fire. The DOM nodes go with the component. |
+
+## Dependencies
+
+- **Svelte 5** — `$state`, `$derived`, `$props`, `Snippet`, `onMount`.
+- **`<script module>`** exports — `pickSize`, `pickPalette`, `clamp01`, `clampPositive`, `distanceSquared`, `nextTrailId`, `isReducedMotion`. All pure, testable without a DOM.
+- **Zero external libraries** — no animation library, no canvas. Pure CSS keyframes + DOM sprites.
+
+## File Structure
+
+```
+src/lib/components/PixelTrail.svelte          # implementation
+src/lib/components/PixelTrail.md              # this explainer
+src/lib/components/PixelTrail.test.ts         # unit tests for exported helpers
+src/routes/pixeltrail/+page.svelte            # demo page
+```

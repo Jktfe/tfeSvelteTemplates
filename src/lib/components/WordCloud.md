@@ -1,174 +1,187 @@
----
-name: WordCloud
-category: Data Visualisation
-author: tfeclaude
-status: shipped
----
+# WordCloud — Technical Logic Explainer
 
-# WordCloud
+## What Does It Do? (Plain English)
 
-A frequency-weighted text-cloud primitive. N words sized proportionally to their `weight`, packed into a container, optionally rotated, coloured deterministically from a palette. At-a-glance summary of token frequency in a corpus — blog tags, search facets, AI prompt-token frequency, customer-feedback sentiment, code-keyword analysis, conference programme buzzwords.
+A frequency-weighted text cloud. Pass it `[{ text, weight, href? }, …]` and it renders the words sized proportionally to their weight, packed into a container, optionally rotated, coloured deterministically from a palette. Three variants share the same input shape: **organic** (`flex-wrap` chaos in a good way), **grid** (CSS-grid placement with weighted spans), and **radial** (concentric rings of words around a centre).
 
-Pure CSS layout — no canvas, no D3, no rAF. Three variants — organic flex-wrap, CSS-grid, polar radial — each shares the same data shape (`{text, weight, href?}`).
+Use cases: blog tags, search facets, AI prompt-token frequency, customer-feedback sentiment, code-keyword analysis. Pure CSS layout — no canvas, no D3, no rAF. Same word always gets the same colour across renders because palette index is derived from a hash of the text, so re-mounts don't flicker.
 
-## Key features
-
-- **Three variants** — `organic` (flex-wrap line flow, larger words first), `grid` (CSS grid, evenly spaced), `radial` (concentric polar rings around the heaviest word at the centre). Each carries the same data shape.
-- **Linear weight→font-size scale** clamped to `[minSize, maxSize]`. Equal-weight corpora collapse to the midpoint — no division-by-zero, no tiny text.
-- **Deterministic palette colour** — `pickPaletteColor(text, palette)` hashes the word text via `hashWord` and indexes into the palette. Same word → same colour, every render. No colour flicker on re-render.
-- **Optional rotation** — `none`, `alternating` (every 2nd word at -90deg), `random` (deterministic from `seed`, picks from a small angle set so most words still read horizontally).
-- **Three render modes** — `<a>` when `href` set, `<button>` when `onWordClick` set, `<span>` otherwise. Words with `href` participate in tab order.
-- **Hover lift** — `transform: scale(1.08)` on interactive words. Disabled under `prefers-reduced-motion: reduce` and when the component detects `isReducedMotion()` on mount.
-- **Optional screen-reader table** via `srTable` — emits a visually-hidden ranked table of words for SR users; decorative spans become `aria-hidden`.
-- **Pure helpers exported** from the module-script — directly unit-testable without rendering.
-- **Zero external dependencies** — pure Svelte 5 + scoped CSS.
-
-## Usage
-
-```svelte
-<script lang="ts">
-	import WordCloud from '$lib/components/WordCloud.svelte';
-	import type { WordCloudWord } from '$lib/components/WordCloud.svelte';
-
-	const topics: WordCloudWord[] = [
-		{ text: 'svelte', weight: 42 },
-		{ text: 'rune', weight: 28 },
-		{ text: 'reactivity', weight: 22 },
-		{ text: 'store', weight: 18, href: '/docs/store' },
-		{ text: 'snippet', weight: 14 }
-	];
-</script>
-
-<!-- Default organic flow -->
-<WordCloud words={topics} />
-
-<!-- Radial variant with alternating rotation -->
-<WordCloud
-	words={topics}
-	variant="radial"
-	rotation="alternating"
-	minSize={16}
-	maxSize={64}
-/>
-
-<!-- Custom palette + click handler -->
-<WordCloud
-	words={topics}
-	variant="grid"
-	palette={['#6366f1', '#06b6d4', '#10b981']}
-	onWordClick={(w) => console.log(w.text)}
-/>
-```
-
-## Props
-
-| Prop          | Type                                 | Default       | Notes                                                                                |
-| ------------- | ------------------------------------ | ------------- | ------------------------------------------------------------------------------------ |
-| `words`       | `WordCloudWord[]`                    | `[]`          | Empty array → renders nothing.                                                       |
-| `variant`     | `'organic' \| 'grid' \| 'radial'`    | `'organic'`   | Unknown values fall back to `organic`.                                               |
-| `rotation`    | `'none' \| 'alternating' \| 'random'`| `'none'`      | Unknown values fall back to `none`.                                                  |
-| `minSize`     | `number` (px)                        | `14`          | Clamped to `[8, 200]`. Non-finite → fallback `14`.                                   |
-| `maxSize`     | `number` (px)                        | `48`          | Clamped to `[8, 200]`. Non-finite → fallback `48`.                                   |
-| `palette`     | `string[]`                           | built-in (8)  | Empty / non-array falls back to the built-in palette.                                |
-| `seed`        | `number`                             | `0`           | Used by the `random` rotation strategy — same seed → same angles.                    |
-| `srTable`     | `boolean`                            | `false`       | Emit a visually-hidden ranked table for screen readers.                              |
-| `onWordClick` | `(w: WordCloudWord) => void`         | `undefined`   | Words become `<button>` when set (and have no `href`).                               |
-| `aria-label`  | `string`                             | `'Word cloud'`| Screen-reader summary of the cloud's purpose.                                        |
-| `class`       | `string`                             | `''`          | Extra classes on the outer wrapper.                                                  |
-
-### `WordCloudWord` shape
-
-| Field    | Type     | Required | Notes                                                          |
-| -------- | -------- | -------- | -------------------------------------------------------------- |
-| `text`   | `string` | yes      | The word itself. Empty strings are stripped by `normaliseWords`.|
-| `weight` | `number` | yes      | Drives font-size and rank order. Non-finite → coerced to `1`.  |
-| `href`   | `string` | no       | If present, the word renders as an anchor with focus styling.  |
-
-## Pure helpers (module-script exports)
-
-Every helper below is exported and directly unit-testable — no DOM, no Svelte runtime needed.
-
-| Helper                                                                          | Purpose                                                                                  |
-| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| `pickVariant(name)`                                                             | Returns a valid `WordCloudVariant`. Falls back to `'organic'`.                            |
-| `isValidVariant(name)`                                                          | Type guard for `WordCloudVariant`.                                                       |
-| `pickRotationStrategy(name)`                                                    | Returns a valid `WordCloudRotation`. Falls back to `'none'`.                              |
-| `isValidRotationStrategy(name)`                                                 | Type guard for `WordCloudRotation`.                                                      |
-| `clampSize(n, fallback)`                                                        | Clamps to `[8, 200]`. Non-finite → fallback.                                              |
-| `hashWord(text)`                                                                | Deterministic 32-bit djb2-style hash of a string. Stable across renders.                  |
-| `pickPaletteColor(text, palette)`                                               | `palette[hashWord(text) % palette.length]`. Empty palette → built-in default.             |
-| `scaleSize(weight, minWeight, maxWeight, minSize, maxSize)`                     | Linear interpolation, clamped. Equal min/max weights → midpoint of size range.            |
-| `pickRotation(strategy, index, seed?)`                                          | Returns rotation angle in degrees. Deterministic for `random` given the same `seed`.      |
-| `normaliseWords(words)`                                                         | Sort by weight desc + dedupe by lowercase text. First occurrence wins.                    |
-| `getWeightExtents(words)`                                                       | `{ min, max }` of the weight column. Empty → `{ min: 0, max: 1 }`.                        |
-| `polarPosition(index)`                                                          | `{ left, top, ring }` percentages for the radial variant. Index 0 sits at the centre.     |
-| `isReducedMotion()`                                                             | Returns `false` outside the browser; otherwise checks `prefers-reduced-motion`.           |
-
-## How it works
+## How It Works (Pseudo-Code)
 
 ```
-.wordcloud (container, role="list" or "group", aria-label)
-  ├ .wordcloud__word (font-size + colour from helpers)
-  ├ .wordcloud__word
-  └ .wordcloud__word
+state:
+  // No internal mutable state — everything is derived from props
+
+derive normalisedWords (from words):
+  // Sort by weight desc, deduplicate by lowercase text (first wins)
+  // Filter out empty/non-string text
+  return sorted, deduped array
+
+derive weightExtents (from normalisedWords):
+  return { min, max } over weights, with sane fallbacks for empty input
+
+derive resolvedVariant     = pickVariant(variant)        // organic | grid | radial
+derive resolvedRotation    = pickRotationStrategy(rot)   // none | alternating | random
+derive resolvedMin / Max   = clampSize(minSize, maxSize) to [8, 200]
+
+per-word (during render, not state):
+  fontSize = scaleSize(weight, min, max, minPx, maxPx)   // linear, clamped
+  color    = palette[hashWord(text) % palette.length]    // deterministic by text
+  rotation = pickRotation(strategy, index, seed)         // 0 | -90 | small set
+
+  if variant === 'radial':
+    {left%, top%} = polarPosition(index)                  // index 0 at centre, then rings of 6, 12, 18…
+
+render:
+  <ul role="list">
+    {#each normalisedWords}
+      {#if href}    <a  role="listitem" style="font-size, color, transform">…</a>
+      {:else if onWordClick}  <button …>
+      {:else}                  <span aria-hidden …>
+    {/each}
+  </ul>
+  {#if srTable} visually-hidden ranked <table> for screen readers {/if}
 ```
 
-The component maps each word to `{ fontSize, colour, angle }` via the pure helpers, then renders one of three element types per word:
+There's no measurement loop, no resize observer, no rAF. The whole layout is a single render pass: compute the per-word style values, hand them to CSS, let the browser do the placement.
 
-- `<a>` if the word has `href`
-- `<button>` if `onWordClick` is provided
-- `<span>` otherwise
+## Core Concept: Three Layout Strategies, One Data Shape
 
-Variant-specific layout is class-driven:
+The interesting bit isn't the maths (it's modest) — it's that three quite different visual outcomes share the same input shape and the same scaling pipeline.
 
-- `organic` → `display: flex; flex-wrap: wrap` with gap
-- `grid` → `display: grid` with `auto-fit` columns
-- `radial` → `display: block; position: relative` with each word `position: absolute` at `polarPosition(index)` percentages
+### Linear weight → font-size scale
 
-Rotation is applied via inline `transform: rotate(Xdeg)` so it survives variant changes without re-renders. Hover lift is GPU-composited (`transform: scale`) and disabled under reduced-motion.
+```
+fontSize(weight) = minSize + ((weight - minWeight) / (maxWeight - minWeight)) × (maxSize - minSize)
+                 clamped to [minSize, maxSize]
+```
 
-## Accessibility
+Linear, not log. For tag clouds the weights are usually within 1–2 orders of magnitude (a popular tag has 50 occurrences, a rare one has 3); linear scaling is honest and readable. Log scaling makes sense when weights span 4+ orders of magnitude (e.g., pageview counts), in which case you should pre-transform `weight` to `log(weight)` before passing it in.
 
-- The outer wrapper is `role="list"` when items are interactive (or any item carries `href`); otherwise `role="group"` with an `aria-label` summary. List items get `role="listitem"` automatically.
-- Linked / clickable words have `:focus-visible` rings (2px outline, 2px offset) — they participate in tab order and respond to `Enter` / `Space` like native controls.
-- The `srTable` prop emits a visually-hidden ranked `<table>` listing every word and its weight. When this table is present, decorative `<span>` words receive `aria-hidden="true"` so screen readers see the data exactly once.
-- Hover lift is suppressed under `prefers-reduced-motion: reduce` (CSS media query + JS probe both flip the class). Words still render and remain readable.
-- Colour is decorative — it carries no semantic meaning. Word size is the only quantitative encoding.
+When all weights are equal, the formula degenerates to `0/0`. We collapse to the midpoint `(minSize + maxSize) / 2` — uniform-size cloud, no division-by-zero exception.
+
+### Deterministic colour: hash the text
+
+Most word-cloud libraries randomise colour, which means re-renders flicker. We hash the text with a tiny djb2-style 32-bit hash and modulo into the palette:
+
+```
+hashWord("svelte") → 4_184_028_393 → mod palette.length → palette[1]
+```
+
+Same word, same colour, every time. Different cloud, different corpus — same word still gets the same colour, which is occasionally useful when you have multiple clouds side by side comparing eras of the same vocabulary.
+
+### Organic variant: flex-wrap chaos
+
+The container is `display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline;` with a small gap. Words are placed left-to-right, top-to-bottom, breaking into new rows when they run out of width. Optional rotation (`-90deg`) is per-word inline transform. The result is the recognisable "wordle" look: high-weight words anchor visually because they're physically larger, low-weight words fill the gaps.
+
+### Grid variant: CSS-grid with weighted spans
+
+The container is `display: grid` with `grid-template-columns: repeat(auto-fill, minmax(<minSize>px, 1fr))`. Each word's `grid-column` span is proportional to its font size band, so heavy words occupy multiple cells while light ones occupy one. The grid algorithm handles placement deterministically — same input, same layout. Useful when you need predictable rows for screenshot stability.
+
+### Radial variant: polar coordinates per index
+
+```
+polarPosition(0)        = centre (50%, 50%)
+polarPosition(1..6)     = ring 1, evenly spaced around 360°
+polarPosition(7..18)    = ring 2, 12 positions
+polarPosition(19..36)   = ring 3, 18 positions
+…
+```
+
+Ring `k` holds `6k` positions and sits at radius `min(48%, 14% × k)` from centre. The positions are computed once per word at render time — no iteration loop, no collision detection. Tight at the centre, loose at the edges; word 0 (heaviest) sits in the bullseye.
+
+The `0.85` vertical squash on the radius (`top = 50 + sin × radius × 0.85`) compensates for typical wide-aspect containers — without it, the radial cloud looks vertically cramped in landscape orientations.
 
 ## Performance
 
-- Single render pass — no measurement loop, no `ResizeObserver`, no rAF.
-- Polar coordinates for the radial variant are computed once per word at render time (sin/cos × N words — cheap even at N≈200).
-- Hover lift is `transform: scale` only — GPU compositor effect, no layout thrash.
-- The deterministic palette index means re-renders with the same data don't allocate or compare colour arrays.
+Single-pass, GPU-friendly, scales to ~500 words before the DOM count starts to matter.
 
-## Distinct from
+- **n ≤ 50:** Trivial. No measurement, no layout thrash.
+- **n = 50–200:** One render. CSS does all the work.
+- **n = 200–500:** DOM has 200–500 list items. Still fine. Hover scale is `transform`, GPU-composited.
+- **n > 500:** DOM count rather than CPU is the limit. If you genuinely have 1 000+ tags to show, consider truncating to top-N before passing in (with a "show all" toggle).
 
-- **`TickerTape`** — scrolls a structured `TickerItem[]` strip horizontally. WordCloud is a static aggregation visual, not a marquee.
-- **`ScrambledText`** / **`Typewriter`** / **`SplitFlap`** — single-string text effects. WordCloud is a multi-token frequency display.
-- **`BubblePacking`** — D3 force-directed circle packing of numeric values. Visually similar but bubbles encode weight via area; WordCloud encodes weight via font-size and renders the actual word.
-- **`StatCard`** — single static KPI card. WordCloud is the multi-token version.
+There's no rAF loop, no observer, no event delegation. Hover transitions are pure CSS. The cost-per-frame is whatever the browser charges to scale-transform a single element on hover.
 
-## When to use
+`prefers-reduced-motion: reduce` disables the hover scale transition. The cloud is otherwise static — no animations to suppress.
 
-- **Topic clouds** — blog tags, search facets, knowledge-base index pages.
-- **Survey response visualisation** — short free-text answers aggregated into common terms.
-- **AI prompt-token frequency** — the most-used words across a model's context window.
-- **Customer-feedback sentiment summaries** — common nouns/adjectives from review corpora.
-- **Code-keyword analysis** — most-imported symbols, most-used React hooks, etc.
-- **Conference programme overview** — talk titles → buzzword cloud.
+## State Flow Diagram
 
-## When _not_ to use
+```
+              ┌────────────────────────┐
+              │  empty / no words      │  words === []
+              │  renders nothing        │
+              └───────────┬────────────┘
+                          │ words prop set
+                          ▼
+              ┌────────────────────────┐
+              │  normalised            │
+              │  - dedup by lowercase  │
+              │  - sort by weight desc │
+              │  - drop invalid items  │
+              └───────────┬────────────┘
+                          │
+                          ▼
+              ┌────────────────────────┐
+              │  rendered              │
+              │  per-word: size, color │
+              │  rotation, position    │
+              └───────────┬────────────┘
+                          │
+              ┌───────────┼───────────────┐
+              │ hover     │ click         │ words prop changes
+              ▼           ▼               ▼
+       ┌──────────┐ ┌──────────────┐  ┌──────────────────┐
+       │ scale    │ │ onWordClick  │  │ re-normalise     │
+       │ transform│ │ fired (or    │  │ re-render        │
+       │ (CSS)    │ │ <a> follow)  │  │ colours stable   │
+       └──────────┘ └──────────────┘  │ across renders   │
+                                       └──────────────────┘
+```
 
-- **Precise quantitative comparison** — sizes are perceptual, not measurable. Use `BubblePacking` or `DataGridBasic` when readers need to read off exact values.
-- **Long-string corpora** (word count > ~100) — the cloud becomes visual clutter. Pre-filter to top-N first.
-- **Ordered sequences** — a word cloud has no narrative order. Use `TickerTape` or `Timeline` for sequential data.
+## Props Reference
 
-## Recipes
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `words` | `WordCloudWord[]` | `[]` | Each word: `{ text, weight, href? }`. Sorted/deduped automatically. |
+| `variant` | `'organic' \| 'grid' \| 'radial'` | `'organic'` | Layout strategy. Invalid strings fall back to `'organic'`. |
+| `rotation` | `'none' \| 'alternating' \| 'random'` | `'none'` | Rotation strategy. `'random'` is seeded by the `seed` prop. |
+| `minSize` | `number` (px) | `14` | Smallest font size. Clamped to `[8, 200]`. |
+| `maxSize` | `number` (px) | `48` | Largest font size. Clamped to `[8, 200]`. |
+| `palette` | `string[]` | built-in | Hex colours indexed by `hashWord(text) % palette.length`. |
+| `seed` | `number` | `0` | PRNG seed for `'random'` rotation. Same seed → same angles. |
+| `srTable` | `boolean` | `false` | Emit a visually-hidden ranked `<table>` for screen readers. |
+| `onWordClick` | `(word: WordCloudWord) => void` | `undefined` | Click handler. When set, words render as `<button role="listitem">`. |
+| `aria-label` | `string` | `'Word cloud'` | Container ARIA label when words are decorative-only. |
+| `class` | `string` | `''` | Extra classes appended to the container. |
 
-- **Blog tag cloud**: `<WordCloud words={tags} variant="organic" minSize={14} maxSize={32} />`
-- **Search-facet poster**: `<WordCloud words={facets} variant="grid" rotation="alternating" />`
-- **Hub-and-spoke topics**: `<WordCloud words={topics} variant="radial" rotation="random" seed={42} />`
-- **Branded palette**: `<WordCloud words={words} palette={['#6366f1', '#06b6d4']} />`
-- **Filter trigger**: `<WordCloud words={filters} onWordClick={applyFilter} />`
-- **Accessible decorative cloud**: `<WordCloud words={words} aria-label="Top 20 themes from customer interviews" srTable />`
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `words === []` | Container renders empty (no words). No errors. |
+| Single word | Centred at midpoint font size (extents collapse triggers midpoint fallback). |
+| All weights identical | Every word renders at `(minSize + maxSize) / 2`. Visual hierarchy disappears (which is correct — the data has no hierarchy). |
+| Duplicate text (e.g. "Svelte" and "svelte") | Lowercase deduplication keeps the first; the duplicate is silently dropped. |
+| Word with empty/whitespace text | Filtered out during normalisation. |
+| `weight` non-finite (NaN, Infinity) | Defaulted to `1` during normalisation. |
+| `minSize > maxSize` | The clamps still respect `[8, 200]` individually; the scale formula goes negative gracefully and clamps back. Layout looks weird but doesn't error. |
+| `palette` empty or missing | Falls back to `DEFAULT_PALETTE` (8 colours). |
+| `variant` is a typo (e.g., `'wonderful'`) | `pickVariant` returns `'organic'`. The `isValidVariant` guard catches anything not in the union. |
+| `'random'` rotation, same `seed`, two mounts | Identical angles. The Mulberry32 PRNG is deterministic. |
+| `prefers-reduced-motion: reduce` | Hover scale disabled. Layout unchanged. |
+| `srTable: true` | A second, hidden ranked table is added to the DOM for screen-reader users. AT navigates the table; sighted users see only the cloud. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$derived` for normalisation and resolved-prop chains.
+- Zero external dependencies. Hashing, PRNG, scaling, polar placement, and palette indexing are all hand-rolled in <150 lines of pure-function code (each exported from the `<script module>` block for tests).
+
+## File Structure
+
+```
+src/lib/components/WordCloud.svelte    # implementation (incl. exported pure helpers in <script module>)
+src/lib/components/WordCloud.test.ts   # unit tests covering hashWord, scaleSize, polarPosition, etc.
+src/lib/components/WordCloud.md        # this file
+src/routes/wordcloud/+page.svelte      # demo page
+```

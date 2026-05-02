@@ -1,117 +1,182 @@
----
-title: ClickSpark
-description: Wrap any element to fire a configurable particle burst from the click point. Pure CSS keyframe animation, no rAF, four spark shapes, and prefers-reduced-motion suppresses the burst entirely.
-category: Helpful UX
-author: tfeClaude
----
+# ClickSpark — Technical Logic Explainer
 
-# ClickSpark
+## What Does It Do? (Plain English)
 
-A drop-in decorative wrapper that turns any clickable element into a delight moment — every click sprays a configurable burst of particles outward from the click point. Inspired by reactbits.dev's _ClickSpark_, rebuilt as a portable Svelte 5 component with no dependencies and a deliberately small surface area.
+ClickSpark is a wrap-anything decoration that fires a tiny burst of particles every time the user clicks inside the wrapper. The wrapped element — a button, a link, a card, an image — keeps its normal click behaviour; ClickSpark just paints decorative sparks emanating from the exact pixel where the click landed. Each burst is independent and self-cleans, so even if the user mashes a button ten times in a row the bursts overlap cleanly without any state churn.
 
-## Key Features
+The shapes (dot, plus, line, star) and palette (any CSS colour) are configurable per instance. Reduced-motion users get the click semantics with no particles at all — the spark generation short-circuits before any DOM mutation.
 
-- **Wrap anything** — buttons, links, cards, images. The wrapped child keeps its native role and click semantics.
-- **Four spark shapes** — `dot`, `plus`, `line`, `star` (all CSS-only, no SVG required).
-- **Composable** — multiple rapid clicks create independent bursts. Each self-cleans on its own timer; no global state or rAF loop.
-- **Configurable** — count, colour, size, spread radius, duration, easing.
-- **Reduced-motion respectful** — when the user prefers reduced motion, the click handler short-circuits and no burst is spawned.
-- **Zero dependencies** — single `.svelte` file, scoped CSS, no external animation library.
+## How It Works (Pseudo-Code)
 
-## Usage
+```
+state:
+  bursts[]   = []        // list of active bursts; each has { id, x, y, angles[] }
+  nextId     = 0         // monotonically increasing id
 
-```svelte
-<script lang="ts">
-  import ClickSpark from '$lib/components/ClickSpark.svelte';
-</script>
+on click(event):
+  if prefers-reduced-motion: return
+  rect = wrapper.getBoundingClientRect()
+  x    = event.clientX − rect.left           // relative to wrapper
+  y    = event.clientY − rect.top
+  id   = nextId++
+  angles = getSparkAngles(sparkCount)         // [0, 360/n, 2*360/n, …]
+  bursts.push({ id, x, y, angles })
 
-<ClickSpark>
-  <button>Click me</button>
-</ClickSpark>
+  schedule(setTimeout, duration + 50ms):
+    bursts = bursts.filter(b => b.id !== id)  // self-clean
+
+render:
+  emit wrapper { onclick }
+    render { children }
+    for each burst in bursts (keyed by id):
+      div.burst at (left: burst.x, top: burst.y)
+        for each angle in burst.angles:
+          span.spark.spark-{shape} with CSS vars:
+            --angle, --distance, --duration, --color, --size, --easing
+
+CSS:
+  .spark {
+    transform: rotate(var(--angle)) translateX(0) scale(1);
+    animation: spark-fly var(--duration) var(--easing) forwards;
+  }
+  @keyframes spark-fly {
+    0%   { transform: rotate(var(--angle)) translateX(0)              scale(1);   opacity: 1; }
+    60%  { opacity: 1; }
+    100% { transform: rotate(var(--angle)) translateX(var(--distance)) scale(0.4); opacity: 0; }
+  }
 ```
 
-### Custom palette + count
+The `setTimeout` after `duration + 50` ms is deliberately slack — the +50 absorbs jitter so a spark that finishes a frame late doesn't briefly render at scale 0.4 before being garbage-collected.
 
-```svelte
-<ClickSpark sparkColor="#fbbf24" sparkCount={12} shape="star">
-  <button class="cta">Try the demo</button>
-</ClickSpark>
+## The Core Concept: Even Angle Distribution Plus Rotate-Then-Translate
+
+Two ideas combine to give cheap, correct radial bursts.
+
+**1. Evenly-spaced angles** are computed by `getSparkAngles(count)`:
+
+```
+angles[i] = i * (360 / count)
 ```
 
-### Bigger, slower, with line streaks
+For `sparkCount = 8` you get `[0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°]` — a clean octagon. Whatever count the consumer picks, the sparks are always evenly distributed; the function lives in `<script module>` so unit tests can verify it without rendering.
 
-```svelte
-<ClickSpark sparkSize={14} spreadRadius={120} duration={900} shape="line">
-  <a href="/about">About →</a>
-</ClickSpark>
+**2. Rotate-first, translate-second** sidesteps the per-spark `cos/sin` calls you would normally need to send each particle in its own direction. The CSS transform on each spark is:
+
+```
+transform: rotate(var(--angle)) translateX(0)              // start
+transform: rotate(var(--angle)) translateX(var(--distance))  // end
 ```
 
-### Wrap a card or image
+Reading the transform: the `translateX(distance)` walks the spark out along its own X axis, but because that translation is applied *inside* the rotated coordinate system, the spark actually moves in whatever direction the rotation pointed. So a spark assigned `--angle: 90deg` walks straight down once the rotation is applied; a spark at `45deg` walks down-and-right; a spark at `0deg` walks right. The browser does all the trigonometry on the GPU compositor; the JavaScript only had to assign the angles.
 
-The wrapper is `display: inline-block` and inherits the child's footprint, so it works equally well around a card:
-
-```svelte
-<ClickSpark sparkColor="#22d3ee" shape="plus">
-  <article class="feature-card">
-    <h3>Features</h3>
-    <p>Click anywhere on the card.</p>
-  </article>
-</ClickSpark>
+```
+              spark angle distribution (count = 8)
+                       0°
+                        │
+              315°    ──┼──    45°
+                        │
+                 ──    [●]    ──         ← burst origin (the click point)
+                        │
+              225°    ──┼──    135°
+                        │
+                       180°
 ```
 
-## Props
+The mid-keyframe `60% { opacity: 1 }` keeps the spark fully visible for the bulk of its travel, then it fades sharply in the final 40%. This gives the burst a snappier feel than a linear opacity ramp would — the eye reads "particle dies" rather than "particle slowly fades the whole way".
 
-| Prop           | Type                                        | Default                          | Description |
-|----------------|---------------------------------------------|----------------------------------|-------------|
-| `sparkColor`   | `string`                                    | `'#ffffff'`                      | Any CSS colour. Applied via `--color` custom property. |
-| `sparkCount`   | `number`                                    | `8`                              | Number of particles per click. Distributed evenly around 360°. |
-| `sparkSize`    | `number`                                    | `10`                             | Particle size in px. |
-| `spreadRadius` | `number`                                    | `60`                             | How far each particle flies, in px. |
-| `duration`     | `number`                                    | `500`                            | Burst lifetime in ms. |
-| `easing`       | `string`                                    | `'cubic-bezier(0.25, 1, 0.5, 1)'` | CSS easing for the fly-out. |
-| `shape`        | `'dot' \| 'plus' \| 'line' \| 'star'`       | `'dot'`                          | Particle shape. |
-| `class`        | `string`                                    | `''`                             | Extra classes on the wrapper. |
-| `children`     | `Snippet`                                   | required                         | Element(s) to wrap. |
+## CSS Animation Strategy
 
-## Exports
+Every spark is a single `<span>` with five CSS custom properties driving the animation. There is no per-frame JavaScript and no `requestAnimationFrame` loop — the browser handles each spark independently.
 
-`ClickSpark.svelte` also exports a small helper for tests / advanced consumers:
-
-```ts
-import { getSparkAngles } from '$lib/components/ClickSpark.svelte';
-
-getSparkAngles(8); // [0, 45, 90, 135, 180, 225, 270, 315]
+```css
+.spark {
+  position: absolute;
+  width: var(--size);
+  height: var(--size);
+  margin-left: calc(var(--size) / -2);   /* centred on the click point */
+  margin-top:  calc(var(--size) / -2);
+  background: var(--color);
+  transform: rotate(var(--angle)) translateX(0) scale(1);
+  animation: spark-fly var(--duration) var(--easing) forwards;
+}
 ```
 
-## When to use
+Four shape variants share the same animation, distinguished only by paint:
 
-- Premium CTAs (sign-up buttons, pricing tiers, "Get started" links)
-- Confirmation moments (likes, votes, "send" buttons in a chat)
-- Decorative interactions on marketing pages
-- Easter-egg flair on logos or hero illustrations
+- `spark-dot` — `border-radius: 50%`
+- `spark-plus` — two crossed gradient bars, transparent background
+- `spark-line` — a thin pill (`width: size * 0.3`) that streaks outward
+- `spark-star` — solid background masked by a five-pointed `clip-path`
 
-## When not to use
+`pointer-events: none` on the burst layer ensures the visual sparks never swallow subsequent clicks meant for the wrapped child. The wrapper itself is `position: relative; display: inline-block` so it does not disturb the parent's layout flow.
 
-- Form submit buttons in production data-entry flows — visual noise during high-frequency clicks can be disorienting.
-- Anywhere the click frequency is high (e.g. a numpad) — bursts compose, but visually they get chaotic.
-- Inside table cells / list items where the wrapper's `inline-block` layout could disrupt grid alignment — wrap an inner span instead.
+`@media (prefers-reduced-motion: reduce) { .spark { display: none; } }` is the belt-and-braces fallback — the click handler also short-circuits up front, so this only matters if the preference flips mid-flight.
 
-## Accessibility notes
+## State Flow Diagram
 
-- The wrapper carries no ARIA role and is not focusable. Keyboard users interact with the wrapped child as normal.
-- Sparks are `aria-hidden="true"` and `pointer-events: none`, so they never appear in the AT tree and never swallow clicks meant for the child.
-- `prefers-reduced-motion: reduce` triggers two safeguards:
-  1. `handleClick` early-returns before pushing a burst into state, so no burst DOM is created.
-  2. A defensive `@media (prefers-reduced-motion: reduce)` rule in the scoped CSS hides any spark elements that might already be in flight if the preference flips mid-burst.
-- The wrapper's click listener fires before the wrapped child's listener (via bubbling), so the child's click handler still runs normally.
+```
+                 ┌──────────────────┐
+                 │   IDLE           │
+                 │   bursts = []    │
+                 └────────┬─────────┘
+                          │ click event
+                          │ (prefers-reduced-motion? skip → IDLE)
+                          ▼
+                 ┌──────────────────┐
+                 │   FIRING         │   ← bursts has ≥1 entry
+                 │   sparks animate │
+                 │   via CSS only   │
+                 └────────┬─────────┘
+                          │ duration + 50ms timer fires per-burst
+                          ▼
+                 ┌──────────────────┐
+                 │   GARBAGE COL.   │
+                 │   filter out id  │
+                 └────────┬─────────┘
+                          │ if any other bursts remain → FIRING, else → IDLE
+                          ▼
 
-## Why CSS keyframes instead of rAF / spring physics
+   prefers-reduced-motion: reduce → click handler returns early; never enters FIRING.
+```
 
-Each spark only needs to do one thing: fly outward in a straight line and fade. A CSS keyframe animation is the right tool — the browser owns the rendering pipeline, individual sparks don't need per-frame state, and the animation runs on the compositor for smoothness. We use `transform: rotate(var(--angle)) translateX(var(--distance))` so each spark's local X axis points outward and we get unique directions for free without per-spark trigonometry.
+## Props Reference
 
-## Distinct from
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `sparkColor` | `string` | `'#ffffff'` | Any CSS colour. Drives the spark fill (and the gradient stops for the plus variant). |
+| `sparkCount` | `number` | `8` | Particles per click, distributed evenly around 360°. `getSparkAngles` is exported for unit testing. |
+| `sparkSize` | `number` | `10` | Particle size in pixels. Line and star variants scale internally off this. |
+| `spreadRadius` | `number` | `60` | How far each particle travels before reaching its endpoint. |
+| `duration` | `number` | `500` | Burst lifetime in milliseconds. Shorter = snappier; longer = lazier. |
+| `easing` | `string` | `'cubic-bezier(0.25, 1, 0.5, 1)'` | Any CSS easing string. Drives the fly-out curve. |
+| `shape` | `'dot' \| 'plus' \| 'line' \| 'star'` | `'dot'` | Visual variant. All four use the same animation pipeline. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+| `children` | `Snippet` | required | The element(s) to wrap. Their click semantics are preserved. |
 
-- **AnimatedBeam** — directional beam between two anchors. ClickSpark is radial outward from a click.
-- **MagneticButton** — cursor-attract effect on hover. ClickSpark fires on click, not hover.
-- **Spinner** — indeterminate loading indicator. ClickSpark is interaction feedback, not status.
-- **ShineBorder / MagicCard** — ambient/hover decoration on the bounding box. ClickSpark is a one-shot burst tied to the click point.
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `sparkCount = 0` | `getSparkAngles(0)` returns `[]`. The burst is created with no sparks — visible no-op. Cheaper to omit ClickSpark entirely. |
+| Rapid repeated clicks | Each click pushes an independent burst; bursts may overlap visually but never share state. Each cleans itself on its own timer, so the array stays bounded by `clicks-per-second × duration`. |
+| Click on disabled child button | The native click event still bubbles to the wrapper. The burst fires; the inner action does not. Fine for most cases. |
+| Wrapper rendered inside `display: inline` parent | We force `inline-block` in CSS so positioning works. Adjacent inline content is unaffected. |
+| Wrapped element overflows the wrapper | Clicks on the overflowed area do not fire (event listener is on the wrapper only). Wrap the overflowing element instead. |
+| `prefers-reduced-motion: reduce` | Click handler returns early before any burst is created; no DOM mutation, no animation. The wrapped child still receives its click. |
+| Burst fires near the edge of the wrapper | Sparks may animate outside the wrapper's box. The wrapper has `position: relative` but no `overflow: hidden`, so this is intentional — the burst is a moment of celebration, not a layout-bound element. |
+| Component unmounts mid-burst | `setTimeout` callbacks reference state owned by the unmounted instance. Svelte tears down the DOM with the component, so the visible sparks disappear with their host; no memory leak. |
+
+## Dependencies
+
+- **Svelte 5** — `$state` for the reactive bursts array, `$props` for configuration, `Snippet` for the children slot.
+- **`<script module>`** — exports `getSparkAngles` so unit tests can import the angle distributor without rendering the component.
+- **Zero external libraries** — no animation library, no icon library, no font CDN. All four spark shapes are pure CSS.
+
+## File Structure
+
+```
+src/lib/components/ClickSpark.svelte          # implementation
+src/lib/components/ClickSpark.md              # this explainer
+src/lib/components/ClickSpark.test.ts         # unit tests, importing getSparkAngles
+src/routes/clickspark/+page.svelte            # demo page
+```

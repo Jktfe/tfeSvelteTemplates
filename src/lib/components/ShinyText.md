@@ -1,90 +1,140 @@
----
-title: ShinyText
-description: Wrap a string of text in a CSS gradient that has a brighter "shine" sweeping across the letters. Pure CSS keyframe animation, two configurable colours, LR/RL direction, loop or one-shot, prefers-reduced-motion safe.
-category: Helpful UX
-author: tfeClaude
----
+# ShinyText — Technical Logic Explainer
 
-# ShinyText
+## What Does It Do? (Plain English)
 
-A small, decorative typography primitive — wraps a string of text in a CSS gradient and animates a brighter "shine" band sweeping through the letterforms. The whole effect is one keyframe animation; no JavaScript runs after mount, so it is safe to drop many on a page.
+ShinyText takes a plain string and runs a bright "shine" band across the letters on a loop, like a flashlight sweeping over engraved metal. The base text sits in a muted colour; a brighter band moves left-to-right (or right-to-left) and falls off back to the muted base on either side.
 
-Inspired by [reactbits.dev's _ShinyText_](https://reactbits.dev/), rebuilt as a portable Svelte 5 component with zero dependencies.
+It is pure CSS — one `linear-gradient` clipped to the letter shapes via `background-clip: text`, animated by sliding `background-position`. No JavaScript runs after the component mounts. Think of it as polish for a CTA: more refined than a colour change, less heavy than a bouncy attention-grabber.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Pure CSS** — single `@keyframes shiny-sweep` block, GPU-accelerated `background-position`, no rAF, no JS interval.
-- **Configurable colours** — `baseColor` (resting) and `shineColor` (highlight) take any CSS colour value (hex, `rgb()`, `hsl()`, `var(...)`).
-- **Direction control** — `direction="lr"` or `"rl"` toggles the visual sweep without swapping keyframes (uses CSS `animation-direction`).
-- **Loop or one-shot** — `loop={false}` runs the animation exactly once and settles.
-- **Optional start delay** — chain ShinyText elements with staggered `delay` for sequenced reveals.
-- **Reduced-motion safe** — `@media (prefers-reduced-motion: reduce)` suppresses the animation entirely; the text settles in its base colour.
-- **Zero dependencies** — single `.svelte` file, scoped CSS, no animation library.
+```
+state:
+  none — every behaviour is encoded in CSS custom properties
 
-## Usage
+derive:
+  gradient        = "linear-gradient(90deg, base 0%, shine 50%, base 100%)"
+  animDirection   = direction === 'lr' ? 'normal' : 'reverse'
+  iterationCount  = loop ? 'infinite' : '1'
 
-```svelte
-<script lang="ts">
-  import ShinyText from '$lib/components/ShinyText.svelte';
-</script>
+render:
+  <span style="
+    background-image:           gradient;
+    background-size:            200% auto;
+    background-position:        -200% center;       // start fully off-screen left
+    background-clip:            text;
+    -webkit-text-fill-color:    transparent;        // letters become a 'window' to the gradient
+    animation-name:             shiny-sweep;
+    animation-duration:         {duration}s;
+    animation-delay:            {delay}s;
+    animation-direction:        animDirection;      // normal | reverse
+    animation-iteration-count:  iterationCount;     // infinite | 1
+    animation-fill-mode:        forwards;
+  ">{text}</span>
 
-<!-- Default: white shine on slate-400 base, 3-second loop -->
-<ShinyText text="Premium" />
+keyframes shiny-sweep:
+  from: background-position = -200% center  (band fully off-screen left)
+  to:   background-position =  200% center  (band fully off-screen right)
 
-<!-- Brand-coloured CTA shimmer -->
-<ShinyText
-  text="Get Started →"
-  shineColor="#fbbf24"
-  baseColor="#475569"
-  duration={2.5} />
-
-<!-- One-shot reveal with a delay (great for hero entrances) -->
-<ShinyText
-  text="Welcome"
-  loop={false}
-  delay={0.4}
-  direction="lr" />
+prefers-reduced-motion:
+  animation: none
+  background-image: none           // remove gradient so transparent text isn't invisible
+  fill colour: base                // settle on the muted resting colour
 ```
 
-Wrap inside any heading or layout element you like — `ShinyText` renders an inline-block `<span>` and inherits the surrounding font size, weight, and family.
+## The Core Concept: 200%-Wide Gradient + `background-clip: text`
 
-```svelte
-<h1 class="hero-title">
-  Build something <ShinyText text="extraordinary" shineColor="#a78bfa" />
-</h1>
+The trick has two ingredients.
+
+**One** — `background-clip: text` (with `-webkit-text-fill-color: transparent`) makes the gradient render *only* inside the letter shapes. The whitespace between letters stays transparent; the rectangular box that owns the gradient is invisible.
+
+**Two** — the gradient is sized to twice the box width (`background-size: 200% auto`) and positioned off-screen to the left (`background-position: -200% center`). Animating `background-position` from `-200%` to `+200%` slides the gradient four element-widths in total, which is enough that a single bright stripe enters from one side, crosses the letters, and exits the other.
+
+```
+  background-size: 200%
+  ┌───────────────────────────────────────────────┐
+  │  base ──────── shine ──────── base            │   ← gradient image
+  └───────────────────────────────────────────────┘
+                     ▲
+                     │ background-position slides this strip
+                     │
+              ┌──────┴──────┐
+              │  S H I N Y  │   ← element box (clip window)
+              └─────────────┘
+
+  At -200%:  shine band sits left of the box → letters look base-coloured
+  At    0%:  shine band centred → middle letters peak bright
+  At +200%:  shine band sits right of the box → letters back to base
 ```
 
-## Props
+Because the gradient stops are `base 0% → shine 50% → base 100%`, every letter sees the brightest pixel exactly once per sweep, then fades back to base.
 
-| Prop         | Type                | Default     | Description                                           |
-|--------------|---------------------|-------------|-------------------------------------------------------|
-| `text`       | `string`            | required    | The text to display                                   |
-| `baseColor`  | `string`            | `'#94a3b8'` | Resting (non-shine) text colour                       |
-| `shineColor` | `string`            | `'#ffffff'` | Bright highlight colour                               |
-| `duration`   | `number`            | `3`         | Seconds for one full sweep                            |
-| `direction`  | `'lr' \| 'rl'`      | `'lr'`      | Sweep direction (left-to-right or right-to-left)      |
-| `loop`       | `boolean`           | `true`      | Repeat indefinitely (`false` = one-shot)              |
-| `delay`      | `number`            | `0`         | Seconds before the first sweep begins                 |
-| `class`      | `string`            | `''`        | Extra CSS classes appended to the wrapper             |
+## CSS Animation Strategy
 
-## Distinct From
+A single `@keyframes` block animates `background-position` from `-200%` to `+200%`. Direction is controlled by `animation-direction: reverse` for `'rl'` rather than a second keyframe block — both because it is shorter, and because it sidesteps a Safari/older-WebKit bug where CSS custom properties inside `@keyframes` sometimes fail to resolve.
 
-- **`ShineBorder`** animates a *border*, leaving the text colour untouched.
-- **`Typewriter`** types characters one at a time; the gradient stays still.
-- **`Marquee`** scrolls a whole element across the viewport; ShinyText never moves the text itself, only the paint inside it.
+`linear` easing keeps the highlight at constant velocity (any other curve would pool the brightness at one edge of the letters). The animation is GPU-friendly — `background-position` triggers only a paint, not a layout, and modern engines composite it cheaply.
 
-## Accessibility
+For reduced-motion users the `@media (prefers-reduced-motion: reduce)` block does three things: stops the animation, removes the gradient image (so transparent fill doesn't leave invisible letters), and sets the colour back to `--shiny-base`. The result is the same word, statically rendered in the muted colour.
 
-- The wrapped text is a real text node, so screen readers read it normally — no `aria-hidden`, no `aria-live` games are required.
-- `@media (prefers-reduced-motion: reduce)` removes the animation and the gradient entirely; the text rests in `baseColor` for users who prefer not to see motion.
-- Purely decorative — no focus, role, or interaction semantics are introduced.
+## Performance
 
-## Performance Notes
+- Zero JS work after mount. No `requestAnimationFrame`, no `setInterval`, no event listeners.
+- One paint per frame on the element's bounding box; modern engines composite paints on the GPU.
+- Safe to drop dozens onto one page — a marquee of CTAs costs the same as one because they all share the same composited pipeline.
+- Pure-export helpers (`buildShinyGradient`, `getAnimDirection`, `getIterationCount`) live in the module-script block so unit tests can assert each branch in two lines without rendering.
 
-- `background-position` animation is composited on the GPU; the layout, paint, and composite costs do not scale with text length.
-- A reasonable upper bound is "anywhere a heading fits" — this is not designed for animating long paragraphs (which would also be unkind to readers).
-- The component never reads layout, never observes resize, and never uses `requestAnimationFrame`.
+## State Flow Diagram
 
-## Implementation Notes
+```
+  [mounted] ── delay elapsed ──▶ [sweeping] ─┐
+                                              │ keyframe completes
+                                              ▼
+                                   loop ?  ─── infinite cycle
+                                       │
+                                       └── one-shot: settle on
+                                           background-position: 200%
 
-The animation slides a 200%-wide linear gradient (base → shine → base) across an `inline-block` span. `background-clip: text` together with `-webkit-text-fill-color: transparent` clips the visible gradient to the letter glyphs. Direction is controlled by `animation-direction: normal | reverse` rather than two keyframe blocks — this keeps the CSS small and side-steps a Safari/older-WebKit quirk where CSS custom properties inside `@keyframes` could fail to resolve.
+  prefers-reduced-motion: reduce
+        │
+        ▼
+   [static]  no animation, no gradient, base colour fill
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `text` | `string` | required | The text to render. |
+| `baseColor` | `string` | `'#94a3b8'` | Resting / muted letter colour. |
+| `shineColor` | `string` | `'#ffffff'` | Bright peak colour at the centre of the band. |
+| `duration` | `number` | `3` | Seconds for one full sweep. |
+| `direction` | `'lr' \| 'rl'` | `'lr'` | Which way the shine moves across the letters. |
+| `loop` | `boolean` | `true` | Repeat indefinitely (`true`) or sweep once (`false`). |
+| `delay` | `number` | `0` | Seconds to wait before the first sweep starts. |
+| `class` | `string` | `''` | Extra classes on the wrapper span. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Empty `text` prop | Renders an empty inline-block span; no animation flicker. |
+| `loop = false` | Plays one sweep, settles at `background-position: 200% center` (band off-screen right) — letters rest at base colour. |
+| User has `prefers-reduced-motion: reduce` | Animation cancelled, gradient removed, letters render in `baseColor`. |
+| Browser without `background-clip: text` support | Falls back to the literal `color: var(--shiny-base)` declared above the transparent fill — letters appear in the base colour with no shine. |
+| `duration` set to `0` | The keyframe completes instantly; with `loop = true` you get a still image at the end position. |
+| Letter colour overridden by inherited `color` | The `-webkit-text-fill-color: transparent` declaration wins over inherited colour — the gradient remains visible. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$derived` runes and module-script exports are core to the implementation.
+- Zero external dependencies — pure CSS keyframe animation, no animation libraries.
+
+## File Structure
+
+```
+src/lib/components/ShinyText.svelte   # implementation
+src/lib/components/ShinyText.md       # this file (rendered inside ComponentPageShell)
+src/lib/components/ShinyText.test.ts  # vitest unit tests for the helper functions
+src/routes/shinytext/+page.svelte     # demo page
+```

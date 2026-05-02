@@ -568,7 +568,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		components: [
 			component('DataGrid', '/datagrid', '📊', 'Two grid implementations for tabular data.', {
 				source: 'src/lib/components/DataGridBasic.svelte',
-				docs: 'src/lib/components/DataGridBasic.md',
+				docs: 'src/lib/components/DataGrid.md',
 				dependencies: ['@svar-ui/svelte-grid'],
 				relatedFiles: [
 					'src/lib/components/DataGridAdvanced.svelte',
@@ -587,7 +587,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 			component('Sankey', '/sankey', '🌊', 'Expandable flow visualisation.', {
 				themeSupport: 'dual',
 				source: 'src/lib/components/ExpandableSankey.svelte',
-				docs: 'src/lib/components/ExpandableSankey.md',
+				docs: 'src/lib/components/Sankey.md',
 				dependencies: ['@unovis/svelte', '@unovis/ts'],
 				relatedFiles: [
 					'src/lib/components/sankeyData.ts',
@@ -601,6 +601,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 			}),
 			component('ExplainerCanvas', '/explainercanvas', '🎓', 'Connected concept-mapping canvas.', {
 				source: 'src/lib/components/ExplainerCanvas/ExplainerCanvas.svelte',
+				docs: 'src/lib/components/ExplainerCanvas/ExplainerCanvas.md',
 				relatedFiles: [
 					'src/lib/components/ExplainerCanvas/Card.svelte',
 					'src/lib/components/ExplainerCanvas/CardContent.svelte',

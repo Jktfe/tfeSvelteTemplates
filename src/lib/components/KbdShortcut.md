@@ -1,96 +1,167 @@
----
-title: KbdShortcut
-description: Keyboard key cap display — single key or combo, Mac/Windows aware (⌘ vs Ctrl). Native <kbd> for screen readers, pure CSS bevel, zero dependencies.
-category: Controls & Input
-author: AntClaude
----
+# KbdShortcut — Technical Logic Explainer
 
-# KbdShortcut
+## What Does It Do? (Plain English)
 
-Renders one or more keys as styled `<kbd>` caps so users can see at a glance which key combo triggers an action. Auto-detects platform to show ⌘ on Mac and Ctrl/Win on Windows, with a manual override if you want to force one look.
+Renders one or more keys as styled `<kbd>` caps so users can see at a glance which key combo triggers an action. Auto-detects platform (Mac vs Windows/Linux) and substitutes the correct modifier glyphs — ⌘ on Mac, Ctrl/Win on Windows. Passing `keys={['Cmd', 'K']}` produces `⌘ K` on a Mac and `Win + K` on Windows; passing `keys={['G', 'S']}` with a custom `separator=" → "` produces a sequential combo like `G → S`.
 
-## Key Features
+Think of it as a typographer's tool, not a wired-up shortcut handler. The component shows the combo; firing the action when the user actually presses it is wholly the consumer's job.
 
-- Single key (`"Esc"`) or combo array (`["Cmd", "K"]`)
-- Auto Mac vs Windows detection (Cmd → ⌘ / Win, Ctrl → ⌃ / Ctrl)
-- Three sizes (`sm` / `md` / `lg`)
-- Custom separator (`"+"`, `" → "`, or any string)
-- Native `<kbd>` semantic element — free a11y from the browser
-- Default `aria-label` spells out keys ("Cmd plus K") so SR says words, not glyphs
-- Pure CSS bevel — no images, no font icons
-- Zero dependencies
+## How It Works (Pseudo-Code)
 
-## Usage
+```
+state:
+  keys      = string | string[]
+  mac       = optional boolean override
 
-```svelte
-<script lang="ts">
-  import KbdShortcut from '$lib/components/KbdShortcut.svelte';
-</script>
+derive isMac:
+  if mac prop is boolean: return mac (consumer wins)
+  if running on server (no navigator): return true (Mac is the safer SSR default)
+  return /Mac|iPod|iPhone|iPad/.test(navigator.platform)
 
-<!-- Single key -->
-<KbdShortcut keys="Esc" />
+derive keyList = Array.isArray(keys) ? keys : [keys]
+derive renderedKeys = keyList.map(k => symbolFor(k, isMac))
 
-<!-- Mac combo (⌘ K rendered on Mac, Win + K on Windows) -->
-<KbdShortcut keys={['Cmd', 'K']} />
+symbolFor(key, onMac):
+  switch key.toLowerCase():
+    case 'cmd' | 'command' | 'meta': → '⌘' on Mac, 'Win' on Windows
+    case 'ctrl' | 'control':         → '⌃' on Mac, 'Ctrl' on Windows
+    case 'alt' | 'option' | 'opt':   → '⌥' on Mac, 'Alt' on Windows
+    case 'shift':                    → '⇧' on Mac, 'Shift' on Windows
+    case 'enter' | 'return':         → '⏎' on Mac, 'Enter' on Windows
+    case 'esc':                      → 'esc' / 'Esc'
+    case 'tab' | 'backspace' | 'space' | arrow keys: → glyph or label
+    default: return key as-is
 
-<!-- Force Windows look -->
-<KbdShortcut keys={['Ctrl', 'Shift', 'P']} mac={false} />
+derive computedAriaLabel:
+  ariaLabel ?? keyList.join(' plus ')
+  // "Cmd plus K" reads better than "command-K-symbol" via SR
 
-<!-- Sequential combo (press g, then s) -->
-<KbdShortcut keys={['G', 'S']} separator=" → " />
+render:
+  <kbd aria-label={computedAriaLabel}>
+    for each rendered symbol:
+      if not first: <span aria-hidden>{separator}</span>
+      <span>{symbol}</span>
+  </kbd>
 ```
 
-## Props
+The component is essentially a lookup table wrapped in pretty CSS. The clever bits are SSR-safe platform detection and the aria-label that spells out modifier names instead of their glyphs.
 
-| Prop        | Type                        | Default     | Description |
-|-------------|-----------------------------|-------------|-------------|
-| `keys`      | `string \| string[]`        | required    | Key or combo to display. |
-| `mac`       | `boolean \| undefined`      | auto        | Force Mac (`true`) or Windows (`false`) symbols. |
-| `size`      | `'sm' \| 'md' \| 'lg'`      | `'md'`      | Cap size and font scale. |
-| `separator` | `string`                    | `'+'`       | Joiner between keys; ignored if `keys` is a string. |
-| `ariaLabel` | `string`                    | auto        | Override the SR-announced label. |
-| `class`     | `string`                    | `''`        | Extra classes on the wrapper. |
+## The Core Concept: Platform-Aware Symbol Substitution
 
-## Theming
+The same shortcut renders differently depending on platform:
 
-Seven dark-aware CSS custom properties on `.kbd`. Light defaults are inline; a `@media (prefers-color-scheme: dark)` block flips the whole set automatically when the user prefers dark. Unlike Slider or RatingStars, there are **no brand-tinted variants on a kbd cap** — bg, fg, border, and shadow are all chrome — so the whole token set flips together (no Pattern #67 split needed).
+| Logical key | Mac glyph | Windows label |
+|-------------|-----------|---------------|
+| `Cmd`       | ⌘         | Win            |
+| `Ctrl`      | ⌃         | Ctrl           |
+| `Alt`       | ⌥         | Alt            |
+| `Shift`     | ⇧         | Shift          |
+| `Enter`     | ⏎         | Enter          |
+| `Tab`       | ⇥         | Tab            |
+| `Backspace` | ⌫         | Backspace      |
+| `Space`     | ␣         | Space          |
+| Arrow keys  | ↑ ↓ ← →   | ↑ ↓ ← →        |
 
-| Property            | Light default        | Dark default         | Used by               |
-|---------------------|----------------------|----------------------|-----------------------|
-| `--kbd-fg`          | `#374151`            | `#d1d5db`            | Cap text colour       |
-| `--kbd-bg-top`      | `#ffffff`            | `#1f2937`            | Bevel gradient top    |
-| `--kbd-bg-bottom`   | `#f3f4f6`            | `#111827`            | Bevel gradient bottom |
-| `--kbd-border`      | `#d1d5db`            | `#4b5563`            | Cap outline           |
-| `--kbd-shadow-inner`| `#d1d5db`            | `#4b5563`            | Inset depth-line      |
-| `--kbd-shadow-drop` | `rgba(0,0,0,0.05)`   | `rgba(0,0,0,0.4)`    | Outer drop-shadow     |
-| `--kbd-sep-color`   | `#9ca3af`            | `#6b7280`            | Separator (`+`, `→`)  |
+The Mac column uses Unicode glyphs that match the keycaps Apple ships. The Windows column uses readable text labels because the Windows keyboard doesn't have a visual symbol for "Win" or "Ctrl" — Microsoft's design language is text-first.
 
-Override at any scope — `:root`, an app shell, or a single section — without forking the component:
+`navigator.platform` is the detection vector. It's been deprecated in favour of `navigator.userAgentData.platform` for a few years, but the new API is still gated by browser permission prompts (User-Agent Client Hints) on some configurations, so we stick with the legacy property — it's reliable for the Mac/non-Mac binary we actually need.
 
-```css
-:root {
-  --kbd-bg-top: #fef3c7;     /* warm beige cap */
-  --kbd-bg-bottom: #fde68a;
-  --kbd-border: #f59e0b;
-  --kbd-fg: #78350f;
-}
+## SSR-Safe Auto-Detection
+
+`navigator` is undefined on the server. A naïve `navigator.platform.includes('Mac')` would crash during SSR. The fix is a guard:
+
+```
+const isMac = $derived.by(() => {
+  if (typeof mac === 'boolean') return mac;             // explicit prop wins
+  if (typeof navigator === 'undefined') return true;    // SSR: assume Mac
+  return /Mac|iPod|iPhone|iPad/.test(navigator.platform);
+});
 ```
 
-If your app already manages its own dark-mode strategy (manual class toggle rather than `prefers-color-scheme`), set the seven tokens inside your own `.dark { ... }` selector and the system-preference block becomes a no-op for users who haven't set the OS preference.
+Why default to Mac on the server? Two reasons:
 
-## When to use
+1. **Hydration mismatch is harmless either way.** The server renders one value; the client re-derives on hydration. If the user is on Windows, the kbd caps re-render from ⌘ to Ctrl on the first hydration tick — a flicker, but the underlying text content is correct after hydration.
+2. **Mac is the more common dev/laptop environment** for the audience this component primarily serves (early-2026 Svelte template gallery). Defaulting to Mac means most users see the right glyphs even before hydration completes.
 
-- Search/command bar hints (next to the input)
-- Tooltips and menu items showing the shortcut
-- Keyboard shortcut documentation pages
-- Onboarding tours teaching power-user keys
+If you want to force a specific platform regardless of detection (e.g. a docs page that always shows Windows shortcuts), pass `mac={false}` explicitly. The `typeof mac === 'boolean'` check ensures the consumer's choice wins.
 
-## When not to use
+## Accessibility: Spelling Out the Combo
 
-- For pressed-state visual feedback during interaction → use a button
-- For text input examples (use `<code>` instead)
-- When the shortcut isn't actually wired up — be honest with users
+The default `aria-label` is `keyList.join(' plus ')`. So `<KbdShortcut keys={['Cmd', 'K']} />` gets `aria-label="Cmd plus K"`. AT users hear "*kbd, Cmd plus K*" — a clear, speakable shortcut.
 
-## Accessibility notes
+Without this, the alternative is having AT read the literal glyphs, which produces output like "*kbd, command symbol K*" or worse, garbled depending on the SR's glyph dictionary. Words always beat glyphs for accessibility.
 
-The whole combo is wrapped in a single `<kbd>` so screen readers announce the entire shortcut as one unit. The default `aria-label` is the keys joined by `" plus "` (e.g. "Cmd plus K") rather than literal symbols, so SR users hear words, not "command-K-symbol". Separator characters (`+`, `→`) are `aria-hidden="true"` to avoid being announced literally.
+The separator characters between keys (`+`, `→`, or whatever the consumer passes) are wrapped in `<span aria-hidden="true">` so AT skips them. The aria-label already encodes "plus" between keys; the visual separator is for the eye only.
+
+The whole combo is one `<kbd>` element rather than per-key `<kbd>`s. Screen readers announce the combo as a single unit ("kbd, Cmd plus K") rather than three separate kbd announcements ("kbd Cmd, plus, kbd K"). The semantic boundary matches the human concept of "one shortcut".
+
+## State Flow Diagram
+
+```
+   PROPS                                  RENDER
+
+   keys = ['Cmd', 'K']
+   mac  = undefined                       ┌─────────────────────┐
+                                           │  <kbd aria-label=    │
+                                           │   "Cmd plus K">      │
+   ───────────────────────────             │   <span>⌘</span>     │
+                                           │   <span +>+</span>   │  ← aria-hidden
+   isMac = navigator.platform              │   <span>K</span>     │
+       matches Mac?                        │  </kbd>              │
+       (server: true, client: real)       └─────────────────────┘
+
+   ───────────────────────────
+
+   renderedKeys = keyList.map(symbolFor)
+     'Cmd' on Mac → '⌘'
+     'K'           → 'K'
+
+   ───────────────────────────
+
+   On hydration mismatch (Windows user):
+     server rendered '⌘ K'
+     client re-derives → 'Win + K'
+     Svelte updates DOM in place
+
+   prefers-color-scheme = dark:
+     7 chrome tokens flip via @media block
+     no Pattern #67 split (no brand variant on a kbd)
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `keys` | `string \| string[]` | required | Single key (`"Esc"`) or combo array (`["Cmd", "K"]`). |
+| `mac` | `boolean \| undefined` | auto | Force Mac (`true`) or Windows (`false`) symbols. Auto-detects when omitted. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Cap size and font scale. |
+| `separator` | `string` | `'+'` | Joiner between keys. Use `' → '` for sequential combos like `G → S`. Ignored if `keys` is a string. |
+| `ariaLabel` | `string` | auto | Override the SR-announced label. Default is keys joined by `" plus "`. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| User on Windows, server rendered for Mac default | First paint shows ⌘; on hydration, Svelte re-renders to `Win + K`. Brief flicker, no error. To avoid the flicker, pass `mac` explicitly when SSR'ing. |
+| `keys` contains an unknown name (e.g. `"F4"`) | `symbolFor` falls through to the default case and returns the key as-is. So `["Cmd", "F4"]` renders as `⌘ F4`. |
+| `keys = []` (empty array) | Renders an empty `<kbd>`. Keyboard a11y not affected (the `<kbd>` is still semantic), but the visual output is just an empty pill. |
+| `separator` is a multi-character string | Rendered as-is between keys. `separator=" then "` produces `⌘ then K`. |
+| User has `prefers-color-scheme: dark` system preference | All seven `--kbd-*` chrome tokens flip via the media query. The whole cap reads on dark surfaces. |
+| Consumer overrides `--kbd-bg-top` at `:root` and uses dark mode | The system-pref media block writes to `.kbd` directly with ≥(0,2,0) specificity, beating the inherited `:root` token. To override in dark mode, target `body .kbd.kbd` or your own `.dark .kbd.kbd`. |
+| `navigator.platform` returns an empty string | The regex doesn't match; `isMac` returns `false`; Windows glyphs are used. |
+| Component used inside a Tooltip on a button | The `<kbd>` is inline-flex, so it sits naturally next to the button's text. No layout fights. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$derived.by` for the platform check, `$props` for the typed interface.
+- Zero external dependencies. Native `<kbd>`, scoped CSS, no icon library.
+
+## File Structure
+
+```
+src/lib/components/KbdShortcut.svelte    # implementation
+src/lib/components/KbdShortcut.md        # this file (rendered inside ComponentPageShell)
+src/lib/components/KbdShortcut.test.ts   # vitest unit tests
+src/routes/kbdshortcut/+page.svelte      # demo page
+```

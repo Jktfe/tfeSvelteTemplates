@@ -1,114 +1,239 @@
----
-name: PerspectiveGrid
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# PerspectiveGrid — Technical Logic Explainer
 
-# PerspectiveGrid
+## What Does It Do? (Plain English)
 
-Ambient 3D-perspective grid backdrop. Wrap any region (hero, terminal, marketing card, full page) and two infinite grid planes — floor and optional ceiling — drift toward the viewer through a single CSS keyframe. The classic synthwave / TRON / arcade-tunnel look, achieved with `transform-style: preserve-3d`, two `repeating-linear-gradient` planes and a `mask-image` horizon fade. No canvas, no WebGL, no `requestAnimationFrame`.
+PerspectiveGrid wraps a slot of content and paints a TRON / synthwave / arcade-tunnel grid behind it — endless lines drifting toward the viewer, vanishing at a horizon line. The slotted child stays in front, fully interactive; the grid is decorative paint that ignores clicks and the cursor. You can switch between three intensities (`calm` / `standard` / `rush`), three colour modes (`mono` / `neon` / `wireframe`), and toggle a mirrored ceiling to turn the surface into a tunnel.
 
-Composes naturally with the rest of the ambient backdrop family: `MeshGradient` (drifting blobs **behind** the grid for a sunset-over-tunnel look), `NoiseField` (grain **on top** for a 16mm-camera-on-arcade-screen feel), `ElectricBorder` (perimeter arcs around a perspective-grid card), `AuroraBackdrop` (gradient sky with grid receding into it).
+Think of it as the floor of an old vector arcade game. The trick is that the lines aren't moving — only the *background-position* of a repeating pattern is. The plane stays geometrically still; the texture flows over it.
 
-## Key features
+## How It Works (Pseudo-Code)
 
-- **Three intensities** — `calm` / `standard` / `rush`. Each preset bundles drift duration, cell size and line opacity so a single prop tunes everything in proportion.
-- **Three modes** — `mono` (achromatic white grid), `neon` (cyan floor + magenta ceiling, both with a soft drop-shadow glow), `wireframe` (hairline 0.5px lines, no glow).
-- **Optional ceiling plane** — `ceiling={true}` mirrors the floor above the viewer; the surface becomes a tunnel. Off by default — most uses are floor-only.
-- **Pure CSS animation** — drift comes from a `background-position` keyframe, not `transform: translateZ()`, because a 1-cell shift is naturally periodic and loops seamlessly.
-- **Pure helpers exported** from the module-script (`pickIntensity`, `pickMode`, `isValidIntensity`, `isValidMode`, `clamp01`, `isReducedMotion`) — directly unit-testable without rendering.
-- **prefers-reduced-motion safe** — `onMount` flips the `runAnimation` state to false when the media query matches; a CSS `@media (prefers-reduced-motion: reduce)` rule disables the keyframe in case the JS probe ever drifts. The grid still renders — statically.
-- **SR-friendly** — slotted content stays in the DOM and the a11y tree. The grid layer is `aria-hidden`, `pointer-events: none`, stacked behind the slot via `z-index`. Focus, click and keyboard interaction with the wrapped child are unaffected.
+```
+state:
+  intensity   = 'calm' | 'standard' | 'rush'
+  mode        = 'mono' | 'neon' | 'wireframe'
+  ceiling     = false
+  animated    = true
+  opacity     = 1
+  runAnimation = true   // gated by isReducedMotion + prop
 
-## Usage
+derive:
+  cfg            = pickIntensity(intensity)
+                 = { durationS, cellPx, lineOpacity }
+  resolvedMode   = pickMode(mode)
+  resolvedOpacity = clamp01(opacity)
 
-```svelte
-<script>
-	import PerspectiveGrid from '$lib/components/PerspectiveGrid.svelte';
-</script>
+onMount:
+  if animated AND !isReducedMotion(): runAnimation = true
+  else:                                runAnimation = false
 
-<PerspectiveGrid>
-	<section class="hero">…</section>
-</PerspectiveGrid>
+reactive effect:
+  if !animated: runAnimation = false   // runtime opt-out
 
-<PerspectiveGrid intensity="rush" mode="neon" ceiling>
-	<article class="terminal">…</article>
-</PerspectiveGrid>
+render:
+  div.pg-wrapper
+    div.pg-stage (mask-image: linear-gradient horizon fade)
+      div.pg-3d   (perspective: 600px; preserve-3d)
+        div.pg-plane.pg-floor    (rotateX(60deg), tile bg)
+        div.pg-plane.pg-ceiling  (rotateX(-60deg), tile bg)  [if ceiling]
+    div.pg-content
+      {@render children()}     // slot stays z-index: 1, above stage
 
-<PerspectiveGrid intensity="calm" mode="wireframe" animated={false}>
-	<div class="card">…</div>
-</PerspectiveGrid>
+CSS animation:
+  .pg-animated .pg-floor   { animation: pg-drift duration linear infinite }
+  .pg-animated .pg-ceiling { animation: pg-drift-reverse … }
+
+  @keyframes pg-drift {
+    from { background-position: 0 0 }
+    to   { background-position: 0 var(--pg-cell) }
+  }
+  // Shifting by exactly one cell makes the loop seamless —
+  // the grid reads as continuously flowing.
 ```
 
-## Props
+The whole thing is **pure CSS** after mount. No `requestAnimationFrame`, no canvas, no WebGL, no `IntersectionObserver`, no `ResizeObserver`. The only JavaScript work is a single `isReducedMotion()` probe and a `$effect` that flips `runAnimation` if the `animated` prop changes.
 
-| Prop        | Type                                  | Default      | Notes                                                              |
-| ----------- | ------------------------------------- | ------------ | ------------------------------------------------------------------ |
-| `intensity` | `'calm' \| 'standard' \| 'rush'`      | `'standard'` | Bundles drift duration + cell size + line opacity.                 |
-| `mode`      | `'mono' \| 'neon' \| 'wireframe'`     | `'mono'`     | Colour preset; `neon` adds drop-shadow glow.                       |
-| `ceiling`   | `boolean`                             | `false`      | Mirror plane above the floor for a tunnel effect.                  |
-| `animated`  | `boolean`                             | `true`       | Auto-disables under `prefers-reduced-motion: reduce`.              |
-| `opacity`   | `number`                              | `1`          | Stage opacity. Clamped to `[0, 1]`. NaN/±Infinity become `0`.      |
-| `class`     | `string`                              | `''`         | Extra classes on the wrapper.                                      |
-| `children`  | `Snippet`                             | _(required)_ | Content to wrap. Stays interactive and stacked above the grid.     |
+## The Core Concept: Faking Receding 3D with One CSS Trick
 
-Unknown intensity / mode values fall back to `standard` / `mono`.
+The visual is geometrically a 3D scene — a flat plane lying on the floor, tilted away from the camera. The implementation is shockingly simple because of one observation:
 
-## Intensity table
+> **A repeating grid pattern is identical to itself when shifted by exactly one cell.**
 
-| Intensity  | durationS | cellPx | lineOpacity | Vibe                                |
-| ---------- | --------- | ------ | ----------- | ----------------------------------- |
-| `calm`     | `18`      | `80`   | `0.35`      | Slow ambient drift — meditative     |
-| `standard` | `9`       | `60`   | `0.55`      | Editorial default — readable motion |
-| `rush`     | `4`       | `50`   | `0.85`      | Tunnel-rush / arcade attack-screen  |
+So instead of moving the plane forward through 3D space (which would require either CSS `transform: translateZ()` with re-rotated planes, or a canvas/WebGL renderer), the plane stays put and the **background pattern** shifts by one cell. The eye reads the moving pattern as the plane drifting toward the camera.
 
-Duration shrinks and opacity grows as you move from calm to rush — the grid both moves faster and asserts itself more visibly.
+### The 3D scene
 
-## Mode table
+```css
+.pg-3d {
+  perspective: 600px;        /* viewer's distance from the screen */
+  perspective-origin: 50% 50%;
+  transform-style: preserve-3d;
+}
+.pg-plane {
+  position: absolute;
+  left: -100%; width: 300%;   /* oversized: 3× wider than wrapper */
+  height: 100%;
+}
+.pg-floor {
+  bottom: 0;
+  transform-origin: 50% 100%;
+  transform: rotateX(60deg);  /* lay it down */
+}
+.pg-ceiling {
+  top: 0;
+  transform-origin: 50% 0%;
+  transform: rotateX(-60deg); /* mirror it */
+}
+```
 
-| Mode        | Line colour                            | Extra effect                                        | Vibe                                |
-| ----------- | -------------------------------------- | --------------------------------------------------- | ----------------------------------- |
-| `mono`      | Pure white (`#ffffff`)                 | —                                                   | Clean editorial / technical drawing |
-| `neon`      | Cyan floor + magenta ceiling           | `drop-shadow()` glow on each plane                  | Synthwave / 80s arcade              |
-| `wireframe` | White at 85% alpha, 0.5px hairline     | —                                                   | Architectural blueprint / data-vis  |
+`perspective: 600px` is what makes parallel lines visibly converge. With `perspective: none`, the rotated plane would be a uniform parallelogram; with `600px`, it tapers to a vanishing point. The 60° rotation chosen is steep enough to feel "floor-like" but shallow enough that the front edge of the plane stays visible.
 
-## Distinct from
+The plane is **300 % wide and offset `left: -100%`** because perspective-projecting a 100 %-wide plane leaves visible edges in the corners of the wrapper. Triple-wide guarantees coverage at any aspect ratio.
 
-- **`MeshGradient`** — colour-blob backdrop, no input, no geometry. PerspectiveGrid is *geometric structure*. They COMPOSE — a colour-mesh under a perspective grid is a strong marketing hero.
-- **`NoiseField`** — achromatic / chromatic grain *texture*. PerspectiveGrid is *line-based geometry*. They COMPOSE — grid + noise reads as VHS-arcade.
-- **`AuroraBackdrop`** — gradient-sweep ambient wash. PerspectiveGrid carries explicit lines and motion direction.
-- **`ElectricBorder`** — perimeter SVG-filter arcs. PerspectiveGrid fills the *interior* and is input-blind.
-- **`Tilt3D`** — cursor-driven 3D tilt of the wrapped content itself. PerspectiveGrid is an *ambient* 3D scene that ignores the cursor.
-- **`OrbitalRing`** — circular layout of children around a centre. PerspectiveGrid is a flat receding plane.
+### The grid lines
 
-## Pure helpers (module-script exports)
+```css
+.pg-plane {
+  background-image:
+    linear-gradient(to right,  white 1px, transparent 1px),
+    linear-gradient(to bottom, white 1px, transparent 1px);
+  background-size: var(--pg-cell) var(--pg-cell);   /* e.g. 60px × 60px */
+}
+```
 
-- `pickIntensity(name)` — returns `{ durationS, cellPx, lineOpacity }`. Falls back to `standard`.
-- `pickMode(name)` — returns `'mono' | 'neon' | 'wireframe'`. Falls back to `mono`.
-- `isValidIntensity(name)` — type guard for intensity names.
-- `isValidMode(name)` — type guard for mode names.
-- `clamp01(n)` — clamps to `[0, 1]`; treats `NaN` / `±Infinity` / non-numeric input as `0`.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+Two stacked linear-gradients render as a 1 px-wide line every `--pg-cell` pixels in each direction. The result is a tile-able grid texture — no DOM elements, no SVG. Cell size, line opacity, and stroke width are all driven by the resolved intensity config.
 
-## Accessibility
+### The drift loop
 
-- The slotted content is rendered as the primary content of the wrapper and is read by screen readers normally.
-- The grid layer is `aria-hidden`, `pointer-events: none`, stacked via `z-index`. Invisible to assistive tech.
-- Under `prefers-reduced-motion: reduce`: the `animated` prop is forced false on mount, the CSS `@media` query disables the keyframe even if the prop slips through, and the grid still renders — just statically. The geometry is part of the *appearance*, not the *motion*; users who want structure without motion still see it.
-- The wrapper carries no `role` attribute — it inherits whatever role the slotted content has.
+```css
+@keyframes pg-drift {
+  from { background-position: 0 0; }
+  to   { background-position: 0 var(--pg-cell); }
+}
+```
+
+The animation shifts the background by one cell over `--pg-duration`. Because the grid pattern is periodic with period `--pg-cell`, the position-`0` frame and the position-`var(--pg-cell)` frame are visually *identical*. So the linear-easing infinite loop never has a "snap-back" — it appears to flow continuously forever.
+
+`pg-drift-reverse` for the ceiling drifts the opposite direction so the floor and ceiling appear to move *together* in 3D space (they're both rotated 60° but in opposite directions, so they need opposite background-position shifts to flow the same way).
+
+### The horizon fade
+
+```css
+.pg-stage {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%, black 18%, black 82%, transparent 100%
+  );
+}
+```
+
+A mask fades the top and bottom 18 % of the stage to fully transparent. Without this, the perspective plane would cut off in a hard rectangular line at the top of the wrapper — instantly killing the 3D illusion. The mask makes the grid dissolve into the canvas instead.
+
+## CSS Animation Strategy
+
+`background-position` animation is unusual but specifically chosen here:
+
+- **Compositor-only** — modern browsers composite background-position changes on the GPU when `will-change: background-position` is set. No paint, no layout.
+- **Naturally periodic** — shifting by `var(--pg-cell)` is a no-op visually, so the loop is seamless without needing keyframes at intermediate percentages.
+- **No transform on the plane** — leaves the perspective-projected geometry untouched, so the pattern always shifts *along the plane*, not through 3D space.
+
+Compare with the obvious alternative — `transform: translateZ()` on the plane:
+- That would require re-rotating the plane each cycle to maintain the floor angle, or a clever `mod`-style wrap which CSS doesn't natively support.
+- Triggers re-projection through the perspective camera each frame.
+- Visibly stutters when the cycle wraps unless the wrap distance is exactly tuned.
+
+`background-position` sidesteps all of that.
+
+The neon mode adds `filter: drop-shadow(0 0 4px ...) drop-shadow(0 0 12px ...)` to each plane — two stacked drop-shadows give the cyan/magenta tube glow without a blur filter (which would soften the lines). The drop-shadows are GPU-composited but more expensive than mono mode; on lower-end mobile, prefer `mono`.
 
 ## Performance
 
-- Two DOM nodes for the grid (1 floor, +1 ceiling if enabled) plus one stage and one 3D context. No per-cell DOM.
-- Drift is a single `background-position` keyframe on a `will-change: background-position` plane. GPU-composited.
-- Horizon fade is a static `mask-image: linear-gradient(...)` — no runtime cost.
-- The 300% × 300% plane size is enough to cover the viewport at any aspect ratio after the 75° tilt; oversize prevents edge reveal during drift.
+- **Two DOM nodes for the grid** (one floor + optional ceiling) plus the wrapper structure. No per-cell DOM, no SVG.
+- **One animation per plane**, single `background-position` keyframe. GPU-composited.
+- **Mask fade is static** — `linear-gradient` mask computes once per layout, not per frame.
+- **No JavaScript per frame** — the only JS is mount-time `isReducedMotion()` probe and a `$effect` that watches the `animated` prop.
+- **Neon mode adds 2 drop-shadow stops per plane**. Each drop-shadow is a separate compositor pass. If you nest multiple PerspectiveGrids in neon mode, the GPU bill stacks; mono and wireframe stay cheap.
+- **Hi-DPI** — line widths are in CSS pixels (1 px and 0.5 px). On retina the 0.5 px wireframe lines hit sub-pixel rendering, which on some browsers anti-aliases them into invisibility; mono is more robust there.
 
-## Recipes
+## State Flow Diagram
 
-- **Synthwave hero**: `<PerspectiveGrid intensity="rush" mode="neon" ceiling><section>…</section></PerspectiveGrid>`.
-- **Editorial backdrop with grain**: `<PerspectiveGrid intensity="standard" mode="mono"><NoiseField intensity="medium" mode="mono"><div>…</div></NoiseField></PerspectiveGrid>`.
-- **Static technical-drawing card**: `<PerspectiveGrid intensity="calm" mode="wireframe" animated={false}><article>…</article></PerspectiveGrid>`.
-- **Arcade attack-screen**: `<PerspectiveGrid intensity="rush" mode="neon" ceiling><pre class="terminal">…</pre></PerspectiveGrid>`.
-- **Marketing landing combined with mesh gradient**: stack `<MeshGradient>` underneath the page content, then wrap the hero only in `<PerspectiveGrid mode="wireframe">` for a soft sky + crisp floor.
+```
+              ┌────────────────────────────┐
+              │   SSR / first paint        │
+              │   runAnimation = true      │
+              │   stage rendered with cfg  │
+              └────────────┬───────────────┘
+                           │ onMount
+                           ▼
+              ┌────────────────────────────┐
+              │   probe isReducedMotion()  │
+              └────────────┬───────────────┘
+                           │
+              ┌────────────┴───────────────┐
+              │                            │
+              │ animated && !reduced       │ animated=false OR reduced
+              ▼                            ▼
+       ┌──────────────┐            ┌──────────────┐
+       │  drifting    │            │  static      │
+       │  pg-animated │            │  no pg-      │
+       │  class on    │            │  animated    │
+       │  stage; CSS  │            │  class;      │
+       │  keyframes   │            │  background- │
+       │  run         │            │  position    │
+       └──────┬───────┘            │  fixed       │
+              │                    └──────────────┘
+              │ animated prop flips false at runtime
+              ▼
+       ┌──────────────┐
+       │  static      │
+       │  $effect     │
+       │  flips       │
+       │  runAnimation│
+       └──────────────┘
+
+  prefers-reduced-motion: reduce  ──►  CSS @media kills keyframe
+                                       (belt-and-braces alongside JS gate)
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `intensity` | `'calm' \| 'standard' \| 'rush'` | `'standard'` | Bundles drift duration (s), cell size (px), and line opacity. Unknown names fall back to `standard`. |
+| `mode` | `'mono' \| 'neon' \| 'wireframe'` | `'mono'` | Colour preset; `neon` adds drop-shadow glow. Unknown names fall back to `mono`. |
+| `ceiling` | `boolean` | `false` | Mirror plane above the floor — turns the surface into a tunnel. |
+| `animated` | `boolean` | `true` | Auto-disabled if `prefers-reduced-motion: reduce`. |
+| `opacity` | `number` | `1` | Stage opacity. Clamped to `[0, 1]`; `NaN` / `±Infinity` collapse to `0`. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+| `children` | `Snippet` | required | Slotted content rendered above the grid. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Unknown `intensity` or `mode` | `pickIntensity` / `pickMode` fall back to `standard` / `mono`. |
+| `opacity` = `NaN` / `±Infinity` | `clamp01` returns `0` — stage becomes invisible rather than throwing. |
+| `prefers-reduced-motion: reduce` set on mount | `runAnimation` flipped to `false`; CSS `@media` query also disables the keyframe as a belt-and-braces guard. Grid renders statically. |
+| `animated` flipped to `false` at runtime | `$effect` sets `runAnimation = false`; the `pg-animated` class drops; CSS animations stop on the next frame. |
+| Component scrolled offscreen | Browser throttles or skips the layer's compositor work. No JS work to pause. |
+| Wrapper resized | Plane is sized in percentages (300 % wide, 100 % tall) — naturally adapts. No `ResizeObserver`. |
+| Hi-DPI / retina | Line widths in CSS pixels render crisp; `wireframe` 0.5 px lines may sub-pixel anti-alias on some browsers — prefer `mono` for hairlines if that bites. |
+| GPU acceleration unavailable | `background-position` falls back to CPU; on weak CPUs you may see jitter. Lower `intensity` to `calm` halves the work per frame. |
+| Multiple instances on one page | Each wrapper carries `isolation: isolate` via the stacking context — no z-index leakage. |
+| Slotted child uses `position: fixed` | Fixed positioning escapes the wrapper; the grid stays put, the child floats — usually what you want. |
+| Neon + ceiling on low-end mobile | Four drop-shadow passes (2 per plane) hit the compositor budget. If frame-rate drops, switch to `mode="mono"` or `ceiling={false}`. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props`, `$derived`, `$effect`, `$state`, snippets. Module-script exports (`pickIntensity`, `pickMode`, `clamp01`, etc.) for unit testing.
+- Zero external dependencies — pure CSS perspective and gradients, no canvas, no WebGL.
+
+## File Structure
+
+```
+src/lib/components/PerspectiveGrid.svelte         # implementation + module-level helpers
+src/lib/components/PerspectiveGrid.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/PerspectiveGrid.test.ts        # vitest unit tests
+src/lib/components/PerspectiveGridTestHarness.test.svelte  # render-test harness
+src/routes/perspectivegrid/+page.svelte           # demo page
+```

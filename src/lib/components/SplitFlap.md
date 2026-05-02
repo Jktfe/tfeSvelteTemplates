@@ -1,97 +1,197 @@
----
-title: SplitFlap
-description: Mechanical Solari-board character flip — each character is a 3D card whose top half drops down through intermediate charset positions, the bottom catches it, settles on the new glyph. Per-character stagger creates a left-to-right cascade like an airport arrivals board updating. Asset-free, prefers-reduced-motion safe.
-category: Statement Sections
-author: antclaude
-status: stable
----
+# SplitFlap — Technical Logic Explainer
 
-# SplitFlap
+## What Does It Do? (Plain English)
 
-Mechanical Solari-board character flip. Each character is a 3D card with a top and bottom half; on a value change the top half rotates down through intermediate charset positions while the bottom catches the new glyph. Per-character stagger creates a left-to-right cascade — the same effect old airport arrivals boards used.
+SplitFlap is the mechanical Solari board you see in old European train stations and airport arrivals halls — a row of cards each split horizontally in two; when the value changes, the top half drops down through intermediate charset positions while the bottom half catches the next glyph and settles. Per-character stagger creates a left-to-right cascade as the whole word updates.
 
-Pure CSS 3D transforms + perspective handle the mechanics. The only JS is a small per-cell timer chain that walks the charset between old and new glyphs and toggles a `flipping` class. No animation library, no font CDN, no images.
+Asset-free: every flap, hinge, and divider is CSS — `transform: rotateX(...)` plus two stacked half-glyph layers. Change `value` and the cells re-tick from their current state to the new target, never spinning more than one full charset traversal.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Solari-board aesthetic** — 3D `rotateX` flap animation, gradient-shaded halves, and a 1px central divider give each cell the look of a hinged mechanical card.
-- **Four named charsets** — `digits`, `alpha`, `alnum`, `solari` (with punctuation extras). Unknown names fall back to `alnum` instead of throwing.
-- **Two traversal directions** — `forward` (the classic Solari feel: every change costs a full charset cycle for the longer-distance characters) or `shortest` (snappier for clocks/counters).
-- **Configurable cascade** — `stagger` controls inter-cell delay, `intensity` multiplies it, `flipDuration` sets per-tick speed. The cascade can be a wave or punchy depending on values.
-- **SSR-safe first paint** — the initial render shows the target value statically; the cascade only kicks in after hydration so server-rendered HTML always matches the final state.
-- **Reduced-motion safe** — `prefers-reduced-motion: reduce` swaps glyphs instantly; the flip animation is disabled at the CSS layer too as a belt-and-braces guarantee.
-- **Accessible** — wrapper carries `role="group"`, `aria-live="polite"`, `aria-busy` toggles while a flip is in flight, and `aria-label` always reflects the target value.
-- **Zero dependencies** — single `.svelte` file, scoped CSS.
+```
+state:
+  displayed: string[]   // current glyph in each cell
+  flipping:  boolean[]  // is each cell mid-rotation right now?
+  timers:    Timeout[]
+  prefersReduced = matchMedia query
 
-## Usage
+derive:
+  resolvedCharset = pickCharset(charset)              // digits | alpha | alnum | solari
+  cells = value.toUpperCase().split('')
 
-```svelte
-<script lang="ts">
-  import SplitFlap from '$lib/components/SplitFlap.svelte';
-  let value = $state('GATE 14');
-</script>
+helpers (pure, exported):
+  pickCharset(name)                                   → SplitFlapCharset
+  nextCharIndex(curIdx, tgtIdx, len, direction)       → next index, one step toward target
+    forward:  always (cur + 1) mod len
+    shortest: pick whichever direction is fewer ticks
+  buildTickSequence(from, to, charset, direction)     → string[] of intermediate glyphs ending in `to`
+  frameDelay(index, baseStagger, intensity)           → ms before this cell's first tick
 
-<!-- Departures-board headline -->
-<SplitFlap value={value} charset="solari" size="lg" />
+on value change:
+  for each cell index i:
+    if displayed[i] === cells[i]: continue            // already on target
+    if prefersReduced: displayed[i] = cells[i]; continue
+    sequence  = buildTickSequence(displayed[i], cells[i], charset, direction)
+    startDelay = frameDelay(i, stagger, intensity)
+    for step, char in sequence:
+      setTimeout(at startDelay + step * flipDuration):
+        displayed[i] = char
+        flipping[i]  = true
+        setTimeout(after flipDuration): flipping[i] = false
 
-<!-- Live clock face -->
-<SplitFlap value="12:34:56" charset="solari" size="md" stagger={40} flipDuration={250} />
-
-<!-- Counter that always takes the shortest path -->
-<SplitFlap value="00420" charset="digits" direction="shortest" />
-
-<!-- Plain alpha headline with a bigger stagger wave -->
-<SplitFlap value="DEPARTING" charset="alpha" stagger={100} intensity={1.4} />
+on unmount:
+  clearTimeout for every queued timer
 ```
 
-`SplitFlap` is an `inline-flex` row — drop it into any heading or hero. To restyle, override the CSS custom properties on the root: `--sf-bg`, `--sf-bg-hi`, `--sf-fg`, `--sf-radius`, `--sf-divider`, `--sf-cell-w`, `--sf-cell-h`.
+The CSS handles the visible rotation: `flipping[i] === true` adds `.sf-flipping`, which animates `.sf-flap-top` from `rotateX(0deg)` → `rotateX(-90deg)` and `.sf-flap-bottom` from `rotateX(90deg)` → `rotateX(0deg)`. Each tick lasts `flipDuration` ms, and the bottom half settles holding the new glyph.
 
-## Props
+## The Core Concept: Tick Sequence + Stagger Cascade
 
-| Prop           | Type                                            | Default     | Description                                                |
-|----------------|-------------------------------------------------|-------------|------------------------------------------------------------|
-| `value`        | `string`                                        | —           | The target string. Internally upper-cased.                 |
-| `charset`      | `'digits' \| 'alpha' \| 'alnum' \| 'solari'`    | `'alnum'`   | Glyph set the cells cycle through. Unknown → `alnum`.      |
-| `stagger`      | `number` (ms)                                   | `60`        | Inter-cell delay before each character begins flipping.    |
-| `flipDuration` | `number` (ms)                                   | `320`       | Per-tick flap rotation duration.                           |
-| `intensity`    | `number`                                        | `1`         | Multiplier applied to the cascade stagger.                 |
-| `direction`    | `'forward' \| 'shortest'`                       | `'forward'` | Charset traversal direction.                               |
-| `size`         | `'sm' \| 'md' \| 'lg'`                          | `'md'`      | Type-scale size class.                                     |
-| `class`        | `string`                                        | `''`        | Extra CSS classes appended to the `.sf-root` wrapper.      |
+A real Solari board doesn't teleport between glyphs — it ticks through every intermediate position. `buildTickSequence` reproduces that:
 
-## Charsets
+```
+from = 'A', to = 'D', charset = ' ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789', direction = 'forward'
 
-| Name      | Length | Notes                                              |
-|-----------|--------|----------------------------------------------------|
-| `digits`  | 10     | `0–9` only — counters, scores, prices.             |
-| `alpha`   | 27     | Leading space + `A–Z`. The space acts as a blank flap, so initial paints look right. |
-| `alnum`   | 37     | Space + `A–Z` + `0–9`. The default — flexible.     |
-| `solari`  | 45     | Adds `.,:!?-+/`. Use for full Solari boards.       |
+  A  →  B  →  C  →  D
+        tick   tick   tick (lands)
 
-## Distinct From
+returned: ['B', 'C', 'D']  — three flaps, three flipDurations
+```
 
-- **`ScrambledText`** — random glyph-shuffle reveal in 2D. SplitFlap traverses a charset deterministically with 3D mechanical flips.
-- **`VariableProximity`** — font-axis morph driven by cursor proximity. SplitFlap is value-change-driven, not pointer-driven.
-- **`ShinyText`** / **`TrueFocus`** — text presentation effects. SplitFlap is a value-change primitive.
-- **`Ticker`** / marquees — continuous translation. SplitFlap holds in place and flips on value change.
+`'shortest'` direction picks the cheaper path (forward vs backward) for each cell, which feels snappier for clocks/counters; `'forward'` always cycles forward through the charset, giving the classic "every change costs a full traversal" Solari rhythm. The function caps at `charset.length` iterations as a hard guard — a malformed direction can never spin a cell forever.
 
-## Accessibility
+The cascade comes from `frameDelay(index, baseStagger, intensity)`:
 
-- The wrapper is a `role="group"` aria-live region. `aria-label` always reflects the target value, so screen readers announce the final string regardless of intermediate flip states.
-- `aria-busy="true"` while any cell is mid-flip; flips back to `false` once the whole cascade settles.
-- Each cell is `aria-hidden="true"` — only the wrapper is announced, not the intermediate glyphs.
-- `prefers-reduced-motion: reduce` instantly swaps glyphs; CSS animations are also disabled at the stylesheet layer.
+```
+delay_i = i * baseStagger * intensity
 
-## Performance Notes
+  baseStagger = 60ms, intensity = 1
+  cell 0:    0ms    starts immediately
+  cell 1:   60ms    starts a beat later
+  cell 2:  120ms
+  cell 3:  180ms
+```
 
-- One `setTimeout` chain per cell during a value change; chains are cancelled on unmount or before a new value lands.
-- Each cell flip runs two CSS animations (top flap down, bottom flap up). Both are GPU-composited transforms.
-- No `requestAnimationFrame`, no continuous polling, no `ResizeObserver`.
-- For very long strings (>100 chars) prefer `direction="shortest"` to keep the maximum tick count bounded.
+Each cell's flap-tick chain is offset, producing a left-to-right wave even though every cell is animating in parallel.
 
-## Implementation Notes
+```
+   t=0       t=60      t=120     t=180
+  ┌───┐    ┌───┐     ┌───┐     ┌───┐
+  │ A │    │ B │     │ A │     │ A │
+  └─▼─┘    └─▼─┘     └─▼─┘     └─▼─┘
+  ┌───┐    ┌───┐     ┌───┐     ┌───┐
+  │ B │    │ C │     │ B │     │ A │
+  └───┘    └───┘     └───┘     └───┘
+  ┌───┐    ┌───┐     ┌───┐     ┌───┐
+  │ C │    │ D │     │ C │     │ B │
+  └───┘    └───┘     └───┘     └───┘
+  ─cell 0─ ─cell 1── ─cell 2── ─cell 3─
+   ticking  ticking   waiting   waiting
+```
 
-- The four pure helpers (`pickCharset`, `nextCharIndex`, `frameDelay`, `buildTickSequence`, `isReducedMotion`) live in `<script module>` so the test suite can assert charset traversal and stagger maths without rendering.
-- `buildTickSequence` is hard-capped at one full charset traversal so a malformed `direction` value can never spin a cell forever.
-- The component renders the target value statically on the server / first paint and only kicks off the cascade after `onMount`, so SSR HTML is always identical to the post-cascade state. This avoids hydration mismatch warnings.
-- A leading space in `alpha` / `alnum` / `solari` acts as the "blank flap" — values containing whitespace render correctly because the space is a member of the charset, not an unknown character.
+## CSS Animation Strategy
+
+Each cell stacks five layers inside a 3D-preserved container:
+
+```
+┌────────────────────┐  ← .sf-cell (perspective: 800px on parent)
+│  ┌──────────────┐  │
+│  │ .sf-half top │  │  static — shows top half of current glyph
+│  ├──────────────┤  │  ← .sf-divider (1px line at 50%)
+│  │ .sf-half bot │  │  static — shows bottom half of current glyph
+│  └──────────────┘  │
+│  ┌──────────────┐  │
+│  │ .sf-flap-top │  │  rotates 0 → -90deg (top falls)
+│  ├──────────────┤  │
+│  │ .sf-flap-bot │  │  rotates 90 → 0deg (bottom rises)
+│  └──────────────┘  │
+└────────────────────┘
+```
+
+When `.sf-flipping` is added:
+
+```css
+.sf-flipping .sf-flap-top    { animation: sf-flap-down 320ms ease-in  forwards; }
+.sf-flipping .sf-flap-bottom { animation: sf-flap-up   320ms ease-out forwards; }
+
+@keyframes sf-flap-down { 0%{rotateX(0)}    100%{rotateX(-90deg)} }
+@keyframes sf-flap-up   { 0%{rotateX(90)}   100%{rotateX(0)}      }
+```
+
+`backface-visibility: hidden` on each flap hides its back during the rotation, so you only ever see the painted face. `transform-origin: bottom center` for the top flap and `top center` for the bottom flap means the hinge sits exactly on the divider — the geometry of a real split-flap mechanism.
+
+Reduced-motion users get `animation: none; opacity: 0` on both flaps — the cell snaps to the new glyph immediately, no rotation.
+
+## Performance
+
+- One `setTimeout` per tick step per cell. A 7-cell update rolling through 4 charset positions is 28 timers — trivial.
+- All timers are tracked in a single array and cleared on unmount or value change.
+- `buildTickSequence` caps at `charset.length`, so even pathological input can't queue an infinite chain.
+- The animation itself is two `transform: rotateX` properties — pure GPU compositor work, no layout, no paint thrash.
+- `aria-busy` flips while any cell is mid-flight, so assistive tech can defer announcements until the row settles.
+
+## State Flow Diagram
+
+```
+   value changes
+        │
+        ▼
+   syncCells(cells)  ── reduced-motion ──▶ [settled instantly]
+        │
+        │ schedule per cell:
+        ▼
+   for cell i: setTimeout(startDelay):
+        ▼
+   [flipping] ── flipDuration tick ──▶ displayed[i] = next char
+        │ flipping[i] = true
+        │
+        │ next setTimeout(flipDuration): flipping[i] = false
+        ▼
+   loop until last char in sequence
+        │
+        ▼
+   [settled]   target glyph painted, flipping = false
+
+   aria-busy = !allSettled  (every cell idle → polite live region announces)
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `value` | `string` | required | Target string. Uppercased before display. |
+| `charset` | `'digits' \| 'alpha' \| 'alnum' \| 'solari'` | `'alnum'` | Allowed glyph set; cells tick through this in order. |
+| `stagger` | `number` | `60` | Milliseconds between adjacent cells' first flips. |
+| `flipDuration` | `number` | `320` | Milliseconds for a single half-flap rotation. |
+| `intensity` | `number` | `1` | Multiplier on the per-cell stagger. `>1` longer cascade, `<1` punchier. |
+| `direction` | `'forward' \| 'shortest'` | `'forward'` | Per-cell traversal: always forward, or whichever way is fewer ticks. |
+| `size` | `'sm' \| 'md' \| 'lg'` | `'md'` | Type scale and cell dimensions. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `value` shrinks (fewer cells) | `syncCells` re-creates `displayed` at the new length; orphan timers from the old length are cleared via `clearTimers()`. |
+| `value` grows (more cells) | New cells start at their target glyph (`prev[i] ?? targets[i]`); only changed cells animate. |
+| Glyph not in `charset` | `buildTickSequence` returns `[to]`; the cell does a single flap straight to the target. |
+| `direction = 'shortest'` and equidistant | Forward wins on tie (`forward <= backward`). |
+| User has `prefers-reduced-motion: reduce` | `scheduleCell` writes the target directly, skipping every intermediate tick. |
+| Reduced-motion preference changes mid-mount | `mq.addEventListener('change')` updates `prefersReduced`; the next `value` change uses the new mode. |
+| Component unmounts mid-flip | `clearTimers()` cancels every pending `setTimeout`; the cleanup also unbinds the `matchMedia` listener. |
+| `value = ''` | `cells = []`; nothing renders, `aria-busy` is `false`. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$derived`, `onMount`, `untrack`.
+- **`window.matchMedia`** (native) — reduced-motion gate, with feature-detection.
+- Zero external dependencies otherwise. Asset-free.
+
+## File Structure
+
+```
+src/lib/components/SplitFlap.svelte   # implementation
+src/lib/components/SplitFlap.md       # this file (rendered inside ComponentPageShell)
+src/lib/components/SplitFlap.test.ts  # vitest unit tests for the pure helpers
+src/routes/splitflap/+page.svelte     # demo page
+```

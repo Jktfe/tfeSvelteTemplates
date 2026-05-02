@@ -1,116 +1,216 @@
----
-name: NoiseField
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# NoiseField — Technical Logic Explainer
 
-# NoiseField
+## What Does It Do? (Plain English)
 
-Ambient grain / film-noise / TV-static overlay. Wrap any region (hero, card, full page) and a single SVG `<feTurbulence>` + `<feColorMatrix>` filter renders a noise pattern, layered over the slotted content via `mix-blend-mode: overlay`. The overlay can shimmer (CSS-translated SVG with `steps()` easing) for a 24-fps film-grain feel, or stay completely static.
+NoiseField wraps any region and lays a film-grain / TV-static / paper-texture overlay on top of it. The grain can be fine and tight (35 mm film), medium and editorial, or chunky and analog (VHS). It can shimmer at a 24-fps stutter, like discrete film frames sliding past, or stay completely still like a printed texture. It can render as monochrome white, saturated chromatic noise, or a chromatic-plus-scanlines retro CRT look.
 
-Pure SVG + CSS — no `requestAnimationFrame`, no canvas, no JS frame loop, no resize observer. The filter chain is GPU-composited and the shimmer is a single keyframe-driven transform.
+Think of it as a sheet of grainy tracing paper laid over your design, with the option of a tiny stage hand jiggling it back and forth.
 
-Composes naturally with colour fields and ambient backdrops: `MeshGradient` (drifting blobs + grain on top for a 35mm-film-still look), `ElectricBorder` (perimeter arcs + interior film texture), `AuroraBackdrop` (gradient sky + analog grain).
+## How It Works (Pseudo-Code)
 
-## Key features
+```
+state:
+  intensity     = 'medium'   // 'fine' | 'medium' | 'coarse'
+  mode          = 'mono'     // 'mono' | 'chroma' | 'retro'
+  animated      = true
+  opacity       = 0.4
+  filterId      = 'nf-static'  // SSR placeholder
+  reducedMotion = false
 
-- **Three intensities** — `fine` / `medium` / `coarse`. Each preset bundles `feTurbulence`'s `baseFrequency` and `numOctaves` so grain size and richness scale together.
-- **Three modes** — `mono` (achromatic white noise), `chroma` (saturated RGB grain — slight cyan/red bias), `retro` (chromatic + a 1px-on / 2px-off scanline overlay via `repeating-linear-gradient`).
-- **Animated shimmer** — when `animated` is true (default), the overlay translates on a 5-stop CSS keyframe with `steps(8)` easing. Stuttering snap motion reads like discrete film frames, not a smooth slide.
-- **SSR-safe filter ID** — a static fallback `nf-static` ID is rendered server-side; `onMount` swaps it for a unique `nf-N` ID via the module-scoped counter. Hydration mismatch never visible to the user.
-- **Pure helpers exported** from the module-script (`pickIntensity`, `pickMode`, `isValidIntensity`, `isValidMode`, `clamp01`, `nextFilterId`, `isReducedMotion`) — directly unit-testable without rendering.
-- **prefers-reduced-motion safe** — the `animated` flag short-circuits at mount-time when `(prefers-reduced-motion: reduce)` matches; a CSS `@media` rule belt-and-braces the animation off if the JS probe ever drifts.
-- **SR-friendly** — slotted content stays in the DOM and a11y tree. The overlay layer is `aria-hidden`, `pointer-events: none`, stacked on top via `z-index: 1`. Focus, click and keyboard interaction with the wrapped child are unaffected.
+derive:
+  intensityConfig = pickIntensity(intensity)  // { baseFrequency, numOctaves }
+  safeMode        = pickMode(mode)
+  safeOpacity     = clamp01(opacity)
+  isAnimated      = animated && !reducedMotion
 
-## Usage
+onMount:
+  filterId      = nextFilterId('nf')           // 'nf-1', 'nf-2', ... unique
+  reducedMotion = isReducedMotion()
 
-```svelte
-<script>
-	import NoiseField from '$lib/components/NoiseField.svelte';
-</script>
+render:
+  div.noisefield-wrapper
+    div.noisefield-content { @render children() }
+    div.noisefield-overlay (aria-hidden, mix-blend-mode: overlay)
+      svg 120% × 120% at -10%/-10%
+        <filter id={filterId}>
+          <feTurbulence type="fractalNoise"
+                        baseFrequency={cfg.baseFrequency}
+                        numOctaves={cfg.numOctaves}
+                        seed=3 />
+          <feColorMatrix values=...                   // mono | chroma | retro
+        </filter>
+        <rect width=100% height=100% filter="url(#nf-N)" />
+      [if mode==='retro']
+        ::after { background: repeating-linear-gradient(...) }  // scanlines
 
-<NoiseField>
-	<section class="hero">…</section>
-</NoiseField>
-
-<NoiseField intensity="coarse" mode="retro" opacity={0.5}>
-	<article class="terminal">…</article>
-</NoiseField>
-
-<NoiseField intensity="fine" mode="chroma" animated={false}>
-	<div class="card">…</div>
-</NoiseField>
+CSS shimmer (when animated):
+  @keyframes noisefield-shimmer steps(8):
+    5 waypoints, transform: translate(±2%, ±1%) and back to 0
+  animation: noisefield-shimmer 2.4s steps(8) infinite
+  // steps(8) = 8 discrete frames per cycle, no smoothing
+  // → looks like 24fps film, not silky 60fps slide
 ```
 
-## Props
+The component runs **zero JS frame loops**. The only JavaScript work is mount-time: probe reduced-motion and assign a unique filter ID. After that, the SVG renderer and the CSS compositor handle everything.
 
-| Prop        | Type                              | Default      | Notes                                                              |
-| ----------- | --------------------------------- | ------------ | ------------------------------------------------------------------ |
-| `intensity` | `'fine' \| 'medium' \| 'coarse'`  | `'medium'`   | Bundles `baseFrequency` + `numOctaves`.                            |
-| `mode`      | `'mono' \| 'chroma' \| 'retro'`   | `'mono'`     | Colour-matrix preset; `retro` adds a scanline overlay.             |
-| `animated`  | `boolean`                         | `true`       | Auto-disables under `prefers-reduced-motion: reduce`.              |
-| `opacity`   | `number`                          | `0.4`        | Overlay opacity. Clamped to `[0, 1]`. NaN/±Infinity become `0`.    |
-| `class`     | `string`                          | `''`         | Extra classes on the wrapper.                                      |
-| `children`  | `Snippet`                         | _(required)_ | Content to wrap. Stays interactive.                                |
+## The Core Concept: feTurbulence + Stepped Animation
 
-Unknown intensity / mode values fall back to `medium` / `mono`.
+Two ideas combine to produce the visual.
 
-## Intensity table
+### feTurbulence — procedural noise on the GPU
 
-| Intensity | baseFrequency | numOctaves | Vibe                              |
-| --------- | ------------- | ---------- | --------------------------------- |
-| `fine`    | `1.6`         | `2`        | Tight, dense grain — 35mm-film    |
-| `medium`  | `0.85`        | `3`        | Editorial default — soft texture  |
-| `coarse`  | `0.4`         | `4`        | Chunky, organic — VHS / analog    |
+```svg
+<feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="3" />
+```
 
-`baseFrequency` decreases as grain gets larger; `numOctaves` increases for richer detail at coarser scales.
+`feTurbulence` generates a Perlin-noise field — a smooth, organic, randomly-shaped image where nearby pixels have similar values, but the field as a whole has no repeating pattern. Two parameters tune it:
 
-## Mode table
+- **`baseFrequency`** — how *coarse* the noise is. Low values produce big blobs of darkness and lightness; high values produce fine-grained crinkle. The component flips this counter-intuitively: `fine` mode uses **higher** frequency (`1.6`) for tight grain; `coarse` mode uses **lower** frequency (`0.4`) for big chunky grain.
+- **`numOctaves`** — how many layers of noise are summed together at half-scale each. More octaves means richer detail (multiple sizes of grain visible at once) but slightly more expensive to compute. The component scales octaves with intensity: 2 → 3 → 4 from fine to coarse.
 
-| Mode     | Colour matrix                                              | Extra layer                                                    | Vibe                              |
-| -------- | ---------------------------------------------------------- | -------------------------------------------------------------- | --------------------------------- |
-| `mono`   | All channels collapsed to white; alpha preserved           | —                                                              | Clean editorial / black-and-white |
-| `chroma` | Slight R/B amplification (`1.2 / 1.0 / 1.4` diagonal)      | —                                                              | Saturated RGB grain               |
-| `retro`  | Cyan-shifted with channel mix + small offset               | 1px / 3px-period scanline `repeating-linear-gradient`           | CRT / VHS / synthwave             |
+`seed=3` makes the noise field **deterministic**. Server and client render the same first frame; multiple instances on the same page render the same noise (which is what you want — different seeds would produce different "grain" on each, breaking visual consistency).
 
-## Distinct from
+### feColorMatrix — colour mode switching
 
-- **`MeshGradient`** — colour-blob backdrop, no input, no texture. NoiseField is achromatic/chromatic *grain* — pairs with MeshGradient for a film-still effect.
-- **`AuroraBackdrop`** — gradient-sweep ambient wash. NoiseField overlays *texture*, not colour.
-- **`ElectricBorder`** — perimeter SVG-filter arcs. NoiseField fills the *interior* and is input-blind.
-- **`ShineBorder`** / **`HoloCard`** — both are perimeter / surface gradient effects. NoiseField is grain.
-- **`PixelTrail`** / **`ClickSpark`** / **`MagnetGrid`** — cursor-event primitives. NoiseField has zero input handling.
+`feTurbulence` produces a grayscale field. `feColorMatrix` re-colours it without changing its shape:
 
-## Pure helpers (module-script exports)
+```svg
+<!-- mono: all channels = 1, alpha preserved -->
+<feColorMatrix type="matrix" values="0 0 0 0 1   0 0 0 0 1   0 0 0 0 1   0 0 0 1 0" />
 
-- `pickIntensity(name)` — returns `{ baseFrequency, numOctaves }`. Falls back to `medium`.
-- `pickMode(name)` — returns `'mono' | 'chroma' | 'retro'`. Falls back to `mono`.
-- `isValidIntensity(name)` — type guard for intensity names.
-- `isValidMode(name)` — type guard for mode names.
-- `clamp01(n)` — clamps to `[0, 1]`; treats `NaN`/`±Infinity` as `0`.
-- `nextFilterId(prefix?)` — module-scoped counter for unique filter IDs across instances.
-- `isReducedMotion()` — `boolean`. Returns `false` outside the browser.
+<!-- chroma: slight R/B amplification, neutral G -->
+<feColorMatrix type="matrix" values="1.2 0 0 0 0   0 1.0 0 0 0   0 0 1.4 0 0   0 0 0 1 0" />
 
-## Accessibility
+<!-- retro: cyan-shifted with channel mix and small additive offset -->
+<feColorMatrix type="matrix" values="0.7 0 0 0 0.1   0 0.9 0 0 0.15   0 0 1.0 0 0.2   0 0 0 1 0" />
+```
 
-- The slotted content is rendered as the primary content of the wrapper and is read by screen readers normally.
-- The overlay layer is `aria-hidden`, `pointer-events: none`, stacked via `z-index: 1`. Invisible to assistive tech.
-- Under `prefers-reduced-motion: reduce`: the `animated` prop is forced false on mount, the CSS `@media` query freezes the keyframe even if the prop slips through, and the noise still renders — just statically. The grain pattern is part of the *appearance*, not the *motion*; users who want texture without motion still see it.
-- The wrapper is role-neutral (no `role` attribute set) — it inherits whatever role the slotted content has.
+The matrix is a 4 × 5 transform on `[R, G, B, A]` (with the 5th column being a constant offset added in). Mono crushes RGB to white, alpha kept. Chroma scales channels independently for a saturated look. Retro adds a small constant offset (the `0.1 / 0.15 / 0.2` last column) to push the noise toward cyan.
+
+### Stepped animation = film-frame stutter
+
+```css
+.noisefield-overlay.animated svg {
+  animation: noisefield-shimmer 2.4s steps(8) infinite;
+}
+```
+
+`steps(8)` is the unusual choice. Most CSS animations use `ease`, `linear`, or a `cubic-bezier` for smooth interpolation. `steps(8)` does the opposite — it divides the 2.4 s cycle into 8 discrete frames and snaps between them with no easing. The result reads as a film projector advancing through individual frames, not as a silky slide.
+
+The keyframe itself is just five offset waypoints:
+
+```css
+@keyframes noisefield-shimmer {
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-2%, 1%); }
+  40%      { transform: translate(1%, -2%); }
+  60%      { transform: translate(-1%, -1%); }
+  80%      { transform: translate(2%, 0); }
+}
+```
+
+The 120 % oversize on the SVG (positioned at `-10%, -10%`) means even a 2 % translate never reveals an empty edge. The translate is on the SVG host, not the noise itself — the filter chain doesn't recompute, only the composited output slides. This is what keeps the animation cheap.
+
+### The retro scanline overlay
+
+Mode `retro` adds a sibling pseudo-element with a hard-edged stripe pattern:
+
+```css
+.noisefield-overlay.retro::after {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.22) 0px,
+    rgba(0, 0, 0, 0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: multiply;
+}
+```
+
+A 1 px-on / 2 px-off stripe pattern. `mix-blend-mode: multiply` darkens whatever's beneath, which combines with the chromatic noise to produce the classic CRT-bleed-through look without a separate render pass.
 
 ## Performance
 
-- One SVG element per instance with one `<filter>` + one `<rect>`. No DOM thrash.
-- Filter chain (`feTurbulence` + `feColorMatrix`) is GPU-composited via `mix-blend-mode: overlay`.
-- Animation is a single CSS keyframe applying a `transform: translate()` to the SVG host. No JS frame loop, no resize observer.
-- Oversized SVG (120% × 120%, positioned at `-10%`/`-10%`) hides edge-reveal during the shimmer slide.
-- `feTurbulence` is the only mildly-expensive primitive — measured fine on commodity hardware. Drop intensity to `coarse` (cheaper octaves) if needed.
+- **One `<svg>` per instance**, containing one `<filter>` and one `<rect>`. No SVG DOM is added or removed during animation.
+- **Filter computation runs on the GPU** (in modern browsers' SVG renderer). `feTurbulence` is the only meaningfully expensive primitive; with 2–4 octaves on a single full-bleed surface it's a few ms per filter recomputation, well within budget.
+- **Filter recomputes only when its inputs change** — `baseFrequency` and `numOctaves` are static once computed from `intensity`. The shimmer animation translates the SVG host, not the filter inputs, so the filter is computed once and its output is shifted.
+- **`mix-blend-mode: overlay` on the overlay** is compositor-only — the GPU multiplies the noise into the underlying content without re-painting the source.
+- **No observers, no rAF, no resize handlers.** The 120 % SVG sizing makes layout-invariant.
+- **`steps(8)` animation** has 8 discrete states per cycle; the GPU only composites a new frame at each step (every 300 ms), so the animation is cheaper than a smooth 60 fps transform would be.
 
-## Recipes
+## State Flow Diagram
 
-- **Hero film-still**: `<NoiseField intensity="medium" mode="mono"><MeshGradient palette="aurora"><section>…</section></MeshGradient></NoiseField>`.
-- **Retro CRT terminal**: `<NoiseField intensity="coarse" mode="retro" opacity={0.55}><article class="terminal">…</article></NoiseField>`.
-- **Static print texture (no shimmer)**: `<NoiseField intensity="fine" animated={false} opacity={0.3}><div class="article">…</div></NoiseField>`.
-- **Composed with ElectricBorder**: `<ElectricBorder><NoiseField mode="chroma" opacity={0.35}><div>…</div></NoiseField></ElectricBorder>`.
-- **Background grain on the whole page**: wrap the `<main>` of a route in `<NoiseField intensity="fine">…</NoiseField>` for a subtle texture across the viewport.
+```
+              ┌──────────────────────────────┐
+              │  SSR / first paint           │
+              │  filterId = 'nf-static'      │
+              │  reducedMotion = false       │
+              │  noise renders with mono     │
+              │  colour matrix               │
+              └────────────┬─────────────────┘
+                           │ onMount
+                           ▼
+              ┌──────────────────────────────┐
+              │  filterId = nextFilterId()   │
+              │  reducedMotion = probed      │
+              └────────────┬─────────────────┘
+                           │
+              ┌────────────┴────────────────┐
+              │                              │
+              │ animated && !reducedMotion   │ animated=false OR reducedMotion
+              ▼                              ▼
+       ┌──────────────┐               ┌──────────────┐
+       │  shimmering  │               │  static      │
+       │  .animated   │               │  no .animated│
+       │  on overlay; │               │  class;      │
+       │  steps(8)    │               │  noise frozen│
+       │  keyframe    │               │  at 0,0      │
+       └──────────────┘               └──────────────┘
+
+  prefers-reduced-motion: reduce  ──►  CSS @media kills shimmer keyframe
+                                       (belt-and-braces alongside JS)
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `intensity` | `'fine' \| 'medium' \| 'coarse'` | `'medium'` | Bundles `feTurbulence` `baseFrequency` and `numOctaves`. Unknown names fall back to `medium`. |
+| `mode` | `'mono' \| 'chroma' \| 'retro'` | `'mono'` | Colour-matrix preset; `retro` adds a scanline overlay. Unknown names fall back to `mono`. |
+| `animated` | `boolean` | `true` | Auto-disabled if `prefers-reduced-motion: reduce`. |
+| `opacity` | `number` | `0.4` | Overlay opacity. Clamped to `[0, 1]`; `NaN` / `±Infinity` collapse to `0`. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+| `children` | `Snippet` | optional | Content to wrap. Stays interactive. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Unknown `intensity` or `mode` | Falls back to `medium` / `mono` via `pickIntensity` / `pickMode`. |
+| `opacity` = `NaN` / `±Infinity` | `clamp01` returns `0` — overlay invisible rather than throwing. |
+| `prefers-reduced-motion: reduce` set on mount | `isAnimated` derives `false`; CSS `@media` rule also kills the shimmer keyframe as a guard. Static grain remains. |
+| Multiple instances on one page | Each gets a unique filter ID via `nextFilterId('nf')` — no SVG ID collisions. |
+| Component scrolled offscreen | Browser throttles the compositor layer; CSS animation pauses naturally on hidden tabs. |
+| Wrapper resized | SVG is sized at `120% × 120%` — naturally adapts to any wrapper size. No `ResizeObserver` needed. |
+| Hi-DPI / retina | `feTurbulence` is resolution-independent; noise scales with the SVG's CSS pixels. The `chroma` and `retro` modes can show colour fringing at very high DPI on some browsers; `mono` is the most robust at extreme resolutions. |
+| GPU acceleration unavailable | `feTurbulence` falls back to CPU; cost rises but stays usable. Drop `intensity` to `coarse` for cheaper octaves. |
+| Browser without SVG filters (IE11) | `<filter>` is ignored; the `<rect>` renders as a black square. The `mix-blend-mode: overlay` makes that imperceptible. |
+| `mode="retro"` on a Safari version without `mix-blend-mode: multiply` | Scanline overlay renders at full opacity instead of multiplying — uglier but still visible. Modern Safari (≥15) supports it. |
+| `children` not provided | `{#if children}` guard skips the content slot; only the noise overlay renders. Useful for full-page background grain. |
+| Component used inside a position-fixed container | Fine — the SVG host is `position: absolute; inset: 0` relative to the wrapper, not the viewport. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props`, `$state`, `$derived`, snippets. Module-script exports (`pickIntensity`, `pickMode`, `clamp01`, `nextFilterId`, etc.) for unit testing.
+- Zero external dependencies — inline SVG filter, CSS keyframes. No image assets, no canvas, no animation library.
+
+## File Structure
+
+```
+src/lib/components/NoiseField.svelte         # implementation + module-level helpers
+src/lib/components/NoiseField.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/NoiseField.test.ts        # vitest unit tests
+src/lib/components/NoiseFieldTestHarness.test.svelte  # render-test harness
+src/routes/noisefield/+page.svelte           # demo page
+```

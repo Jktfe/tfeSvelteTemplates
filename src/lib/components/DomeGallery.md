@@ -1,464 +1,192 @@
-# DomeGallery - Technical Logic Explainer
+# DomeGallery — Technical Logic Explainer
 
 ## What Does It Do? (Plain English)
 
-DomeGallery creates a stunning 3D spherical gallery where images are arranged on a dome surface. Users can drag to spin the globe, watch it coast with momentum, and click any image to view it enlarged. It's like a futuristic photo viewer from a sci-fi movie!
+A grid of image tiles arranged on the surface of an invisible sphere. Drag to spin the sphere; let go and it coasts to a stop with a touch of inertia, the way a globe on a desk does. Tap any tile and it flies out from where it sat to a centred lightbox, ready to read. Tap outside or press Escape and it flies back home.
 
-**Think of it like:** A snow globe filled with photos instead of snowflakes. You can spin it around by dragging, and it keeps spinning after you let go (like a globe on a desk). Click any photo to see it bigger.
-
----
+Think of it as a snow globe full of photographs — except instead of glass, the dome is built entirely from CSS 3D transforms (`rotateX`, `rotateY`, `translateZ`, `perspective`). There is no Three.js, no WebGL, and no canvas: every tile is a real `<img>` inside a regular DOM element, so they remain selectable, focusable, and indexable.
 
 ## How It Works (Pseudo-Code)
 
 ```
-WHEN component loads:
-  1. BUILD grid of image tiles arranged on sphere surface
-  2. CALCULATE sphere radius based on container size
-  3. RENDER tiles with CSS 3D transforms
-  4. SET UP event listeners for interaction
+state:
+  rotation   = { x: 0, y: 0 }   // reactive — drives sphere transform
+  dragging   = false
+  moved      = false            // exceeded click vs drag threshold?
+  velocity   = { x: 0, y: 0 }   // updated every pointermove
+  enlarging  = false            // reactive — drives lightbox class
+  inertiaRAF = null             // active requestAnimationFrame id
 
-WHEN user drags on sphere:
-  1. CAPTURE starting position and rotation
-  2. TRACK velocity (speed + direction) during drag
-  3. UPDATE rotation based on movement
-  4. APPLY transforms to spin the sphere
+derive:
+  items = buildItems(images, segments)   // grid coords + photo data per tile
 
-WHEN user releases drag:
-  1. IF velocity > threshold:
-     - START inertia animation
-     - APPLY friction each frame
-     - STOP when velocity < threshold
-  2. RECORD drag end time (for click detection)
+events:
+  on ResizeObserver:
+    radius = clamp(min, basis × fit, max); write --radius CSS var
 
-WHEN user clicks an image tile:
-  1. IGNORE if it was actually a drag (moved too far)
-  2. LOCK page scrolling
-  3. CREATE overlay element at tile's position
-  4. ANIMATE overlay to screen centre
-  5. OPTIONALLY resize to custom dimensions
+  on pointerdown over sphere:
+    if focused (lightbox open): ignore
+    stopInertia(); dragging = true; moved = false
+    capture pointer; lockScroll(); snapshot startRot/startPos
 
-WHEN user closes enlarged image:
-  1. ANIMATE overlay back to tile position
-  2. FADE out and show original tile
-  3. UNLOCK page scrolling
+  on pointermove (skip if !dragging):
+    update velocity (Δposition / Δtime)
+    if drag distance² > 16 px² → moved = true
+    rotation.x = clamp(start − dy/sensitivity, ±maxVerticalRotationDeg)
+    rotation.y = wrap(start + dx/sensitivity)
+    apply transform on sphere element
+
+  on pointerup:
+    if |velocity| significant: startInertia(vx, vy)
+    if !moved AND target was a tile: openItemFromElement(tile)
+    release pointer; unlockScroll()
+
+  on tile open:
+    capture tile rect; FLIP-style transform from tile → centre
+    enlarging = true; lockScroll()
+
+  on Escape / scrim click:
+    FLIP back to original tile rect; remove overlay; unlockScroll()
+
+inertia step (rAF):
+  vX *= friction; vY *= friction
+  apply rotation; recurse until |v| < threshold OR frames > maxFrames
 ```
 
----
+## The Core Concept: Building a Sphere From Flat Tiles
 
-## The Core Concept: CSS 3D Transforms
-
-### Building a Sphere from Flat Tiles
-
-The "sphere" isn't actually a sphere - it's a collection of flat images positioned in 3D space to *appear* like a sphere surface.
+The "sphere" is a stack of plain rectangles, each rotated to the right latitude/longitude and pushed outward by `radius` so its centre lands on the imaginary spherical surface.
 
 ```
-How tiles are positioned:
-
-  Stage (perspective container)
-  │
-  └── Sphere (translateZ back)
-      │
-      ├── Tile 1: rotateY(α) rotateX(β) translateZ(radius)
-      ├── Tile 2: rotateY(α) rotateX(β) translateZ(radius)
-      └── Tile N: rotateY(α) rotateX(β) translateZ(radius)
-
-Each tile is:
-1. Rotated to its position (latitude + longitude)
-2. Pushed outward to the sphere's surface (translateZ)
+.stage          { perspective: 1200px; }            // viewer eye
+  └── .sphere   { transform: translateZ(-radius)
+                            rotateX(rotation.x)
+                            rotateY(rotation.y); }
+        ├── .item   transform: rotateY(longitude)
+        │                       rotateX(latitude)
+        │                       translateZ(radius);
+        ├── .item   …
+        └── .item   …
 ```
 
-### The Transform Chain
-
-```css
-/* Step 1: Push sphere back (centre at viewer position) */
-.sphere {
-  transform: translateZ(calc(var(--radius) * -1));
-}
-
-/* Step 2: Position each tile on sphere surface */
-.item {
-  transform:
-    rotateY(longitude)    /* Turn to horizontal position */
-    rotateX(latitude)     /* Tilt to vertical position */
-    translateZ(radius);   /* Push out to surface */
-}
-```
-
-**Visual Explanation:**
+For each tile at grid position `(offsetX, offsetY)` with `segments` columns:
 
 ```
-Top-down view (rotateY determines position):
-
-         North
-           ↑
-           │
-    ┌──────┼──────┐
-    │      │      │
-West ←──── ● ────→ East
-    │   viewer    │
-    │      │      │
-    └──────┼──────┘
-           │
-           ↓
-         South
-
-Side view (rotateX determines position):
-
-           Up
-           ↑
-    ┌──────┼──────┐
-    │      │      │
-    │   viewer    │
-    │      ●      │
-    │             │
-    └──────┼──────┘
-           │
-           ↓
-          Down
+unit     = 360° / segments / 2     // half-step per grid unit
+rotateY  = unit × (offsetX + (sizeX − 1) / 2)    // longitude
+rotateX  = unit × (offsetY − (sizeY − 1) / 2)    // latitude
 ```
 
----
+Why halve the step? The brick-stagger pattern increments grid X by 2 between columns and uses two interleaved Y arrays (`evenYs = [-4,-2,0,2,4]`, `oddYs = [-3,-1,1,3,5]`), which means consecutive *visual* columns are only one half-step apart. Halving the unit puts them on a continuous angular grid without overlaps.
 
-## The Grid Layout: Staggered Brick Pattern
+`translateZ(radius)` is the trick that turns a 2D layout into a sphere surface: each tile, after its rotations, points outward from the origin and is then pushed exactly `radius` units along its own local Z axis. The sphere itself is then translated `-radius` on Z so the *near* face of the dome sits at the viewer's eye position — that's why a tile at rotation `(0, 0)` appears flat against the screen.
 
-Images aren't arranged in a boring grid - they use a "brick pattern" for visual interest.
+A staggered brick pattern (rather than a regular grid) is used so the tile seams do not line up into obvious horizontal/vertical bands when the dome rotates — the eye reads a brick pattern as "varied" and a uniform grid as "rigid".
 
-```javascript
-// Even columns have these Y offsets
-const evenYs = [-4, -2, 0, 2, 4];
+## Performance: Where the Frame Budget Goes
 
-// Odd columns have these Y offsets (shifted by 1)
-const oddYs = [-3, -1, 1, 3, 5];
+The component holds a strict invariant: **only `rotation` and `enlarging` are reactive Svelte state**. Everything else (`dragging`, `velocity`, `lastMovePos`, RAF ids) is plain JS that mutates without triggering re-renders. When `rotation` changes, the sphere's `transform` is rewritten directly via DOM API, not via re-rendering children.
 
-// This creates:
-//   Even     Odd      Even     Odd
-//   ┌──┐             ┌──┐
-//   │  │    ┌──┐     │  │    ┌──┐
-//   └──┘    │  │     └──┘    │  │
-//   ┌──┐    └──┘     ┌──┐    └──┘
-//   │  │    ┌──┐     │  │    ┌──┐
-//   └──┘    │  │     └──┘    │  │
-//           └──┘             └──┘
-```
+Per drag-frame: two `clamp`/`wrap` calls and one `applyTransform` (one CSS `transform` string written on the sphere element). Per inertia frame: identical, plus one `requestAnimationFrame` schedule. The friction loop terminates on two conditions (velocity below threshold OR frame count over a maximum) so a stuck animation cannot run forever.
 
----
-
-## Physics-Based Inertia
-
-### Velocity Tracking
-
-During drag, we track velocity (speed + direction):
-
-```javascript
-// Each frame during drag:
-const now = performance.now();
-const dt = now - lastMoveTime;  // Time since last move
-
-velocity = {
-  x: (currentX - lastX) / dt,   // Horizontal speed
-  y: (currentY - lastY) / dt    // Vertical speed
-};
-```
-
-### Friction Animation
-
-When you release, velocity decays exponentially:
-
-```javascript
-function startInertia(vx, vy) {
-  const friction = 0.94;  // ~6% speed loss per frame
-
-  const step = () => {
-    // Apply friction
-    vX *= friction;
-    vY *= friction;
-
-    // Stop when too slow
-    if (Math.abs(vX) < threshold) return;
-
-    // Update rotation
-    rotation.y += vX / 200;
-    rotation.x += vY / 200;
-
-    // Next frame
-    requestAnimationFrame(step);
-  };
-
-  requestAnimationFrame(step);
-}
-```
-
-**Velocity Decay Over Time:**
-
-```
-100% ████████████████████
- 80% ████████████████
- 60% ████████████
- 45% █████████
- 34% ███████
- 26% █████
- 19% ████
- 14% ███
- 10% ██
-  7% █
-     ─────────────────────→
-     Frame 0  →  Frame 20
-```
-
----
-
-## Click vs Drag Detection
-
-How do we know if you clicked or dragged?
-
-```javascript
-// Threshold: 4 pixels (squared for cheaper comparison)
-const DRAG_THRESHOLD_SQUARED = 16;
-
-// During drag:
-const dxTotal = currentX - startX;
-const dyTotal = currentY - startY;
-const dist2 = dxTotal * dxTotal + dyTotal * dyTotal;
-
-if (dist2 > DRAG_THRESHOLD_SQUARED) {
-  moved = true;  // It's a drag, not a click
-}
-
-// On click handler:
-if (moved) return;  // Was actually a drag
-if (performance.now() - lastDragEndTime < 80) return;  // Debounce
-openImage();  // It's a real click!
-```
-
----
-
-## Image Enlargement Animation
-
-### Opening Animation
-
-```
-Step 1: Calculate tile's screen position
-┌──────────────────────────────────┐
-│                                  │
-│      ┌───┐                       │
-│      │ * │ ← Tile on sphere      │
-│      └───┘                       │
-│                                  │
-└──────────────────────────────────┘
-
-Step 2: Create overlay at tile position
-┌──────────────────────────────────┐
-│                                  │
-│      ┌───┐                       │
-│      │ ▣ │ ← Overlay (same pos)  │
-│      └───┘                       │
-│                                  │
-└──────────────────────────────────┘
-
-Step 3: Animate to centre
-┌──────────────────────────────────┐
-│                                  │
-│        ┌─────────────┐           │
-│        │             │           │
-│        │      ▣      │ ← Enlarged│
-│        │             │           │
-│        └─────────────┘           │
-│                                  │
-└──────────────────────────────────┘
-```
-
-### The Transform Math
-
-```javascript
-// Initial position (at tile)
-const tx0 = tileRect.left - frameRect.left;
-const ty0 = tileRect.top - frameRect.top;
-const sx0 = tileRect.width / frameRect.width;
-const sy0 = tileRect.height / frameRect.height;
-
-// Set initial transform
-overlay.style.transform = `translate(${tx0}px, ${ty0}px) scale(${sx0}, ${sy0})`;
-
-// Animate to final position
-overlay.style.transform = 'translate(0, 0) scale(1, 1)';
-```
-
----
-
-## Responsive Radius Calculation
-
-The sphere radius adapts to container size:
-
-```javascript
-// In ResizeObserver callback:
-const w = containerWidth;
-const h = containerHeight;
-const aspect = w / h;
-
-// Choose basis dimension based on fitBasis prop
-let basis;
-switch (fitBasis) {
-  case 'min': basis = Math.min(w, h); break;
-  case 'max': basis = Math.max(w, h); break;
-  case 'width': basis = w; break;
-  case 'height': basis = h; break;
-  default: basis = aspect >= 1.3 ? w : Math.min(w, h);  // Auto
-}
-
-// Calculate radius with guards
-let radius = basis * fit;
-radius = Math.min(radius, h * 1.35);  // Don't exceed 135% height
-radius = clamp(radius, minRadius, maxRadius);
-```
-
----
-
-## CSS Custom Properties
-
-The component uses CSS variables for dynamic values:
-
-| Variable | Purpose | Set By |
-|----------|---------|--------|
-| `--radius` | Sphere radius | ResizeObserver |
-| `--segments-x/y` | Grid divisions | Props |
-| `--circ` | Circumference | Calculated |
-| `--rot-x/y` | Degrees per grid unit | Calculated |
-| `--item-width/height` | Tile dimensions | Calculated |
-| `--tile-radius` | Tile border radius | Props |
-| `--enlarge-radius` | Enlarged image radius | Props |
-| `--image-filter` | Grayscale filter | Props |
-| `--overlay-blur-color` | Edge fade colour | Props |
-
----
-
-## Performance Optimisations
-
-### 1. GPU-Accelerated Transforms
+Three CSS rules earn their keep:
 
 ```css
 .sphere { will-change: transform; }
-.item__image { transform: translateZ(0); }  /* Force layer */
+.item   { backface-visibility: hidden; }   /* skip rear-facing tiles */
+.stage  { contain: layout paint size; }    /* isolate from page layout */
 ```
 
-### 2. Backface Culling
+`backface-visibility: hidden` is the big one — half the tiles face away at any moment, and culling them at the GPU level halves the per-frame fill cost. `contain: layout paint size` means the rest of the page never has to lay out or repaint when the dome rotates.
 
-```css
-.item { backface-visibility: hidden; }
-/* Tiles facing away from viewer aren't rendered */
+Image tags use the browser's standard lazy-decode path. Add `loading="lazy"` and `decoding="async"` on tiles that will start off-screen if you have many — the component itself does no lazy-loading, keeping it portable.
+
+## Accessibility Deep-Dive
+
+- Each tile is a real focusable element with `role="button"`, `tabindex="0"`, and an `aria-label` derived from its `alt` text — Tab walks the tile set in DOM order regardless of where they sit visually.
+- `Enter` / `Space` opens the lightbox; `Escape` closes it; focus is restored to the originating tile.
+- The lightbox locks page scroll (`document.body` gets the `dg-scroll-lock` class). The lock is released only when both `enlarging` is false AND `dragging` is false — the two states share one lock so neither can leak.
+- For `prefers-reduced-motion: reduce`, set `dragDampening={0}` to suppress inertia coast and `enlargeTransitionMs={0}` for instant lightbox swaps.
+- The 16 px² click-vs-drag threshold matters for keyboard users too: `Enter`/`Space` never accidentally triggers drag logic, and mouse users with shaky hands get a small grace zone.
+
+## State Flow Diagram
+
+```
+              ┌────────────────────┐
+              │       IDLE         │
+              │  rotation = {0,0}  │
+              │  enlarging = false │
+              └─────────┬──────────┘
+                        │ pointerdown on sphere
+                        ▼
+              ┌────────────────────┐
+              │      DRAGGING      │
+              │  rotation updates  │
+              │  velocity tracked  │
+              │  scroll locked     │
+              └─────────┬──────────┘
+                        │ pointerup
+            ┌───────────┴────────────┐
+            │                        │
+   moved & |v| significant       !moved & on tile
+            │                        │
+            ▼                        ▼
+   ┌────────────────┐      ┌──────────────────┐
+   │   COASTING     │      │    ENLARGING     │
+   │  rAF friction  │      │  FLIP tile→centre│
+   └────────┬───────┘      └─────────┬────────┘
+            │ |v| < threshold         │ Escape / scrim
+            ▼                         ▼
+           IDLE                   FLIP back → IDLE
 ```
 
-### 3. Layout Containment
+## Props Reference
 
-```css
-.stage { contain: layout paint size; }
-/* Changes inside don't trigger parent relayout */
-```
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `images` | `(string \| DomeGalleryImage)[]` | `[]` | Array of `{ src, alt }` objects or plain URL strings. Cycles to fill all grid slots. |
+| `fit` | `number` | `0.5` | Multiplier applied to the chosen container basis to derive the sphere radius. |
+| `fitBasis` | `'auto' \| 'min' \| 'max' \| 'width' \| 'height'` | `'auto'` | Which container dimension drives the radius calculation. |
+| `minRadius` | `number` | `600` | Lower bound on the sphere radius in pixels. |
+| `maxRadius` | `number` | `Infinity` | Upper bound on the sphere radius in pixels. |
+| `padFactor` | `number` | `0.25` | Padding applied around the viewer as a fraction of the basis dimension. |
+| `overlayBlurColor` | `string` | `'#060010'` | Colour used by the radial vignette that fades the dome edges. |
+| `maxVerticalRotationDeg` | `number` | `5` | Hard clamp on vertical (X-axis) rotation, in degrees. |
+| `dragSensitivity` | `number` | `20` | Pixels of pointer movement per degree of rotation; lower = more sensitive. |
+| `enlargeTransitionMs` | `number` | `300` | Duration of the FLIP open/close animation. |
+| `segments` | `number` | `35` | Number of grid columns; more = smaller, denser tiles. |
+| `dragDampening` | `number` | `0.8` | 0–1 inertia tuning: 0 = no coast, 1 = long coast. |
+| `openedImageWidth` | `string` | `'250px'` | Width of the enlarged image. |
+| `openedImageHeight` | `string` | `'350px'` | Height of the enlarged image. |
+| `imageBorderRadius` | `string` | `'30px'` | Border radius applied to grid tiles. |
+| `openedImageBorderRadius` | `string` | `'30px'` | Border radius applied to the enlarged image. |
+| `grayscale` | `boolean` | `true` | Apply a `grayscale(1)` filter to the tiles for an editorial look. |
 
-### 4. Minimal Reactive State
-
-```javascript
-// These don't trigger re-renders:
-let dragging = false;        // Plain variable
-let velocity = { x: 0, y: 0 }; // Plain object
-
-// This does trigger re-renders:
-let rotation = $state({ x: 0, y: 0 }); // Only when needed
-```
-
----
-
-## Edge Cases Handled
+## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
-| Drag outside container | Pointer capture continues tracking |
-| Very fast drag | Velocity clamped to MAX_VELOCITY |
-| Click right after drag | 80ms debounce prevents accidental open |
-| No images provided | Empty tiles rendered |
-| Too many images | Warning logged, excess ignored |
-| Image load failure | Broken image shows in tile |
-| Escape key pressed | Enlarged image closes |
-| Page scroll during enlarge | Scroll locked |
-| Component unmount | Scroll lock cleaned up |
-| Container resize | Radius recalculated |
-
----
-
-## Accessibility Features
-
-### Keyboard Navigation
-
-- **Tab**: Focus tiles sequentially
-- **Enter/Space**: Open focused tile
-- **Escape**: Close enlarged image
-
-### ARIA Attributes
-
-```html
-<div
-  role="button"
-  tabindex="0"
-  aria-label="Open image: {alt text}"
->
-```
-
-### Focus Management
-
-- Tiles receive focus outline (can be customised)
-- Focus returns to tile after closing enlarged view
-
----
-
-## What This Component Does NOT Do
-
-- Does not support vertical (up/down) scrolling
-- Does not lazy-load images (parent should handle)
-- Does not support pinch-to-zoom on enlarged images
-- Does not persist rotation state between sessions
-- Does not support dynamic image addition/removal
-- Does not provide image download functionality
-- Does not animate between multiple enlarged images
-
----
+| Small viewport (mobile portrait) | `ResizeObserver` recalculates `--radius` against the smaller dimension; the dome shrinks proportionally and tiles remain readable. `touch-action: none` ensures vertical page scroll is not stolen by horizontal drags. |
+| Image fails to load | The browser's broken-image glyph appears in that tile; nothing else changes. Surrounding tiles continue to render and the dome remains interactive. |
+| Slow network | Tiles render their backing `<img>` immediately; pixels stream in as the network delivers them. Pre-decode by adding `decoding="async"` and `loading="lazy"` to image sources. |
+| `prefers-reduced-motion: reduce` | Pass `dragDampening={0}` to suppress inertia coast and `enlargeTransitionMs={0}` for instant lightbox swaps. The dome remains static unless dragged. |
+| Keyboard-only user | Tab walks tiles in DOM order; Enter/Space opens, Escape closes and restores focus to the originating tile. |
+| Click landed mid-coast | Pointer-down calls `stopInertia()` first, so a coasting dome can be caught and re-grabbed without delay. |
+| More / fewer images than tiles | More: `console.warn` and excess ignored. Fewer: array cycles; a swap-pass guarantees no two adjacent slots repeat. |
+| Dark mode page | Theme-agnostic — set `overlayBlurColor` to the page background to make the edge fade blend. Default `#060010` suits dark themes. |
+| Component unmount mid-drag | `$effect` cleanup cancels `inertiaRAF` and removes the scroll-lock class so unmounting cannot strand the page locked. |
 
 ## Dependencies
 
-**Zero external dependencies** - fully portable!
-
-Uses:
-- Svelte 5 runes (`$state()`, `$derived()`, `$effect()`)
-- CSS 3D transforms and perspective
-- Pointer Events API for unified input handling
-- ResizeObserver API for responsive sizing
-- requestAnimationFrame for smooth animation
-
----
+- **Svelte 5.x** — `$state`, `$derived`, `$effect`, and `$props`. Reactive state is deliberately limited to `rotation` and `enlarging`; everything else is plain JS for performance.
+- Zero external dependencies — no Three.js, no canvas, no animation library, no icon library. CSS 3D transforms, `ResizeObserver`, and the Pointer Events API are the only browser features used.
 
 ## File Structure
 
 ```
-DomeGallery.svelte    # The component
-DomeGallery.test.ts   # Unit tests
-DomeGallery.md        # This explainer
+src/lib/components/DomeGallery.svelte         # implementation
+src/lib/components/DomeGallery.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/DomeGallery.test.ts        # vitest unit tests
+src/routes/domegallery/+page.svelte           # demo page
+src/lib/types.ts                              # DomeGalleryProps + DomeGalleryImage + DomeGalleryItem
 ```
-
----
-
-## Props Quick Reference
-
-| Prop | Default | Purpose |
-|------|---------|---------|
-| `images` | `[]` | Image data (URLs or {src, alt}) |
-| `segments` | `35` | Grid divisions (more = smaller tiles) |
-| `fit` | `0.5` | Radius multiplier (0-1) |
-| `minRadius` | `600` | Minimum sphere radius |
-| `maxRadius` | `Infinity` | Maximum sphere radius |
-| `dragSensitivity` | `20` | Drag responsiveness |
-| `dragDampening` | `0.8` | Inertia duration (0-1) |
-| `enlargeTransitionMs` | `300` | Animation duration |
-| `grayscale` | `true` | Apply grayscale filter |
-| `overlayBlurColor` | `'#060010'` | Edge fade colour |
-
----
-
-*Last updated: 26 December 2025*

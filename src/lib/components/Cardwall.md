@@ -1,93 +1,211 @@
----
-title: Cardwall
-description: Full-bleed perspective billboard wall — multiple rows of gradient tiles drift at row-specific speeds and directions inside a CSS perspective container, giving the illusion of a deep, slowly-tumbling photo wall. Click or keyboard-activate any tile to pin it; the rest of the wall keeps moving. Asset-free, SSR-deterministic, prefers-reduced-motion safe.
-category: Statement Sections
-author: antclaude
-status: stable
----
+# Cardwall — Technical Logic Explainer
 
-# Cardwall
+## What Does It Do? (Plain English)
 
-A statement-piece hero section that reads like a slowly-tumbling architectural photo wall — multiple rows of gradient billboard tiles drifting horizontally at row-specific speeds and alternating directions, all viewed through a CSS perspective so the upper rows tilt forward and the lower rows tilt back. There are no images: every tile is a CSS-gradient panel with a serif label, palette-picked deterministically from a Halton sequence so SSR and client agree without an RNG seed leak.
+Cardwall is a full-bleed statement section that reads like a slowly-tumbling architectural photo wall. Multiple rows of gradient-billboard tiles drift horizontally at row-specific speeds and alternating directions, all viewed through a CSS perspective so the upper rows tilt forward and the lower rows tilt back. There are no images: every tile is a CSS-gradient panel with a serif label, and the whole composition picks itself deterministically from a Halton sequence so SSR and the hydrated client produce byte-identical output. Click any tile (or activate it with Enter / Space) to pin it; the rest of the wall keeps drifting.
 
-Inspired by the marquee wall on real-world editorial sites where a photo gallery scrolls past on a slight tilt, rebuilt as a portable Svelte 5 component with zero dependencies and zero image assets.
+Think of it like the marquee photo wall on an editorial homepage, rebuilt as a fully portable Svelte 5 component with zero image assets and zero RNG seeds.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Pure CSS gradients** — no `<img>`, no SVG sprites, nothing to download. Every tile paints itself from a four-stop palette (`from`, `via`, `to`, `accent`).
-- **Perspective billboard** — CSS `perspective` + per-row `rotateX/scale/translateY` gives the wall its tilt; the middle row sits flat on the camera plane and outer rows fall away.
-- **Seamless infinite drift** — each row track renders the tile sequence twice; a `requestAnimationFrame` loop translates the track by `rowOffset(t)` which wraps inside `[0, period)` so the seam is invisible.
-- **Row-specific speed + direction** — odd rows go right-to-left, even rows go left-to-right, and the speed cycles 12–29 px/s so neighbouring rows never lock-step.
-- **Click / keyboard pin** — every tile is `role="button" tabindex="0"`; activate it (mouse or Enter/Space) to pin it. A `.cw-pin-readout` chip live-reports the pinned label for assistive tech.
-- **Reduced-motion safe** — `@media (prefers-reduced-motion: reduce)` short-circuits the rAF loop and freezes every track at offset 0; the wall reads as a static composition.
-- **SSR-deterministic** — palette + label selection comes from `halton(2, 3)` indexed by row × tile, so the first paint matches the hydrated DOM byte-for-byte.
-- **Pure-helpers split** — all maths (offset wrap, perspective transform, palette pick, motion gate) is in `Cardwall/types.ts` so the test suite can assert it without rendering.
+```
+state:
+  rows           = buildRows(density, tilesPerRow)    // pure function — deterministic
+  trackEls       = bound DOM ref per row
+  pinned         = null | tile palette
+  reducedMotion  = boolean
+  rafId          = pending RAF handle
+  startTime      = performance now at first tick
 
-## Usage
+on mount:
+  reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches
+  if not reducedMotion:
+    rafId = requestAnimationFrame(tick)
 
-```svelte
-<script lang="ts">
-  import Cardwall from '$lib/components/Cardwall/Cardwall.svelte';
-</script>
+tick(now):
+  t = (now − startTime) / 1000                        // seconds
+  for each row in rows:
+    offset = rowOffset(t, period, row.speed, row.dir)
+    trackEls[r].style.transform = `translate3d(${-offset}px, 0, 0)`
+  rafId = requestAnimationFrame(tick)
 
-<!-- Default 5-row wall, 8 tiles per row -->
-<Cardwall />
+events:
+  on tile click / Enter / Space:
+    if pinned matches this tile: pinned = null      // toggle off
+    else:                         pinned = tile     // pin this one
 
-<!-- Sparse 3-row variant — quieter, suits hero sections that want
-     the wall as a backdrop rather than the main event -->
-<Cardwall density="sparse" tilesPerRow={6} />
-
-<!-- Dense 7-row "city of tiles" — best paired with a foreground
-     headline overlay -->
-<Cardwall density="dense" tilesPerRow={10} />
-
-<!-- Larger tiles for a more cinematic billboard -->
-<Cardwall tileWidth={300} tileGap={20} />
+on destroy:
+  cancelAnimationFrame(rafId)
 ```
 
-The component is a single full-bleed `<section class="cw-wall">` — it expects to live inside a parent that gives it a sensible width (typically `100vw`) and at least 480 px of height.
+The maths is split into a pure-helpers module (`Cardwall/types.ts`) with no DOM dependencies, so the whole drift / wrap / perspective pipeline is unit-testable without rendering anything.
 
-## Props
+## The Core Concept: Seamless Marquee with a Twin Track
 
-| Prop          | Type                              | Default     | Description                                                  |
-|---------------|-----------------------------------|-------------|--------------------------------------------------------------|
-| `density`     | `'sparse' \| 'default' \| 'dense'` | `'default'` | Number of rows (3 / 5 / 7).                                  |
-| `tilesPerRow` | `number`                          | `8`         | Tiles per row before the seamless duplicate.                 |
-| `tileWidth`   | `number` (px)                     | `220`       | Width of each tile. Tile height is `0.62 ×` width.           |
-| `tileGap`     | `number` (px)                     | `16`        | Horizontal gap between adjacent tiles in a row.              |
-| `class`       | `string`                          | `''`        | Extra CSS classes appended to the `.cw-wall` wrapper.        |
+The trick that makes the rows drift forever without seams is rendering each row's tile sequence **twice**, side by side, and translating both copies in lockstep. When the first copy slides off-screen left, the second copy is already filling in from the right at the same X position the first copy occupied moments before — there's nothing to see at the seam because the seam visually never appears.
 
-## Palette + label sets
+```
+row inner element renders the tile sequence twice:
 
-The component ships with eight curated four-stop palettes (deep teal/sky, violet/pink, amber/rose, emerald/cyan, etc.) and sixteen short serif labels — `STORY`, `CRAFT`, `DRIFT`, `SIGNAL`, `NORTH`, `CIPHER`, `STILL`, `SPARK`, `ECHO`, `OFFLINE`, `CANVAS`, `PROOF`, `WARP`, `PRELUDE`, `STATUS`, `INDIGO`. Each tile draws one of each, indexed by a Halton sequence so the same `(rowIdx, tileIdx)` pair always produces the same look.
+  [TILE TILE TILE TILE TILE TILE TILE TILE][TILE TILE TILE TILE TILE TILE TILE TILE]
+  ┃ ──────────── copy A ──────────────── ┃ ──────────── copy B ──────────────── ┃
 
-If you want to extend the sets, override the arrays in `Cardwall/types.ts` — they are exported intentionally for downstream curation.
+  translate3d(-offset, 0, 0)
+       offset wraps inside [0, period)
+       period = (tileWidth + tileGap) × tilesPerRow
 
-## Accessibility
+  when offset wraps from period → 0 (or vice versa for dir = -1):
+    copy A snaps back into the same on-screen position copy B was just at
+    the snap is invisible because the tile sequences are identical
+```
 
-- Each tile is `role="button"` with a descriptive `aria-label` of the form `Pin <LABEL>` and `aria-pressed` to reflect the pinned state — fully keyboard-operable via Enter or Space.
-- The pinned-tile readout uses `aria-live="polite"` so screen readers announce the change without interrupting current speech.
-- The wall wrapper carries `aria-label="Decorative billboard wall"` to give assistive tech context for what otherwise is a long sequence of decorative buttons.
-- The duplicate marquee copy is hidden with `aria-hidden="true"` so screen readers do not read the same labels twice.
-- Honours `prefers-reduced-motion: reduce` — no rAF loop is started, and the tracks rest at `transform: translate3d(0, 0, 0)`.
+The wrap is implemented in `rowOffset(t, period, speed, dir)`:
 
-## Performance Notes
+```
+raw = (t * speed * dir) mod period
+if raw === 0: return 0           // normalise -0
+if raw <  0: return raw + period // always inside [0, period)
+return raw
+```
 
-- A single `requestAnimationFrame` loop runs for the whole wall, not one per row. Per-frame work is `O(rowCount)` style writes — comfortable up to dense 7-row configurations.
-- `will-change: transform` is set on `.cw-row` and `.cw-track` so the compositor promotes them to their own layer; mutations are GPU-only.
-- Tiles use `transform: scale()` on hover/focus rather than re-laying out — there is no paint-storm even with 50+ tiles on screen.
-- The duplicate track copy doubles the DOM node count vs. a single-render row. For very dense walls (e.g. `density="dense"` × `tilesPerRow={20}` × 2 copies = 280 tiles) this is still cheap, but consider lowering `tilesPerRow` if your target hardware is constrained.
+Two subtle moves:
 
-## Distinct From
+1. **Always-positive return.** `(-foo) mod period` in JavaScript returns negatives, which means the consumer would have to sign-juggle when applying `translateX`. Wrapping into `[0, period)` lets the consumer always write `translate3d(${-offset}px, 0, 0)` — correct for both directions.
+2. **`-0` normalisation.** JavaScript distinguishes `0` and `-0`; `0 * -1` is `-0`. The helper coerces to `+0` so consumers don't accidentally end up with subtly weird transform strings during testing.
 
-- **`Marquee`** — also scrolls horizontally but is a single row of arbitrary children, no perspective tilt, no pin interaction.
-- **`BentoGrid`** — a static editorial grid of fixed cells; never moves, content is a real grid of children.
-- **`CardStack`** / **`CardStackMotionFlip`** — focused on a single tower of cards being flipped; no horizontal drift, no multi-row depth field.
-- **`MembraneHero`** — a single warped fluid-mesh canvas as the hero backdrop; no tile grid, no multi-row marquee.
+## Perspective Tilt: Mapping Row Index to Camera
 
-## Implementation Notes
+Each row gets a single CSS transform combining `translateY`, `rotateX`, and `scale`:
 
-- The seamless marquee math: each row's inner element renders the tile sequence twice. The `rowOffset(t, period, speed, dir)` helper wraps the time-driven offset into `[0, period)`. Translating by `-offset` makes copy 1 drift off-screen left while copy 2 fills in from the right; when `offset` wraps to 0, copy 1 has snapped back into the same on-screen position copy 2 just occupied — the snap is invisible.
-- `perspectiveTransform(rowIdx, totalRows)` returns a single `translateY + rotateX + scale` transform string. The middle row gets the identity transform (no tilt, unit scale). Outer rows tilt by ±14° and scale to 0.92, with a subtle ±6 px Y nudge to compress the apparent depth.
-- The wall lives inside a CSS `perspective: 1400px` container with `transform-style: preserve-3d` so the per-row tilts compose with the camera projection rather than acting as flat 2D rotations.
-- Each row carries a soft horizontal mask (`mask-image: linear-gradient(transparent, #000 8%, #000 92%, transparent)`) so tiles fade in and out at the row edges instead of clipping hard.
+```
+perspectiveTransform(rowIdx, totalRows):
+  mid    = (totalRows − 1) / 2
+  rel    = (rowIdx − mid) / mid                  // [-1, 1] across rows
+  tilt   = -rel × 14                              // ±14° rotateX
+  scale  = 1 − abs(rel) × 0.08                    // 0.92 .. 1.00
+  ty     = rel × 6                                // ±6 px Y nudge
+  return `translateY(${ty}px) rotateX(${tilt}deg) scale(${scale})`
+```
+
+```
+row index    rel       tilt       scale     ty
+─────────────────────────────────────────────────
+   0       -1.00      +14.0°      0.92    -6 px      (top — tilts forward)
+   1       -0.50       +7.0°      0.96    -3 px
+   2 (mid)  0.00        0.0°      1.00     0 px      (camera plane)
+   3       +0.50       -7.0°      0.96    +3 px
+   4       +1.00      -14.0°      0.92    +6 px      (bottom — tilts back)
+```
+
+The wall lives inside a CSS `perspective: 1400px` container with `transform-style: preserve-3d`, so the per-row tilts compose with the camera projection rather than acting as flat 2D rotations. Without `preserve-3d`, you'd see the rows rotate in their own plane and the depth illusion would collapse.
+
+## Deterministic Palette Selection: Halton Sequence
+
+The palette and label of each tile come from a Halton(2, 3) low-discrepancy sequence indexed by `(rowIdx × 100) + tileIdx`. Halton sequences are quasi-random — they look uniformly distributed, but the same input always returns the same output. This solves the SSR-vs-client hydration problem: a server render and a client render of the same `(density, tilesPerRow)` will pick the same palette for every tile, so React-style hydration mismatches never happen.
+
+```
+halton(i, base):
+  f = 1; r = 0; n = i
+  while n > 0:
+    f /= base
+    r += f × (n mod base)
+    n  = floor(n / base)
+  return r                          // float in [0, 1)
+
+pickTilePalette(seed):
+  h2 = halton(seed + 1, 2)          // base 2 — picks palette
+  h3 = halton(seed + 1, 3)          // base 3 — picks label
+  palette = TILE_PALETTES[floor(h2 × len) % len]
+  label   = TILE_LABELS  [floor(h3 × len) % len]
+  return { ...palette, label }
+```
+
+Two Halton bases (2 and 3 — co-prime — is the canonical choice) ensure palette and label are statistically independent: a "STORY" tile won't always be teal, an amber tile won't always say "DRIFT". The result is visually rich variety from a tiny deterministic pipeline.
+
+## State Flow Diagram
+
+```
+                    ┌──────────────────────┐
+                    │  buildRows(density,  │
+                    │    tilesPerRow)      │
+                    │  → deterministic     │
+                    │    palette + labels  │
+                    └──────────┬───────────┘
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │  on mount            │
+                    │  reducedMotion?      │
+                    └──┬───────────────────┘
+                       │
+       ┌───────────────┴────────────────┐
+       │ false                          │ true
+       ▼                                ▼
+  ┌──────────────────┐         ┌──────────────────┐
+  │ DRIFTING         │         │ STATIC           │
+  │ rAF loop writes  │         │ tracks at        │
+  │ translate3d to   │         │ translate3d(0,0) │
+  │ each row track   │         │ no rAF loop      │
+  │ each frame       │         └──────────────────┘
+  └────────┬─────────┘
+           │
+   click/Enter/Space on tile
+           │
+           ▼
+  ┌──────────────────┐
+  │ PINNED           │
+  │ pinned = tile    │
+  │ readout          │
+  │ announces label  │
+  │ (aria-live)      │
+  │                  │
+  │ tracks keep      │
+  │ drifting         │
+  └────────┬─────────┘
+           │
+   click same tile
+           │
+           ▼
+  ┌──────────────────┐
+  │ pinned = null    │
+  └──────────────────┘
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `density` | `'sparse' \| 'default' \| 'dense'` | `'default'` | Number of rows: 3 / 5 / 7. |
+| `tilesPerRow` | `number` | `8` | Tiles per row before the seamless duplicate. |
+| `tileWidth` | `number` | `220` | Tile width in px. Tile height is `0.62 ×` width (golden-ratio-ish). |
+| `tileGap` | `number` | `16` | Horizontal gap between adjacent tiles in a row, in px. |
+| `class` | `string` | `''` | Extra classes appended to the `.cw-wall` wrapper. |
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| User has `prefers-reduced-motion: reduce` | The rAF loop never starts; tracks rest at `translate3d(0, 0, 0)`. The wall reads as a static composition. Pin interaction still works. |
+| `tilesPerRow = 0` or negative | `period` becomes 0; `rowOffset` returns 0 unconditionally; the wall renders empty rows. The component does not throw. |
+| Window resized while drifting | The rAF loop keeps writing the same transform values; the rows reflow naturally because the tiles are inline-flex. No reset needed. |
+| Same tile palette appears twice in adjacent rows | Possible — Halton(2, 3) is quasi-random but not anti-aliased. The eye reads it as a coincidence rather than a bug. |
+| User pins a tile in copy A, then copy A drifts off-screen | The same palette appears in copy B; the pin "follows" because the comparison is by palette content (`from + label`), not by DOM identity. |
+| SSR with no `window` | `isReducedMotion()` returns `false` in non-DOM environments; `buildRows` is pure; the wall renders to HTML correctly during SSR and hydrates without mismatch. |
+| Very dense configuration (`density="dense"`, `tilesPerRow=20`) | DOM contains 7 × 20 × 2 = 280 tile elements. Acceptable on most hardware; lower `tilesPerRow` if the target device is constrained. |
+| `tileWidth` set to a tiny value (e.g. 40) | Period shrinks to ~448 px; the wrap interval becomes obvious because tile patterns repeat quickly. The component still works; the visual just looks less varied. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$derived`, `$props`, `bind:this` for the row track refs, and `onMount`/`onDestroy` for the rAF lifecycle.
+- Zero external dependencies — pure CSS gradients (no images, no SVG sprites), pure CSS perspective for tilt, single rAF loop for drift.
+
+## File Structure
+
+```
+src/lib/components/Cardwall/Cardwall.svelte         # wall + rAF lifecycle
+src/lib/components/Cardwall/CardwallTile.svelte     # one tile (gradient + label + pin button)
+src/lib/components/Cardwall/types.ts                # pure helpers (rowOffset, perspectiveTransform, halton, buildRows)
+src/lib/components/Cardwall.md                      # this file
+src/lib/components/Cardwall.test.ts                 # vitest unit tests (helpers + render)
+src/routes/cardwall/+page.svelte                    # demo page
+```

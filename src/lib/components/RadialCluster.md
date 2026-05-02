@@ -1,226 +1,204 @@
-# RadialCluster - Technical Logic Explainer
+# RadialCluster — Technical Logic Explainer
 
 ## What Does It Do? (Plain English)
 
-RadialCluster displays hierarchical data (like a family tree or file system) in a circular layout. The root is at the centre, and branches spread outward like spokes on a wheel, connected by smooth curved lines.
+A circular dendrogram. Pass it nested `{ name, children? }` data and it renders the root at the centre with branches fanning outward like spokes — every leaf node sits on the same outer ring, connected back through curved Bézier paths to its ancestors. The visual idiom is borrowed from D3's classic "radial cluster" example, but rebuilt natively in Svelte 5 with no D3 dependency.
 
-**Think of it like:** A family tree arranged in a circle! Grandparents in the middle, their children in the next ring, grandchildren in the outer ring - all connected by curved lines showing relationships.
+Think of it as a family tree wrapped into a circle. It's the right shape when you have a bushy hierarchy (lots of leaves at similar depth) and you want to show *all* of them at once: project taxonomies, organisational charts, file-system overviews, biological clades, anything tree-shaped where rectangle layouts feel cramped.
 
----
+The layout is deterministic — same data in, same picture out — so it's safe for visual regression tests and screenshot comparisons.
 
 ## How It Works (Pseudo-Code)
 
 ```
-WHEN component loads:
-  1. PARSE hierarchical data into tree structure
-  2. CALCULATE depth of each node (distance from root)
-  3. ASSIGN angles to leaf nodes (spread evenly around circle)
-  4. CALCULATE parent angles (average of children)
-  5. DRAW curved links between parents and children
-  6. PLACE nodes and labels at calculated positions
+state:
+  hoveredNode      = null
+  mousePos         = { x: 0, y: 0 }
+  maxVisibleDepth  = null          // null = show all rings
 
-FOR each node:
-  - CALCULATE angle (theta) based on position among siblings
-  - CALCULATE radius based on depth level
-  - CONVERT polar (angle, radius) to cartesian (x, y)
+derive layout:
+  // 1. Count leaves under every node so siblings get angular space proportional to bushiness
+  leafCounts = postOrderTraversal(data, n =>
+    n.children.length === 0 ? 1 : sum(children.leafCounts)
+  )
 
-FOR each link:
-  - DRAW curved Bézier path from parent to child
+  // 2. Recursively assign each node an angle and a radius
+  function place(node, angleStart, angleEnd, depth):
+    if isLeaf(node):
+      angle  = (angleStart + angleEnd) / 2
+      radius = effectiveOuterRadius      // every leaf on the same outer ring
+    else:
+      // Distribute the angular slice [angleStart, angleEnd] among children
+      // proportionally to their leaf counts
+      cursor = angleStart
+      for each child:
+        slice = (child.leafCount / node.leafCount) × (angleEnd - angleStart) × separation
+        place(child, cursor, cursor + slice, depth + 1)
+        cursor += slice
+      angle  = mean(child.angle for child in children)
+      radius = innerRadius + (depth / maxDepth) × (effectiveOuterRadius - innerRadius)
+
+  // 3. Flatten and emit links (parent→child pairs) for rendering
+  nodes = flatten(layoutTree)
+  links = collectLinks(layoutTree)
+
+render:
+  <svg>
+    {#each links} curved Bézier path from source(angle, r) to target(angle, r) {/each}
+    {#each nodes}
+      <circle at polar(angle, r) /> with hover/focus handlers
+      {#if showLabels} <text rotated tangentially> {/each}
+  </svg>
+  {#if hoveredNode} tooltip near mousePos {/if}
 ```
 
----
+The placement function is the whole algorithm. It walks the tree top-down, recursively dividing the parent's angular slice among its children based on each subtree's leaf count, then assigns each node a `(angle, radius)` polar position.
 
-## The Core Concept
+## Core Concept: Angle by Leaf Count, Radius by Depth
 
-### Radial Layout
+Two layout decisions define the look.
 
-Unlike a top-down tree, a radial cluster uses **polar coordinates**:
+### Angular allocation: leaves get equal share
 
-```
-Standard Tree:           Radial Cluster:
-    [Root]                    ○
-   /  |  \                  / | \
-  A   B   C              ○   ○   ○
- /\       |            /  \       \
-D  E      F          ○    ○       ○
+If you naively gave each subtree the same angle (say, parent has 3 children, each gets 120°), a subtree with 10 leaves would crowd the same arc as a subtree with 1 leaf. The layout would look uneven and labels would collide.
 
-                    (arranged in a circle)
-```
-
-### Polar to Cartesian Conversion
-
-Every point is calculated using:
-```
-x = radius × cos(angle)
-y = radius × sin(angle)
-```
-
-Where:
-- **angle** = position around the circle (0 to 2π radians)
-- **radius** = distance from centre (based on depth)
-
----
-
-## Layout Algorithm
-
-### Step 1: Count Leaves
-```
-function countLeaves(node):
-  IF node has no children:
-    return 1
-  ELSE:
-    return SUM of countLeaves(child) for each child
-```
-
-### Step 2: Assign Angles
-Leaf nodes are spread evenly around the full circle (360°):
+Instead, every subtree's angular slice is **proportional to how many leaves it contains**:
 
 ```
-Total leaves: 8
-Each leaf gets: 360° / 8 = 45°
-
-Angles assigned: 0°, 45°, 90°, 135°, 180°, 225°, 270°, 315°
+slice(child) = (child.leafCount / parent.leafCount) × parent.slice × separation
 ```
 
-### Step 3: Parent Positioning
-Parents are placed at the **average angle** of their children:
+Leaves all end up on the same outer ring at angles that are uniformly distributed around the circle. Every leaf gets exactly `360° / totalLeaves` of arc, regardless of how deeply nested it is. This is the "cluster" property: leaves are equally spaced even though their parents are not.
+
+The `separation` prop multiplies the slice (default 1, but you can pass e.g. 0.95 to compress the layout slightly, leaving small gaps between sibling subtrees that improve readability of dense trees).
+
+### Radial allocation: depth maps linearly to radius
 
 ```
-Parent with children at 45° and 90°:
-Parent angle = (45° + 90°) / 2 = 67.5°
+radius(node) = isLeaf
+             ? effectiveOuterRadius
+             : innerRadius + (depth / maxDepth) × (effectiveOuterRadius - innerRadius)
 ```
 
----
+Internal nodes are placed at concentric rings spaced linearly between `innerRadius` and `effectiveOuterRadius`. Leaves are pinned to `effectiveOuterRadius` regardless of their actual depth — that's what makes this a cluster layout (leaves aligned) rather than a tree layout (leaves at their natural depth).
 
-## Curved Links (Bézier Paths)
+If you want the tree variant where leaves at depth 3 sit closer in than leaves at depth 5, swap the `isLeaf` branch for the same depth-based radius formula. This component deliberately enforces equal-leaf-radius for visual rhythm.
 
-Links use **cubic Bézier curves** for smooth connections:
+### Curved links
 
-```
-M (start point)
-C (control point 1) (control point 2) (end point)
-```
+Connecting two polar points with a straight line crosses the centre awkwardly. We use a cubic Bézier where the control points are the source's radius rotated to the target's angle (and vice versa) — the link bows outward in a smooth arc that hugs the layer geometry. The path string is `M sx sy C cx1 cy1 cx2 cy2 tx ty` with control points computed from the polar coordinates.
 
-The control points create a curve that follows the radial direction:
+This is the same trick D3's `d3.linkRadial` uses; it's worth understanding because it's also the right answer for radial Sankey, radial trees, and any other circle-aligned diagram with parent-child links.
 
-```
-              ○ Child
-             /
-            /   ← Curved link
-           /
-      ○───○ Parent
-```
+### Pre-computed leaf counts
 
----
+The naive approach to "how many leaves under this node" is to traverse the subtree on demand — but that's O(n²) over a deep tree. We precompute every node's leaf count in a single post-order pass and store it in a `SvelteMap<RadialClusterNode, number>`. Layout building then runs in O(n).
 
-## Label Rotation
+## Performance
 
-Labels rotate to follow the circle, making them easier to read:
+The layout is O(n) once leaf counts are precomputed. Rendering is O(n) DOM elements (one `<circle>` and one `<text>` per node, one `<path>` per link).
 
-```
-Left side (180°-360°):     Right side (0°-180°):
-    ┤ Label                    Label ├
-    (text-anchor: end)         (text-anchor: start)
-```
+Cost at typical scales:
 
-Labels on the left side are flipped 180° so they're not upside down.
+- **n ≤ 100 nodes:** Trivial. Layout in <1 ms; render is dominated by SVG paint.
+- **n = 100–500:** Comfortable. Layout in a few ms. Labels are still legible at the default 800 × 800 viewport.
+- **n = 500–1 000:** The DOM holds up; readability is the bottleneck. Reduce `fontSize`, set `showLabels: false`, or grow the SVG.
+- **n > 1 000:** Layout is still fast (~5 ms), but you'll have label overlap regardless of font size. Consider whether the radial form is the right choice — packed bar layouts handle dense leaves better.
 
----
+There are no animations and no rAF loops. The `$derived` chain recomputes the layout when `data`, `width`, `height`, or any layout knob changes; otherwise everything is static. Hover triggers a state change but doesn't re-run the layout — only the `hoveredNode` reference updates.
 
-## Data Format
-
-```javascript
-{
-  name: "Root",
-  children: [
-    {
-      name: "Branch A",
-      children: [
-        { name: "Leaf 1" },
-        { name: "Leaf 2" }
-      ]
-    },
-    {
-      name: "Branch B",
-      children: [
-        { name: "Leaf 3" }
-      ]
-    }
-  ]
-}
-```
-
----
-
-## Visual Structure
+## State Flow Diagram
 
 ```
-                    Leaf
-                   /
-              Branch ─── Leaf
-             /
-    Centre ─┤
-             \
-              Branch ─── Leaf
-                   \
-                    Leaf
-
-All arranged in a circle, not linear!
+              ┌────────────────────────┐
+              │  empty / no data       │  data is required
+              │  (component errors at  │
+              │   runtime if missing)  │
+              └───────────┬────────────┘
+                          │ data prop set
+                          ▼
+              ┌────────────────────────┐
+              │  layout computed       │
+              │  - leaf counts         │
+              │  - polar positions     │
+              │  - links collected     │
+              └───────────┬────────────┘
+                          │
+                          ▼
+              ┌────────────────────────┐
+              │  rendered              │
+              │  hoveredNode = null    │
+              └───────────┬────────────┘
+                          │
+              ┌───────────┼─────────────────┐
+              │ hover     │ tab+focus       │ data prop changes
+              ▼           ▼                 ▼
+       ┌──────────┐ ┌──────────────┐  ┌────────────────┐
+       │ hovered- │ │ focus ring   │  │ layout         │
+       │ Node set │ │ on circle    │  │ recomputes     │
+       │ tooltip  │ │              │  │ everything     │
+       │ visible  │ │              │  │ re-renders     │
+       └────┬─────┘ └──────────────┘  └────────────────┘
+            │ mouseleave
+            ▼
+       ┌──────────┐
+       │ hovered- │
+       │ Node ←   │
+       │  null    │
+       └──────────┘
 ```
 
----
+## Props Reference
 
-## Performance Notes
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `RadialClusterNode` | required | Root of the tree. Recursive `{ name, children?, value? }`. |
+| `width` | `number` | `800` | SVG width in pixels. |
+| `height` | `number` | `800` | SVG height in pixels. |
+| `innerRadius` | `number` | `100` | Radius of the innermost ring (root's distance from centre 0). |
+| `outerRadius` | `number` | `min(w, h)/2 - 120` | Radius where leaves sit. Auto-computed to leave label room. |
+| `nodeRadius` | `number` | `2.5` | Pixel radius of each node circle. |
+| `nodeColorParent` | `string` | `'#555'` | Fill colour for non-leaf nodes. |
+| `nodeColorLeaf` | `string` | `'#999'` | Fill colour for leaf nodes. |
+| `linkColor` | `string` | `'#555'` | Stroke colour of curved links. |
+| `linkOpacity` | `number` | `0.4` | Link stroke opacity (0–1). |
+| `linkWidth` | `number` | `1.5` | Link stroke width in pixels. |
+| `fontSize` | `number` | `11` | Label font size in pixels. |
+| `fontFamily` | `string` | `'system-ui, sans-serif'` | Label font family. |
+| `labelColor` | `string` | `'#333'` | Label fill colour. |
+| `showLabels` | `boolean` | `true` | Render text labels next to nodes. |
+| `rotateLabels` | `boolean` | `true` | Rotate labels tangentially so they read along the radial direction. |
+| `separation` | `number` | `1` | Multiplier on each child's angular slice. <1 leaves visible gaps between sibling subtrees. |
+| `class` | `string` | `''` | Extra classes on the container. |
 
-- **SVG Paths:** Uses SVG `<path>` for smooth Bézier curves
-- **Single Pass Layout:** Tree traversed once to calculate positions
-- **CSS Transitions:** Hover effects use CSS for smoothness
-- **Lazy Labels:** Labels hidden for very small nodes
-
----
-
-## Edge Cases Handled
+## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
-| Single node | Dot in centre, no links |
-| Very deep tree | Inner rings get smaller |
-| Many siblings | Nodes spread evenly |
-| Long labels | May overlap (rotate helps) |
-| Empty children array | Treated as leaf node |
-
----
-
-## What This Component Does NOT Do
-
-- Does not support collapsible branches (see ExpandableSankey)
-- Does not animate layout changes
-- Does not auto-size labels to fit
-- Does not have zoom/pan features
-
----
+| `data` missing entirely | Component errors at runtime (`data` is required). Always provide at least a root with no children. |
+| Single root, no children | Renders one circle at the centre. No links. Single label. |
+| Root with one child | Child placed at angle 0 on the outer ring. Link is a straight-ish curve; not visually interesting but valid. |
+| Tree of depth 1 (star) | All children are leaves; they fan around the outer ring at equal angular spacing. |
+| Very deep, narrow tree (chain) | Internal nodes step radius outward at `1/maxDepth` increments; the only leaf sits at `outerRadius`. The chain looks like a spiral spoke. |
+| Subtree with thousands of leaves | Allocated angular slice is proportional. Labels overlap badly; reduce `fontSize` or set `showLabels: false`. |
+| Duplicate node `name`s | No problem for layout (nodes are identified by reference, not name). Tooltip text may be ambiguous. |
+| `width` or `height` very small | `effectiveOuterRadius` defaults to `min(w,h)/2 - 120`, which can go negative. Pass a sensible viewport, or set `outerRadius` explicitly. |
+| `separation: 0` | All siblings collapse to the same angle. Layout is degenerate; pass at least 0.5. |
+| `prefers-reduced-motion: reduce` | Hover stroke transition disabled. Layout doesn't animate, so nothing else changes. |
 
 ## Dependencies
 
-**Zero external dependencies.**
-
-This component uses only:
-- Svelte 5 (`$props()`, `$state()`, `$derived()` runes)
-- Standard SVG elements (`<path>`, `<circle>`, `<text>`)
-- Native JavaScript trigonometry (Math.sin, Math.cos)
-
-Inspired by D3's radial cluster example, but rewritten entirely in native Svelte.
-
----
+- **Svelte 5.x** — `$state`, `$derived` for the reactive layout chain.
+- **`svelte/reactivity`** — `SvelteMap` to memoise leaf counts in a way the runtime can track.
+- Zero external runtime dependencies. The polar-coordinate maths, leaf-count traversal, and Bézier path construction are hand-rolled (~200 lines of layout logic). D3 is intentionally not used — its `d3-hierarchy` would add ~50 KB to give us a feature this component implements in 5 KB.
 
 ## File Structure
 
 ```
-RadialCluster.svelte      # The component
-RadialCluster.test.ts     # Unit tests
-RadialCluster.md          # This explainer
+src/lib/components/RadialCluster.svelte    # implementation
+src/lib/components/RadialCluster.test.ts   # unit tests
+src/lib/components/RadialCluster.md        # this file
+src/routes/radialcluster/+page.svelte      # demo page
+src/lib/types.ts                           # RadialClusterNode, RadialClusterLayoutNode, RadialClusterProps
+src/lib/constants.ts                       # FALLBACK_RADIAL_CLUSTER_DATA sample tree
 ```
-
----
-
-*Last updated: 26 December 2025*

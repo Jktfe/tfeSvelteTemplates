@@ -1,203 +1,182 @@
-# Countdown - Technical Logic Explainer
+# Countdown — Technical Logic Explainer
 
-## Overview
+## What Does It Do? (Plain English)
 
-Countdown is a **zero-dependency timer component** that displays the time remaining until a target date. It supports multiple display formats (cards, labels, compact) and includes smooth CSS animations for digit changes.
+Countdown displays a live timer ticking down from "now" toward a target date — days, hours, minutes, and seconds (or any subset). When a number changes, a small flip animation cues the change so the reader's eye latches onto it. When the target hits zero the component fires `onComplete` and either swaps to a completion message or hides itself.
 
-## The Flow: How the Timer Works
+Three formats: `cards` (boxed segments with labels), `labels` (numbers with units beneath), `compact` (`HH:MM:SS` separated by a glyph). Think of it as the digital alarm clock at midnight on New Year's Eve, just packaged as a Svelte component.
+
+## How It Works (Pseudo-Code)
 
 ```
-[Component Mounts]
-      ↓
-[Parse targetDate] → Date object | number | ISO string
-      ↓
-[Calculate Time Remaining]
-      ↓
-      ├── difference > 0 → Update segments, schedule next tick
-      │         ↓
-      │   [Wait 1 second]
-      │         ↓
-      │   [Recalculate] ────────────┐
-      │                              │
-      └── difference <= 0 → Show completion message
-                ↓
-          [Call onComplete callback]
-                ↓
-          [Stop interval timer]
+state:
+  segments        : Array<{ value, label, unit }>
+  isComplete      = false
+  intervalId      = setInterval handle
+  previousValues  : Record<unit, number>   // tracked for the change-flash class
+
+helpers:
+  parseTargetDate(target)        → Date  (accepts Date | number | string)
+  getUnitLabel(unit, value)      → singular or plural label
+  formatValue(value, padZeros)   → '05' | '5'
+  hasValueChanged(unit, value)   → bool   (used to drive .countdown__segment--changed)
+
+calculateTimeRemaining():
+  target = parseTargetDate(targetDate)
+  if target invalid:
+    segments = zeros; clear interval; return
+  diff = target - now
+  if diff <= 0:
+    if not isComplete:
+      isComplete = true
+      segments = zeros
+      onComplete?()
+    return
+  totalSeconds = floor(diff / 1000)
+  totalMinutes = floor(totalSeconds / 60)
+  totalHours   = floor(totalMinutes / 60)
+  totalDays    = floor(totalHours / 24)
+  values = {
+    days:    totalDays,
+    hours:   totalHours   % 24,
+    minutes: totalMinutes % 60,
+    seconds: totalSeconds % 60
+  }
+  for unit in units: previousValues[unit] = current segments[unit].value
+  segments = units.map(unit => ({ value: values[unit], label: ..., unit }))
+
+on mount:
+  calculateTimeRemaining()
+  intervalId = setInterval(calculateTimeRemaining, 1000)
+
+on destroy:
+  clearInterval(intervalId)
 ```
 
-## Key Concepts
+The whole thing is a `setInterval` ticking once per second. Every tick recomputes from scratch — there's no incremental subtraction, so clock skew, sleep/resume, and tab-throttling all heal themselves on the next tick.
 
-### 1. Time Unit Calculations
+## The Core Concept: Modular Arithmetic, Not Incremental Subtraction
 
-The countdown breaks down milliseconds into human-readable units:
+A naive countdown subtracts 1 from `seconds` each tick, rolls over to `minutes` at zero, and so on. That accumulates drift over hours (the `setInterval` is approximate, especially when the tab is throttled). The fix is to recompute every unit from a single ground-truth `diff = target - now` on each tick:
 
-```typescript
-// Raw difference in milliseconds
-difference = targetDate.getTime() - now.getTime();
+```
+  diff = target.getTime() - now.getTime()        (milliseconds)
 
-// Convert to each unit
-totalSeconds = Math.floor(difference / 1000);
-totalMinutes = Math.floor(totalSeconds / 60);
-totalHours = Math.floor(totalMinutes / 60);
-totalDays = Math.floor(totalHours / 24);
+  totalSeconds = ⌊ diff / 1000 ⌋
+  totalMinutes = ⌊ totalSeconds / 60 ⌋
+  totalHours   = ⌊ totalMinutes / 60 ⌋
+  totalDays    = ⌊ totalHours / 24 ⌋
 
-// Get remainder for each unit (modulo operation)
-hours = totalHours % 24;     // Hours within current day
-minutes = totalMinutes % 60; // Minutes within current hour
-seconds = totalSeconds % 60; // Seconds within current minute
+  values:
+    days    = totalDays
+    hours   = totalHours   mod 24
+    minutes = totalMinutes mod 60
+    seconds = totalSeconds mod 60
 ```
 
-### 2. Segment Data Structure
+```
+  Example: diff = 90061000 ms
 
-Each time unit becomes a "segment" with three properties:
+  totalSeconds = 90061
+  totalMinutes = 1501
+  totalHours   = 25
+  totalDays    = 1
 
-```typescript
-interface CountdownSegment {
-  value: number;    // e.g., 5
-  label: string;    // e.g., "Hours" or "Hour" (singular/plural)
-  unit: CountdownUnit;  // 'days' | 'hours' | 'minutes' | 'seconds'
-}
+  display:
+    days:    1
+    hours:   25 mod 24 = 1
+    minutes: 1501 mod 60 = 1
+    seconds: 90061 mod 60 = 1
+
+  → "1 day, 1 hour, 1 minute, 1 second"
 ```
 
-### 3. Animation Trigger Pattern
+This means a tab that was suspended for 30 minutes resumes at the *correct* time on the next tick, not 30 minutes behind. The `units` prop selects which subset to display; the modular arithmetic always runs over all four so the maths is consistent.
 
-Animations only play when a value changes (not every second):
+## CSS Animation Strategy
 
-```typescript
-// Track previous values
-previousValues = { days: -1, hours: -1, minutes: -1, seconds: -1 }
+When `previousValues[unit] !== currentValue`, the segment gains a transient `.countdown__segment--changed` class. CSS keyframes fade the new value in or apply a small flip-style transform — enough to draw the eye without distracting. The component reads `prefers-reduced-motion` indirectly via the global media query — the keyframes are wrapped in `@media (prefers-reduced-motion: no-preference)` so reduced-motion users see static digit changes.
 
-// Check if value just changed
-hasValueChanged(unit, currentValue) {
-  return previousValues[unit] !== currentValue
-         && previousValues[unit] !== -1  // Skip initial render
-}
+`compact` format uses a separator span between segments (default `:`); `cards` and `labels` use flex gap. The `aria-live="polite"` region announces ticks to assistive tech — but at one update per second it doesn't spam screen readers; the `aria-label` on each segment carries the human-readable form (`"5 Hours"`).
+
+## Performance
+
+- One `setInterval` at 1 Hz. Cheap.
+- Every tick recomputes from scratch; no accumulator drift.
+- `previousValues` is a tiny `Record<CountdownUnit, number>`, not a Map, so reads/writes are O(1).
+- DOM cost: one segment per displayed unit (max 4). Re-renders are flat regardless of how long until the target.
+- `setInterval` is cleared in `onDestroy` — no orphan timer after navigation.
+- Invalid `targetDate` clears the interval immediately and renders zeros, so we don't burn ticks on garbage input.
+
+## State Flow Diagram
+
+```
+  [mounted]
+        │
+        │  calculateTimeRemaining() once
+        │  setInterval(calculateTimeRemaining, 1000)
+        ▼
+  [ticking]   segments update each second
+        │
+        │  diff > 0
+        ◀──── (loop) ────┐
+        │                │
+        │  invalid date  │
+        ▼                │
+  [zeroed]               │
+        │                │
+        │                │
+        ▼                │
+        ◀────────────────┘
+        │
+        │  diff <= 0  (first time)
+        ▼
+  [complete]   isComplete = true
+                onComplete?()
+                if hideOnComplete: render nothing
+                else: render completedMessage
+
+  on destroy: clearInterval
 ```
 
-### 4. Display Format Modes
-
-| Format | Description | Use Case |
-|--------|-------------|----------|
-| `cards` | Each unit in a dark card with shadow | Hero sections, landing pages |
-| `labels` | Large numbers with labels below | Event pages, announcements |
-| `compact` | Single line with separators | Headers, tight spaces |
-
-## State Management
-
-| State | Type | Purpose |
-|-------|------|---------|
-| `segments` | `CountdownSegment[]` | Current countdown values |
-| `isComplete` | `boolean` | Timer has reached zero |
-| `intervalId` | `number \| null` | Reference for cleanup |
-| `previousValues` | `Record<unit, number>` | Animation detection |
-
-## Props Quick Reference
+## Props Reference
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `targetDate` | `Date \| number \| string` | required | Target date/time |
-| `units` | `CountdownUnit[]` | all four | Which units to show |
-| `format` | `'cards' \| 'labels' \| 'compact'` | `'cards'` | Display style |
-| `showLabels` | `boolean` | `true` | Show unit names |
-| `separator` | `string` | `':'` | Compact mode separator |
-| `padZeros` | `boolean` | `true` | Pad with zeros (05 vs 5) |
-| `completedMessage` | `string` | `"Time's up!"` | Shown when done |
-| `onComplete` | `() => void` | - | Called when timer ends |
-| `hideOnComplete` | `boolean` | `false` | Hide entire component |
+| `targetDate` | `Date \| number \| string` | required | Target date/time. String parsed by `new Date()`; number is a UTC ms timestamp. |
+| `units` | `CountdownUnit[]` | `['days', 'hours', 'minutes', 'seconds']` | Which units to display (`CountdownUnit = 'days' \| 'hours' \| 'minutes' \| 'seconds'`). |
+| `format` | `'cards' \| 'labels' \| 'compact'` | `'cards'` | Display style. `compact` separates segments with `separator`; `cards`/`labels` use the unit label below. |
+| `showLabels` | `boolean` | `true` | Show "Days" / "Hours" / etc. labels (ignored in `compact` mode). |
+| `separator` | `string` | `':'` | Glyph rendered between segments in `compact` mode. |
+| `padZeros` | `boolean` | `true` | Zero-pad single digits (`05` instead of `5`). |
+| `completedMessage` | `string` | `"Time's up!"` | Text shown when the countdown reaches zero. |
+| `onComplete` | `() => void` | `undefined` | Callback fired exactly once when the countdown completes. |
+| `hideOnComplete` | `boolean` | `false` | Hide the entire component when complete (otherwise `completedMessage` is shown). |
 
-## Date Input Flexibility
+## Edge Cases
 
-The component accepts dates in multiple formats:
+| Situation | Behaviour |
+|-----------|-----------|
+| `targetDate` is in the past at mount | `diff <= 0` immediately; `isComplete = true`; `onComplete` fires once; component renders the completion message. |
+| `targetDate` is invalid (e.g. `"not-a-date"`) | `parseTargetDate` returns an invalid Date; `isNaN(target.getTime())` triggers; segments render zeros; interval cleared. |
+| Tab is suspended (browser throttling) | On resume, the next tick recomputes from `target - now` — display heals automatically, no skew. |
+| User changes system clock backwards | Display jumps forward (more time remaining); the recompute uses the system clock as ground truth. |
+| `units` prop is empty | Loop renders nothing; the wrapper `aria-live` region remains, just with no segments. |
+| `onComplete` is called multiple times concurrently | Guarded by `if (!isComplete)` — the callback fires exactly once even if the interval re-enters. |
+| Component unmounts before completion | `onDestroy` clears the interval; no callback fires. |
+| `hideOnComplete=true` on completion | `{#if !hideOnComplete || !isComplete}` evaluates false; the entire wrapper is removed from the DOM. |
 
-```typescript
-// Date object
-<Countdown targetDate={new Date('2025-12-31')} />
+## Dependencies
 
-// Timestamp (milliseconds)
-<Countdown targetDate={1735689600000} />
+- **Svelte 5.x** — `$state`, `$props`, `onMount`, `onDestroy`.
+- **`$lib/types`** — shared `CountdownProps`, `CountdownUnit`, `CountdownSegment` interfaces.
+- Zero external dependencies — no animation library, native `setInterval` and `Date`.
 
-// ISO string
-<Countdown targetDate="2025-12-31T23:59:59" />
+## File Structure
+
 ```
-
-## CSS Animation Details
-
-Each format has its own animation style:
-
-| Format | Animation | Effect |
-|--------|-----------|--------|
-| `cards` | `card-flip` | Subtle scale pulse |
-| `labels` | `value-change` | Slide down with fade |
-| `compact` | `value-blink` | Quick opacity flash |
-
-## Accessibility Features
-
-| Feature | Implementation |
-|---------|----------------|
-| Screen readers | `role="timer"` with `aria-live="polite"` |
-| Unit context | Each segment has `aria-label="5 Hours"` |
-| Reduced motion | Animations disabled via `@media` query |
-
-## Lifecycle Cleanup
-
-The component properly cleans up its interval timer:
-
-```typescript
-onMount(() => {
-  // Start the timer
-  intervalId = setInterval(calculateTimeRemaining, 1000);
-});
-
-onDestroy(() => {
-  // Stop the timer when component unmounts
-  if (intervalId) {
-    clearInterval(intervalId);
-  }
-});
+src/lib/components/Countdown.svelte   # implementation
+src/lib/components/Countdown.md       # this file (rendered inside ComponentPageShell)
+src/lib/components/Countdown.test.ts  # vitest unit tests
+src/routes/countdown/+page.svelte     # demo page
 ```
-
-## Common Patterns
-
-### Countdown to Specific Time
-
-```svelte
-<Countdown
-  targetDate="2025-12-31T23:59:59"
-  format="cards"
-  onComplete={() => showConfetti()}
-/>
-```
-
-### Simple Days Counter
-
-```svelte
-<Countdown
-  targetDate={eventDate}
-  units={['days']}
-  format="labels"
-/>
-```
-
-### Inline Timer
-
-```svelte
-<p>
-  Sale ends in
-  <Countdown
-    targetDate={saleEnd}
-    format="compact"
-    units={['hours', 'minutes', 'seconds']}
-    showLabels={false}
-  />
-</p>
-```
-
-## Edge Cases Handled
-
-| Scenario | Behaviour |
-|----------|-----------|
-| Past date | Shows completion message immediately |
-| Invalid date | Displays as "0" for all units |
-| Component unmount | Interval timer cleaned up |
-| Very long duration | Days count grows indefinitely |

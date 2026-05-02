@@ -1,181 +1,201 @@
----
-name: MeshGradient
-slug: meshgradient
-category: Decorative
-status: shipped
-since: 2026-04-29
----
+# MeshGradient — Technical Logic Explainer
 
-# MeshGradient
+## What Does It Do? (Plain English)
 
-An ambient animated mesh-gradient backdrop. A small set of large,
-blurry radial-gradient blobs drift slowly across the surface; the
-GPU composites them through a single `filter: blur` layer so the
-result reads as a soft, smoky mesh — Stripe / Linear / Vercel
-marketing energy, with no canvas, no rAF loop, and no per-frame JS.
+MeshGradient is the soft, smoky animated wash you've seen on Stripe, Linear and Vercel marketing pages. A handful of large, brightly coloured blobs drift slowly across the host — each one is a single CSS `radial-gradient` circle — and the whole layer is blurred so heavily that the blobs bleed into one another instead of reading as individual shapes. The result is a continuously-shifting cloud of colour that the eye reads as ambient atmosphere rather than as moving objects.
 
-Useful as a hero backdrop behind a headline, the wash on a marketing
-landing splash, atmosphere behind an empty-state panel that wants
-quiet life, or a dark-mode glow accent. Pure decoration that doesn't
-fight for attention.
+Think of dropping a few coloured ink droplets into a shallow tray of milky water and lightly tilting the tray. The droplets drift, blur into each other, and never quite settle — that's the visual the component is going for.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **6 named palettes** — `sunset`, `aurora`, `ember`, `cosmic`,
-  `mint`, `monochrome`. Each carries 5 colours chosen to blend
-  cleanly under heavy blur (saturated mid-lights, no muddy grays).
-- **Configurable blob count** — 1–12 blobs. Lower counts give a
-  cleaner, more singular wash; higher counts give a busier, more
-  textured mesh.
-- **Independent drift per blob** — golden-angle spiral places each
-  blob; staggered durations and negative animation-delays mean they
-  never sync up, so the loop reads as continuous flow rather than a
-  metronome.
-- **Cascaded CSS custom properties** — every position, colour, blur,
-  opacity, and timing value is set inline on the DOM. The GPU only
-  ever touches its compositor layer; layout never thrashes.
-- **prefers-reduced-motion** — every blob freezes at its first-frame
-  position. The composition still reads as a static mesh gradient —
-  no jarring blank.
+```
+state:
+  palette    = 'sunset'          // one of 6 named palettes
+  blobCount  = 5                  // 1..12 blobs
+  blur       = 80                 // host-level blur in px
+  opacity    = 0.7                // 0..1
+  speed      = 1                  // 0 freezes, 2 = double speed
 
-## Usage
+derive at render time:
+  activePalette = pickPalette(palette)
+  blobs[]       = buildBlobLayout(blobCount, palette):
+    for i in 0..count-1:
+      pos      = blobPosition(i, count)        // golden-angle spiral
+      anim     = blobAnimation(i, count)       // negative delay + per-i duration
+      size     = blobSize(count)               // 1 blob = 90%, 12 = 52%
+      color    = blobColor(i, palette)         // cycles through palette[5]
+      push BlobLayout
+  safeBlur, safeOpacity, speedFactor = clamps
 
-### Default sunset wash
+render:
+  host div with --mesh-blur, --mesh-opacity, --mesh-speed
+  for each blob:
+    div with --blob-x, --blob-y, --blob-size, --blob-color,
+             --blob-delay, --blob-duration
 
-```svelte
-<script>
-  import MeshGradient from '$lib/components/MeshGradient.svelte';
-</script>
+CSS animates each .mesh-gradient__blob:
+  @keyframes mesh-drift: 0/25/50/75/100% translate(±8%, ±10%)
+  duration: var(--blob-duration) * var(--mesh-speed)
+  delay:    var(--blob-delay)            // negative → starts mid-cycle
+  ease-in-out, infinite
 
-<div style="position: relative; height: 400px;">
-  <MeshGradient />
-  <h1 style="position: relative; z-index: 1;">Hello, world</h1>
-</div>
+  Heavy filter:blur on the HOST (not on each blob) means
+  all blobs composite through one shared blur layer →
+  they bleed into one another → soft mesh feel.
 ```
 
-### Aurora at higher density
+No `requestAnimationFrame`. No `IntersectionObserver`. No `ResizeObserver`. The component is a pure function from props to inline-styled DOM; the GPU does every frame.
 
-```svelte
-<MeshGradient palette="aurora" blobCount={8} blur={100} />
+## The Core Concept: Golden-Angle Spiral Placement
+
+Naïve blob placement (random, or grid) produces lumpy washes — clusters of colour next to bare patches. The component instead places blobs along a **golden-angle (Fibonacci) spiral**, the same algorithm sunflower seeds and pinecones use to pack themselves uniformly without forming a regular grid pattern.
+
+```
+goldenAngle = 137.5077640500378°    // most-irrational angle
+for i in 0..count-1:
+  angleRad      = i * goldenAngle * π / 180
+  ratio         = sqrt((i + 0.5) / count)   // 0..1, even area coverage
+  radiusPercent = 38                         // never closer than 12% to edge
+  xPercent      = 50 + cos(angleRad) * ratio * radiusPercent
+  yPercent      = 50 + sin(angleRad) * ratio * radiusPercent
 ```
 
-### Cosmic dark-mode glow at half speed
+Two ideas combine here:
 
-```svelte
-<MeshGradient
-  palette="cosmic"
-  blobCount={5}
-  blur={120}
-  opacity={0.85}
-  speed={0.5}
-/>
+1. **`goldenAngle`** — the most irrational rotation. Rotating by exactly 137.5°… each step means consecutive points never align radially, so you never get a "spoke" pattern.
+2. **`sqrt((i + 0.5) / count)`** — a square-root radius. Plain `i / count` would crowd the centre and leave the edges empty (because area scales with r²). The square root cancels the area term so each blob lands in roughly equal area.
+
+A single blob (`count = 1`) sits at the centre. Five blobs spread out along the spiral. Twelve blobs fill the host evenly. No grid, no clusters, no symmetry that the eye could lock onto.
+
+```
+1 blob:        5 blobs:           12 blobs:
+                 ●                    ●  ●
+   ●           ●   ●               ● ● ● ●
+                 ●  ●                ● ●
+                                   ●  ●  ●
+                                     ●  ●
 ```
 
-### Frozen mesh (no drift)
+## CSS Animation Strategy
 
-```svelte
-<MeshGradient palette="ember" speed={0} />
+Two design choices keep the layer cheap and the visual right:
+
+### Blur lives on the host, not on each blob
+
+```css
+.mesh-gradient {
+  filter: blur(var(--mesh-blur, 80px));
+  isolation: isolate;
+}
+.mesh-gradient__blob {
+  background: radial-gradient(circle, var(--blob-color), transparent 75%);
+  /* no filter:blur here */
+}
 ```
 
-## Props
+If each blob carried its own `filter:blur`, you'd see five fuzzy circles. By blurring the *parent*, the unblurred blobs paint into the same compositor layer first, then the whole thing blurs — so the colour at any point is a weighted sum of nearby blob centres. That's the difference between "mesh gradient" and "five fuzzy dots".
 
-| Prop        | Type     | Default     | Description                                              |
-| ----------- | -------- | ----------- | -------------------------------------------------------- |
-| `palette`   | `string` | `'sunset'`  | Named palette: `sunset`, `aurora`, `ember`, `cosmic`, `mint`, `monochrome` |
-| `blobCount` | `number` | `5`         | Number of blobs to render (clamped 1–12, floored)        |
-| `blur`      | `number` | `80`        | Blur radius in px (clamped ≥0)                           |
-| `opacity`   | `number` | `0.7`       | Container opacity (clamped 0–1)                          |
-| `speed`     | `number` | `1`         | Speed multiplier — `0` freezes, `2` runs double-time     |
-| `class`     | `string` | `''`        | Extra classes on the host                                |
+### Per-blob desync via duration + negative delay
 
-## Pure helpers (module-script exports)
+```ts
+durationMs = baseDurationMs + i * 1500       // each blob runs slightly slower
+delayMs    = -(i * baseDurationMs) / count   // negative → starts mid-cycle
+```
 
-| Function                                       | Returns          | Purpose                                                |
-| ---------------------------------------------- | ---------------- | ------------------------------------------------------ |
-| `pickPalette(name)`                            | `Palette`        | Validates / defaults a palette name                    |
-| `getPaletteColors(name)`                       | `readonly string[]` | Hex array for the named palette                     |
-| `clamp01(n)`                                   | `number`         | Clamp to `[0, 1]`, NaN-safe                            |
-| `clampPositive(n, fallback?)`                  | `number`         | Clamp to `[0, ∞)`, NaN-safe                            |
-| `clampInt(n, min, max)`                        | `number`         | Floored int clamp, NaN-safe                            |
-| `blobPosition(i, count)`                       | `{xPercent, yPercent}` | Golden-angle spiral position for one blob        |
-| `blobAnimation(i, count, baseDurationMs?)`     | `{delayMs, durationMs}` | Per-blob animation timing                       |
-| `blobColor(i, paletteName)`                    | `string`         | Hex colour for blob `i` in named palette               |
-| `blobSize(count)`                              | `number`         | Diameter percent — bigger blobs when fewer blobs       |
-| `buildBlobLayout(count, paletteName)`          | `BlobLayout[]`   | Full layout array: position, colour, timing, size      |
-| `isReducedMotion()`                            | `boolean`        | SSR-safe matchMedia probe                              |
+The 1500 ms per-index stagger means after one cycle each blob has accumulated a different drift, and the negative delay means blob `i` starts at phase `-i/count` of its loop — so on the first paint they're already at five different points around the cycle. There's no visible "everyone restarts at zero" beat the way there would be with shared timing.
 
-## How it works
+The keyframe itself is intentionally cheap:
 
-The host renders one absolutely-positioned div per blob. Each blob
-carries six inline CSS custom properties — `--blob-x`, `--blob-y`,
-`--blob-size`, `--blob-color`, `--blob-delay`, `--blob-duration` —
-which feed straight into a single `radial-gradient` background, a
-`translate(-50%, -50%)` anchor, and an `animation` shorthand.
+```css
+@keyframes mesh-drift {
+  0%, 100% { transform: translate(-50%, -50%) translate(0, 0); }
+  25%      { transform: translate(-50%, -50%) translate(8%, -6%); }
+  50%      { transform: translate(-50%, -50%) translate(-4%, 10%); }
+  75%      { transform: translate(-50%, -50%) translate(-7%, -4%); }
+}
+```
 
-The host itself owns the heavy `filter: blur(N px)` so all blobs
-composite into one another rather than each sitting in their own
-isolated blur — that's what gives the soft mesh feel rather than a
-collection of distinct fuzzy circles.
-
-A single 0/25/50/75/100% `@keyframes mesh-drift` rule translates each
-blob a few percent off its base position and back. The interesting
-thing is what happens between blobs: each runs at a different
-duration (`blobAnimation` adds 1500ms per index) and starts at a
-different point in its cycle (negative delays scaled by index).
-That's why the mesh feels like continuous flow rather than a
-synchronised wave.
-
-`buildBlobLayout` is the single source of truth — props in, layout
-array out. Component, tests, and demo pages all consume the same
-function, so what the test asserts and what the user sees are
-guaranteed to match.
-
-## Accessibility
-
-- The host is `role="presentation"` — MeshGradient is purely a
-  visual effect, not interactive content. Wrap it inside meaningful
-  semantics if you put real UI on top.
-- `pointer-events: none` on the host means the gradient never
-  intercepts clicks or hovers from descendants z-indexed over it.
-- `prefers-reduced-motion: reduce` → every blob's animation drops
-  to `none !important` and the transform freezes at base. The
-  composition still reads as a static mesh gradient.
-- No keyboard interaction. No focus capture. No screen-reader
-  output (it's decorative).
+Five waypoints, all on `transform` (compositor-only, no layout). The `-50%, -50%` is the centring anchor; the second `translate` is the drift.
 
 ## Performance
 
-- **Zero JS animation loop** — every transition runs on the
-  GPU through CSS keyframes and inline custom properties.
-- **One DOM node per blob** — default 5 blobs = 5 absolutely
-  positioned divs. Tested smooth at 12 blobs even with 100px+
-  blur on retina displays.
-- **`filter: blur` on the host** — blobs composite into one
-  another rather than each sitting in their own blur layer.
-  Net result: one expensive compositor effect, not N.
-- **`will-change: transform`** on each blob to hint the GPU.
-- Reduced motion disables animations entirely — zero animation
-  cost, just static gradient.
+- **DOM cost** — one `<div>` per blob. Default 5 blobs = 5 nodes. Maximum 12.
+- **Frame cost** — zero JS work per frame. Each blob has one composited transform animation; the host has one blur filter. The GPU handles all of it.
+- **`will-change: transform`** on each blob promotes them onto their own layer so the host blur can composite them efficiently.
+- **`isolation: isolate`** on the host creates a stacking context so the blur and any future `mix-blend-mode` don't leak onto siblings.
+- **Speed multiplier via `--mesh-speed`** — `animation-duration: calc(var(--blob-duration) * var(--mesh-speed))`. Setting `speed=0` results in `--mesh-speed: '0'`, which CSS treats as `0s` duration and effectively freezes the animation.
+- **No observers or rAF** — resize is handled implicitly by percentage-based positioning; offscreen pages are throttled by the browser's compositor.
+- **SSR-safe** — `buildBlobLayout` is deterministic, so server output matches the first client paint exactly. No flash of unstyled blobs.
 
-## When to reach for it
+## State Flow Diagram
 
-- Hero backdrops behind a headline.
-- Marketing / landing splash washes.
-- Empty-state panels that want quiet ambient life.
-- Dark-mode glow accents.
-- Anywhere "premium product" energy is the goal.
+```
+                  ┌────────────────────────────┐
+                  │  initial / SSR             │
+                  │  buildBlobLayout returns   │
+                  │  deterministic positions   │
+                  │  inline styles written     │
+                  └────────────┬───────────────┘
+                               │ mount (no JS work)
+                               ▼
+                  ┌────────────────────────────┐
+                  │  drifting                  │
+                  │  CSS @keyframes mesh-drift │
+                  │  per blob, desync'd        │
+                  └────────────┬───────────────┘
+                               │
+            ┌──────────────────┼──────────────────┐
+            │                  │                  │
+            │ speed prop = 0   │ palette/blobCount│ prefers-reduced-motion
+            │                  │ change            │  reduce
+            ▼                  ▼                  ▼
+       ┌──────────┐     ┌──────────────┐    ┌──────────────┐
+       │ frozen   │     │ re-derive    │    │ static       │
+       │ duration │     │ buildBlob…   │    │ animation    │
+       │ → 0s     │     │ inline styles│    │ : none       │
+       └──────────┘     │ updated; CSS │    │ transform    │
+                        │ keeps running│    │ frozen       │
+                        └──────────────┘    └──────────────┘
+```
 
-## When not to
+## Props Reference
 
-- For event-driven concentric expansion, reach for **RippleGrid**.
-- For cursor-following displacement, reach for **MagnetGrid**.
-- For stripey horizontal aurora bands, reach for **AuroraBackdrop**.
-- For one-axis sweep on a border, reach for **ShineBorder**.
-- For burst-on-click sparkles, reach for **ClickSpark**.
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `palette` | `'sunset' \| 'aurora' \| 'ember' \| 'cosmic' \| 'mint' \| 'monochrome'` | `'sunset'` | Named 5-colour palette. Unknown names fall back to `sunset`. |
+| `blobCount` | `number` | `5` | Number of blobs to render. Floored and clamped to `[1, 12]`. |
+| `blur` | `number` | `80` | Host-level blur radius in px. Clamped to `[0, ∞)`; `NaN` falls back to `80`. |
+| `opacity` | `number` | `0.7` | Container opacity. Clamped to `[0, 1]`; `NaN` becomes `0`. |
+| `speed` | `number` | `1` | Animation-duration multiplier (inverted: `1/speed`). `0` freezes; `2` runs double-time. |
+| `class` | `string` | `''` | Extra classes on the host. |
 
-## Inspiration
+## Edge Cases
 
-A nod to the soft mesh-gradient backdrops Stripe, Linear, and
-Vercel popularised in their 2023–24 marketing surfaces. Pure CSS
-keyframes with cascaded custom properties — the GPU does the heavy
-lifting and the helpers stay pure for testing.
+| Situation | Behaviour |
+|-----------|-----------|
+| `blobCount` = 0 / negative / `NaN` | Clamped to 1 — a single blob renders dead centre. |
+| `blobCount` = 13+ | Clamped to 12. Beyond 12 the wash becomes mush; the cap is a quality decision. |
+| Unknown palette name | `pickPalette` falls back to `sunset`. |
+| `opacity` = `Infinity` / `NaN` | Coerced to `0` — host becomes invisible rather than throwing. |
+| `speed` = 0 | `--mesh-speed: '0'` → CSS `animation-duration: calc(N * 0) = 0s` → blobs freeze at their delay-offset positions. |
+| `prefers-reduced-motion: reduce` | `@media` rule sets `animation: none !important` and resets transforms; static mesh remains. |
+| Host scrolled offscreen | Browser's compositor throttles or skips the layer. No JS work to pause. |
+| Resized viewport | Blob positions are percentage-based; no recomputation needed. No `ResizeObserver`. |
+| Hi-DPI / retina | Blur is in CSS pixels and resolution-independent; GPU upscales. |
+| Multiple instances stacked | `isolation: isolate` on each gives them independent stacking contexts; blurs do not leak. |
+| Browser without GPU acceleration | The `filter: blur(80px)` on the host falls back to CPU and may stutter; lower `blur` to ~30 for older devices. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$props`, `$derived`. Module-script helpers (`buildBlobLayout`, `clamp01`, `clampInt`, etc.) are pure functions exported for the test suite.
+- Zero external dependencies — pure CSS keyframes, no animation library, no canvas.
+
+## File Structure
+
+```
+src/lib/components/MeshGradient.svelte         # implementation + module-level helpers
+src/lib/components/MeshGradient.md             # this file (rendered inside ComponentPageShell)
+src/lib/components/MeshGradient.test.ts        # vitest unit tests
+src/lib/components/MeshGradientTestHarness.test.svelte  # render-test harness
+src/routes/meshgradient/+page.svelte           # demo page
+```

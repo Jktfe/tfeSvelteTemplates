@@ -1,117 +1,201 @@
----
-name: CountUp
-category: Helpful UX
-author: antclaude
-status: shipped
----
+# CountUp — Technical Logic Explainer
 
-# CountUp
+## What Does It Do? (Plain English)
 
-Number-animation primitive — animate a value from `start` → `end` over a duration when it enters the viewport (or on manual trigger). Configurable easing, decimal precision, prefix/suffix, locale-aware grouping. Asset-free, dependency-free, prefers-reduced-motion safe.
+CountUp animates a number from a start value (default `0`) up to an end value over a configurable duration, with an easing curve, formatted display (locale, decimals, prefix/suffix, thousands grouping), and an optional flash-on-complete cue. Trigger on viewport entry, on mount, or manually. Exposes `run()` and `reset()` so consumers can drive it imperatively.
 
-## Key Features
+Think of it as the "stat ticker" you see on marketing pages — *"$2.3M raised"* counting up the moment the section scrolls into view.
 
-- **Five easings** — `linear`, `quad`, `cubic`, `quart` (default), `expo`. All unit-testable as pure functions exported from the module-script.
-- **Three triggers** — `viewport` (default; IntersectionObserver), `mount` (immediate), `manual` (call `run()` from a parent component reference).
-- **Locale-aware formatting** — `Intl.NumberFormat` does the heavy lifting. Pass `locale="de-DE"` for `1.000.000` instead of `1,000,000`.
-- **Prefix / suffix** — currency, percent, plus signs all work. Decimals clamp to `[0, 20]` and integerise on negative input.
-- **Direction-agnostic** — `start={100}` `end={0}` counts down with the same easing curve.
-- **Tabular nums** — `font-variant-numeric: tabular-nums` keeps each digit slot the same width so the number doesn't dance during the count.
-- **prefers-reduced-motion safe** — instant set to end value; no rAF loop spawned.
-- **Optional flash-on-complete** — gentle text-shadow pop on landing for celebratory KPIs.
+## How It Works (Pseudo-Code)
 
-## Usage
+```
+state:
+  current   = start          // resting value at SSR / pre-mount
+  done      = false
+  startTs   = null            // performance.now() at first rAF tick
+  rafId     = null
+  observer  = IntersectionObserver | null
 
-```svelte
-<script>
-	import { CountUp } from '$lib/components/CountUp.svelte';
-</script>
+derive:
+  easeFn       = pickEasing(easing)
+  formatOpts   = { locale, decimals, prefix, suffix, useGrouping }
+  displayValue = formatNumber(current, formatOpts)   // visual
+  finalLabel   = formatNumber(end, formatOpts)        // SR-only
 
-<!-- Basic: viewport-triggered count -->
-<CountUp end={1234} />
+helpers (pure, exported):
+  pickEasing(name)           → t-curve   (linear | quad | cubic | quart | expo)
+  easeOutQuart(t)            → 1 - (1-t)^4
+  tickValue(start, end, t, easeFn)  → start + (end - start) * easeFn(clamp(t, 0, 1))
+  clampValue(v, start, end)  → guard against rAF overshoot on the final tick
+  formatNumber(value, opts)  → Intl.NumberFormat with prefix/suffix
+  isReducedMotion()          → bool
 
-<!-- Currency stat with grouping and flash -->
-<CountUp end={1500000} prefix="£" decimals={0} flash size="lg" />
+step(now):
+  if startTs null: startTs = now
+  elapsed = now - startTs
+  t       = clamp(elapsed / duration, 0, 1)   (or 1 if duration <= 0)
+  v       = tickValue(start, end, t, easeFn)
+  current = clampValue(v, start, end)
+  if t < 1: rafId = requestAnimationFrame(step)
+  else: current = end; done = true; rafId = null
 
-<!-- Percentage with decimal precision -->
-<CountUp end={99.9} decimals={1} suffix="%" />
+run():
+  cancelAnimationFrame(rafId); startTs = null
+  done = false; current = start
+  if SSR or reduced-motion or duration <= 0:
+    current = end; done = true; return
+  rafId = requestAnimationFrame(step)
 
-<!-- Count down -->
-<CountUp start={60} end={0} duration={1500} suffix="s" />
+reset():
+  cancelAnimationFrame(rafId); rafId = null
+  startTs = null; current = start; done = false
 
-<!-- Manual trigger from a parent -->
-<script>
-	let counter: ReturnType<typeof CountUp> | null = $state(null);
-</script>
-<CountUp bind:this={counter} end={500} trigger="manual" />
-<button onclick={() => counter?.run()}>Run</button>
+trigger gating:
+  trigger = 'mount':    run() onMount
+  trigger = 'viewport': IntersectionObserver(threshold) → run() once → disconnect
+  trigger = 'manual':   consumer calls run() / reset() via bind
 ```
 
-## Props
+## The Core Concept: Easing the Final Stretch
 
-| Prop          | Type                                          | Default     | Notes                                               |
-| ------------- | --------------------------------------------- | ----------- | --------------------------------------------------- |
-| `end`         | `number`                                      | (required)  | Destination value                                   |
-| `start`       | `number`                                      | `0`         | Starting value (can be > end for count-down)        |
-| `duration`    | `number`                                      | `1800`      | Total animation time in ms                          |
-| `easing`      | `'linear' \| 'quad' \| 'cubic' \| 'quart' \| 'expo'` | `'quart'` | Curve shape                                          |
-| `decimals`    | `number`                                      | `0`         | Decimal places (clamped to `[0, 20]`)               |
-| `prefix`      | `string`                                      | `''`        | Renders before the number (e.g. `£`, `$`)            |
-| `suffix`      | `string`                                      | `''`        | Renders after the number (e.g. `+`, `%`, `x`)        |
-| `locale`      | `string`                                      | `'en-GB'`   | `Intl.NumberFormat` locale                          |
-| `useGrouping` | `boolean`                                     | `true`      | Thousand separators on/off                          |
-| `trigger`     | `'viewport' \| 'mount' \| 'manual'`           | `'viewport'`| When the count starts                               |
-| `threshold`   | `number`                                      | `0.4`       | IntersectionObserver threshold (viewport trigger)   |
-| `flash`       | `boolean`                                     | `false`     | Text-shadow pop on completion                       |
-| `size`        | `'sm' \| 'md' \| 'lg' \| 'xl'`                | `'md'`      | Typographic preset                                  |
-| `class`       | `string`                                      | `''`        | Extra class names appended to root                  |
+A linear count from 0 to 1,000,000 in 1.8s feels mechanical and unfinished — you reach 1,000,000 and the animation simply stops. Real "stat ticker" anims slow toward the end so the eye lands gracefully on the final value. CountUp's default is **quart-out** (`1 − (1 − t)⁴`):
 
-## Imperative API
+```
+  t (progress)   linear   quart-out (1 - (1-t)^4)
+  0.0            0.000    0.0000
+  0.1            0.100    0.3439
+  0.2            0.200    0.5904
+  0.3            0.300    0.7599
+  0.5            0.500    0.9375
+  0.7            0.700    0.9919
+  0.9            0.900    0.9999
+  1.0            1.000    1.0000
+```
 
-The component exposes two methods via `bind:this`:
+By the half-way mark you're already at 94 % of the final value; the back half of the timeline is dedicated to easing those last few percent in. This is exactly what makes the anim feel "finished" rather than "cut off".
 
-| Method  | Effect                                                |
-| ------- | ----------------------------------------------------- |
-| `run()` | Start (or restart) the count from `start`. Clears any in-flight rAF. |
-| `reset()` | Cancel any in-flight rAF and snap to `start`.         |
+`tickValue(start, end, t, easeFn)` computes the in-flight value:
 
-## Easings
+```
+v = start + (end - start) * easeFn(clamp(t, 0, 1))
+```
 
-| Name     | Shape                | Best for                             |
-| -------- | -------------------- | ------------------------------------ |
-| `linear` | Constant rate        | Even tickers (clocks, progress)      |
-| `quad`   | Mild ease-out        | Subtle entrance                      |
-| `cubic`  | Stronger ease-out    | Hero stats                           |
-| `quart`  | **Default.** Punchy ease-out | KPI grids, marketing stats   |
-| `expo`   | Aggressive ease-out  | Big-impact numbers (fast-then-stop)  |
+The function is direction-agnostic — pass `start = 100, end = 0` and it counts down with the same easing curve. `clampValue` guards against rAF overshoot: if the browser fires the final frame slightly past `duration` (timestamp drift), the displayed value still snaps to exactly `end`.
 
-## Distinct From
+```
+Available curves (all map t ∈ [0,1] → progress ∈ [0,1]):
 
-- **vs SplitFlap** — SplitFlap mechanically flap-flips characters when a value changes. CountUp eases monotonically; no per-character animation.
-- **vs ScrambledText** — ScrambledText shuffles glyphs to reveal arbitrary text. CountUp is value-driven, not text-driven.
-- **vs ScrollReveal** — ScrollReveal staggers the reveal of multiple children on viewport entry. CountUp animates a single numeric value within one node. They compose well — wrap a grid of `<CountUp>` cards in `<ScrollReveal>` for a stat dashboard reveal.
-- **vs Tilt3D / RippleGrid / ClickSpark** — those are interaction primitives; CountUp is content-driven.
-
-## Helpers
-
-All exported from `<script lang="ts" module>` for testing and advanced consumers:
-
-| Helper            | Returns                  | Notes                                                                             |
-| ----------------- | ------------------------ | --------------------------------------------------------------------------------- |
-| `pickEasing(name)`| `(t: number) => number`  | Easing function lookup; falls back to `quart` on unknown name                     |
-| `easeOutQuart(t)` | `number`                 | Quart-out easing; clamps `t` into `[0, 1]`                                        |
-| `tickValue(start, end, t, easeFn)` | `number`        | Value at progress `t` with given easing; direction-agnostic                       |
-| `clampValue(value, start, end)` | `number`            | Clamps to `[min(start,end), max(start,end)]`                                      |
-| `formatNumber(value, opts)` | `string`                | Wraps `Intl.NumberFormat` with prefix/suffix/decimals/grouping                    |
-| `isReducedMotion()`| `boolean`               | Reads `prefers-reduced-motion: reduce` via `matchMedia`                           |
-
-## Accessibility
-
-The visible ticking number has `aria-hidden="true"`. The destination value (final, formatted) sits in a visually-hidden `.countup-sr` span so screen readers announce the end-state value once on first encounter, instead of every rAF tick. `prefers-reduced-motion: reduce` short-circuits to the end value with no animation.
+  linear   →  t                                  no easing, mechanical
+  quad     →  1 - (1-t)²                          gentle ease-out
+  cubic    →  1 - (1-t)³                          stronger ease-out
+  quart    →  1 - (1-t)⁴   (default)              "marketing-stat" feel
+  expo     →  1 - 2^(-10t)                        steepest ease-out, dramatic
+```
 
 ## Performance
 
-- **One rAF loop** per active count. No scroll listeners, no resize handlers.
-- **One IntersectionObserver per CountUp** when `trigger="viewport"`. Disconnects after first intersection — observer is throwaway.
-- **GPU-friendly flash** — when `flash={true}`, the only post-completion animation is a 600 ms text-shadow + transform. Composited.
-- **Steady-state cost: zero** once the count is done.
+- One rAF loop while running. Cancelled the moment `t === 1` and on every `run()` re-entry.
+- Reduced-motion users skip the rAF loop entirely (`current = end; done = true`); the resting value paints once.
+- `formatNumber` runs once per rAF tick — `Intl.NumberFormat` is cheap and modern engines cache the formatter.
+- The final value is exposed through a visually-hidden `.countup-sr` span carrying the formatted `finalLabel`. Screen readers announce the *destination* number once, not every rAF tick — otherwise users would hear "two thousand thirteen, two thousand seventeen, two thousand twenty-two..." spam.
+- Viewport trigger uses `IntersectionObserver` with `threshold: 0.4` (40% visible) and disconnects after the first intersection — the observer is dormant for the rest of the page lifetime.
+
+## CSS Animation Strategy
+
+The displayed number is plain text — no transform, no filter — so the count itself doesn't need CSS animation. The optional `flash` prop adds a 600 ms `text-shadow` pulse keyframe when `done` flips true:
+
+```css
+@keyframes countup-flash {
+  0%   { text-shadow: 0 0 0 transparent;       transform: translateY(0); }
+  35%  { text-shadow: 0 0 14px rgba(125,211,252,.9); transform: translateY(-2px); }
+  100% { text-shadow: 0 0 0 transparent;       transform: translateY(0); }
+}
+.countup-flash .countup-value { animation: countup-flash 600ms ease-out 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .countup-flash .countup-value { animation: none; }
+}
+```
+
+Reduced-motion users get the static destination value with no flash — just like they get the static value with no count animation.
+
+## State Flow Diagram
+
+```
+  [mounted]   current = start  (paints resting value during SSR/hydration)
+        │
+        │  trigger = 'mount': run() immediately
+        │  trigger = 'viewport': observe; on intersection → run() → disconnect
+        │  trigger = 'manual': consumer calls run() via bind
+        ▼
+  [running]   rAF loop
+        │
+        │  reduced-motion / SSR / duration <= 0
+        │     ──────────────────────▶ [done]   current = end; done = true
+        │
+        │  every rAF tick:
+        │     elapsed = now - startTs
+        │     t       = clamp(elapsed / duration, 0, 1)
+        │     current = clampValue(tickValue(start, end, t, easeFn), start, end)
+        │
+        │  t === 1
+        ▼
+  [done]   current = end
+        │
+        │  flash && done → CSS keyframe fires once (600 ms)
+        ▼
+  [resting]   stays at end until reset() or new run()
+
+  on destroy: cancelAnimationFrame; observer.disconnect()
+```
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `end` | `number` | required | Destination value. |
+| `start` | `number` | `0` | Initial value (also the resting value during SSR). |
+| `duration` | `number` | `1800` | Milliseconds for the count animation. `0` snaps instantly. |
+| `easing` | `'linear' \| 'quad' \| 'cubic' \| 'quart' \| 'expo'` | `'quart'` | Easing curve. |
+| `decimals` | `number` | `0` | Decimal places in the formatted output (clamped to `0..20`). |
+| `prefix` | `string` | `''` | Text prepended (`'$'`, `'£'`, etc.). |
+| `suffix` | `string` | `''` | Text appended (`'%'`, `'M'`, etc.). |
+| `locale` | `string` | `'en-GB'` | BCP-47 locale passed to `Intl.NumberFormat`. |
+| `useGrouping` | `boolean` | `true` | Insert thousands separators per locale. |
+| `trigger` | `'viewport' \| 'mount' \| 'manual'` | `'viewport'` | When to start counting. |
+| `threshold` | `number` | `0.4` | Visibility ratio that triggers the viewport mode (0..1). |
+| `flash` | `boolean` | `false` | Run a 600 ms text-shadow pulse on completion. |
+| `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Type scale. |
+| `class` | `string` | `''` | Extra classes on the wrapper. |
+
+Exported imperative API: `run(): void`, `reset(): void` — bind the component instance to call these.
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `duration <= 0` | `run()` snaps `current = end; done = true` without entering the rAF loop. |
+| `start > end` | Counts down. Easing applies in the same direction; `clampValue` keeps the displayed value within `[end, start]`. |
+| User has `prefers-reduced-motion: reduce` | `run()` snaps to `end`; no rAF, no flash. |
+| `trigger = 'viewport'` and `IntersectionObserver` unsupported | The observer block is skipped; consumer must call `run()` manually or use `trigger='mount'`. |
+| Component re-mounts after completion | Fresh state — `current` initialises to `start` again; trigger logic re-fires. |
+| `run()` called while already running | Existing rAF cancelled; `startTs` reset; new run starts cleanly from `start`. |
+| `reset()` called mid-flight | rAF cancelled; `current = start`; `done = false`. |
+| Locale unknown to `Intl` | `Intl.NumberFormat` substitutes the runtime default — no throw. |
+| `decimals` outside `0..20` | Clamped to the valid range before being passed to `Intl`. |
+
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$derived`, `$props`, `onMount`, `onDestroy`, module-script exports.
+- **`Intl.NumberFormat`** (native) — locale-aware formatting.
+- **`IntersectionObserver`** (native) — viewport trigger; component falls back gracefully when missing.
+- Zero external dependencies otherwise — no GSAP, no anime.js.
+
+## File Structure
+
+```
+src/lib/components/CountUp.svelte    # implementation
+src/lib/components/CountUp.md        # this file (rendered inside ComponentPageShell)
+src/lib/components/CountUp.test.ts   # vitest unit tests for the pure helpers
+src/routes/countup/+page.svelte      # demo page
+```

@@ -1,192 +1,220 @@
----
-name: OrbitalRing
-slug: orbitalring
-category: Helpful UX
-status: shipped
-since: 2026-04-29
----
+# OrbitalRing — Technical Logic Explainer
 
-# OrbitalRing
+## What Does It Do? (Plain English)
 
-A circular orbital layout primitive for arbitrary children. N items are
-distributed evenly around a ring that auto-rotates clockwise or
-counter-clockwise. Each item's content can either stay world-frame
-upright (planet orientation) or rotate with the ring (constellation
-orientation).
+OrbitalRing arranges any list of items evenly around the rim of an invisible circle and slowly rotates the whole ring. Think of a planetary system: the centre slot holds a star (or a logo, or any custom content) and the orbiting items circle it at a configurable radius and speed. Each orbit slot can either travel with the ring (so a clock face's numbers tilt as the ring spins) or counter-rotate so it always faces the viewer (so an avatar always reads the right way up).
 
-Useful for testimonials carousels, team-photo galleries, value-prop
-spotlights, awards reels, or any radial layout where a flat
-left-to-right strip would feel mundane.
+It is a small but expressive layout primitive — useful for "ecosystem" diagrams, hero sections, "constellation"-style team pages, and anywhere you want a continuous, low-key sense of motion that draws the eye to a centre. Hovering pauses the ring; reduced-motion users see a static composition; visibility-aware: the rAF loop stops when the ring scrolls off-screen.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Radial layout** — N children pinned to a circle of given radius.
-- **Auto-spin** — continuous rotation in either direction; configurable
-  duration per full revolution.
-- **Pause on hover** — ring stops while the cursor is inside.
-- **Pause when offscreen** — IntersectionObserver halts rAF when the
-  ring leaves the viewport, so a hero ring at the top of a long page
-  doesn't burn cycles you can't see.
-- **Counter-rotation** — content stays upright in world frame
-  (default) or rotates with the ring.
-- **Optional centre slot** — a snippet rendered at the ring's centre,
-  counter-rotated so it stays still while the ring spins around it.
-- **prefers-reduced-motion** — auto-spin disabled at the stylesheet
-  level. Items still positioned correctly, just static.
+```
+state:
+  ringRotation = 0    // current angle of the whole ring, deg
+  reduced            // capability flag
+  hovered            // pause-on-hover flag
+  visible            // IntersectionObserver flag
+  rafId              // current animation frame id
 
-## Usage
+derived:
+  safeDirection = pickDirection(direction)        // 'clockwise' or 'counter-clockwise'
+  safeRadius    = clampRadius(radius)             // [20, 2000] px
+  angles        = distributeAngles(items.length, startAngleDeg)
 
-### Basic auto-spinning ring
+on mount:
+  reduced = isReducedMotion()
+  observer = new IntersectionObserver(([entry]) => visible = entry.isIntersecting)
+  observer.observe(containerEl)
 
-```svelte
-<script>
-  import OrbitalRing from '$lib/components/OrbitalRing.svelte';
+effect:
+  if autoSpin and !reduced and !(pauseOnHover and hovered) and visible:
+    start()
+  else:
+    stop()
 
-  const planets = [
-    { id: 1, name: 'Mercury' },
-    { id: 2, name: 'Venus' },
-    { id: 3, name: 'Earth' },
-    { id: 4, name: 'Mars' },
-    { id: 5, name: 'Jupiter' }
-  ];
-</script>
+tick(now):
+  if lastTs === null: lastTs = now
+  elapsed = now - lastTs
+  lastTs  = now
+  degPerMs = 360 / max(spinDurationMs, 1)
+  sign     = safeDirection === 'clockwise' ? 1 : -1
+  ringRotation = (ringRotation + sign * elapsed * degPerMs) % 360
+  rafId = requestAnimationFrame(tick)
 
-<OrbitalRing items={planets} radius={180}>
-  {#snippet item(p)}
-    <div class="planet">{p.name}</div>
-  {/snippet}
-</OrbitalRing>
+on hover enter / leave: hovered = true / false
+on destroy: cancelAnimationFrame, observer.disconnect
+
+render:
+  <div class="orbital-ring" style="--orbital-ring-rotation: {ringRotation}deg">
+    <div class="orbital-ring__track">       /* spins as a single layer */
+      {center?.()}
+      for each item, i:
+        <div class="orbital-ring__slot" style="--orbital-slot-angle: {angles[i]}deg">
+          <div class="orbital-ring__content {counterRotate ? '--upright' : ''}">
+            {item(data, i)}
+          </div>
+        </div>
+    </div>
+  </div>
+
+CSS:
+  .__track    { transform: rotate(var(--ring-rotation)); }
+  .__slot     { transform: translate(-50%, -50%) rotate(slot-angle) translateY(-radius); }
+  .__content          { transform: rotate(calc(slot-angle * -1)); }
+  .__content--upright { transform: rotate(calc(slot-angle * -1 - ring-rotation)); }
 ```
 
-### With a stationary centre
+## The Core Concept: Stacked Rotations And Counter-Rotation
 
-```svelte
-<OrbitalRing items={services} radius={200}>
-  {#snippet center()}
-    <div class="logo">☀</div>
-  {/snippet}
-  {#snippet item(s)}
-    <div class="service-tile">{s.label}</div>
-  {/snippet}
-</OrbitalRing>
+Three nested transforms compose together to put each item where you want and (optionally) keep it upright.
+
+**1. Distribute slots evenly** by stepping the angle by `360/N`:
+
+```
+distributeAngles(count, startDeg) returns [
+  startDeg + 0 * (360/count),
+  startDeg + 1 * (360/count),
+  ...
+]
 ```
 
-### Counter-clockwise, slow spin
+For five items and `startDeg = 0`, that's `[0°, 72°, 144°, 216°, 288°]`. The function is exported from `<script module>` so the test suite can assert distribution without rendering.
 
-```svelte
-<OrbitalRing
-  items={testimonials}
-  radius={220}
-  spinDurationMs={60000}
-  direction="counter-clockwise"
->
-  {#snippet item(t)}
-    <blockquote>{t.quote}</blockquote>
-  {/snippet}
-</OrbitalRing>
+**2. Pin a slot to the ring** by chaining three transforms in CSS, applied right-to-left:
+
+```
+transform:
+  translate(-50%, -50%)               /* anchor on element centre */
+  rotate(slot-angle)                  /* rotate around the centre */
+  translateY(-radius)                 /* walk outward along the rotated Y axis */
 ```
 
-### Constellation mode (items rotate with the ring)
+The `translate(-50%, -50%)` keeps the slot's centre on the ring, regardless of slot size; the `rotate(slot-angle)` aims a fresh local Y axis in the slot's direction; the `translateY(-radius)` walks out along that axis. Since each slot lives inside `.__track`, when the track rotates by `ringRotation` the entire ring moves together — no per-slot JavaScript update needed.
 
-```svelte
-<OrbitalRing items={stars} counterRotateItems={false}>
-  {#snippet item(s)}
-    <span class="star">★</span>
-  {/snippet}
-</OrbitalRing>
+**3. Counter-rotate the content** if you want it to stay upright. There are two flavours:
+
+- **Ring-frame upright** (`counterRotateItems = true` is the default; the `--upright` class without ring rotation cancellation): content rotates with the ring (numbers on a clock dial). The CSS applies `rotate(calc(slot-angle * -1))` — undoing only the slot's local rotation, so the content sits flat against the ring.
+- **World-frame upright** (the actual `--upright` rule includes both `slot-angle * -1` and `ring-rotation * -1`): content stays upright in the viewer's frame regardless of where the ring has spun. Used for avatars and labels you always want readable.
+
+```
+                    ●  ← centre
+                  ╱
+                 ╱
+               ●  ← slot pinned at slot-angle, distance radius
+              ╱
+            content rotated back so it reads upright
 ```
 
-## Props
+The `dampedSine` style of nested-transform composition is what makes the maths cheap: once mounted, the only state that changes per frame is `--orbital-ring-rotation`, a single CSS variable on `.__track`. The compositor inherits that change to all descendant slots, applies the per-slot rotations on the GPU, and the ring spins without a single per-slot JavaScript write.
 
-| Prop                  | Type                                          | Default          | Description                                                            |
-| --------------------- | --------------------------------------------- | ---------------- | ---------------------------------------------------------------------- |
-| `items`               | `T[]`                                         | required         | Array of arbitrary data, one slot per element                          |
-| `radius`              | `number`                                      | `160`            | Distance from centre to slot centres, in px (clamped 20–2000)          |
-| `autoSpin`            | `boolean`                                     | `true`           | Whether the ring rotates continuously                                  |
-| `spinDurationMs`      | `number`                                      | `20000`          | Time for one full revolution                                           |
-| `direction`           | `'clockwise' \| 'counter-clockwise'`          | `'clockwise'`    | Rotation direction                                                     |
-| `pauseOnHover`        | `boolean`                                     | `true`           | Halt rotation while the cursor is inside the ring                      |
-| `counterRotateItems`  | `boolean`                                     | `true`           | World-upright (true) vs ring-upright (false) for item content          |
-| `itemSize`            | `number`                                      | `80`             | Px size of each slot box                                               |
-| `startAngleDeg`       | `number`                                      | `0`              | Where item 0 begins (0 = 12 o'clock, 90 = 3 o'clock)                   |
-| `class`               | `string`                                      | `''`             | Extra classes on the host                                              |
-| `item`                | `Snippet<[T, number]>`                        | —                | Render snippet for each slot — receives item + index                   |
-| `center`              | `Snippet`                                     | —                | Optional snippet rendered at the ring's centre (counter-rotated)       |
+## CSS Animation Strategy
 
-## Pure helpers (module-script exports)
+A single per-frame change drives every visible motion:
 
-| Function                                     | Returns           | Purpose                                               |
-| -------------------------------------------- | ----------------- | ----------------------------------------------------- |
-| `distributeAngles(count, startDeg)`          | `number[]`        | Evenly spaced angles, in degrees                      |
-| `slotTransform(angleDeg, radius)`            | `string`          | CSS transform that pins a slot at angle               |
-| `contentRotation(angle, ringRot, upright)`   | `number`          | Counter-rotation degrees for content's inner div      |
-| `pickDirection(name)`                        | `Direction`       | Validates / defaults a direction string               |
-| `clampRadius(value, minPx, maxPx)`           | `number`          | Defensive radius clamp                                |
-| `isReducedMotion()`                          | `boolean`         | SSR-safe matchMedia probe                             |
+```css
+.orbital-ring__track {
+  transform: rotate(var(--orbital-ring-rotation, 0deg));
+  will-change: transform;
+}
 
-## How it works
+.orbital-ring__slot {
+  transform:
+    translate(-50%, -50%)
+    rotate(var(--orbital-slot-angle, 0deg))
+    translateY(calc(var(--orbital-radius, 160px) * -1));
+}
 
-The host writes four CSS custom properties: `--orbital-radius`,
-`--orbital-size`, `--orbital-item-size`, and `--orbital-ring-rotation`.
-The track has `transform: rotate(var(--orbital-ring-rotation))` —
-that's the only attribute updated per frame, so the GPU composites a
-single transform on a single layer regardless of how many items are
-in the ring.
+.orbital-ring__content--upright {
+  transform: rotate(calc(var(--orbital-slot-angle, 0deg) * -1 - var(--orbital-ring-rotation, 0deg)));
+}
 
-Each slot uses `rotate(var(--slot-angle)) translateY(-radius)` to pin
-itself to the circle. Content inside each slot uses a `calc()` against
-both `--slot-angle` and `--ring-rotation` to counter-rotate, so a face
-stays facing the viewer regardless of where the ring has spun to.
+@media (prefers-reduced-motion: reduce) {
+  .orbital-ring__track { transform: none !important; }
+  .orbital-ring__content--upright,
+  .orbital-ring__content { transform: rotate(calc(var(--orbital-slot-angle, 0deg) * -1)) !important; }
+}
+```
 
-The rAF loop accumulates `(360 / spinDurationMs) * elapsedMs` per
-frame onto `ringRotation` (modulo 360) — no envelope, no halting; it
-runs steady-state. `IntersectionObserver` toggles `visible`, which an
-`$effect` watches alongside `hovered` and `reduced` to start or stop
-the rAF dispatcher.
-
-## Accessibility
-
-- The host carries `role="list"`; each slot carries `role="listitem"`.
-- The optional centre slot is `role="presentation"` — assistive tech
-  reads through to its content, not the wrapper.
-- prefers-reduced-motion: reduce → the stylesheet zeroes the track
-  transform via `!important`, so the ring renders as a static circle
-  even if the rAF loop momentarily fires before `onMount` runs.
-- No keyboard interaction in M1 — items are layout, not buttons. If
-  consumers wrap items with their own anchors or buttons, normal Tab
-  order applies.
+Reduced motion freezes the track and *also* removes the world-frame counter-rotation so upright content sits at a deterministic angle. The `!important` is necessary because the inline `--orbital-ring-rotation` variable would otherwise win the cascade.
 
 ## Performance
 
-- Steady spin: a single CSS custom property update per frame on the
-  host. Browser composites the track transform on its own layer.
-- Counter-rotation: handled by CSS `calc()` against the cascaded
-  custom property — no per-item JS work per frame.
-- Offscreen: rAF stops when the ring leaves the viewport.
-- Reduced motion: stylesheet-level `transform: none !important` —
-  zero animation cost, layout only.
+- **Steady state per frame**: one `$state` write (`ringRotation`), one CSS variable update on the wrapper, GPU compositor handles the rest. With 8 items the per-frame cost is sub-millisecond.
+- **Idle when off-screen**: the `IntersectionObserver` flips `visible` to `false`, the effect calls `stop()`, the rAF loop unschedules. A scrolled-away ring contributes nothing to the frame budget.
+- **Idle on hover**: same mechanism via the `hovered` flag.
+- **Idle for reduced-motion users**: the rAF loop never starts; the `@media` rule freezes the visible state at the stylesheet level even if the JS gate ever drifts.
 
-## When to reach for it
+## State Flow Diagram
 
-- Radial galleries (testimonials, team photos, value props, awards).
-- "Solar system" diagrams where one element is the focal point and
-  others orbit it.
-- Constellations / star fields where items should rotate with the
-  ring (set `counterRotateItems={false}`).
+```
+              ┌──────────────────────┐
+              │  REST                │  ← rafId = null
+              │  ringRotation = 0    │
+              └──────────┬───────────┘
+                         │ autoSpin + visible + !hovered + !reduced
+                         ▼
+              ┌──────────────────────┐
+              │  SPINNING            │  ← rAF loop active
+              │  ringRotation grows  │
+              │  by elapsed × degPerMs│
+              └──┬───────────────────┘
+                 │ hover, scroll-out, or OS pref change
+                 ▼
+              ┌──────────────────────┐
+              │  PAUSED              │  ← cancelAnimationFrame
+              │  ringRotation frozen │
+              └──────────┬───────────┘
+                         │ gates flip back true
+                         ▼ resume from current rotation
 
-## When not to
+  IntersectionObserver: container off-screen → visible=false → stop
+  Hover enter / leave: hovered=true / false → effect flips
+  prefers-reduced-motion: reduce: locked in REST forever
+```
 
-- For a strict carousel with explicit prev/next navigation, reach for
-  CardStack or Marquee — OrbitalRing has no direct keyboard / button
-  controls in M1.
-- For data viz where item position encodes meaning (e.g.,
-  hierarchical), reach for Sunburst or RadialCluster.
-- For long lists (>12 items), readability suffers — radial layout
-  rewards a small N.
+## Props Reference
 
-## Inspiration
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `items` | `T[]` | required | Generic items array. Each is rendered via the `item` snippet. |
+| `radius` | `number` | `160` | Ring radius in pixels. Clamped to `[20, 2000]`. |
+| `autoSpin` | `boolean` | `true` | Drive the ring with rAF. False renders a static layout. |
+| `spinDurationMs` | `number` | `20000` | Time for one full revolution. Higher = slower. |
+| `direction` | `'clockwise' \| 'counter-clockwise'` | `'clockwise'` | Spin direction. Unknown values fall back to clockwise via `pickDirection`. |
+| `pauseOnHover` | `boolean` | `true` | Pause when the cursor enters the wrapper. |
+| `counterRotateItems` | `boolean` | `true` | World-frame upright: items always face the viewer. False makes them tilt with the ring. |
+| `itemSize` | `number` | `80` | Slot box size in pixels. The container's outer size = `radius*2 + itemSize`. |
+| `startAngleDeg` | `number` | `0` | Angle of the first slot. `0` = top; `90` = right. |
+| `class` | `string` | `''` | Extra wrapper classes. |
+| `item` | `Snippet<[T, number]>` | — | Per-slot rendering snippet. Receives `(data, index)`. |
+| `center` | `Snippet` | — | Optional centre snippet rendered inside the ring. |
 
-A nod to circular-mast galleries and the "satellites round a planet"
-effect popular in agency hero sections circa 2024–2026 (Awwwards
-darlings). Pure-CSS implementation with no SVG or canvas, so it copy-
-pastes into any Svelte 5 project with zero dependencies.
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `items = []` | Track renders empty. The centre snippet still appears if provided. No rAF work — `start()` runs but the loop is harmless with no slots to update. |
+| `items.length = 1` | One slot at `startAngleDeg`. With `counterRotateItems`, it stays upright; without, it tilts. |
+| Non-finite `radius` | `clampRadius` returns `minPx = 20` so the inline style never receives `NaNpx`. |
+| Unknown `direction` string | `pickDirection` falls back to `'clockwise'`. Never crashes on user data. |
+| `pauseOnHover = true`, cursor enters then quickly leaves | Effect flips `hovered` → `start()` resumes from the current rotation. No reset. |
+| Component scrolls off-screen | `IntersectionObserver` flips `visible = false` → effect stops the loop. Re-entering resumes — the ring "remembers" where it was. |
+| `prefers-reduced-motion: reduce` enabled | rAF loop never starts. CSS `@media` rule additionally pins `transform: none` on the track and removes ring-rotation cancellation on upright content. |
+| Resizing the window mid-spin | `getBoundingClientRect` is not used in the per-frame path, so resizes don't trigger jitter. The ring continues spinning; `radius` and `itemSize` are absolute pixels. |
+| Component unmounts mid-spin | `onDestroy` cancels the rAF and disconnects the observer. No leaked timer. |
+
+## Dependencies
+
+- **Svelte 5** — `$state`, `$derived`, `$effect`, `$props`, `Snippet`, generic component (`<T>`).
+- **`<script module>`** exports — `distributeAngles`, `slotTransform`, `contentRotation`, `pickDirection`, `clampRadius`, `isReducedMotion`. All pure, testable without a DOM.
+- **`IntersectionObserver`** — browser primitive used to pause when off-screen.
+- **Zero external libraries** — no animation library, no layout library. Pure CSS transforms + rAF.
+
+## File Structure
+
+```
+src/lib/components/OrbitalRing.svelte         # implementation
+src/lib/components/OrbitalRing.md             # this explainer
+src/lib/components/OrbitalRing.test.ts        # unit tests for exported helpers
+src/routes/orbitalring/+page.svelte           # demo page
+```

@@ -1,108 +1,153 @@
----
-title: ScrambledText
-description: Reveal a string by scrambling each character through a configurable pool of glyphs, then settling on the final letter. Pure JS state machine on requestAnimationFrame, deterministic-friendly helpers, prefers-reduced-motion safe.
-category: Helpful UX
-author: tfeClaude
----
+# ScrambledText — Technical Logic Explainer
 
-# ScrambledText
+## What Does It Do? (Plain English)
 
-A typography reveal that turns plain text into a "decoding terminal" effect — every character starts as a random glyph from a configurable pool and then snaps to its final letter at a per-character settle time. Two reveal orders (left-to-right, random), optional replay-on-hover, optional start delay.
+ScrambledText displays a string where each character starts as a random glyph from a configurable pool (default `A–Z` + `0–9`) and "decodes" to the final letter at a per-character settle time. The classic Mission Impossible / Matrix / heist-movie terminal reveal — every glyph rolls through the pool until the right one drops into place.
 
-Inspired by [reactbits.dev's _ScrambledText_](https://reactbits.dev/), rebuilt as a portable Svelte 5 component with zero dependencies.
+Think of it as a row of slot-machine wheels, each spinning at random until its target letter clicks into position.
 
-## Key Features
+## How It Works (Pseudo-Code)
 
-- **Pure JS state machine** — one `requestAnimationFrame` loop while scrambling, cleared on completion. No per-letter components, no DOM diffing — a single text node is updated each frame.
-- **Configurable scramble pool** — defaults to `A–Z` + `0–9`. Pass any string (Cyrillic, katakana, glyph cipher, custom emoji set) to change the cipher feel.
-- **Two reveal orders** — `'left-to-right'` lands characters in reading order; `'random'` jitters each character into a random slot inside the duration window.
-- **Replay on hover** — set `replayOnHover` to re-scramble the text whenever the pointer enters.
-- **Auto-start or trigger later** — `autoStart={false}` settles to the final text immediately so you can choreograph timing yourself (e.g. via `replayOnHover`).
-- **Optional start delay** — chain multiple `ScrambledText` reveals in sequence.
-- **Reduced-motion safe** — `prefers-reduced-motion: reduce` skips the animation; the text renders in its final form. No flicker, no half-states.
-- **Spaces preserved** — whitespace never scrambles, so word boundaries stay readable mid-reveal. Reads less like noise, more like a message coming into focus.
-- **Zero dependencies** — single `.svelte` file, scoped CSS, no animation library.
-- **Pure helpers exported** — `pickScrambleChar`, `computeSettleTimes`, `getDisplayString`, `isScrambleComplete` are exported from the `module` script and unit-tested with deterministic rng.
+```
+state:
+  display       = ''             // frame-by-frame visible string
+  isAnimating   = false
+  settleTimes   = number[]       // ms each char locks at
+  startTime     = 0              // performance.now() at first tick
+  prefersReduced = matchMedia query
 
-## Usage
+helpers (pure, exported):
+  pickScrambleChar(pool, rng) → random character from pool
+  computeSettleTimes(charCount, duration, order, rng) → number[]
+    'left-to-right': i_th time = ((i+1) / count) * duration
+    'random':        i_th time = rng() * duration
+  getDisplayString(text, settleTimes, elapsed, pool, rng) → string
+    for each char in text:
+      if char is space → keep space
+      else if elapsed >= settleTimes[i] → final char
+      else → pickScrambleChar(pool)
+  isScrambleComplete(settleTimes, elapsed) → bool
 
-```svelte
-<script lang="ts">
-  import ScrambledText from '$lib/components/ScrambledText.svelte';
-</script>
+start animation:
+  if prefersReduced: display = text; bail
+  settleTimes = computeSettleTimes(text.length, duration, order)
+  display = getDisplayString(text, settleTimes, 0, pool)  // paint a fully-scrambled frame first
+  isAnimating = true
+  if delay > 0: setTimeout(begin, delay) else begin()
 
-<!-- Default: left-to-right reveal over 1.5s -->
-<ScrambledText text="Hello, world" />
+  begin():
+    startTime = performance.now()
+    rafLoop(now):
+      elapsed = now - startTime
+      display = getDisplayString(text, settleTimes, elapsed, pool)
+      if isScrambleComplete(settleTimes, elapsed):
+        display = text; isAnimating = false; stop
+      else:
+        rafHandle = requestAnimationFrame(rafLoop)
 
-<!-- Random reveal, hover to replay -->
-<ScrambledText
-  text="DECODED"
-  duration={2000}
-  order="random"
-  replayOnHover />
+on pointerenter:
+  if replayOnHover and not isAnimating: startScramble()
 
-<!-- Sequenced one-shots with delay (great for hero entrances) -->
-<ScrambledText text="Ready." duration={900} />
-<ScrambledText text="Set."   duration={900} delay={400} />
-<ScrambledText text="Go."    duration={900} delay={800} />
+on unmount:
+  cancelAnimationFrame(rafHandle); clearTimeout(delayHandle)
 ```
 
-Drop inside any heading or layout element — `ScrambledText` renders an inline-block span and inherits the surrounding font, weight, and size.
+The component itself is thin: build the settle-time array once, then run an rAF loop that calls a pure `getDisplayString` each frame.
 
-```svelte
-<h1 class="hero-title">
-  We <ScrambledText text="ENGINEER" pool="01" duration={2200} /> outcomes.
-</h1>
+## The Core Concept: Per-Character Settle Times
+
+The trick that gives the effect its rhythm is precomputing one timestamp per character — the `settleTimes` array. Each entry says "at this many milliseconds into the animation, this character stops scrambling and shows its final glyph". The rAF loop then becomes embarrassingly simple: read `elapsed`, ask each character whether its time has come.
+
+```
+text       = "DECODED"
+duration   = 1500ms
+order      = 'left-to-right'
+
+i  char  settleTime          elapsed:  0    400   800   1200  1500
+0  D     214  ms              ────────  ░     D     D     D     D
+1  E     429  ms              ────────  ▒     ▒     E     E     E
+2  C     643  ms              ────────  ░     ▓     C     C     C
+3  O     857  ms              ────────  ▓     ░     ▒     O     O
+4  D     1071 ms              ────────  ▒     ▒     ░     D     D
+5  E     1286 ms              ────────  ░     ▓     ▒     ░     E
+6  D     1500 ms              ────────  ▓     ░     ▒     ▓     D
+
+  ░ ▒ ▓ = randomly picked glyphs from the pool at that frame
 ```
 
-## Props
+For `'random'` order, settle times are uniform-random in `[0, duration]`, which produces the chaotic "letters lock in unpredictable order" feel rather than the orderly left-to-right reveal.
 
-| Prop            | Type                              | Default                                | Description                                                |
-|-----------------|-----------------------------------|----------------------------------------|------------------------------------------------------------|
-| `text`          | `string`                          | required                               | The final string                                           |
-| `duration`      | `number`                          | `1500`                                 | Total scramble length in ms                                |
-| `pool`          | `string`                          | `A–Z` + `0–9`                          | Characters to pick from while scrambling                   |
-| `order`         | `'left-to-right' \| 'random'`     | `'left-to-right'`                      | Per-char settle order                                      |
-| `replayOnHover` | `boolean`                         | `false`                                | Restart the scramble on `pointerenter`                     |
-| `autoStart`     | `boolean`                         | `true`                                 | Run the scramble on mount (else settle to text immediately)|
-| `delay`         | `number`                          | `0`                                    | Ms to wait before the first tick                           |
-| `class`         | `string`                          | `''`                                   | Extra CSS classes appended to the wrapper                  |
+The functions are split out as pure exports (`pickScrambleChar`, `computeSettleTimes`, `getDisplayString`, `isScrambleComplete`) so unit tests can pass a deterministic `rng = () => 0` and assert the exact sequence without rendering anything.
 
-## Distinct From
+## Performance
 
-- **`Typewriter`** types one character at a time, in order — never scrambles or shows non-final glyphs.
-- **`ShinyText`** recolours letters via a sweeping gradient — the glyphs themselves never change.
-- **`Marquee`** scrolls a whole element across the viewport — the text content stays the same.
-- **`MorphingDialog`** transitions between two layouts — operates at the layout level, not the character level.
+- One rAF loop while scrambling; cancelled the moment `isScrambleComplete` returns true.
+- The visible string updates a **single text node** — no per-letter `<span>` tree, so DOM cost stays flat regardless of text length.
+- No layout reads (`getBoundingClientRect`, `offsetWidth`, etc.) during the animation, so no forced reflows.
+- `font-variant-numeric: tabular-nums` and a hairline `letter-spacing` keep proportional fonts from "wobbling" as glyph widths change between frames.
 
-## Accessibility
+## CSS Animation Strategy
 
-- The wrapper carries an `aria-label` set to the **final** text, so screen readers announce the destination string immediately — they never read the noisy scrambled state.
-- The visible text node is `aria-hidden="true"` (decorative).
-- `@media (prefers-reduced-motion: reduce)` is respected on mount: the animation is skipped and the text renders in its final form. JS-level check + no CSS animations means there is no fallback flicker.
-- Purely decorative — no focus, role, or interaction semantics are introduced (with one exception: pointer events for `replayOnHover`).
+ScrambledText is JS-driven for the scramble itself (the random glyph pick has no CSS analogue), so the CSS layer stays minimal: a `display: inline-block` wrapper, `tabular-nums` for predictable digit width, and a `0.95` opacity nudge while `is-animating` to make the reveal feel slightly muted compared to the resting text. The settled string then snaps to full opacity, giving the eye a subtle "lock-in" moment without any explicit transition.
 
-## Performance Notes
+## State Flow Diagram
 
-- **One `requestAnimationFrame` loop** while scrambling, cancelled on completion.
-- **One text node** is updated each frame; no per-letter spans, no DOM diff per character. The DOM cost stays flat with text length.
-- No layout reads, no `ResizeObserver`, no scroll listeners.
-- Suitable for headings and short labels. For multi-line paragraphs the effect would be illegible — and unkind to readers — so use it sparingly.
+```
+  [idle]
+     │  autoStart on mount     replayOnHover pointerenter
+     ▼
+  [animating]  ── rAF tick ──┐
+     │                       │
+     │  for each char:       │
+     │   elapsed >= settle?  │
+     │     yes → final glyph │
+     │     no  → pick random │
+     │                       │
+     ◀───────────────────────┘
+     │
+     │  isScrambleComplete(elapsed) === true
+     ▼
+  [settled]   display = text; isAnimating = false
 
-## Implementation Notes
+  prefers-reduced-motion: reduce
+       └─ skip [animating], paint final text once.
+```
 
-The character-settle math is split into pure helpers, exposed via the `module` script, so unit tests can pass a deterministic rng (e.g. `() => 0`) and assert that:
+## Props Reference
 
-- `computeSettleTimes(4, 1000, 'left-to-right')` returns `[250, 500, 750, 1000]`
-- `getDisplayString('CAT', [50, 200, 400], 100, 'X', () => 0)` returns `'CXX'` (first char settled, others scrambling)
-- spaces are preserved at every elapsed time
-- `isScrambleComplete(...)` flips `true` exactly once `elapsed` meets the largest settle time
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `text` | `string` | required | The final string to land on. |
+| `duration` | `number` | `1500` | Total scramble length in milliseconds. |
+| `pool` | `string` | `'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'` | Pool of glyphs picked from while scrambling. |
+| `order` | `'left-to-right' \| 'random'` | `'left-to-right'` | How per-character settle times are distributed. |
+| `replayOnHover` | `boolean` | `false` | Restart the scramble when the pointer enters the wrapper. |
+| `autoStart` | `boolean` | `true` | Run the scramble on mount; otherwise render the final text and wait for `replayOnHover`. |
+| `delay` | `number` | `0` | Milliseconds to wait after `start` is requested before the first rAF tick. |
+| `class` | `string` | `''` | Extra classes on the wrapper span. |
 
-This split keeps the component file itself a thin shell:
+## Edge Cases
 
-1. Build `settleTimes` once at start.
-2. rAF loop ticks `elapsed`.
-3. Each tick computes the visible string from `(text, settleTimes, elapsed, pool)`.
-4. On completion, snap to `text` and cancel the loop.
+| Situation | Behaviour |
+|-----------|-----------|
+| Empty `text` prop | `computeSettleTimes` returns `[]`; `isScrambleComplete` is true immediately and no rAF loop starts. |
+| Single-character `text` | `settleTimes` is `[duration]` regardless of `order`; the lone character locks in at the very end. |
+| Empty `pool` | `pickScrambleChar` returns `''`; mid-scramble the character renders blank, then resolves to its final glyph at settle time. |
+| User has `prefers-reduced-motion: reduce` | `display = text` immediately; rAF never starts, no flicker. |
+| `replayOnHover` triggered while still animating | The hover handler bails out (`if (!isAnimating)`); current run completes before another can start. |
+| Component unmounts mid-animation | `onMount` teardown calls `cancelTimers()`, cancelling both the rAF handle and any pending `setTimeout`. |
+| Spaces in `text` | Spaces are passed through verbatim — they never scramble — so word boundaries remain readable as the rest of the string decodes. |
 
-No DOM diffing, no per-letter component, just a single text node updated each frame.
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$props`, `onMount` for lifecycle.
+- Zero external dependencies — pure JS state machine + `requestAnimationFrame`.
+
+## File Structure
+
+```
+src/lib/components/ScrambledText.svelte   # implementation
+src/lib/components/ScrambledText.md       # this file (rendered inside ComponentPageShell)
+src/lib/components/ScrambledText.test.ts  # vitest unit tests for the pure helpers
+src/routes/scrambledtext/+page.svelte     # demo page
+```
