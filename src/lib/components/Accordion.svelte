@@ -52,6 +52,7 @@
 -->
 
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 
 	export type AccordionItem = {
@@ -89,7 +90,8 @@
 
 	// SvelteSet gives O(1) has/add/delete and is reactive — Svelte 5
 	// tracks reads/writes for fine-grained updates without full reassignment.
-	const openIds = new SvelteSet<string>(defaultOpen);
+	// untrack: defaultOpen seeds initial state only; user clicks own state after that.
+	const openIds = new SvelteSet<string>(untrack(() => defaultOpen));
 
 	function isOpen(id: string): boolean {
 		return openIds.has(id);

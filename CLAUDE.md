@@ -39,7 +39,7 @@ Additional reading:
 | 3D / charts | `three`, `layerchart`, `@unovis/svelte` | Only where genuinely required |
 | Database | Neon (Postgres) via `@neondatabase/serverless` | Optional — fallback constants always available |
 | Auth | **Better Auth** via `better-auth` + `better-auth/svelte` | Optional; graceful "Auth Offline" mode without env |
-| Sanitisation / markdown | `isomorphic-dompurify`, `marked`, `highlight.js` | |
+| Sanitisation / markdown | `sanitize-html`, `marked`, `highlight.js` | `sanitize-html` is pure JS — no jsdom/parse5, runs cleanly on Vercel Node 22 |
 | Search | `fuse.js` | |
 | Interaction | `@panzoom/panzoom` | Pan/zoom for diagrams/maps |
 | Analytics | `@vercel/analytics` | |
@@ -299,7 +299,7 @@ docs/                       # THEMING.md, DATAGRID_FORMATTING.md,
 
 ### Native vs external library
 - **Build native** unless: it would take >40h, requires ongoing security updates (auth, sanitisation), is a well-maintained industry standard <200KB, or has no native equivalent.
-- **Currently justified externals**: Leaflet (maps), Better Auth (auth), Unovis & layerchart (charts), SVAR Grid (DataGridAdvanced), `isomorphic-dompurify` (sanitisation), GSAP/animejs/`@humanspeak/svelte-motion` (animation), Three (3D), `@panzoom/panzoom`, `marked` + `highlight.js`, `fuse.js`.
+- **Currently justified externals**: Leaflet (maps), Better Auth (auth), Unovis & layerchart (charts), SVAR Grid (DataGridAdvanced), `sanitize-html` (markdown sanitisation), GSAP/animejs/`@humanspeak/svelte-motion` (animation), Three (3D), `@panzoom/panzoom`, `marked` + `highlight.js`, `fuse.js`.
 
 ### Comment style — "clear and warm"
 Explain the *why*, not the *what*. Friendly tone over jargon. Comments should help a reader understand non-obvious decisions, not narrate the obvious.

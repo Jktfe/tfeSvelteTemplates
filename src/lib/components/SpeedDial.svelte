@@ -24,14 +24,19 @@
 	- Tooltips with auto-positioning based on direction
 	- Full keyboard navigation (Tab, Enter, Escape)
 	- ARIA compliance for accessibility
-	- XSS-safe SVG icon rendering via DOMPurify
+	- SVG icon rendering via {@html} (see Security note below)
 	- Respects reduced motion preferences
 	- Bindable isOpen state for programmatic control
 
 	DEPENDENCIES:
 	- $lib/types (SpeedDialProps, SpeedDialAction interfaces)
-	- $lib/utils (sanitizeSVG function using DOMPurify)
-	- DOMPurify (external - for XSS protection)
+	- $lib/utils (sanitizeSVG — currently a pass-through; see file for caveats)
+
+	SECURITY:
+	- Icons are rendered with {@html sanitizeSVG(icon)}. `sanitizeSVG` is
+	  currently a no-op pass-through (see src/lib/utils.ts). This is safe so
+	  long as `icon` strings come from the developer, not end users. If you
+	  ever expose user-supplied SVG, plug a real sanitiser into `sanitizeSVG`.
 
 	ACCESSIBILITY:
 	- Full keyboard support (Tab cycles through, Escape closes)
@@ -69,7 +74,7 @@
 		SpeedDialAction,
 		SpeedDialDirection,
 	} from '$lib/types';
-	// [CR] DOMPurify wrapper for XSS-safe SVG rendering
+	// SVG pass-through; see security note in the docblock above.
 	import { sanitizeSVG } from '$lib/utils';
 
 	// [CR] Props destructuring with sensible defaults

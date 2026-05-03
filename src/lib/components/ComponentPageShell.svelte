@@ -210,7 +210,7 @@
 							<h2 id="cp-explainer-title">Logic explainer</h2>
 							<span class="cp-eyebrow">03</span>
 						</header>
-						<!-- docsHtml is sanitised by DOMPurify upstream in renderMarkdown -->
+						<!-- docsHtml is sanitised by sanitize-html upstream in renderMarkdown -->
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 						<div class="cp-explainer__body">{@html docsHtml}</div>
 					</section>
