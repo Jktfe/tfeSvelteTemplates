@@ -38,7 +38,10 @@
 	DEPENDENCIES:
 	- Zero external dependencies (copy-paste ready!)
 	- Uses $lib/types for TypeScript interfaces
-	- Uses $lib/utils for sanitizeHTML (XSS protection)
+	- Uses $lib/utils for sanitizeHTML — currently a pass-through. Safe because
+	  cell values come from typed Employee[] data, not free-form HTML. If you
+	  add a column whose formatter returns user-supplied HTML, replace
+	  sanitizeHTML in $lib/utils with a real sanitiser first.
 
 	ACCESSIBILITY:
 	- Sortable columns are keyboard focusable

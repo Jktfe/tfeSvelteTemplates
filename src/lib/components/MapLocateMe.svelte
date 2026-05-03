@@ -334,11 +334,14 @@
 	}
 
 	/**
-	 * Start locating user position
+	 * Start locating user position.
 	 *
-	 * Build warning: "`locateMe` is updated" is a false positive
-	 * Reason: This is a function, not a state variable. Compiler confused by export statement.
+	 * The `non_reactive_update` warning here is a false positive: this is a stable
+	 * function declaration, never reassigned. Svelte's analyser flags it because
+	 * the legacy `export { locateMe }` pattern (line 411) creates an exported
+	 * binding it can't statically distinguish from a mutable variable.
 	 */
+	// svelte-ignore non_reactive_update
 	function locateMe(): void {
 		if (!isGeolocationSupported) {
 			const message = getErrorMessage('NOT_SUPPORTED');

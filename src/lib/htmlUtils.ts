@@ -1,6 +1,7 @@
 /**
- * HTML utility functions that don't require DOMPurify
- * Separated to avoid pulling in isomorphic-dompurify on server-side
+ * HTML utility functions with no sanitiser dependency.
+ * Lives separately from `$lib/utils` so server-only code can pull these in
+ * without dragging in any HTML-parsing libraries.
  */
 
 /**

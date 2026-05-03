@@ -404,11 +404,15 @@
 
 <!-- FILING CABINET VIEW (closed state) -->
 <!--
-	Build warning: "onclick needs keyboard handler" is acceptable here
-	Reason: Container div that clears mobile preview on tap/click outside folders
-	Interactive elements (folders) inside have proper keyboard support
+	The two a11y warnings on this <div> are deliberate:
+	- It's an outside-tap target that dismisses the mobile preview overlay.
+	- The folders inside are real <button>s with full keyboard support.
+	A keyboard equivalent for "tap empty space" doesn't exist (Escape is handled
+	at the document level for the open-folder view, not the closed cabinet).
 -->
 {#if !openFolder}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 	<div
 		class="filing-cabinet-container"
 		role="region"

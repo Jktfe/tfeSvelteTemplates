@@ -31,11 +31,6 @@
 	 * - Respects prefers-reduced-motion
 	 * - TypeScript typed throughout
 	 *
-	 * [CR] KNOWN WARNINGS (Safe to ignore)
-	 * CSS Unused Selector warnings: Selectors like .field-input, .field-error
-	 * are used by child form components (TextField, TextareaField, SelectField)
-	 * that render inside this modal. Svelte's static analysis can't detect them.
-	 *
 	 * ============================================================
 	 * @component
 	 */
@@ -492,78 +487,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1.25rem;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.form-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-label {
-		font-size: 0.875rem;
-		font-weight: 500;
-		color: #374151;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.required {
-		color: #dc2626;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-input,
-	/* svelte-ignore css-unused-selector */
-	.field-textarea,
-	/* svelte-ignore css-unused-selector */
-	.field-select {
-		padding: 0.625rem 0.75rem;
-		border: 1px solid #d1d5db;
-		border-radius: 6px;
-		font-size: 0.9375rem;
-		color: #111827;
-		transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-		font-family: inherit;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-input:focus,
-	/* svelte-ignore css-unused-selector */
-	.field-textarea:focus,
-	/* svelte-ignore css-unused-selector */
-	.field-select:focus {
-		outline: none;
-		border-color: #3b82f6;
-		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-input[aria-invalid='true'],
-	/* svelte-ignore css-unused-selector */
-	.field-textarea[aria-invalid='true'] {
-		border-color: #dc2626;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-input[aria-invalid='true']:focus,
-	/* svelte-ignore css-unused-selector */
-	.field-textarea[aria-invalid='true']:focus {
-		box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-textarea {
-		resize: vertical;
-		min-height: 4rem;
-	}
-
-	/* svelte-ignore css-unused-selector */
-	.field-error {
-		font-size: 0.875rem;
-		color: #dc2626;
-		margin-top: 0.25rem;
 	}
 
 	/* Form Actions */

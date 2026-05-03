@@ -29,7 +29,7 @@
 	• @panzoom/panzoom - Complex touch/mouse canvas navigation
 	• marked + highlight.js - Markdown rendering with code highlighting
 	• fuse.js - Fast fuzzy search across nested content
-	• isomorphic-dompurify - Security-critical XSS sanitization
+	• sanitize-html - XSS sanitisation for rendered markdown (via $lib/utils/markdown)
 
 	⚡ PERFORMANCE
 	• Suitable for: Canvases with up to 100+ cards across hierarchy
