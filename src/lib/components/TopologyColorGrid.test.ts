@@ -49,6 +49,19 @@ describe('TopologyColorGrid', () => {
 		expect(screen.getByRole('button', { name: 'Activate Extrusion' })).toBeTruthy();
 	});
 
+	it('marks a card as pressed when clicked', async () => {
+		const { container } = render(TopologyColorGrid);
+		const cards = container.querySelectorAll<HTMLButtonElement>('button.topology-card');
+		// Pick a card that is NOT the default-active one so the click meaningfully changes state.
+		const targetCard = Array.from(cards).find((card) => card.getAttribute('aria-pressed') === 'false');
+		expect(targetCard).toBeTruthy();
+
+		await fireEvent.click(targetCard!);
+
+		expect(targetCard!.getAttribute('aria-pressed')).toBe('true');
+		expect(targetCard!.classList.contains('is-active')).toBe(true);
+	});
+
 	it('supports explicit light and dark themes', async () => {
 		const { container } = render(TopologyColorGrid, { theme: 'dark' });
 		const root = container.querySelector('.topology-color-grid');

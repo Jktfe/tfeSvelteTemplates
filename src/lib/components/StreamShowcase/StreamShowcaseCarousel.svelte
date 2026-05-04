@@ -286,15 +286,15 @@
 		align-items: center;
 		justify-content: flex-start;
 		min-height: 50vh;
-		padding: 1rem 1.5rem 4rem;
+		padding: clamp(0.75rem, 2vw, 1.5rem) clamp(1rem, 4vw, 1.5rem) clamp(2rem, 6vw, 4rem);
 		color: inherit;
 		overflow: hidden;
 	}
 
 	.ssc-fan {
 		position: relative;
-		width: 280px;
-		height: 380px;
+		width: clamp(220px, 28vw, 280px);
+		height: clamp(300px, 42vw, 380px);
 		margin-top: 1rem;
 		touch-action: pan-y;
 		cursor: grab;
@@ -313,7 +313,7 @@
 		padding: 1.25rem;
 		text-align: left;
 		font: inherit;
-		color: #fff;
+		color: inherit;
 		background: linear-gradient(155deg, var(--ssc-from) 0%, var(--ssc-to) 100%);
 		border-radius: 1rem;
 		border: 1px solid color-mix(in srgb, #fff 12%, transparent);
@@ -401,7 +401,7 @@
 	}
 	.ssc-card-count {
 		font-size: 0.75rem;
-		opacity: 0.7;
+		color: color-mix(in srgb, currentColor 75%, transparent);
 	}
 	.ssc-card-edge {
 		position: absolute;

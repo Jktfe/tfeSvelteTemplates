@@ -54,6 +54,16 @@ describe('TrueFocus helpers', () => {
 				'post-IPO'
 			]);
 		});
+
+		it('does not include trailing whitespace on any word (the separator lives outside the word span)', () => {
+			// Why this matters: the focus indicator measures each word
+			// span via getBoundingClientRect(). If splitWords leaked a
+			// trailing space into a token, the box would draw too wide.
+			for (const w of splitWords('  leading   middle\ttrailing  ')) {
+				expect(w).toBe(w.trim());
+				expect(/\s/.test(w)).toBe(false);
+			}
+		});
 	});
 
 	describe('cycleNext', () => {

@@ -327,9 +327,7 @@
 				() => wordEls.get(idx) ?? null,
 				(el) => setWordEl(idx, el)
 			}
-		>
-			{word}{#if idx < words.length - 1}&nbsp;{/if}
-		</span>
+		>{word}</span>{#if idx < words.length - 1}<span class="space" aria-hidden="true">&nbsp;</span>{/if}
 	{/each}
 	<!--
 		Single morphing focus box. Decorative — aria-hidden so
@@ -362,6 +360,19 @@
 		z-index: 1;
 		transition: color 200ms ease;
 		outline: none;
+		/* Keep each word as one unbroken glyph run — the indicator
+		   measures the word span, so we never want a single word to
+		   wrap mid-glyph and skew the bounding rect. Wrapping happens
+		   between words via the sibling .space separator. */
+		white-space: nowrap;
+	}
+
+	.space {
+		/* Sibling separator between words. Lives outside the word
+		   span so the indicator's getBoundingClientRect() measures
+		   only the word — not word + trailing space. */
+		display: inline;
+		white-space: pre;
 	}
 
 	.word:focus-visible {

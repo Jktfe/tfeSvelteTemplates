@@ -2,9 +2,36 @@
 	import StreamShowcase from '$lib/components/StreamShowcase/StreamShowcase.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+	import { SAMPLE_PLAYLISTS } from '$lib/components/StreamShowcase/playlists';
 	import type { Playlist } from '$lib/components/StreamShowcase/types';
 
 	const shell = catalogShellPropsForSlug('/streamshowcase')!;
+
+	// Interactive playground — drives a single live instance. Card count,
+	// fan spread and theme all rebind into the showcase.
+	let playgroundCount = $state(8);
+	let playgroundSpread = $state(5);
+	let playgroundTheme = $state<'light' | 'dark'>('dark');
+	let playgroundActive = $state(4);
+	let playgroundLastSelected = $state<Playlist | null>(null);
+
+	function handlePlaygroundSelect(p: Playlist) {
+		playgroundLastSelected = p;
+	}
+
+	// Active card title for the read-out strip — uses the same looped
+	// fan-card resolution that the carousel does internally.
+	const playgroundFanCards = $derived(
+		Array.from(
+			{ length: playgroundCount },
+			(_, i) => SAMPLE_PLAYLISTS[i % SAMPLE_PLAYLISTS.length] ?? SAMPLE_PLAYLISTS[0]
+		)
+	);
+	// Clamp the active index into the current fan range when the slider
+	// shrinks count below the previously selected position.
+	const playgroundActiveSafe = $derived(
+		Math.min(Math.max(0, playgroundActive), Math.max(0, playgroundCount - 1))
+	);
 
 	// Default-deck state for the flagship demo. We track both the active
 	// (centred) index and the most recently selected playlist for the live
@@ -99,13 +126,108 @@
 	tags={['Svelte 5', 'Carousel', 'Drag', 'Keyboard', 'Asset-free']}
 >
 	{#snippet demo()}
+		<section class="ss-section ss-playground">
+			<header class="ss-section__header">
+				<h3>Interactive playground</h3>
+				<p>Tune the fan live — card count, spread angle and theme all bind to one instance.</p>
+			</header>
+
+			<div class="ss-controls">
+				<div class="ss-control">
+					<label class="ss-control__label" for="ss-count">
+						<span>Card count</span>
+						<output for="ss-count">{playgroundCount}</output>
+					</label>
+					<input
+						id="ss-count"
+						type="range"
+						min="4"
+						max="12"
+						step="1"
+						bind:value={playgroundCount}
+					/>
+				</div>
+
+				<div class="ss-control">
+					<label class="ss-control__label" for="ss-spread">
+						<span>Spread (degrees)</span>
+						<output for="ss-spread">{playgroundSpread}</output>
+					</label>
+					<input
+						id="ss-spread"
+						type="range"
+						min="2"
+						max="8"
+						step="1"
+						bind:value={playgroundSpread}
+					/>
+				</div>
+
+				<div class="ss-control">
+					<span class="ss-control__label"><span>Theme</span></span>
+					<div class="ss-buttons">
+						<button
+							type="button"
+							class="ss-btn"
+							class:ss-btn--active={playgroundTheme === 'light'}
+							onclick={() => (playgroundTheme = 'light')}
+						>
+							Light
+						</button>
+						<button
+							type="button"
+							class="ss-btn"
+							class:ss-btn--active={playgroundTheme === 'dark'}
+							onclick={() => (playgroundTheme = 'dark')}
+						>
+							Dark
+						</button>
+					</div>
+				</div>
+			</div>
+
+			{#key playgroundCount}
+				<div class="ss-shell">
+					<StreamShowcase
+						theme={playgroundTheme}
+						count={playgroundCount}
+						spread={playgroundSpread}
+						bind:active={playgroundActive}
+						onSelect={handlePlaygroundSelect}
+						class="ss-frame"
+					/>
+				</div>
+			{/key}
+
+			<div class="ss-state-strip" aria-live="polite">
+				<span>Active: <code>{playgroundActiveSafe}</code></span>
+				<span class="ss-state-strip__sep">·</span>
+				<span>Title: <code>{playgroundFanCards[playgroundActiveSafe]?.title ?? '—'}</code></span>
+				<span class="ss-state-strip__sep">·</span>
+				<span>
+					Last selected:
+					{#if playgroundLastSelected}
+						<code>{playgroundLastSelected.slug}</code>
+					{:else}
+						<em>none</em>
+					{/if}
+				</span>
+			</div>
+		</section>
+
 		<section class="ss-section">
 			<header class="ss-section__header">
 				<h3>Default deck — 10 cards, dark theme</h3>
-				<p>The flagship configuration: full sample playlists, drag/keyboard/click all wired in.</p>
+				<p>The flagship configuration with full sample playlists and every interaction wired in.</p>
 			</header>
 			<div class="ss-shell">
 				<StreamShowcase bind:active onSelect={handleSelect} class="ss-frame" />
+			</div>
+
+			<div class="ss-state-strip" aria-live="polite">
+				<span>Active: <code>{active}</code></span>
+				<span class="ss-state-strip__sep">·</span>
+				<span>Title: <code>{SAMPLE_PLAYLISTS[active % SAMPLE_PLAYLISTS.length]?.title ?? '—'}</code></span>
 			</div>
 
 			<div class="ss-meta">
@@ -140,10 +262,7 @@
 		<section class="ss-section">
 			<header class="ss-section__header">
 				<h3>Light theme — fewer cards (count = 7)</h3>
-				<p>
-					Same component with <code>theme="light"</code> and a tighter 7-card fan. Useful for
-					editorial pages on light backgrounds.
-				</p>
+				<p>Same component on a warm light canvas with a tighter seven-card fan.</p>
 			</header>
 			<div class="ss-shell">
 				<StreamShowcase
@@ -179,11 +298,7 @@
 		<section class="ss-section">
 			<header class="ss-section__header">
 				<h3>Custom playlists — 4 hand-rolled cards</h3>
-				<p>
-					A bespoke <code>playlists</code> array with custom titles, tags and gradient covers,
-					plus a tighter <code>count={4}</code>. The toast below updates whenever you press
-					<kbd>Enter</kbd> on the centre card.
-				</p>
+				<p>Bespoke playlists with custom covers; the toast below echoes the <code>onSelect</code> payload.</p>
 			</header>
 			<div class="ss-shell">
 				<StreamShowcase
@@ -231,6 +346,12 @@
 					<td><code>number</code></td>
 					<td><code>10</code></td>
 					<td>Number of card slots in the fan (cycles through <code>playlists</code>).</td>
+				</tr>
+				<tr>
+					<td><code>spread</code></td>
+					<td><code>number</code></td>
+					<td><code>5</code></td>
+					<td>Degrees of fan rotation between adjacent cards.</td>
 				</tr>
 				<tr>
 					<td><code>theme</code></td>
@@ -301,15 +422,6 @@
 		font-size: 12px;
 		background: var(--surface-2);
 		padding: 1px 6px;
-		border-radius: var(--r-1);
-	}
-	.ss-section__header kbd {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		background: var(--surface-2);
-		padding: 1px 6px;
-		border: 1px solid var(--border-strong);
-		border-bottom-width: 2px;
 		border-radius: var(--r-1);
 	}
 	.ss-shell {
@@ -417,5 +529,94 @@
 		text-transform: uppercase;
 		letter-spacing: 0.04em;
 		color: var(--fg-3);
+	}
+
+	/* Interactive playground — sliders + theme toggle. */
+	.ss-controls {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		gap: 14px;
+		padding: 16px 18px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+	}
+	.ss-control {
+		display: grid;
+		gap: 8px;
+	}
+	.ss-control__label {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		font-weight: 500;
+	}
+	.ss-control__label output {
+		font-variant-numeric: tabular-nums;
+		color: var(--fg-1);
+		background: var(--surface-2);
+		padding: 1px 6px;
+		border-radius: var(--r-1);
+	}
+	.ss-control input[type='range'] {
+		width: 100%;
+		accent-color: var(--accent);
+	}
+	.ss-buttons {
+		display: flex;
+		gap: 8px;
+	}
+	.ss-btn {
+		appearance: none;
+		border: 1px solid var(--border);
+		background: var(--surface);
+		padding: 7px 14px;
+		border-radius: var(--r-1);
+		font-size: 13px;
+		cursor: pointer;
+		color: var(--fg-1);
+		transition: all var(--dur-fast);
+	}
+	.ss-btn:hover {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+	.ss-btn--active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--fg-on-dark, #ffffff);
+	}
+
+	/* Live state read-out under a deck. */
+	.ss-state-strip {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 10px;
+		margin-top: 16px;
+		padding: 10px 14px;
+		border-radius: var(--r-2);
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--fg-2);
+		font-size: 13px;
+	}
+	.ss-state-strip code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		background: var(--surface-2);
+		padding: 1px 6px;
+		border-radius: var(--r-1);
+		color: var(--fg-1);
+	}
+	.ss-state-strip__sep {
+		color: var(--fg-3);
+		opacity: 0.5;
 	}
 </style>

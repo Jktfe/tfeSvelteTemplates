@@ -146,6 +146,10 @@
 
 	let rafId: number | null = null;
 	let reducedMotion = false;
+	// Set true once `onMount` has measured the title — guards `computeTargets`
+	// against the one-frame race where cards would otherwise read titleHeight = 0
+	// and snap into the wrong fan layout before the first measurement lands.
+	let mounted = false;
 
 	// ------------------------------------------------------------------
 	// Measure viewport + hero title height. Cheap enough to run on every
@@ -267,6 +271,10 @@
 	// ------------------------------------------------------------------
 	function computeTargets() {
 		if (!cards.length) return;
+		// Bail out for the brief window where the component has mounted but the
+		// hero title hasn't been measured yet — running the fan maths against a
+		// titleHeight of 0 would snap cards into a visibly wrong pose for a frame.
+		if (mounted && titleHeight === 0) return;
 		const n = cards.length;
 		const cardH = getCardH(vw, vh);
 		const fanCfg = computeFan(vw, vh, heroTopPx(), titleHeight);
@@ -448,6 +456,10 @@
 	onMount(() => {
 		reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 		measure();
+		// Belt-and-braces: measure the title synchronously before any tick fires
+		// so the very first computeTargets call sees a non-zero titleHeight.
+		if (titleEl) titleHeight = titleEl.getBoundingClientRect().height;
+		mounted = true;
 		initCards();
 		applyTheme();
 
