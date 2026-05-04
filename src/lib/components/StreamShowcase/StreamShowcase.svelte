@@ -66,6 +66,7 @@
 	interface Props {
 		playlists?: Playlist[];
 		count?: number;
+		spread?: number;
 		eyebrow?: string;
 		topLine?: string;
 		bottomLine?: string;
@@ -78,6 +79,7 @@
 	let {
 		playlists = SAMPLE_PLAYLISTS,
 		count = 10,
+		spread = 5,
 		eyebrow = 'Now browsing',
 		topLine = 'Queue up.',
 		bottomLine = 'Level up.',
@@ -93,7 +95,7 @@
 	<div class="ss-glow ss-glow-2" aria-hidden="true"></div>
 
 	<StreamShowcaseHero {eyebrow} {topLine} {bottomLine} />
-	<StreamShowcaseCarousel {playlists} {count} bind:active {onSelect} />
+	<StreamShowcaseCarousel {playlists} {count} {spread} bind:active {onSelect} />
 </section>
 
 <style>
@@ -112,7 +114,13 @@
 		color: #f4f1eb;
 	}
 	.ss-light {
-		background: radial-gradient(ellipse at 50% 30%, #fff 0%, #f4f1eb 70%);
+		background:
+			radial-gradient(
+				ellipse at 50% 30%,
+				rgba(255, 247, 230, 0.95) 0%,
+				rgba(254, 243, 199, 0.55) 35%,
+				#f4f1eb 75%
+			);
 		color: #0f172a;
 	}
 
@@ -140,10 +148,22 @@
 		background: radial-gradient(circle, rgba(124, 58, 237, 0.45) 0%, transparent 70%);
 	}
 	.ss-light .ss-glow-1 {
-		background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+		background: radial-gradient(circle, rgba(245, 158, 11, 0.4) 0%, transparent 70%);
 	}
 	.ss-light .ss-glow-2 {
-		background: radial-gradient(circle, rgba(124, 58, 237, 0.18) 0%, transparent 70%);
+		background: radial-gradient(circle, rgba(124, 58, 237, 0.28) 0%, transparent 70%);
+	}
+
+	/* Restore depth on cards under the lighter canvas. */
+	.ss-light :global(.ssc-card) {
+		box-shadow:
+			0 12px 32px -16px rgba(15, 23, 42, 0.18),
+			0 30px 60px -25px color-mix(in srgb, var(--ssc-from) 60%, transparent);
+	}
+	.ss-light :global(.ssc-card-active) {
+		box-shadow:
+			0 18px 40px -12px rgba(15, 23, 42, 0.22),
+			0 36px 80px -20px color-mix(in srgb, var(--ssc-from) 70%, transparent);
 	}
 
 	/* Subcomponents stack vertically inside; section provides the canvas. */

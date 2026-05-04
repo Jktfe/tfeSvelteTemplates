@@ -94,23 +94,39 @@
 </section>
 
 <style>
+	/*
+	 * Theming notes (see docs/THEMING.md):
+	 * - Chrome (background, body text) flips with the theme prop.
+	 * - Brand glows (warm amber + cool purple) stay identity-bearing across
+	 *   schemes — exposed as --pp-glow-warm / --pp-glow-cool so a consumer
+	 *   can override per-theme without forking the component.
+	 */
 	.pp-root {
+		--pp-glow-warm: rgba(245, 158, 11, 0.45);
+		--pp-glow-cool: rgba(124, 58, 237, 0.4);
+		--pp-bg-from: #1c1917;
+		--pp-bg-to: #0c0a09;
+		--pp-fg: #f5f5f4;
+
 		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		min-height: 100vh;
+		min-height: clamp(420px, 60vh, 720px);
 		overflow: hidden;
 		isolation: isolate;
+		background: radial-gradient(ellipse at 50% 30%, var(--pp-bg-from) 0%, var(--pp-bg-to) 70%);
+		color: var(--pp-fg);
 	}
 
-	.pp-dark {
-		background: radial-gradient(ellipse at 50% 30%, #1c1917 0%, #0c0a09 70%);
-		color: #f5f5f4;
-	}
 	.pp-light {
-		background: radial-gradient(ellipse at 50% 30%, #fafaf9 0%, #e7e5e4 70%);
-		color: #1c1917;
+		--pp-bg-from: #fafaf9;
+		--pp-bg-to: #e7e5e4;
+		--pp-fg: #1c1917;
+		/* Bumped from 0.18 / 0.14 — the original values disappeared on a
+		   bright page; these read clearly without overpowering the copy. */
+		--pp-glow-warm: rgba(245, 158, 11, 0.32);
+		--pp-glow-cool: rgba(124, 58, 237, 0.24);
 	}
 
 	.pp-glow {
@@ -126,7 +142,7 @@
 		width: 360px;
 		height: 360px;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(245, 158, 11, 0.45) 0%, transparent 70%);
+		background: radial-gradient(circle, var(--pp-glow-warm) 0%, transparent 70%);
 	}
 	.pp-glow-2 {
 		bottom: 14%;
@@ -134,13 +150,7 @@
 		width: 420px;
 		height: 420px;
 		border-radius: 50%;
-		background: radial-gradient(circle, rgba(124, 58, 237, 0.4) 0%, transparent 70%);
-	}
-	.pp-light .pp-glow-1 {
-		background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
-	}
-	.pp-light .pp-glow-2 {
-		background: radial-gradient(circle, rgba(124, 58, 237, 0.14) 0%, transparent 70%);
+		background: radial-gradient(circle, var(--pp-glow-cool) 0%, transparent 70%);
 	}
 
 	.pp-root :global(.prh-stage) {

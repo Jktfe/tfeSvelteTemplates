@@ -60,8 +60,9 @@
 				<div class="sf-label">
 					<h3>Departures board</h3>
 					<p class="sf-help">Solari charset · forward · auto-rotates every 4.5 s</p>
+					<p class="sf-help sf-help-aside">Editorial dark surface — Solari boards are dark by design, so this panel stays dark in either page theme.</p>
 				</div>
-				<div class="sf-board">
+				<div class="sf-board" data-theme="dark">
 					<div class="sf-board-row">
 						<span class="sf-eyebrow">Now boarding</span>
 						<SplitFlap value={destination} charset="solari" size="lg" stagger={70} flipDuration={320} />
@@ -175,11 +176,21 @@
 		font-size: 0.85rem;
 		color: var(--fg-2);
 	}
+	.sf-help-aside {
+		flex-basis: 100%;
+		font-style: italic;
+		opacity: 0.85;
+	}
 	.sf-board {
+		/* Editorial dark surface — Solari boards are dark in the real world,
+		   so this panel deliberately stays dark in either page theme. The
+		   color-scheme + data-theme hooks make that intent explicit so any
+		   descendants resolving CSS custom properties pick dark tokens. */
+		color-scheme: dark;
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		padding: 2rem;
+		padding: clamp(1rem, 4vw, 2rem);
 		background: linear-gradient(180deg, #18223a 0%, #0a1020 100%);
 		border-radius: 1rem;
 		box-shadow:

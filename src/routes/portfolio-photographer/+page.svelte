@@ -33,6 +33,18 @@
 
 	const codeExplanation =
 		'PortfolioPhotographer composes a wireframe lens SVG, a marquee-style photo reel, a Halton low-discrepancy dot scatter, and a serif display name into one editorial hero. Each photo tile is a three-stop CSS gradient (asset-free fallback) — pass real images through the photos prop to swap in your own work. The reel auto-pauses on hover/focus and respects prefers-reduced-motion.';
+
+	// ---------------------------------------------------------------
+	// Interactive playground state — drives the third (live) instance.
+	// ---------------------------------------------------------------
+	let playTheme = $state<'light' | 'dark'>('dark');
+	let playDotCount = $state<number>(24);
+	let playDuration = $state<number>(36);
+
+	// Derived label for the live state strip — converts the duration
+	// (seconds per full reel cycle) into a more friendly "drift speed"
+	// percentage where shorter cycles read as faster.
+	const driftSpeedPct = $derived(Math.round((36 / playDuration) * 100));
 </script>
 
 <svelte:head>
@@ -51,19 +63,114 @@
 >
 	{#snippet demo()}
 		<div class="pp-demo">
-			<div class="pp-demo__frame pp-demo__frame--dark">
-				<PortfolioPhotographer theme="dark" class="pp-demo__hero" />
+			<!-- Mounted-variant gallery: stacks on mobile, side-by-side on tablet+. -->
+			<div class="pp-demo__gallery">
+				<section class="pp-demo__variant">
+					<h4>Dark — default voice</h4>
+					<p class="pp-demo__hint">
+						Warm dark palette, full default photo set, Aria Lindqvist as the byline.
+					</p>
+					<div class="pp-demo__frame pp-demo__frame--dark">
+						<PortfolioPhotographer theme="dark" class="pp-demo__hero" />
+					</div>
+				</section>
+
+				<section class="pp-demo__variant">
+					<h4>Light — paper edit</h4>
+					<p class="pp-demo__hint">
+						Same component, paper-light surface, custom name and tagline. Glow opacity adapts.
+					</p>
+					<div class="pp-demo__frame pp-demo__frame--light">
+						<PortfolioPhotographer
+							theme="light"
+							name="Mira Holm"
+							tagline="quiet portraits, slow streets"
+							years="2020 — 2026"
+							class="pp-demo__hero"
+						/>
+					</div>
+				</section>
 			</div>
 
-			<div class="pp-demo__frame pp-demo__frame--light">
-				<PortfolioPhotographer
-					theme="light"
-					name="Mira Holm"
-					tagline="quiet portraits, slow streets"
-					years="2020 — 2026"
-					class="pp-demo__hero"
-				/>
-			</div>
+			<!-- Interactive playground: one live instance, three controls. -->
+			<section class="pp-demo__playground" aria-labelledby="pp-playground-title">
+				<header class="pp-demo__playground-head">
+					<h4 id="pp-playground-title">Interactive playground</h4>
+					<p>Adjust the live instance below — every control rebinds the same hero.</p>
+				</header>
+
+				<div class="pp-demo__controls">
+					<div class="pp-control">
+						<span class="pp-control__label">Theme</span>
+						<div class="pp-control__buttons">
+							<button
+								class="pp-btn"
+								class:pp-btn--active={playTheme === 'dark'}
+								onclick={() => (playTheme = 'dark')}
+								type="button"
+							>
+								Dark
+							</button>
+							<button
+								class="pp-btn"
+								class:pp-btn--active={playTheme === 'light'}
+								onclick={() => (playTheme = 'light')}
+								type="button"
+							>
+								Light
+							</button>
+						</div>
+					</div>
+
+					<div class="pp-control">
+						<label class="pp-control__label" for="pp-dotcount">
+							Dot count <span class="pp-control__value">{playDotCount}</span>
+						</label>
+						<input
+							id="pp-dotcount"
+							type="range"
+							min="0"
+							max="48"
+							step="1"
+							bind:value={playDotCount}
+						/>
+					</div>
+
+					<div class="pp-control">
+						<label class="pp-control__label" for="pp-duration">
+							Drift duration <span class="pp-control__value">{playDuration}s</span>
+						</label>
+						<input
+							id="pp-duration"
+							type="range"
+							min="12"
+							max="80"
+							step="2"
+							bind:value={playDuration}
+						/>
+					</div>
+				</div>
+
+				<div
+					class="pp-demo__frame"
+					class:pp-demo__frame--dark={playTheme === 'dark'}
+					class:pp-demo__frame--light={playTheme === 'light'}
+				>
+					<PortfolioPhotographer
+						theme={playTheme}
+						dotCount={playDotCount}
+						duration={playDuration}
+						class="pp-demo__hero"
+					/>
+				</div>
+
+				<!-- Live state strip — derived speed from the duration prop. -->
+				<div class="pp-demo__state" role="status" aria-live="polite">
+					<span>Theme: <code>{playTheme}</code></span>
+					<span>Dots: <code>{playDotCount}</code></span>
+					<span>Drift speed: <code>{driftSpeedPct}%</code> of default</span>
+				</div>
+			</section>
 
 			<div class="pp-demo__notes">
 				<div class="pp-demo__note">
@@ -87,7 +194,7 @@
 				<div class="pp-demo__note">
 					<h3>Halton scatter</h3>
 					<p>
-						The 24 dots use the <code>halton(i, 2)</code> / <code>halton(i, 3)</code>
+						The dots use the <code>halton(i, 2)</code> / <code>halton(i, 3)</code>
 						low-discrepancy sequence biased toward the centre — scattered, not random; no clumping,
 						no grid feel.
 					</p>
@@ -166,7 +273,35 @@
 <style>
 	.pp-demo {
 		display: grid;
-		gap: 24px;
+		gap: 28px;
+	}
+
+	/* Side-by-side hero pair on tablet+, stacks on mobile.
+	   minmax(360px, 1fr) lets each variant own a full row when there
+	   isn't room for two — no media-query needed. */
+	.pp-demo__gallery {
+		display: grid;
+		gap: 20px;
+		grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+	}
+	.pp-demo__variant {
+		display: grid;
+		gap: 8px;
+	}
+	.pp-demo__variant h4 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 14px;
+		font-weight: 500;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--fg-1);
+	}
+	.pp-demo__hint {
+		margin: 0 0 6px;
+		font-size: 13px;
+		line-height: 1.55;
+		color: var(--fg-2);
 	}
 
 	.pp-demo__frame {
@@ -185,12 +320,115 @@
 		background: #fafaf9;
 	}
 
-	/* The component is min-height: 100vh by default — clamp it so two
-	   themed frames fit comfortably on one page. */
+	/* The component now defaults to clamp(420px, 60vh, 720px) — no
+	   need for a !important override. Slightly tighter ceiling so
+	   the playground instance plays nicely with the controls above. */
 	:global(.pp-demo__hero) {
-		min-height: clamp(420px, 60vh, 640px) !important;
+		min-height: clamp(380px, 56vh, 600px);
 	}
 
+	/* ---- Playground ----------------------------------------------- */
+	.pp-demo__playground {
+		display: grid;
+		gap: 16px;
+		padding: 18px 20px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+	}
+	.pp-demo__playground-head h4 {
+		margin: 0;
+		font-family: var(--font-display);
+		font-size: 16px;
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		color: var(--fg-1);
+	}
+	.pp-demo__playground-head p {
+		margin: 4px 0 0;
+		font-size: 13px;
+		line-height: 1.55;
+		color: var(--fg-2);
+	}
+
+	.pp-demo__controls {
+		display: grid;
+		gap: 14px;
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	}
+	.pp-control {
+		display: grid;
+		gap: 8px;
+	}
+	.pp-control__label {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+		font-weight: 500;
+	}
+	.pp-control__value {
+		font-size: 12px;
+		color: var(--fg-1);
+		letter-spacing: 0.04em;
+		text-transform: none;
+	}
+	.pp-control__buttons {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.pp-btn {
+		appearance: none;
+		border: 1px solid var(--border);
+		background: var(--surface);
+		padding: 7px 14px;
+		border-radius: var(--r-1);
+		font-size: 13px;
+		cursor: pointer;
+		color: var(--fg-1);
+		transition: all var(--dur-fast, 120ms) ease;
+	}
+	.pp-btn:hover {
+		border-color: var(--accent);
+		color: var(--accent);
+	}
+	.pp-btn--active {
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--fg-on-dark, #ffffff);
+	}
+	.pp-control input[type='range'] {
+		width: 100%;
+		accent-color: var(--accent);
+	}
+
+	.pp-demo__state {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 14px 22px;
+		padding: 10px 14px;
+		font-size: 13px;
+		color: var(--fg-2);
+		background: var(--surface-2);
+		border: 1px solid var(--border);
+		border-radius: var(--r-1);
+	}
+	.pp-demo__state code {
+		font-family: var(--font-mono);
+		font-size: 12px;
+		padding: 1px 6px;
+		border-radius: 4px;
+		background: var(--surface);
+		border: 1px solid var(--border);
+		color: var(--fg-1);
+	}
+
+	/* ---- Notes (unchanged behaviour, kept for context) ------------ */
 	.pp-demo__notes {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));

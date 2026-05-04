@@ -3,7 +3,7 @@
 	GlobePresence - High-Performance 3D Globe Visualization
 	============================================================
 
-	[CR] WHAT IT DOES
+	WHAT IT DOES
 	Renders a stunning 3D globe using HTML5 Canvas. Supports auto-rotation,
 	interactive drag, and plottable markers. Uses Svelte 5 runes for
 	reactive state management and a zero-dependency math implementation.
@@ -36,14 +36,18 @@
 	let respectReducedMotion = $state(false);
 	let isVisible = $state(true);
 
-	// [CR] Animation frame reference
-	let frameId: number;
+	// Animation frame reference
+	let frameId: number | null = null;
+	// Tracks the DPR last applied to the canvas transform so we only re-scale
+	// when the device pixel ratio actually changes (setting canvas.width resets
+	// the transform, so we re-apply ctx.scale only inside the resize block).
+	let lastScaledDpr = 0;
 
-	// [CR] Globe constants
+	// Globe constants
 	const DOT_COUNT = 800; // Number of background dots forming the sphere
 	const GLOBE_RADIUS_RATIO = 0.4; // Radius relative to canvas size
 
-	// [CR] Derived dots for the globe surface (memoized conceptually)
+	// Derived dots for the globe surface (memoized conceptually)
 	const globeDots = Array.from({ length: DOT_COUNT }, () => {
 		const phi = Math.acos(-1 + (2 * Math.random()));
 		const theta = Math.random() * 2 * Math.PI;
@@ -51,15 +55,15 @@
 	});
 
 	function project(phi: number, theta: number, radius: number, currentRotation: number) {
-		// [CR] Apply rotation around Y axis
+		// Apply rotation around Y axis
 		const rotatedTheta = theta + currentRotation;
-		
-		// [CR] Spherical to Cartesian
+
+		// Spherical to Cartesian
 		const x = radius * Math.sin(phi) * Math.cos(rotatedTheta);
 		const y = radius * Math.cos(phi);
 		const z = radius * Math.sin(phi) * Math.sin(rotatedTheta);
 
-		// [CR] Simple perspective projection (orthogonal for this flat look)
+		// Simple perspective projection (orthogonal for this flat look)
 		return { x, y, z };
 	}
 
@@ -68,12 +72,22 @@
 		const ctx = canvas.getContext('2d');
 		if (!ctx) return;
 
-		// [CR] Handle high-DPI displays for maximum crispness
+		// Handle high-DPI displays for maximum crispness.
+		// Setting canvas.width/height resets the 2D context transform, so we
+		// only re-apply ctx.scale inside this resize block. lastScaledDpr
+		// guards against compounding scale calls if the DPR ever changes
+		// without a width/height change (rare, but cheap insurance).
 		const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
-		if (canvas.width !== containerWidth * dpr || canvas.height !== containerHeight * dpr) {
+		if (
+			canvas.width !== containerWidth * dpr ||
+			canvas.height !== containerHeight * dpr ||
+			lastScaledDpr !== dpr
+		) {
 			canvas.width = containerWidth * dpr;
 			canvas.height = containerHeight * dpr;
+			ctx.setTransform(1, 0, 0, 1, 0, 0);
 			ctx.scale(dpr, dpr);
+			lastScaledDpr = dpr;
 		}
 
 		const centerX = containerWidth / 2;
@@ -82,7 +96,7 @@
 
 		ctx.clearRect(0, 0, containerWidth, containerHeight);
 
-		// [CR] Draw background dots
+		// Draw background dots
 		globeDots.forEach(dot => {
 			const { x, y, z } = project(dot.phi, dot.theta, radius, rotation);
 			// Draw if on front side, or very faded if on back side for "translucent" effect
@@ -97,19 +111,25 @@
 			ctx.fill();
 		});
 
-		// [CR] Draw outer atmosphere glow
+		// Draw outer atmosphere glow. Both themes get a halo so light mode
+		// retains the same sense of "energy" — light mode uses a softer
+		// blue tint at lower opacity so it doesn't overwhelm the dots.
+		const glow = ctx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.1);
 		if (theme === 'dark') {
-			const glow = ctx.createRadialGradient(centerX, centerY, radius * 0.9, centerX, centerY, radius * 1.1);
 			glow.addColorStop(0, 'rgba(0, 242, 255, 0.0)');
 			glow.addColorStop(0.5, 'rgba(0, 242, 255, 0.1)');
 			glow.addColorStop(1, 'rgba(0, 242, 255, 0.0)');
-			ctx.fillStyle = glow;
-			ctx.beginPath();
-			ctx.arc(centerX, centerY, radius * 1.1, 0, Math.PI * 2);
-			ctx.fill();
+		} else {
+			glow.addColorStop(0, 'rgba(59, 130, 246, 0.0)');
+			glow.addColorStop(0.5, 'rgba(59, 130, 246, 0.06)');
+			glow.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
 		}
+		ctx.fillStyle = glow;
+		ctx.beginPath();
+		ctx.arc(centerX, centerY, radius * 1.1, 0, Math.PI * 2);
+		ctx.fill();
 
-		// [CR] Draw markers
+		// Draw markers
 		const time = Date.now() * 0.002;
 		let currentHoveredId: string | null = null;
 
@@ -230,7 +250,10 @@
 
 		draw();
 		return () => {
-			cancelAnimationFrame(frameId);
+			if (frameId !== null) {
+				cancelAnimationFrame(frameId);
+				frameId = null;
+			}
 			mq.removeEventListener('change', motionHandler);
 			observer.disconnect();
 		};
@@ -254,7 +277,7 @@
 		class="w-full h-full"
 	></canvas>
 
-	<!-- [CR] Accessible Data List Fallback -->
+	<!-- Accessible Data List Fallback -->
 	<div class="sr-only">
 		<h3>Global Presence Locations</h3>
 		<ul>

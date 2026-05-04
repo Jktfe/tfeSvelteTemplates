@@ -127,6 +127,8 @@
 
 	function selectCard(id: string) {
 		if (!interactive) return;
+		// No-op if already active — avoids re-triggering transitions on repeat clicks/hovers/focus
+		if (activeId === id) return;
 		activeId = id;
 	}
 
@@ -351,6 +353,7 @@
 						--r: ${layout.rotation}deg;
 					`}
 					aria-pressed={activeId === swatch.id}
+					onclick={() => selectCard(swatch.id)}
 					onmouseenter={() => selectCard(swatch.id)}
 					onfocus={() => selectCard(swatch.id)}
 					data-topology-reveal
