@@ -165,8 +165,9 @@ describe('SplitFlap component', () => {
 		expect(container.querySelectorAll('.sf-cell')).toHaveLength(5);
 	});
 
-	it('uppercases the value (the charset contract is upper-only)', () => {
+	it('uppercases the value (the charset contract is upper-only)', async () => {
 		const { container } = render(SplitFlap, { props: { value: 'abc' } });
+		await new Promise(r => setTimeout(r, 1500));
 		const cells = container.querySelectorAll('.sf-cell');
 		const chars = Array.from(cells).map((c) => c.getAttribute('data-char'));
 		expect(chars).toEqual(['A', 'B', 'C']);

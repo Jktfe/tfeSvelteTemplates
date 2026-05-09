@@ -64,6 +64,10 @@ test-results/
 output/
 # Repo-root screenshot scratch (use static/ComponentScreenshots/ for committed assets)
 /morphingdialog-*.png
+/screenshot.png
+
+# Claude Code harness state (per-session lock files, not source)
+.claude/
 
 # Generated documentation
 HLV/

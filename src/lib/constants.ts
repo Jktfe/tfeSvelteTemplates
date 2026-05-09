@@ -31,7 +31,8 @@ import type {
 	FloatingDockItem,
 	ToastData,
 	InteractiveCardsProject,
-	InteractiveCardsTestimonial
+	InteractiveCardsTestimonial,
+	GanttTask
 } from './types';
 
 /**
@@ -2896,5 +2897,87 @@ export const FALLBACK_INTERACTIVE_TESTIMONIALS: InteractiveCardsTestimonial[] = 
 		title: 'Architect - Karachi',
 		photo: 'https://images.unsplash.com/photo-1610431205421-739e027cc0ce?w=200&h=200&fit=crop',
 		quote: 'A tiny canvas with an outsized presence. I kept reaching for it.'
+	}
+];
+
+/**
+ * Fallback Gantt schedule. Dates are computed relative to "today" so the today
+ * marker always lands inside the rendered chart regardless of when the demo loads.
+ */
+function ganttOffsetDate(days: number): string {
+	const date = new Date();
+	date.setHours(0, 0, 0, 0);
+	date.setDate(date.getDate() + days);
+	return date.toISOString().slice(0, 10);
+}
+
+export const FALLBACK_GANTT: GanttTask[] = [
+	{
+		id: 'discovery',
+		name: 'Discovery & research',
+		start: ganttOffsetDate(-7),
+		end: ganttOffsetDate(-1),
+		progress: 100,
+		group: 'Plan',
+		assignee: 'Roxy'
+	},
+	{
+		id: 'kickoff',
+		name: 'Kick-off milestone',
+		start: ganttOffsetDate(0),
+		end: ganttOffsetDate(0),
+		isMilestone: true,
+		dependencies: ['discovery'],
+		color: '#f59e0b',
+		group: 'Plan'
+	},
+	{
+		id: 'design',
+		name: 'Design system',
+		start: ganttOffsetDate(1),
+		end: ganttOffsetDate(8),
+		progress: 60,
+		dependencies: ['kickoff'],
+		group: 'Build',
+		assignee: 'James'
+	},
+	{
+		id: 'build-frontend',
+		name: 'Build front-end',
+		start: ganttOffsetDate(5),
+		end: ganttOffsetDate(16),
+		progress: 25,
+		dependencies: ['design'],
+		group: 'Build',
+		assignee: 'Fletcher'
+	},
+	{
+		id: 'build-api',
+		name: 'Build API',
+		start: ganttOffsetDate(2),
+		end: ganttOffsetDate(12),
+		progress: 40,
+		dependencies: ['kickoff'],
+		group: 'Build',
+		assignee: 'Viola'
+	},
+	{
+		id: 'integrate',
+		name: 'Integrate & QA',
+		start: ganttOffsetDate(13),
+		end: ganttOffsetDate(20),
+		progress: 0,
+		dependencies: ['build-frontend', 'build-api'],
+		group: 'Ship'
+	},
+	{
+		id: 'launch',
+		name: 'Launch',
+		start: ganttOffsetDate(22),
+		end: ganttOffsetDate(22),
+		isMilestone: true,
+		dependencies: ['integrate'],
+		color: '#10b981',
+		group: 'Ship'
 	}
 ];

@@ -257,7 +257,27 @@ export const componentCategories: ComponentCatalogCategory[] = [
 					'src/lib/components/forms/RadioGroup.svelte',
 					'src/lib/components/forms/RangeField.svelte'
 				],
-				usage: '<TextField label="Email" bind:value={email} />',
+				usage: `<script lang="ts">
+  import TextField from '$lib/components/forms/TextField.svelte';
+  import SelectField from '$lib/components/forms/SelectField.svelte';
+  import CheckboxField from '$lib/components/forms/CheckboxField.svelte';
+
+  let email = $state('');
+  let role = $state('engineer');
+  let optIn = $state(false);
+
+  const roles = [
+    { value: 'engineer',  label: 'Engineer' },
+    { value: 'designer',  label: 'Designer' },
+    { value: 'pm',        label: 'Product manager' }
+  ];
+</script>
+
+<form>
+  <TextField label="Email" bind:value={email} type="email" required />
+  <SelectField label="Role" bind:value={role} options={roles} />
+  <CheckboxField label="Email me product updates" bind:checked={optIn} />
+</form>`,
 				agentHint: 'Copy the field components you need, or copy the whole forms folder for the full suite.'
 			}),
 			component('PinInput', '/pininput', '🔢', 'Segmented OTP and verification-code entry.', {
@@ -1210,6 +1230,24 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </script>
 
 <CalendarHeatmap {data} />`
+			}),
+			component('Gantt', '/gantt', '📊', 'Native SVG Gantt with deps, milestones, today, weekends, % complete.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Gantt from '$lib/components/Gantt.svelte';
+  import type { GanttTask } from '$lib/types';
+
+  const tasks: GanttTask[] = [
+    { id: 'spec',   name: 'Spec',          start: '2026-05-01', end: '2026-05-05', progress: 100 },
+    { id: 'kick',   name: 'Kick-off',      start: '2026-05-06', end: '2026-05-06', isMilestone: true, dependencies: ['spec'] },
+    { id: 'build',  name: 'Build',         start: '2026-05-07', end: '2026-05-15', progress: 35, dependencies: ['kick'] },
+    { id: 'qa',     name: 'QA',            start: '2026-05-14', end: '2026-05-18', dependencies: ['build'] },
+    { id: 'launch', name: 'Launch',        start: '2026-05-20', end: '2026-05-20', isMilestone: true, dependencies: ['qa'] }
+  ];
+</script>
+
+<Gantt {tasks} showDependencies showProgress />`,
+				agentHint: 'Pure Svelte 5 + SVG, zero deps. Drop in tasks with start/end dates; pass `dependencies: []` for arrows; set `isMilestone: true` for diamonds.'
 			}),
 			component('BubblePacking', '/bubblepacking', '🫧', 'Force-directed circle packing view.', {
 				usage: `<script lang="ts">

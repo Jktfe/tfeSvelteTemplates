@@ -29,7 +29,11 @@
 	];
 
 	const broken = [
-		{ name: 'Broken Image User', src: 'https://invalid-host-404/never.jpg' },
+		// `src` omitted on purpose so the row demonstrates the no-image fallback
+		// path (initials) without firing a network request — keeps the mobile
+		// gate console-clean. To demonstrate the onerror→initials fallback,
+		// see Avatar.test.ts which exercises a programmatically-failed load.
+		{ name: 'Broken Image User' },
 		{ name: 'Working Image User', src: 'https://i.pravatar.cc/96?img=12' },
 		{ name: 'Initials Only User' }
 	];

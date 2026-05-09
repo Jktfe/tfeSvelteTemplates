@@ -81,8 +81,11 @@
 		animation = 'slide', // [NTL] How items appear: slide, fade, scale, or none
 		animationDuration = 600, // [NTL] How long each animation takes (milliseconds)
 		animationDelay = 100, // [NTL] Gap between each item's animation
-		lineColor = '#e2e8f0', // [NTL] The colour of the connecting line
-		markerColor = '#146ef5', // [NTL] Default colour for the timeline dots
+		// Defaults left undefined so the CSS theme tokens (light + dark) win
+		// unless the consumer passes an explicit colour. See the prefers-color-scheme
+		// dark plus :global(.dark) blocks at the bottom of the style block.
+		lineColor = undefined, // [NTL] Optional override for the connecting line colour
+		markerColor = undefined, // [NTL] Optional override for the marker colour
 		showProgress = false, // [NTL] Show a filled line for completed events?
 		dateFormat, // [NTL] How to format dates - function or 'relative'
 		onEventClick // [NTL] Your function to handle event clicks
@@ -95,6 +98,13 @@
 	let timelineRef: HTMLDivElement | null = null;
 	let hasAnimated = $state(false);
 	let prefersReducedMotion = $state(false);
+
+	function buildTimelineStyle(): string {
+		const parts: string[] = [];
+		if (lineColor) parts.push('--line-color: ' + lineColor + ';');
+		if (markerColor) parts.push('--marker-color: ' + markerColor + ';');
+		return parts.join(' ');
+	}
 
 	// ==========================================================================
 	// HELPER FUNCTIONS
@@ -310,11 +320,7 @@
 	class="timeline timeline--{orientation}"
 	role="list"
 	aria-label="Timeline of events"
-	style="
-		--line-color: {lineColor};
-		--marker-color: {markerColor};
-		--progress-percent: {getProgressPercentage()}%;
-	"
+	style={buildTimelineStyle()}
 >
 	<!-- [CR] The connecting line (background) -->
 	<div class="timeline-line" aria-hidden="true"></div>
@@ -526,7 +532,7 @@
 		justify-content: center;
 		flex-shrink: 0;
 		box-shadow:
-			0 0 0 4px #ffffff,
+			0 0 0 4px var(--timeline-marker-ring, #ffffff),
 			0 2px 8px rgba(0, 0, 0, 0.15);
 		transition: transform 0.2s ease, box-shadow 0.2s ease;
 	}
@@ -556,7 +562,7 @@
 	.timeline-item--clickable:focus .timeline-marker {
 		transform: scale(1.1);
 		box-shadow:
-			0 0 0 4px #ffffff,
+			0 0 0 4px var(--timeline-marker-ring, #ffffff),
 			0 4px 12px rgba(0, 0, 0, 0.2);
 	}
 
@@ -583,7 +589,7 @@
 	.timeline-title {
 		font-size: 1.125rem;
 		font-weight: 700;
-		color: #1e293b;
+		color: var(--timeline-title, #1e293b);
 		margin: 0 0 0.5rem 0;
 		line-height: 1.3;
 	}
@@ -601,7 +607,7 @@
 
 	.timeline-description {
 		font-size: 0.9375rem;
-		color: #64748b;
+		color: var(--timeline-description, #64748b);
 		line-height: 1.6;
 		margin: 0;
 	}
@@ -697,5 +703,26 @@
 		.timeline-content {
 			transition: none !important;
 		}
+	}
+
+	/* ==========================================================================
+	 * THEME TOKENS
+	 * Dark mode via prefers-color-scheme OR opt-in :global(.dark) wrapper.
+	 * ========================================================================== */
+
+	@media (prefers-color-scheme: dark) {
+		.timeline {
+			--timeline-title: #f1f5f9;
+			--timeline-description: #cbd5e1;
+			--timeline-marker-ring: #0f172a;
+			--line-color: rgba(148, 163, 184, 0.25);
+		}
+	}
+
+	:global(.dark) .timeline {
+		--timeline-title: #f1f5f9;
+		--timeline-description: #cbd5e1;
+		--timeline-marker-ring: #0f172a;
+		--line-color: rgba(148, 163, 184, 0.25);
 	}
 </style>

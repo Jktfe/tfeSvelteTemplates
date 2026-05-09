@@ -64,7 +64,7 @@
 				</header>
 				<div class="mq-stage">
 					<Marquee pauseOnHover={true} duration={60}>
-						{#each testimonials as testimonial (testimonial.id)}
+						{#each testimonials as testimonial (testimonial.id ?? `${testimonial.name}-${testimonial.company}`)}
 							<div class="mq-testimonial">
 								<div class="mq-avatar">{testimonial.avatar}</div>
 								<p class="mq-quote">"{testimonial.quote}"</p>
@@ -130,7 +130,7 @@
 				</header>
 				<div class="mq-stage">
 					<MarqueeDraggable duration={50} dragMomentum={true}>
-						{#each testimonialsInteractive as testimonial (testimonial.id)}
+						{#each testimonialsInteractive as testimonial (testimonial.id ?? `${testimonial.name}-${testimonial.company}`)}
 							<div class="mq-testimonial">
 								<div class="mq-avatar">{testimonial.avatar}</div>
 								<p class="mq-quote">"{testimonial.quote}"</p>

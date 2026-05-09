@@ -2720,7 +2720,7 @@ export interface FloatingDockItem {
  * @property class - Additional CSS classes for the dock
  */
 export interface FloatingDockProps {
-	items: FloatingDockItem[];
+	items?: FloatingDockItem[];
 	magnification?: number;
 	distance?: number;
 	class?: string;
@@ -2878,5 +2878,340 @@ export interface AvatarStackProps {
 	overlap?: number;
 	borderColor?: string;
 	showOverflow?: boolean;
+	class?: string;
+}
+
+/**
+ * A single task or milestone on a Gantt chart.
+ *
+ * @property id - Stable identifier referenced by dependencies and keyed each loops.
+ * @property name - Label shown in the left column.
+ * @property start - Start date (ISO 8601 string or Date).
+ * @property end - End date (ISO 8601 string or Date). For milestones, end may equal start.
+ * @property progress - 0–100 completion percentage. Drives the inner shaded bar.
+ * @property dependencies - Ids of tasks this one depends on; arrows render finish→start.
+ * @property isMilestone - When true, renders a diamond at start instead of a bar.
+ * @property color - CSS colour for the bar/marker. Falls back to a per-group palette.
+ * @property group - Optional swimlane name; tasks in the same group share a row colour band.
+ * @property assignee - Optional person/team label shown alongside the task name.
+ */
+export interface GanttTask {
+	id: string;
+	name: string;
+	start: string | Date;
+	end: string | Date;
+	progress?: number;
+	dependencies?: string[];
+	isMilestone?: boolean;
+	color?: string;
+	group?: string;
+	assignee?: string;
+}
+
+/**
+ * Props for Gantt — native SVG chart of dated tasks with dependencies.
+ *
+ * @property tasks - Required list of GanttTask rows, in display order.
+ * @property startDate - Earliest date the chart covers. Defaults to min(task.start).
+ * @property endDate - Latest date the chart covers. Defaults to max(task.end).
+ * @property dayWidth - Pixel width of one day on the timeline. Default 32.
+ * @property rowHeight - Pixel height of one task row. Default 36.
+ * @property labelWidth - Pixel width of the left labels column. Default 220.
+ * @property showWeekends - Shade Saturdays/Sundays. Default true.
+ * @property showToday - Draw a vertical line at today's date when in range. Default true.
+ * @property showDependencies - Render finish→start arrows between tasks. Default true.
+ * @property showProgress - Overlay a darker bar showing percent complete. Default true.
+ * @property dateFormat - Either an Intl format function or 'short' / 'long' presets. Default 'short'.
+ * @property onTaskClick - Click handler invoked with the GanttTask.
+ * @property ariaLabel - aria-label on the chart wrapper. Default 'Gantt chart'.
+ * @property class - Extra CSS classes for the outer container.
+ */
+export interface GanttProps {
+	tasks: GanttTask[];
+	startDate?: string | Date;
+	endDate?: string | Date;
+	dayWidth?: number;
+	rowHeight?: number;
+	labelWidth?: number;
+	showWeekends?: boolean;
+	showToday?: boolean;
+	showDependencies?: boolean;
+	showProgress?: boolean;
+	dateFormat?: 'short' | 'long' | ((date: Date) => string);
+	onTaskClick?: (task: GanttTask) => void;
+	ariaLabel?: string;
+	class?: string;
+}
+
+/**
+ * Database row for the gantt_tasks table (see database/schema_gantt.sql).
+ * Server utilities transform snake_case → camelCase at the boundary.
+ */
+export interface GanttTaskRow {
+	id: number;
+	task_key: string;
+	name: string;
+	start_date: string;
+	end_date: string;
+	progress: number | null;
+	is_milestone: boolean;
+	color: string | null;
+	group_name: string | null;
+	assignee: string | null;
+	display_order: number;
+	is_active: boolean;
+	created_at: Date;
+	updated_at: Date;
+}
+
+/**
+ * A single still in a CinemaReel.
+ *
+ * @property id - Stable id used as the each-key.
+ * @property image - Optional image URL. When omitted, the frame falls back to a
+ *   tinted gradient driven by `color`.
+ * @property alt - Alt text for the image; defaults to `title` when present.
+ * @property title - Big-letter title rendered under the still in the active frame.
+ * @property caption - Optional body copy under the title.
+ * @property scene - Optional scene number / label (e.g. "01") rendered above the title.
+ * @property color - Optional accent colour. Used as the gradient tint when no image.
+ */
+export interface CinemaReelStill {
+	id: string;
+	image?: string;
+	alt?: string;
+	title?: string;
+	caption?: string;
+	scene?: string;
+	color?: string;
+}
+
+/**
+ * Props for CinemaReel — vertical scroll reel of cinematic stills.
+ *
+ * @property stills - Array of stills in display order.
+ * @property letterboxRatio - Top/bottom black bar height as a fraction of the
+ *   frame's height (0–0.45). Active frames render at 55% of this. Default 0.18.
+ * @property activeThreshold - IntersectionObserver ratio at which a frame is
+ *   considered active. Default 0.55.
+ * @property ariaLabel - aria-label on the wrapper. Default 'Cinema reel'.
+ * @property class - Extra classes on the outer container.
+ */
+export interface CinemaReelProps {
+	stills: CinemaReelStill[];
+	letterboxRatio?: number;
+	activeThreshold?: number;
+	ariaLabel?: string;
+	class?: string;
+}
+
+/**
+ * Props for ShapeTrailHero — canvas-rendered geometric shapes that orbit the
+ * pointer with damped trails, settle into a lattice on click.
+ *
+ * @property density - Number of particles to render. Clamped to [8, 128]. Default 32.
+ * @property palette - Hue band: 'mono' (blues), 'aurora' (cyan→magenta), 'amber'
+ *   (warm reds/oranges). Default 'aurora'.
+ * @property ariaLabel - Wrapper aria-label. Default 'Shape Trail hero'.
+ * @property class - Extra classes on the outer container.
+ */
+export interface ShapeTrailHeroProps {
+	density?: number;
+	palette?: 'mono' | 'aurora' | 'amber';
+	ariaLabel?: string;
+	class?: string;
+}
+
+/**
+ * Props for LiquidTypeHero — variable-font hero with per-character spring physics.
+ *
+ * @property words - Words to render. Each word stays one visual unit; spaces between
+ *   words are preserved. Default `['Words', 'have', 'weight']`.
+ * @property baseWeight - Idle font-weight per glyph. Default 300.
+ * @property peakWeight - Peak font-weight when a glyph is fully influenced. Default 850.
+ * @property baseScale - Idle scale. Default 1.
+ * @property peakScale - Peak scale at full influence. Default 1.18.
+ * @property influenceRadius - Pointer influence falls off linearly to zero at this
+ *   radius (px). Default 160.
+ * @property ariaLabel - Wrapper aria-label. Default 'Liquid Type hero'.
+ * @property class - Extra classes on the outer container.
+ */
+export interface LiquidTypeHeroProps {
+	words?: string[];
+	baseWeight?: number;
+	peakWeight?: number;
+	baseScale?: number;
+	peakScale?: number;
+	influenceRadius?: number;
+	ariaLabel?: string;
+	class?: string;
+}
+
+/**
+ * A single card in a DragGallery.
+ *
+ * @property id - Stable id used as the each-key.
+ * @property title - Required card title (also used as aria-label and alt fallback).
+ * @property eyebrow - Small label rendered above the title (e.g. category).
+ * @property subtitle - Smaller secondary line under the title (e.g. price).
+ * @property image - Optional image URL. Falls back to a tinted placeholder.
+ * @property alt - Optional explicit alt text for the image (defaults to `title`).
+ */
+export interface DragGalleryItem {
+	id: string;
+	title: string;
+	eyebrow?: string;
+	subtitle?: string;
+	image?: string;
+	alt?: string;
+}
+
+/**
+ * Props for DragGallery — fan-stacked product slider with momentum drag.
+ *
+ * @property items - Required cards in display order.
+ * @property initialIndex - Card to start active. Default 0.
+ * @property cardWidth - Pixel width of each card. Default 220.
+ * @property cardGap - Pixel gap between cards. Default 32.
+ * @property ariaLabel - Wrapper aria-label. Default 'Drag gallery'.
+ * @property onSelect - Fires when the active card changes (drag-snap or keyboard).
+ * @property class - Extra classes on the outer container.
+ */
+export interface DragGalleryProps {
+	items: DragGalleryItem[];
+	initialIndex?: number;
+	cardWidth?: number;
+	cardGap?: number;
+	ariaLabel?: string;
+	onSelect?: (item: DragGalleryItem, index: number) => void;
+	class?: string;
+}
+
+/**
+ * A single card in a MomentumSlider.
+ *
+ * @property id - Stable id used as the each-key.
+ * @property title - Required card title (and aria-label / alt fallback).
+ * @property eyebrow - Small label rendered above the title.
+ * @property subtitle - Smaller secondary line under the title.
+ * @property description - Long-form text shown only in the expanded modal.
+ * @property image - Optional image URL. Falls back to a tinted placeholder.
+ * @property alt - Optional explicit alt text (defaults to `title`).
+ * @property color - Optional accent colour for the placeholder gradient.
+ */
+export interface MomentumSliderItem {
+	id: string;
+	title: string;
+	eyebrow?: string;
+	subtitle?: string;
+	description?: string;
+	image?: string;
+	alt?: string;
+	color?: string;
+}
+
+/**
+ * Props for MomentumSlider — editorial 3D carousel with momentum drag and
+ * a modal handshake on click.
+ *
+ * @property items - Required cards in display order.
+ * @property initialIndex - Card to start active. Default 0.
+ * @property cardWidth - Pixel width of each card. Default 280.
+ * @property cardGap - Pixel gap between cards. Default 32.
+ * @property ariaLabel - Wrapper aria-label. Default 'Momentum slider'.
+ * @property onSelect - Fires when the active card changes.
+ * @property onExpand - Fires when the active card is clicked into the modal.
+ * @property class - Extra classes on the outer container.
+ */
+export interface MomentumSliderProps {
+	items: MomentumSliderItem[];
+	initialIndex?: number;
+	cardWidth?: number;
+	cardGap?: number;
+	ariaLabel?: string;
+	onSelect?: (item: MomentumSliderItem, index: number) => void;
+	onExpand?: (item: MomentumSliderItem, index: number) => void;
+	class?: string;
+}
+
+/**
+ * A single painting in a PicassoPortfolio.
+ *
+ * @property id - Stable id used as the each-key.
+ * @property title - Real <h3> rendered under the painting.
+ * @property caption - Real <p> rendered below the title.
+ * @property scene - Optional scene number / label (e.g. "01") above the title.
+ * @property palette - Required colour palette woven into the grid swatches.
+ *   Cells cycle through the palette in row-major order.
+ */
+export interface PicassoPainting {
+	id: string;
+	title: string;
+	caption?: string;
+	scene?: string;
+	palette: string[];
+}
+
+/**
+ * Props for PicassoPortfolio — scroll-triggered dissect/reassemble portfolio.
+ *
+ * @property paintings - Required list of paintings in display order.
+ * @property gridSize - Side length of each painting's grid (gridSize × gridSize cells). Default 4.
+ * @property duration - Reassemble timeline duration (seconds). Default 1.4.
+ * @property ariaLabel - Wrapper aria-label. Default 'Picasso portfolio'.
+ * @property class - Extra classes on the outer container.
+ */
+export interface PicassoPortfolioProps {
+	paintings: PicassoPainting[];
+	gridSize?: number;
+	duration?: number;
+	ariaLabel?: string;
+	class?: string;
+}
+
+/**
+ * Props for GsapTimeline — GSAP-driven sibling of the native Timeline.
+ * Same TimelineEvent[] data shape; the entrance is staged by gsap.timeline.
+ *
+ * @property events - Required list of TimelineEvent rows in display order.
+ * @property alignment - 'left' | 'right' | 'alternate'. Default 'alternate'.
+ * @property showProgress - Render the progress fill on the connector line. Default false.
+ * @property dateFormat - Custom formatter, otherwise 'D MMM YYYY' via toLocaleDateString.
+ * @property onEventClick - Optional click + Enter/Space handler.
+ * @property ariaLabel - Wrapper aria-label. Default 'GSAP timeline'.
+ * @property class - Extra classes on the outer container.
+ */
+export interface GsapTimelineProps {
+	events: TimelineEvent[];
+	alignment?: TimelineAlignment;
+	showProgress?: boolean;
+	dateFormat?: ((date: Date) => string) | undefined;
+	onEventClick?: (event: TimelineEvent) => void;
+	ariaLabel?: string;
+	class?: string;
+}
+
+/**
+ * Props for GsapGantt — GSAP-driven sibling of the native Gantt.
+ * Same `GanttTask[]` data shape; entrance is staged by `gsap.timeline`:
+ * bars draw left → right via `scaleX 0 → 1`, milestones pop with
+ * `back.out(1.7)`, dependency arrows fade in once their endpoints land.
+ *
+ * Mirrors the GanttProps shape (see above) — keep the two in sync.
+ */
+export interface GsapGanttProps {
+	tasks: GanttTask[];
+	startDate?: string | Date;
+	endDate?: string | Date;
+	dayWidth?: number;
+	rowHeight?: number;
+	labelWidth?: number;
+	showWeekends?: boolean;
+	showToday?: boolean;
+	showDependencies?: boolean;
+	showProgress?: boolean;
+	dateFormat?: 'short' | 'long' | ((date: Date) => string);
+	onTaskClick?: (task: GanttTask) => void;
+	ariaLabel?: string;
 	class?: string;
 }

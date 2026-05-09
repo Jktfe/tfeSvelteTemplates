@@ -9,7 +9,7 @@
 	let clockValue = $state('12:34:56');
 	let counterValue = $state('00000');
 	let destinationIdx = $state(0);
-	const destinations = ['LONDON', 'PARIS  ', 'TOKYO  ', 'NEW YORK', 'SYDNEY '];
+	const destinations = ['LONDON  ', 'PARIS   ', 'TOKYO   ', 'NEW YORK', 'SYDNEY  '];
 	let destination = $derived(destinations[destinationIdx % destinations.length]);
 
 	function pad(n: number, w = 2): string {

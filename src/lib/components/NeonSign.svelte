@@ -191,22 +191,29 @@
 <style>
 	.neon-root {
 		display: inline-flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		max-width: 100%;
 		font-family: 'Brush Script MT', 'Lucida Handwriting', 'Marker Felt', cursive;
 		font-weight: 700;
 		letter-spacing: 0.04em;
-		line-height: 1;
+		line-height: 1.05;
 		color: #fff;
 		user-select: none;
 	}
 
+	/* Sizes use clamp() so long signs (e.g. "NO VACANCY") shrink on narrow
+	   viewports rather than pushing the page wider than the screen. The upper
+	   bound preserves the desktop hero look; the vw-based middle term scales
+	   down through phone widths; the lower bound keeps small signs legible. */
 	.neon-size-sm {
-		font-size: 1.75rem;
+		font-size: clamp(1.25rem, 5vw, 1.75rem);
 	}
 	.neon-size-md {
-		font-size: 3rem;
+		font-size: clamp(1.75rem, 8vw, 3rem);
 	}
 	.neon-size-lg {
-		font-size: 5rem;
+		font-size: clamp(2.25rem, 12vw, 5rem);
 	}
 
 	.neon-char {

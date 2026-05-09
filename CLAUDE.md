@@ -194,7 +194,7 @@ When you add a new component, register it in `componentCatalog.ts` so it appears
 ```
 src/
 ├── lib/
-│   ├── components/         # 159 .svelte files + sibling .md docs + .test.ts (some *TestHarness.test.svelte)
+│   ├── components/         # ~188 .svelte files (incl. subfolders) + sibling .md docs + .test.ts (some *TestHarness.test.svelte)
 │   ├── server/             # auth, betterAuth, dataSource, cards, dataGrid, editorData,
 │   │                       # expandingCards, linkPreviews, testimonials, sankeyData,
 │   │                       # calendarData, folderFiles, maps
@@ -391,6 +391,9 @@ Emitted by third-party libraries (Leaflet, Unovis, SVAR Grid, GSAP/svelte-motion
 
 ### `bun run check` route-file errors
 A handful of route-level type errors are false positives related to generated `$types`. Run `bun run check` to see; verify against `bun run build` (the source of truth — should be clean).
+
+### `bun run test` heavy-module timeouts (TopologyColorGrid, GeoViz)
+A small set of tests time out only when run as part of the full `vitest` parallel pool — the heavy module imports (gsap for TopologyColorGrid, Leaflet for GeoViz/GeoBubbleMap/GeoChoropleth/GeoSpikeMap) race the worker rpc and one or more workers report `Closing rpc while fetch was pending` or `Test timed out`. Each file passes 100% in isolation (`bun run vitest run src/lib/components/GeoViz.test.ts`). Treat as a worker-pool tuning issue, not a real test or component bug. Real fix when prioritised: add a vitest `poolOptions.forks` config splitting the heavy-module tests into their own pool, or set `isolate: true` for those file globs.
 
 ## Quality gates
 
