@@ -282,7 +282,9 @@
 	.pp-demo__gallery {
 		display: grid;
 		gap: 20px;
-		grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+		/* min(360px, 100%) collapses to viewport on narrow screens so the
+		   demo grid never pushes the page wider than the viewport. */
+		grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
 	}
 	.pp-demo__variant {
 		display: grid;

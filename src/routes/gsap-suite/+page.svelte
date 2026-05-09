@@ -9,6 +9,22 @@
 		type GsapFlipGridFilter,
 		type GsapFlipGridItem
 	} from '$lib/components/GsapFlipGrid.svelte';
+	import CinemaReel from '$lib/components/CinemaReel/CinemaReel.svelte';
+	import ShapeTrailHero from '$lib/components/ShapeTrail/ShapeTrailHero.svelte';
+	import LiquidTypeHero from '$lib/components/LiquidType/LiquidTypeHero.svelte';
+	import DragGallery from '$lib/components/DragGallery/DragGallery.svelte';
+	import MomentumSlider from '$lib/components/MomentumSlider/MomentumSlider.svelte';
+	import PicassoPortfolio from '$lib/components/Picasso/PicassoPortfolio.svelte';
+	import GsapTimeline from '$lib/components/GsapTimeline.svelte';
+	import GsapGantt from '$lib/components/GsapGantt.svelte';
+	import type {
+		CinemaReelStill,
+		DragGalleryItem,
+		MomentumSliderItem,
+		PicassoPainting,
+		TimelineEvent,
+		GanttTask
+	} from '$lib/types';
 	import AgentPromptCopy from '$lib/components/AgentPromptCopy.svelte';
 	import BadgeProvenance from '$lib/components/BadgeProvenance.svelte';
 
@@ -28,6 +44,85 @@
 	const kineticEntry = getGsapSuiteEntry('kinetic-canvas')!;
 	const fanDeckEntry = getGsapSuiteEntry('fan-deck')!;
 	const flipGridEntry = getGsapSuiteEntry('flip-grid')!;
+	const cinemaReelEntry = getGsapSuiteEntry('cinema-reel')!;
+	const shapeTrailEntry = getGsapSuiteEntry('shape-trail')!;
+	const liquidTypeEntry = getGsapSuiteEntry('liquid-type')!;
+	const dragGalleryEntry = getGsapSuiteEntry('drag-gallery')!;
+	const momentumSliderEntry = getGsapSuiteEntry('momentum-slider')!;
+	const picassoEntry = getGsapSuiteEntry('picasso')!;
+	const gsapTimelineEntry = getGsapSuiteEntry('gsap-timeline')!;
+	const gsapGanttEntry = getGsapSuiteEntry('gsap-gantt')!;
+
+	const gsapTimelineEvents: TimelineEvent[] = [
+		{ id: 't1', date: '2024-01-15', title: 'Discovery', description: 'Kickoff meeting + scope', completed: true },
+		{ id: 't2', date: '2024-03-01', title: 'MVP', description: 'First demo to stakeholders', completed: true, icon: '🚀' },
+		{ id: 't3', date: '2024-06-15', title: 'Beta', description: 'Limited release to design partners', color: '#9333ea' },
+		{ id: 't4', date: '2024-09-01', title: 'GA', description: 'Public launch' }
+	];
+
+	function offsetIso(days: number): string {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const d = new Date(Date.now());
+		d.setHours(0, 0, 0, 0);
+		d.setDate(d.getDate() + days);
+		return d.toISOString().slice(0, 10);
+	}
+
+	const gsapGanttTasks: GanttTask[] = [
+		{ id: 'g-spec', name: 'Spec & sign-off', start: offsetIso(-5), end: offsetIso(-1), progress: 100, group: 'Plan' },
+		{ id: 'g-kick', name: 'Kick-off', start: offsetIso(0), end: offsetIso(0), isMilestone: true, dependencies: ['g-spec'], color: '#f59e0b' },
+		{ id: 'g-design', name: 'Design', start: offsetIso(1), end: offsetIso(8), progress: 60, dependencies: ['g-kick'], group: 'Build' },
+		{ id: 'g-build', name: 'Build', start: offsetIso(5), end: offsetIso(16), progress: 25, dependencies: ['g-design'], group: 'Build' },
+		{ id: 'g-launch', name: 'Launch', start: offsetIso(20), end: offsetIso(20), isMilestone: true, dependencies: ['g-build'], color: '#10b981' }
+	];
+
+	const picassoPaintings: PicassoPainting[] = [
+		{
+			id: 'pp-01',
+			title: 'Cubist Calm',
+			caption: 'Soft geometric harmony — earth tones disrupted by a single hot accent.',
+			scene: 'Suite I · 2024',
+			palette: ['#1d4ed8', '#0f766e', '#fde68a', '#f87171', '#9333ea']
+		},
+		{
+			id: 'pp-02',
+			title: 'Aurora Variations',
+			caption: 'Cool tones with magenta heat. The eye finds the warmth and stays.',
+			scene: 'Suite II · 2025',
+			palette: ['#0891b2', '#9333ea', '#e879f9', '#fbbf24', '#22d3ee']
+		},
+		{
+			id: 'pp-03',
+			title: 'Heatmap',
+			caption: 'Two reds, one yellow, one black — minimum palette, maximum tension.',
+			scene: 'Suite III · 2026',
+			palette: ['#dc2626', '#7f1d1d', '#f59e0b', '#0f172a']
+		}
+	];
+
+	const momentumSliderItems: MomentumSliderItem[] = [
+		{ id: 'ms-01', title: 'Establishing', eyebrow: 'Wide', subtitle: 'Take 1', description: 'Wide, slow, deliberate. The camera tells the audience what to feel before anything moves.', color: '#1d4ed8' },
+		{ id: 'ms-02', title: 'Reveal', eyebrow: 'Cut', subtitle: 'Take 2', description: 'Cut to close-up. The eye finds the subject; the rest of the frame falls away.', color: '#9333ea' },
+		{ id: 'ms-03', title: 'Tension', eyebrow: 'Hold', subtitle: 'Take 3', description: 'Hold. Let the audience breathe. The longest cuts feel the shortest in the right scene.', color: '#dc2626' },
+		{ id: 'ms-04', title: 'Coda', eyebrow: 'Pull', subtitle: 'Take 4', description: 'Pull back. The frame becomes a memory. End on a long, calm hold.', color: '#0f766e' },
+		{ id: 'ms-05', title: 'Credits', eyebrow: 'Stagger', subtitle: 'Take 5', description: 'Names rise, bow, and exit. The room exhales.', color: '#0891b2' }
+	];
+
+	const dragGalleryItems: DragGalleryItem[] = [
+		{ id: 'dg-01', title: 'Linen Tote', eyebrow: 'Bags', subtitle: '£64' },
+		{ id: 'dg-02', title: 'Cedar Tray', eyebrow: 'Home', subtitle: '£42' },
+		{ id: 'dg-03', title: 'Brass Compass', eyebrow: 'Gifts', subtitle: '£38' },
+		{ id: 'dg-04', title: 'Wool Throw', eyebrow: 'Home', subtitle: '£120' },
+		{ id: 'dg-05', title: 'Glass Carafe', eyebrow: 'Kitchen', subtitle: '£28' },
+		{ id: 'dg-06', title: 'Walnut Spoon', eyebrow: 'Kitchen', subtitle: '£12' }
+	];
+
+	const cinemaReelStills: CinemaReelStill[] = [
+		{ id: 'cr-01', scene: '01', title: 'Establishing', caption: 'Wide, slow, deliberate.', color: '#1d4ed8' },
+		{ id: 'cr-02', scene: '02', title: 'Reveal', caption: 'Cut to close-up. The eye finds the subject.', color: '#9333ea' },
+		{ id: 'cr-03', scene: '03', title: 'Tension', caption: 'Hold. Let the audience breathe.', color: '#dc2626' },
+		{ id: 'cr-04', scene: '04', title: 'Coda', caption: 'Pull back. The frame becomes a memory.', color: '#0f766e' }
+	];
 
 	const revealCards = [
 		{
@@ -242,6 +337,238 @@
 			usage={flipGridEntry.usageExample}
 			inspiredBy={flipGridEntry.inspiredBy.label}
 			notes={flipGridEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="shape-trail" class="component-section" aria-labelledby="shape-trail-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">Pointer-driven motion</p>
+				<h2 id="shape-trail-title">{shapeTrailEntry.title}</h2>
+				<p class="lede">{shapeTrailEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={shapeTrailEntry.inspiredBy.kind}
+				sourceLabel={shapeTrailEntry.inspiredBy.label}
+				sourceUrl={shapeTrailEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<ShapeTrailHero density={48} palette="aurora" />
+
+		<AgentPromptCopy
+			name={shapeTrailEntry.componentName}
+			summary={shapeTrailEntry.tagline}
+			componentPath={shapeTrailEntry.componentImportPath}
+			demoPath={shapeTrailEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={shapeTrailEntry.propsSignature}
+			usage={shapeTrailEntry.usageExample}
+			inspiredBy={shapeTrailEntry.inspiredBy.label}
+			notes={shapeTrailEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="liquid-type" class="component-section" aria-labelledby="liquid-type-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">Variable-font physics</p>
+				<h2 id="liquid-type-title">{liquidTypeEntry.title}</h2>
+				<p class="lede">{liquidTypeEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={liquidTypeEntry.inspiredBy.kind}
+				sourceLabel={liquidTypeEntry.inspiredBy.label}
+				sourceUrl={liquidTypeEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<LiquidTypeHero words={['Words', 'have', 'weight']} />
+
+		<AgentPromptCopy
+			name={liquidTypeEntry.componentName}
+			summary={liquidTypeEntry.tagline}
+			componentPath={liquidTypeEntry.componentImportPath}
+			demoPath={liquidTypeEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={liquidTypeEntry.propsSignature}
+			usage={liquidTypeEntry.usageExample}
+			inspiredBy={liquidTypeEntry.inspiredBy.label}
+			notes={liquidTypeEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="gsap-timeline" class="component-section" aria-labelledby="gsap-timeline-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">GSAP variant of native Timeline</p>
+				<h2 id="gsap-timeline-title">{gsapTimelineEntry.title}</h2>
+				<p class="lede">{gsapTimelineEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={gsapTimelineEntry.inspiredBy.kind}
+				sourceLabel={gsapTimelineEntry.inspiredBy.label}
+				sourceUrl={gsapTimelineEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<GsapTimeline events={gsapTimelineEvents} showProgress />
+
+		<AgentPromptCopy
+			name={gsapTimelineEntry.componentName}
+			summary={gsapTimelineEntry.tagline}
+			componentPath={gsapTimelineEntry.componentImportPath}
+			demoPath={gsapTimelineEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={gsapTimelineEntry.propsSignature}
+			usage={gsapTimelineEntry.usageExample}
+			inspiredBy={gsapTimelineEntry.inspiredBy.label}
+			notes={gsapTimelineEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="gsap-gantt" class="component-section" aria-labelledby="gsap-gantt-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">GSAP variant of native Gantt</p>
+				<h2 id="gsap-gantt-title">{gsapGanttEntry.title}</h2>
+				<p class="lede">{gsapGanttEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={gsapGanttEntry.inspiredBy.kind}
+				sourceLabel={gsapGanttEntry.inspiredBy.label}
+				sourceUrl={gsapGanttEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<GsapGantt tasks={gsapGanttTasks} />
+
+		<AgentPromptCopy
+			name={gsapGanttEntry.componentName}
+			summary={gsapGanttEntry.tagline}
+			componentPath={gsapGanttEntry.componentImportPath}
+			demoPath={gsapGanttEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={gsapGanttEntry.propsSignature}
+			usage={gsapGanttEntry.usageExample}
+			inspiredBy={gsapGanttEntry.inspiredBy.label}
+			notes={gsapGanttEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="picasso" class="component-section" aria-labelledby="picasso-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">Scroll-driven editorial</p>
+				<h2 id="picasso-title">{picassoEntry.title}</h2>
+				<p class="lede">{picassoEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={picassoEntry.inspiredBy.kind}
+				sourceLabel={picassoEntry.inspiredBy.label}
+				sourceUrl={picassoEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<PicassoPortfolio paintings={picassoPaintings} />
+
+		<AgentPromptCopy
+			name={picassoEntry.componentName}
+			summary={picassoEntry.tagline}
+			componentPath={picassoEntry.componentImportPath}
+			demoPath={picassoEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={picassoEntry.propsSignature}
+			usage={picassoEntry.usageExample}
+			inspiredBy={picassoEntry.inspiredBy.label}
+			notes={picassoEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="momentum-slider" class="component-section" aria-labelledby="momentum-slider-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">Editorial 3D carousel</p>
+				<h2 id="momentum-slider-title">{momentumSliderEntry.title}</h2>
+				<p class="lede">{momentumSliderEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={momentumSliderEntry.inspiredBy.kind}
+				sourceLabel={momentumSliderEntry.inspiredBy.label}
+				sourceUrl={momentumSliderEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<MomentumSlider items={momentumSliderItems} />
+
+		<AgentPromptCopy
+			name={momentumSliderEntry.componentName}
+			summary={momentumSliderEntry.tagline}
+			componentPath={momentumSliderEntry.componentImportPath}
+			demoPath={momentumSliderEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={momentumSliderEntry.propsSignature}
+			usage={momentumSliderEntry.usageExample}
+			inspiredBy={momentumSliderEntry.inspiredBy.label}
+			notes={momentumSliderEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="drag-gallery" class="component-section" aria-labelledby="drag-gallery-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">Pointer-driven slider</p>
+				<h2 id="drag-gallery-title">{dragGalleryEntry.title}</h2>
+				<p class="lede">{dragGalleryEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={dragGalleryEntry.inspiredBy.kind}
+				sourceLabel={dragGalleryEntry.inspiredBy.label}
+				sourceUrl={dragGalleryEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<DragGallery items={dragGalleryItems} />
+
+		<AgentPromptCopy
+			name={dragGalleryEntry.componentName}
+			summary={dragGalleryEntry.tagline}
+			componentPath={dragGalleryEntry.componentImportPath}
+			demoPath={dragGalleryEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={dragGalleryEntry.propsSignature}
+			usage={dragGalleryEntry.usageExample}
+			inspiredBy={dragGalleryEntry.inspiredBy.label}
+			notes={dragGalleryEntry.agentNotes}
+		/>
+	</section>
+
+	<section id="cinema-reel" class="component-section" aria-labelledby="cinema-reel-title">
+		<header class="component-section__header">
+			<div>
+				<p class="eyebrow">Scroll-driven scenes</p>
+				<h2 id="cinema-reel-title">{cinemaReelEntry.title}</h2>
+				<p class="lede">{cinemaReelEntry.summary}</p>
+			</div>
+			<BadgeProvenance
+				kind={cinemaReelEntry.inspiredBy.kind}
+				sourceLabel={cinemaReelEntry.inspiredBy.label}
+				sourceUrl={cinemaReelEntry.inspiredBy.url}
+			/>
+		</header>
+
+		<CinemaReel stills={cinemaReelStills} />
+
+		<AgentPromptCopy
+			name={cinemaReelEntry.componentName}
+			summary={cinemaReelEntry.tagline}
+			componentPath={cinemaReelEntry.componentImportPath}
+			demoPath={cinemaReelEntry.demoRoutePath}
+			deps={[]}
+			propsSignature={cinemaReelEntry.propsSignature}
+			usage={cinemaReelEntry.usageExample}
+			inspiredBy={cinemaReelEntry.inspiredBy.label}
+			notes={cinemaReelEntry.agentNotes}
 		/>
 	</section>
 

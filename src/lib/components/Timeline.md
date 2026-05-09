@@ -29,15 +29,17 @@ events:
     handleEventClick(event)
 
 on mount:
-  if prefersReducedMotion: skip animation; events render in their final positions
-  else:
-    use animejs to stagger items into view:
-      - target each .timeline__item
-      - opacity 0 → 1
-      - translateY (or translateX for horizontal) according to `animation` prop
-      - duration: animationDuration ms
-      - delay:    stagger(animationDelay) — anime.js helper
-    set hasAnimated = true once the last item lands
+  arm an IntersectionObserver on the root .timeline element (threshold 0.1)
+  when it intersects and hasAnimated is false:
+    if prefersReducedMotion: skip animation; events render in their final positions
+    else:
+      use animejs to stagger items into view:
+        - target each .timeline-item
+        - opacity 0 → 1
+        - per-variant transform (translateX ±50 for slide; scale 0.8 for scale; opacity-only for fade)
+        - duration: animationDuration ms
+        - delay:    stagger(animationDelay) — anime.js helper
+      set hasAnimated = true once the last item lands
 ```
 
 ## The Core Concept: Dual-Axis Layout via CSS + JS-Sequenced Entrance
@@ -46,8 +48,8 @@ Timeline has two distinct concerns: **layout** (how the line and items are arran
 
 **Layout** is pure CSS:
 
-- Vertical orientation: a single absolutely-positioned `::before` line down the middle, with each item floated left or right of it. The marker dot sits on the line; a thin connector ties the dot to the card.
-- Horizontal orientation: flex row with the line as a horizontal `::before`, items stacked above or below.
+- Vertical orientation: a single absolutely-positioned `.timeline-line` `<div>` down the middle, with each `.timeline-item` flex-aligned left or right of it. The marker dot sits on the line; a thin connector ties the dot to the card. On mobile (≤ 768px) all items collapse to `align-left` automatically — both `alternate` and `right` modes funnel into the single-column layout.
+- Horizontal orientation: flex row with the line as a horizontal `.timeline-line`, items stacked above the line, scrolling left-to-right with `scroll-snap`.
 - `alignment="alternate"` toggles the side per-index; `'left'` / `'right'` pin to one side.
 
 ```
@@ -65,14 +67,14 @@ Timeline has two distinct concerns: **layout** (how the line and items are arran
               card 3
 ```
 
-**Entrance** is anime.js: a single timeline animation that stages each `.timeline__item` with a stagger between them. The `animation` prop selects the variant:
+**Entrance** is anime.js: a single timeline animation that stages each `.timeline-item` with a stagger between them. The `animation` prop selects the variant:
 
 - `'fade'`: opacity 0 → 1
-- `'slide'`: opacity 0 → 1 + translateY(20px) → 0  (default)
-- `'scale'`: opacity 0 → 1 + scale(0.9) → 1
+- `'slide'`: opacity 0 → 1 + translateX(±50) → 0 (mirrored by alignment side; on mobile always −50)  (default)
+- `'scale'`: opacity 0 → 1 + scale(0.8) → 1
 - `'none'`: items appear instantly in their final positions
 
-The progress prop lights up a `--progress-percentage` custom property on the central line so a coloured fill animates from `0%` to `getProgressPercentage()%`. Three CSS lines, no JS work after the first computation.
+When `showProgress` is true, a second `.timeline-progress` `<div>` is positioned over the static `.timeline-line`. It carries an inline `style="--progress: <getProgressPercentage()>%"` that the scoped CSS consumes via `height: var(--progress, 0%)` (vertical) or `width: var(--progress, 0%)` (horizontal), so the coloured fill grows from `0%` to the computed completion percentage. The first paint is static; on entry the anime.js stagger then animates `scaleY` (or `scaleX`) on top of the fill once for the dramatic reveal.
 
 ## Why anime.js Here
 
@@ -90,7 +92,7 @@ The cost is ~17 KB minified+gzipped. For a component this prominent, the library
 
 ## CSS Animation Strategy
 
-Layout is CSS Grid / flex with absolute-positioned dots. The connecting line is `::before` on the wrapper; the progress fill is a second `::before` constrained by `--progress-percentage` and animated via `transition: height 600ms ease-out` (or `width` for horizontal). When `showProgress` is true and `events` change, the percentage updates and CSS interpolates.
+Layout is flex with absolute-positioned dots. The connecting line is a real `.timeline-line` `<div>` on the wrapper; the progress fill is a second `.timeline-progress` `<div>` whose inline `--progress` custom property feeds `height: var(--progress, 0%)` (vertical) or `width: var(--progress, 0%)` (horizontal). On entry, anime.js animates `scaleY` (or `scaleX` for horizontal) on top of that pre-positioned fill once after the entrance stagger lands. When `showProgress` is true and `events` change, the percentage recomputes and the next entrance pass redraws the fill.
 
 For reduced-motion users, the entrance animation is skipped (anime.js bails when the matchMedia probe reports `reduce`), and the progress fill transition is disabled via `@media (prefers-reduced-motion: reduce)` — the bar appears at its final percentage statically.
 
@@ -142,11 +144,25 @@ For reduced-motion users, the entrance animation is skipped (anime.js bails when
 | `animation` | `'fade' \| 'slide' \| 'scale' \| 'none'` | `'slide'` | Entrance animation style. |
 | `animationDuration` | `number` | `600` | Per-item entrance duration in ms. |
 | `animationDelay` | `number` | `100` | Stagger delay between consecutive items in ms. |
-| `lineColor` | `string` | `'#e2e8f0'` | Connecting line colour. |
-| `markerColor` | `string` | `'#146ef5'` | Default colour for the marker dots. Overridable per-event via `event.color`. |
+| `lineColor` | `string \| undefined` | `undefined` | Optional override for the connecting line colour. When undefined, the CSS theme tokens (`--line-color`, light + dark) win — light mode falls back to `#e2e8f0`, dark mode to `rgba(148, 163, 184, 0.25)`. |
+| `markerColor` | `string \| undefined` | `undefined` | Optional override for the marker colour. When undefined, the CSS token `--marker-color` is used (`#146ef5`). Per-event `event.color` always wins. |
 | `showProgress` | `boolean` | `false` | Render a progress fill on the line based on `event.completed` count. |
 | `dateFormat` | `((d: Date) => string) \| 'relative' \| undefined` | `undefined` | Date formatting strategy: function for custom, `'relative'` for `Intl.RelativeTimeFormat`, undefined for `'D MMM YYYY'`. |
 | `onEventClick` | `(event: TimelineEvent) => void` | `undefined` | Click and keyboard-Enter handler. |
+
+### Theme tokens (CSS custom properties)
+
+The component exposes four custom properties so you can retheme without props. Override these on `.timeline` (or any ancestor):
+
+| Token | Default (light) | Default (dark) | Effect |
+|-------|-----------------|----------------|--------|
+| `--timeline-title` | `#1e293b` | `#f1f5f9` | Card title text |
+| `--timeline-description` | `#64748b` | `#cbd5e1` | Card body text |
+| `--timeline-marker-ring` | `#ffffff` | `#0f172a` | The white halo around the dot |
+| `--line-color` | `#e2e8f0` | `rgba(148, 163, 184, 0.25)` | Connecting line |
+| `--marker-color` | `#146ef5` | inherited | Default dot colour |
+
+The dark-mode defaults activate via both `@media (prefers-color-scheme: dark)` and an opt-in `:global(.dark) .timeline` selector. The `lineColor` / `markerColor` props are optional overrides — if you omit them, the tokens win, which means dark mode "just works".
 
 ## Edge Cases
 

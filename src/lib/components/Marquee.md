@@ -39,7 +39,7 @@ render:
     <div bind:this={contentEl} class="animate-marquee ...">  <!-- copy 0: measured -->
       {@render children?.()}
     </div>
-    {#each {length: actualRepeat - 1}}
+    {#each Array.from({ length: actualRepeat - 1 }) as _, i (i)}
       <div class="animate-marquee ...">                       <!-- copies 1..n-1 -->
         {@render children?.()}
       </div>

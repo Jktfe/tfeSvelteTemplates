@@ -16,13 +16,15 @@
 
 import type { ExplainerCanvasData } from '$lib/types';
 import { shineBorderStoryboard } from './shineborder';
+import { timelineStoryboard } from './timeline';
 
 /**
  * Map of component names to their storyboard data.
  * The key should match the URL slug (/storyboard/[component]).
  */
 export const storyboards: Record<string, ExplainerCanvasData> = {
-	shineborder: shineBorderStoryboard
+	shineborder: shineBorderStoryboard,
+	timeline: timelineStoryboard
 	// Add more storyboards here as they're created:
 	// cardstack: cardStackStoryboard,
 	// marquee: marqueeStoryboard,
@@ -47,4 +49,4 @@ export function getAvailableStoryboards(): string[] {
 }
 
 // Re-export individual storyboards for direct import
-export { shineBorderStoryboard };
+export { shineBorderStoryboard, timelineStoryboard };

@@ -65,7 +65,7 @@
 		id={inputId}
 		role="switch"
 		aria-checked={checked}
-		aria-label={ariaLabel ?? (label ? undefined : 'Toggle')}
+		aria-label={ariaLabel || label || 'Toggle'}
 		{disabled}
 		class="switch-track switch-{variant}"
 		class:switch-on={checked}

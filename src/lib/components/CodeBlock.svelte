@@ -368,6 +368,14 @@
 <style>
 	.codeblock {
 		position: relative;
+		/* Mobile-overflow guards: ensure the block never pushes its parent wider
+		   than the viewport even when its content is intrinsically wide
+		   (long install URLs, prose-free monospace, etc.). overflow:hidden
+		   on the root + overflow-x:auto on .body keeps the long line scroll
+		   inside the codeblock instead of inflating the page. */
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
 		border-radius: 8px;
 		overflow: hidden;
 		font-family:

@@ -183,7 +183,7 @@
 		const newDisplayed = new Array<string>(len);
 		const newFlipping = new Array<boolean>(len).fill(false);
 		for (let i = 0; i < len; i++) {
-			newDisplayed[i] = prev[i] ?? targets[i];
+			newDisplayed[i] = prev[i] ?? resolvedCharset.chars[0];
 		}
 		displayed = newDisplayed;
 		flipping = newFlipping;
@@ -239,10 +239,10 @@
 			style:--sf-duration="{flipDuration}ms"
 			aria-hidden="true"
 		>
-			<span class="sf-half sf-top">{char}</span>
 			<span class="sf-half sf-bottom">{char}</span>
-			<span class="sf-flap sf-flap-top">{char}</span>
+			<span class="sf-half sf-top">{char}</span>
 			<span class="sf-flap sf-flap-bottom">{char}</span>
+			<span class="sf-flap sf-flap-top">{char}</span>
 			<span class="sf-divider"></span>
 		</span>
 	{/each}
@@ -357,14 +357,14 @@
 	}
 	.sf-flap-top {
 		top: 0;
-		align-items: flex-end;
+		align-items: flex-start;
 		padding-top: 0.04em;
 		background: linear-gradient(180deg, var(--sf-bg) 0%, var(--sf-bg-hi) 100%);
 		transform-origin: bottom center;
 	}
 	.sf-flap-bottom {
 		bottom: 0;
-		align-items: flex-start;
+		align-items: flex-end;
 		padding-bottom: 0.04em;
 		background: linear-gradient(180deg, var(--sf-bg-hi) 0%, var(--sf-bg) 100%);
 		transform-origin: top center;

@@ -169,8 +169,8 @@
 				<tr><td><code>animation</code></td><td><code>"fade" | "slide" | "scale" | "none"</code></td><td><code>"slide"</code></td><td>Entrance animation.</td></tr>
 				<tr><td><code>animationDuration</code></td><td><code>number</code></td><td><code>600</code></td><td>Per-item duration in ms.</td></tr>
 				<tr><td><code>animationDelay</code></td><td><code>number</code></td><td><code>100</code></td><td>Stagger between items.</td></tr>
-				<tr><td><code>lineColor</code></td><td><code>string</code></td><td><code>"#e2e8f0"</code></td><td>Connecting line colour.</td></tr>
-				<tr><td><code>markerColor</code></td><td><code>string</code></td><td><code>"#146ef5"</code></td><td>Default marker colour.</td></tr>
+				<tr><td><code>lineColor</code></td><td><code>string?</code></td><td><code>undefined</code></td><td>Optional override; CSS token <code>--line-color</code> (light + dark) wins by default.</td></tr>
+				<tr><td><code>markerColor</code></td><td><code>string?</code></td><td><code>undefined</code></td><td>Optional override; CSS token <code>--marker-color</code> wins by default.</td></tr>
 				<tr><td><code>showProgress</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Fill the line for completed events.</td></tr>
 				<tr><td><code>dateFormat</code></td><td><code>function | "relative"</code></td><td><code>undefined</code></td><td>Custom formatter or relative dates.</td></tr>
 				<tr><td><code>onEventClick</code></td><td><code>(event) => void</code></td><td><code>undefined</code></td><td>Callback for event clicks.</td></tr>
@@ -233,7 +233,9 @@
 	}
 	.tl-grid-2 {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+		/* min(380px, 100%) collapses to viewport on narrow screens so the demo
+		   never pushes the page wider than the viewport. */
+		grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
 		gap: 1rem;
 	}
 	.tl-toast {

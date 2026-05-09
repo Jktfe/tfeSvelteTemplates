@@ -160,9 +160,12 @@
 			{@render children()}
 		{/if}
 	</div>
-	<!-- [CR] Additional copies for seamless infinite loop -->
+	<!-- [CR] Additional copies for seamless infinite loop. Array.from() is
+	     required: Svelte 5 expects an iterable here, and passing the bare
+	     `{ length: N }` array-like silently produced duplicate undefined
+	     keys and an `each_key_duplicate` page error at runtime. -->
 	<!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-	{#each { length: actualRepeat - 1 } as _, i (i)}
+	{#each Array.from({ length: actualRepeat - 1 }) as _, i (i)}
 		<div
 			class={cn('flex shrink-0 justify-around [gap:var(--gap)]', {
 				'animate-marquee flex-row': !vertical,

@@ -110,7 +110,10 @@
 		eyebrow = 'GSAP suite',
 		copy = 'SplitText, scoped timelines, canvas motion, and deck choreography packaged as reusable Svelte components.',
 		initialMode = 'chars',
-		theme = 'light',
+		// theme prop default left undefined so the component follows prefers-color-scheme
+		// when the consumer hasn't opted in to a fixed theme. theme="light" / theme="dark"
+		// still pin the colour set explicitly via .is-light / .is-dark classes.
+		theme = undefined,
 		class: className = ''
 	}: Props = $props();
 
@@ -231,6 +234,7 @@
 	bind:this={root}
 	class={`split-text-hero ${className}`}
 	class:is-dark={theme === 'dark'}
+	class:is-light={theme === 'light'}
 	aria-labelledby="gsap-suite-title"
 >
 	<div class="hero-copy">
@@ -290,6 +294,42 @@
 	}
 
 	.split-text-hero.is-dark {
+		--split-surface: rgba(13, 17, 23, 0.98);
+		--split-surface-end: rgba(24, 31, 42, 0.98);
+		--split-grid-line: rgba(255, 255, 255, 0.04);
+		--split-border: rgba(255, 255, 255, 0.12);
+		--split-fg: #f8fafc;
+		--split-muted: #cbd5e1;
+		--split-eyebrow: #5eead4;
+		--split-control-bg: rgba(15, 23, 42, 0.7);
+		--split-control-bg-active: #f8fafc;
+		--split-control-border: rgba(203, 213, 225, 0.26);
+		--split-control-fg: #e2e8f0;
+		--split-control-active-fg: #111827;
+	}
+
+	/* When the consumer hasn't pinned theme="light", follow the OS preference
+	   so the embedded hero stays readable on a dark host page (e.g. /gsap-suite).
+	   theme="light" adds .is-light which blocks this override; theme="dark"
+	   already has the explicit .is-dark rule above. */
+	@media (prefers-color-scheme: dark) {
+		.split-text-hero:not(.is-light) {
+			--split-surface: rgba(13, 17, 23, 0.98);
+			--split-surface-end: rgba(24, 31, 42, 0.98);
+			--split-grid-line: rgba(255, 255, 255, 0.04);
+			--split-border: rgba(255, 255, 255, 0.12);
+			--split-fg: #f8fafc;
+			--split-muted: #cbd5e1;
+			--split-eyebrow: #5eead4;
+			--split-control-bg: rgba(15, 23, 42, 0.7);
+			--split-control-bg-active: #f8fafc;
+			--split-control-border: rgba(203, 213, 225, 0.26);
+			--split-control-fg: #e2e8f0;
+			--split-control-active-fg: #111827;
+		}
+	}
+
+	:global(.dark) .split-text-hero:not(.is-light) {
 		--split-surface: rgba(13, 17, 23, 0.98);
 		--split-surface-end: rgba(24, 31, 42, 0.98);
 		--split-grid-line: rgba(255, 255, 255, 0.04);

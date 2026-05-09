@@ -156,6 +156,10 @@
 		flex-wrap: wrap;
 		gap: 1rem;
 		padding: 2.5rem 1.5rem;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
+		overflow: hidden;
 		background:
 			radial-gradient(ellipse at 50% 100%, rgba(15, 23, 42, 0.8) 0%, #050409 70%),
 			repeating-linear-gradient(

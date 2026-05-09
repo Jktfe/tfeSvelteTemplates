@@ -399,6 +399,18 @@
 		border-radius: var(--r-3);
 		padding: 24px;
 		min-width: 0;
+		/* Belt-and-braces: clip any demo content that intrinsically wants to be
+		   wider than the card (per-component demo wrappers don't always set
+		   min-width:0 themselves). Internal scrollers like .codeblock .body
+		   keep working because they declare their own overflow-x:auto.
+		   contain:paint stops absolutely-positioned descendants (and overflow-clipped
+		   content) from contributing to ancestor scrollWidth — without it the
+		   document still reports phantom horizontal overflow on mobile even though
+		   the content is visually clipped. */
+		max-width: 100%;
+		box-sizing: border-box;
+		overflow-x: hidden;
+		contain: paint;
 	}
 	.cp-card--side {
 		padding: 18px 20px;
