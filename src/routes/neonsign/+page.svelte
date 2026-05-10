@@ -7,13 +7,23 @@
 
 	let powered = $state(true);
 	let intensity = $state(1.2);
+	let pulseDuration = $state(2.4);
+	let pulseMin = $state(0.55);
+	let pulseMax = $state(1);
 
 	const usageSnippet = `<script>
   import NeonSign from '$lib/components/NeonSign.svelte';
 </${'script'}>
 
 <NeonSign value="OPEN" colour="pink" size="lg" intensity={1.4} />
-<NeonSign value="NO VACANCY" colour="red" broken={[0, 1]} flicker="broken" />`;
+<NeonSign value="NO VACANCY" colour="red" broken={[0, 1]} flicker="broken" />
+<NeonSign
+  value="PULSE"
+  colour="purple"
+  flicker="pulse"
+  pulseDuration={2.4}
+  pulseRange={[0.55, 1]}
+/>`;
 
 	const codeExplanation =
 		'NeonSign builds a five-stop text-shadow stack on a single span: a hard white core, two saturated palette stops at 4px and 8px, and two soft halo stops at 16px and 32px. All radii scale with intensity. The flicker animation dips opacity at deterministic per-seed beats; broken indices drop characters out of the stack and into the palette dim shade. prefers-reduced-motion disables the flicker keyframe — the steady glow remains.';
@@ -76,6 +86,37 @@
 					<span class="ns-slider__value">{intensity.toFixed(1)}×</span>
 				</label>
 			</div>
+
+			<!-- Pulse variant — smooth breathing glow with consumer-controlled
+			     timing and intensity range. -->
+			<div class="ns-brick ns-brick--stacked">
+				<NeonSign
+					value="PULSE"
+					colour="purple"
+					size="lg"
+					intensity={1.3}
+					flicker="pulse"
+					pulseDuration={pulseDuration}
+					pulseRange={[pulseMin, pulseMax]}
+				/>
+				<div class="ns-pulse-controls">
+					<label class="ns-slider">
+						<span>duration</span>
+						<input type="range" min="0.4" max="6" step="0.1" bind:value={pulseDuration} />
+						<span class="ns-slider__value">{pulseDuration.toFixed(1)}s</span>
+					</label>
+					<label class="ns-slider">
+						<span>min</span>
+						<input type="range" min="0" max="0.95" step="0.05" bind:value={pulseMin} />
+						<span class="ns-slider__value">{pulseMin.toFixed(2)}</span>
+					</label>
+					<label class="ns-slider">
+						<span>max</span>
+						<input type="range" min="0.05" max="1" step="0.05" bind:value={pulseMax} />
+						<span class="ns-slider__value">{pulseMax.toFixed(2)}</span>
+					</label>
+				</div>
+			</div>
 		</div>
 	{/snippet}
 
@@ -110,9 +151,21 @@
 				</tr>
 				<tr>
 					<td><code>flicker</code></td>
-					<td><code>'none' | 'subtle' | 'broken'</code></td>
+					<td><code>'none' | 'subtle' | 'broken' | 'pulse'</code></td>
 					<td><code>'subtle'</code></td>
-					<td>Deterministic per-seed flicker profile.</td>
+					<td>Flicker profile. <code>'pulse'</code> uses the smooth breathing variant with consumer-tunable timing and intensity range.</td>
+				</tr>
+				<tr>
+					<td><code>pulseDuration</code></td>
+					<td><code>number</code></td>
+					<td><code>2.4</code></td>
+					<td>Seconds for one full pulse cycle. Only applied when <code>flicker === 'pulse'</code>.</td>
+				</tr>
+				<tr>
+					<td><code>pulseRange</code></td>
+					<td><code>[number, number]</code></td>
+					<td><code>[0.55, 1]</code></td>
+					<td>Min/max opacity for the pulse — both clamped to <code>[0, 1]</code>; max is forced to be ≥ min.</td>
 				</tr>
 				<tr>
 					<td><code>broken</code></td>
@@ -211,5 +264,9 @@
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		min-width: 3em;
 		color: #38bdf8;
+	}
+	.ns-pulse-controls {
+		display: grid;
+		gap: 0.5rem;
 	}
 </style>

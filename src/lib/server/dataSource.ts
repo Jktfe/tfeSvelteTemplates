@@ -43,6 +43,26 @@ export const fromDatabaseError = <T>(data: T, error: unknown): DataSourceResult<
 	message: error instanceof Error ? error.message : String(error)
 });
 
+/**
+ * Postgres throws "relation X does not exist" (SQLSTATE 42P01) when the
+ * database is configured but the component's schema hasn't been provisioned
+ * yet. That's a setup state, not a bug — surface it as a friendly fallback
+ * with a hint about which schema to run, instead of a scary error badge.
+ */
+export const isMissingTableError = (error: unknown): boolean => {
+	if (!error) return false;
+	const message = error instanceof Error ? error.message : String(error);
+	return /relation .+ does not exist/i.test(message);
+};
+
+export const fromMissingTable = <T>(data: T, schemaFile: string): DataSourceResult<T> => ({
+	data,
+	source: 'fallback',
+	usingDatabase: false,
+	databaseConfigured: true,
+	message: `Schema not provisioned — run database/${schemaFile} on your Neon database to enable live data.`
+});
+
 export const fromStatic = <T>(data: T): DataSourceResult<T> => ({
 	data,
 	source: 'static',

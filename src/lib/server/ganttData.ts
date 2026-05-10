@@ -10,7 +10,9 @@ import {
 	fromDatabase,
 	fromDatabaseError,
 	fromFallback,
+	fromMissingTable,
 	getConfiguredDatabaseUrl,
+	isMissingTableError,
 	type DataSourceResult
 } from './dataSource';
 import type { GanttTask, GanttTaskRow } from '$lib/types';
@@ -71,6 +73,10 @@ export async function loadGanttFromDatabase(): Promise<DataSourceResult<GanttTas
 		const tasks = taskRows.map((row) => rowToTask(row, depMap.get(row.task_key) ?? []));
 		return fromDatabase(tasks);
 	} catch (err) {
+		if (isMissingTableError(err)) {
+			// Treat "schema not yet provisioned" as a setup state, not an error.
+			return fromMissingTable(FALLBACK_GANTT, 'schema_gantt.sql');
+		}
 		console.error('[ganttData] Error loading Gantt schedule:', err);
 		return fromDatabaseError(FALLBACK_GANTT, err);
 	}
