@@ -93,6 +93,21 @@
 		href: string;
 	}
 
+	export interface ShelfNavigationLink {
+		name: string;
+		href: string;
+		icon: string;
+		description: string;
+	}
+
+	export interface ShelfNavigation {
+		shelf: string;
+		index: number;
+		total: number;
+		previous?: ShelfNavigationLink;
+		next?: ShelfNavigationLink;
+	}
+
 	export interface ComponentPageShellProps {
 		name: string;
 		category: string;
@@ -110,6 +125,8 @@
 		codeFileName?: string;
 		/** Override the syntax language for the Implementation snippet (defaults to 'svelte') */
 		codeLanguage?: string;
+		/** Previous/next sibling links within the same catalog shelf. */
+		shelfNavigation?: ShelfNavigation;
 		/**
 		 * Pre-rendered, sanitised HTML for the "Logic explainer" section.
 		 * Comes from the sibling `<Component>.md` via `getDocsHtmlForPath`.
@@ -141,6 +158,7 @@
 		codeExplanation,
 		codeFileName,
 		codeLanguage = 'svelte',
+		shelfNavigation,
 		docsHtml,
 		demo,
 		api
@@ -148,6 +166,52 @@
 
 	const resolvedFileName = $derived(codeFileName ?? `${name}.svelte`);
 </script>
+
+{#snippet shelfNavBlock(placement: 'header' | 'footer')}
+	{#if shelfNavigation && (shelfNavigation.previous || shelfNavigation.next)}
+		<nav
+			class="cp-shelf-nav cp-shelf-nav--{placement}"
+			aria-label={`${shelfNavigation.shelf} component navigation`}
+		>
+			<p class="cp-shelf-nav__meta">
+				<span>{placement === 'footer' ? 'Continue exploring' : shelfNavigation.shelf}</span>
+				<b>{shelfNavigation.index} / {shelfNavigation.total}</b>
+			</p>
+			<div class="cp-shelf-nav__links">
+				{#if shelfNavigation.previous}
+					<a
+						class="cp-shelf-nav__link cp-shelf-nav__link--prev"
+						href={shelfNavigation.previous.href}
+						aria-label={`Previous ${shelfNavigation.shelf} component: ${shelfNavigation.previous.name}`}
+					>
+						<span class="cp-shelf-nav__arrow" aria-hidden="true">←</span>
+						<span class="cp-shelf-nav__copy">
+							<span>Previous</span>
+							<b>{shelfNavigation.previous.icon} {shelfNavigation.previous.name}</b>
+						</span>
+					</a>
+				{:else}
+					<span class="cp-shelf-nav__placeholder" aria-hidden="true"></span>
+				{/if}
+				{#if shelfNavigation.next}
+					<a
+						class="cp-shelf-nav__link cp-shelf-nav__link--next"
+						href={shelfNavigation.next.href}
+						aria-label={`Next ${shelfNavigation.shelf} component: ${shelfNavigation.next.name}`}
+					>
+						<span class="cp-shelf-nav__copy">
+							<span>Next</span>
+							<b>{shelfNavigation.next.icon} {shelfNavigation.next.name}</b>
+						</span>
+						<span class="cp-shelf-nav__arrow" aria-hidden="true">→</span>
+					</a>
+				{:else}
+					<span class="cp-shelf-nav__placeholder" aria-hidden="true"></span>
+				{/if}
+			</div>
+		</nav>
+	{/if}
+{/snippet}
 
 <article class="cp-page">
 	<div class="cp-wrap">
@@ -160,6 +224,7 @@
 			</div>
 			<h1 class="cp-title">{name}</h1>
 			<p class="cp-desc">{description}</p>
+			{@render shelfNavBlock('header')}
 		</header>
 
 		<!-- ===== Two-col body ===== -->
@@ -309,6 +374,8 @@
 				{/if}
 			</aside>
 		</div>
+
+		{@render shelfNavBlock('footer')}
 	</div>
 </article>
 
@@ -371,6 +438,97 @@
 		color: var(--fg-2);
 		max-width: 64ch;
 		margin: 0;
+	}
+	.cp-shelf-nav {
+		margin-top: 28px;
+		display: grid;
+		gap: 12px;
+		max-width: 760px;
+	}
+	.cp-shelf-nav__meta {
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-family: var(--font-mono);
+		font-size: 11px;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.cp-shelf-nav__meta b {
+		color: var(--fg-1);
+		font-weight: 500;
+	}
+	.cp-shelf-nav__links {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+	}
+	.cp-shelf-nav__link {
+		min-width: 0;
+		min-height: 74px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 14px;
+		padding: 14px 16px;
+		border: 1px solid var(--border);
+		border-radius: var(--r-2);
+		background: var(--surface);
+		color: var(--fg-1);
+		text-decoration: none;
+		box-shadow: 0 1px 0 rgba(17, 24, 39, 0.04);
+		transition:
+			border-color var(--dur-fast),
+			background var(--dur-fast),
+			transform var(--dur-fast);
+	}
+	.cp-shelf-nav__link:hover {
+		border-color: var(--accent);
+		background: var(--surface-2);
+		transform: translateY(-1px);
+	}
+	.cp-shelf-nav__link:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+	.cp-shelf-nav__link--next {
+		text-align: right;
+	}
+	.cp-shelf-nav__copy {
+		display: grid;
+		gap: 5px;
+		min-width: 0;
+	}
+	.cp-shelf-nav__copy span {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--fg-3);
+	}
+	.cp-shelf-nav__copy b {
+		min-width: 0;
+		font-size: 15px;
+		line-height: 1.25;
+		color: var(--fg-1);
+		font-weight: 600;
+		overflow-wrap: anywhere;
+	}
+	.cp-shelf-nav__arrow {
+		flex: 0 0 auto;
+		width: 32px;
+		height: 32px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--accent);
+		font-family: var(--font-mono);
+		font-size: 18px;
+		line-height: 1;
 	}
 
 	/* ===== Body ===== */
@@ -742,6 +900,15 @@
 		}
 		.cp-title {
 			font-size: clamp(40px, 9vw, 64px);
+		}
+		.cp-shelf-nav__links {
+			grid-template-columns: 1fr;
+		}
+		.cp-shelf-nav__link {
+			min-height: 68px;
+		}
+		.cp-shelf-nav__link--next {
+			text-align: left;
 		}
 	}
 </style>

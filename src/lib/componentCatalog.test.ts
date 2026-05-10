@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
 	componentCatalogEntries,
 	componentCount,
+	catalogShellPropsForSlug,
 	getCatalogEntryByHref,
+	getShelfNavigation,
 	isCatalogComponentPath,
 	themeSupportLabel
 } from './componentCatalog';
@@ -21,6 +23,24 @@ describe('componentCatalog agent metadata', () => {
 		expect(entry?.item.themeSupport).toBe('dual');
 		expect(isCatalogComponentPath('/topologycolorgrid')).toBe(true);
 		expect(isCatalogComponentPath('/not-a-template')).toBe(false);
+	});
+
+	it('derives previous and next component links inside the current shelf', () => {
+		const first = getShelfNavigation('/navbar');
+		const middle = getShelfNavigation('/speeddial/');
+		const shell = catalogShellPropsForSlug('/navbar');
+
+		expect(first?.shelf).toBe('Navigation & Shell');
+		expect(first?.index).toBe(1);
+		expect(first?.previous).toBeUndefined();
+		expect(first?.next?.name).toBe('SpeedDial');
+		expect(first?.next?.href).toBe('/speeddial');
+
+		expect(middle?.previous?.name).toBe('Navbar');
+		expect(middle?.next?.name).toBe('FloatingDock');
+
+		expect(shell?.props.shelfNavigation?.next?.name).toBe('SpeedDial');
+		expect(getShelfNavigation('/not-a-template')).toBeUndefined();
 	});
 
 	it('records non-standard source and docs paths for component families', () => {
