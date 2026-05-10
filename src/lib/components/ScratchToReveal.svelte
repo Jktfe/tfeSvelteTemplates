@@ -98,6 +98,12 @@
 	let canvasHeight = $state(height === 'auto' ? 0 : height);    // [CR] Calculated canvas height
 	let rafId: number | null = null;                              // [CR] RequestAnimationFrame ID for smooth drawing
 	let resizeObserver: ResizeObserver | null = null;             // [CR] Observer for auto-sizing
+	const fixedSize = $derived(width !== 'auto' && height !== 'auto');
+	const scratchSizeStyle = $derived(
+		fixedSize
+			? `--scratch-width: ${canvasWidth}px; --scratch-ratio: ${canvasWidth} / ${canvasHeight};`
+			: undefined
+	);
 
 	// [CR] Auto-measure content dimensions when width/height is 'auto'
 	// [NTL] When you don't specify a size, we figure out how big the hidden content is
@@ -144,8 +150,8 @@
 		const dpr = window.devicePixelRatio || 1;
 		canvasEl.width = canvasWidth * dpr;
 		canvasEl.height = canvasHeight * dpr;
-		canvasEl.style.width = `${canvasWidth}px`;
-		canvasEl.style.height = `${canvasHeight}px`;
+		canvasEl.style.width = fixedSize ? '100%' : `${canvasWidth}px`;
+		canvasEl.style.height = fixedSize ? '100%' : `${canvasHeight}px`;
 		ctx.scale(dpr, dpr);
 
 		// Draw scratch surface
@@ -215,8 +221,10 @@
 
 		rafId = requestAnimationFrame(() => {
 			const rect = canvasEl!.getBoundingClientRect();
-			const x = e.clientX - rect.left;
-			const y = e.clientY - rect.top;
+			const scaleX = canvasWidth / Math.max(rect.width, 1);
+			const scaleY = canvasHeight / Math.max(rect.height, 1);
+			const x = (e.clientX - rect.left) * scaleX;
+			const y = (e.clientY - rect.top) * scaleY;
 
 			// Erase mode: 'destination-out' removes pixels
 			ctx!.globalCompositeOperation = 'destination-out';
@@ -306,10 +314,12 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
 	class="scratch-to-reveal-wrapper {className}"
+	data-fixed-size={fixedSize ? 'true' : undefined}
 	role="application"
 	aria-label="Scratch to reveal hidden content. Press Space or Enter to skip scratching."
 	tabindex="0"
 	onkeydown={handleKeyDown}
+	style={scratchSizeStyle}
 >
 	<!-- Interactive scratch area (canvas + content) -->
 	<div bind:this={containerEl} class="scratch-area">
@@ -393,11 +403,18 @@
 		user-select: none;
 		-webkit-user-select: none;
 		outline: none;
+		max-width: 100%;
+		box-sizing: border-box;
 	}
 
 	.scratch-to-reveal-wrapper:focus-visible {
 		outline: 2px solid #3b82f6;
 		outline-offset: 2px;
+	}
+
+	.scratch-to-reveal-wrapper[data-fixed-size='true'] {
+		width: min(100%, var(--scratch-width));
+		align-items: stretch;
 	}
 
 	/**
@@ -409,6 +426,14 @@
 	.scratch-area {
 		position: relative;
 		display: inline-flex;
+		max-width: 100%;
+	}
+
+	.scratch-to-reveal-wrapper[data-fixed-size='true'] .scratch-area {
+		display: block;
+		width: 100%;
+		max-width: 100%;
+		aspect-ratio: var(--scratch-ratio);
 	}
 
 	/**
@@ -421,6 +446,13 @@
 		opacity: 1;
 		pointer-events: none;
 		overflow: hidden;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.scratch-to-reveal-wrapper[data-fixed-size='true'] .revealed-content {
+		width: 100% !important;
+		height: 100% !important;
 	}
 
 	.revealed-content.visible {
@@ -452,6 +484,7 @@
 		gap: 8px;
 		margin-top: 12px;
 		width: 100%;
+		max-width: min(100%, var(--scratch-width, 100%));
 	}
 
 	/**

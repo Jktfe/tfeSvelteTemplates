@@ -172,6 +172,18 @@
 	}
 
 	/**
+	 * Visible fallback for slnt. Some installed fonts expose wght/wdth but not
+	 * slnt; skewing the glyph wrapper keeps the Slant demo honest instead of
+	 * silently no-oping on common system stacks.
+	 */
+	export function buildSlantTransform(axes: AxisRange[], proximity: number): string {
+		const slantAxis = axes.find(({ axis }) => axis === 'slnt');
+		if (!slantAxis) return '';
+		const v = axisInterpolate(proximity, slantAxis.base, slantAxis.peak);
+		return `skewX(${v.toFixed(2)}deg)`;
+	}
+
+	/**
 	 * Capability probe — does the browser handle font-variation-settings?
 	 * Used by the component to bail out of cursor handling on very old
 	 * engines (the effect would silently no-op anyway, but skipping the
@@ -229,6 +241,7 @@
 
 	const letters = $derived(splitToLetters(text));
 	const baseSettings = $derived(buildVariationSettings(axes, 0));
+	const baseSlantTransform = $derived(buildSlantTransform(axes, 0));
 
 	let wrapper: HTMLElement | null = null;
 	const letterEls = new SvelteMap<number, HTMLElement>();
@@ -258,6 +271,7 @@
 			// Pointer is away or just left — reset every letter to base.
 			for (const el of letterEls.values()) {
 				el.style.fontVariationSettings = baseSettings;
+				el.style.transform = baseSlantTransform;
 			}
 			return;
 		}
@@ -275,6 +289,7 @@
 			const d = distance(cursor, lCenter);
 			const prox = falloff(d, radius, falloffCurve);
 			el.style.fontVariationSettings = buildVariationSettings(axes, prox);
+			el.style.transform = buildSlantTransform(axes, prox);
 		}
 	}
 
@@ -355,7 +370,7 @@
 			<span
 				class="letter"
 				aria-hidden="true"
-				style="font-variation-settings: {baseSettings};"
+				style="font-variation-settings: {baseSettings}; transform: {baseSlantTransform};"
 				bind:this={
 					() => letterEls.get(idx) ?? null,
 					(el) => setLetterEl(idx, el)
@@ -389,8 +404,11 @@
 
 	.letter {
 		display: inline-block;
-		transition: font-variation-settings var(--vp-transition-ms, 150ms) ease-out;
-		will-change: font-variation-settings;
+		transform-origin: 50% 80%;
+		transition:
+			font-variation-settings var(--vp-transition-ms, 150ms) ease-out,
+			transform var(--vp-transition-ms, 150ms) ease-out;
+		will-change: font-variation-settings, transform;
 	}
 
 	.space {

@@ -276,7 +276,7 @@
 <style>
 	.str-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
 		gap: 16px;
 	}
 	.str-card {
@@ -305,15 +305,15 @@
 	.str-stage {
 		display: grid;
 		place-items: center;
-		padding: 24px;
+		padding: clamp(12px, 4vw, 24px);
 		border-radius: var(--r-2);
 		background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 	}
 	.str-mini-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
 		gap: 12px;
-		padding: 16px;
+		padding: clamp(12px, 4vw, 16px);
 		border-radius: var(--r-2);
 		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 	}
