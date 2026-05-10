@@ -65,7 +65,7 @@
 		].join(', ');
 	}
 
-	export type FlickerProfile = 'none' | 'subtle' | 'broken';
+	export type FlickerProfile = 'none' | 'subtle' | 'broken' | 'pulse';
 
 	export interface FlickerStop {
 		pct: number;
@@ -79,12 +79,28 @@
 	 *
 	 * `subtle` → 2 short dips to ~0.7-0.9 (real-world neon).
 	 * `broken` → 6 deeper dips to ~0.2-0.6 (failing tube).
+	 * `pulse`  → smooth two-stop sine ramp (caller customises range
+	 *           via the `min`/`max` arguments — defaults to 0.55-1).
 	 */
-	export function flickerSchedule(seed: number, profile: FlickerProfile = 'subtle'): FlickerStop[] {
+	export function flickerSchedule(
+		seed: number,
+		profile: FlickerProfile = 'subtle',
+		pulseRange: [number, number] = [0.55, 1]
+	): FlickerStop[] {
 		if (profile === 'none') {
 			return [
 				{ pct: 0, opacity: 1 },
 				{ pct: 100, opacity: 1 }
+			];
+		}
+		if (profile === 'pulse') {
+			const [rawMin, rawMax] = pulseRange;
+			const min = Math.min(Math.max(rawMin, 0), 1);
+			const max = Math.min(Math.max(rawMax, min), 1);
+			return [
+				{ pct: 0, opacity: max },
+				{ pct: 50, opacity: min },
+				{ pct: 100, opacity: max }
 			];
 		}
 		const stops: FlickerStop[] = [{ pct: 0, opacity: 1 }];
@@ -104,6 +120,17 @@
 		}
 		stops.push({ pct: 100, opacity: 1 });
 		return stops.sort((a, b) => a.pct - b.pct);
+	}
+
+	/**
+	 * Clamp the customisable pulse range to valid [0,1] opacities and
+	 * ensure max >= min. Used by both the helper and the CSS bindings.
+	 */
+	export function normalisePulseRange(range: [number, number] = [0.55, 1]): [number, number] {
+		const [rawMin, rawMax] = range;
+		const min = Math.min(Math.max(rawMin, 0), 1);
+		const max = Math.min(Math.max(rawMax, min), 1);
+		return [min, max];
 	}
 
 	/**
@@ -138,6 +165,10 @@
 		on?: boolean;
 		size?: 'sm' | 'md' | 'lg';
 		seed?: number;
+		/** Seconds for one full pulse cycle. Only used when flicker === 'pulse'. */
+		pulseDuration?: number;
+		/** [min, max] opacity range driving the pulse. Both clamped to [0, 1]. */
+		pulseRange?: [number, number];
 		class?: string;
 	};
 
@@ -150,6 +181,8 @@
 		on = true,
 		size = 'md',
 		seed = 7,
+		pulseDuration = 2.4,
+		pulseRange = [0.55, 1],
 		class: extraClass = ''
 	}: Props = $props();
 
@@ -157,12 +190,15 @@
 	const shadowStack = $derived(buildShadowStack(palette, intensity));
 	const mask = $derived(brokenMask(value, broken));
 	const chars = $derived(value.split(''));
+	const [pulseMin, pulseMax] = $derived(normalisePulseRange(pulseRange));
 	// flickerSchedule is exposed for the test suite + advanced
 	// consumers; in CSS we use static keyframes and phase-shift
 	// per-sign via --neon-delay (driven by seed).
 	const animationName = $derived(
 		flicker === 'none' ? 'none' : `neon-flicker-${flicker}`
 	);
+	const animationDuration = $derived(flicker === 'pulse' ? `${pulseDuration}s` : '6s');
+	const animationTiming = $derived(flicker === 'pulse' ? 'ease-in-out' : 'steps(40, end)');
 	const animationDelay = $derived(
 		flicker === 'none' ? '0s' : `-${(Math.abs(seed) % 600) / 100}s`
 	);
@@ -179,7 +215,11 @@
 	style:--neon-dim={palette.dim}
 	style:--neon-shadow={shadowStack}
 	style:--neon-anim={animationName}
+	style:--neon-anim-duration={animationDuration}
+	style:--neon-anim-timing={animationTiming}
 	style:--neon-delay={animationDelay}
+	style:--neon-pulse-min={pulseMin}
+	style:--neon-pulse-max={pulseMax}
 	aria-label={value}
 	role="img"
 >
@@ -221,11 +261,11 @@
 		text-shadow: var(--neon-shadow);
 		transition: text-shadow 220ms ease;
 		animation-name: var(--neon-anim);
-		animation-duration: 6s;
+		animation-duration: var(--neon-anim-duration, 6s);
 		animation-iteration-count: infinite;
 		animation-fill-mode: both;
 		animation-delay: var(--neon-delay, 0s);
-		animation-timing-function: steps(40, end);
+		animation-timing-function: var(--neon-anim-timing, steps(40, end));
 		min-width: 0.2em;
 	}
 
@@ -253,6 +293,17 @@
 		70.5% { opacity: 1; }
 		88% { opacity: 0.34; }
 		88.6% { opacity: 1; }
+	}
+
+	/* Smooth breathing pulse — opacity walks min → max → min driven by
+	   --neon-pulse-min / --neon-pulse-max, with the cycle length set by
+	   --neon-anim-duration. Both knobs are component props so consumers
+	   can dial in anything from a slow chest-rise breath to a tight
+	   strobe. */
+	@keyframes neon-flicker-pulse {
+		0%   { opacity: var(--neon-pulse-max, 1); }
+		50%  { opacity: var(--neon-pulse-min, 0.55); }
+		100% { opacity: var(--neon-pulse-max, 1); }
 	}
 
 	.neon-on .neon-char {

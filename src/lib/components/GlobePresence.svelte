@@ -213,7 +213,11 @@
 
 		if (!isDragging) return;
 		const deltaX = e.clientX - lastPointerX;
-		rotation += deltaX * 0.01;
+		// Drag-right must spin the globe right (markers follow the cursor).
+		// With the projection's z = sin(rotatedTheta) > 0 = front convention,
+		// a positive theta delta rotates front-centre markers to the LEFT,
+		// so the drag delta must be subtracted, not added.
+		rotation -= deltaX * 0.01;
 		lastPointerX = e.clientX;
 	}
 

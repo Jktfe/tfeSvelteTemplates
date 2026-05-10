@@ -74,9 +74,11 @@
 
 	export function topologyCardLayout(index: number, extruded = true): TopologyCardLayout {
 		const layout = cardLayouts[((index % cardLayouts.length) + cardLayouts.length) % cardLayouts.length];
+		// Flatten means flatten — all cards on the same plane. The earlier
+		// 32% reduction left enough Z that the toggle barely registered.
 		return {
 			...layout,
-			depth: extruded ? layout.depth : Math.round(layout.depth * 0.32)
+			depth: extruded ? layout.depth : 0
 		};
 	}
 </script>
@@ -354,8 +356,6 @@
 					`}
 					aria-pressed={activeId === swatch.id}
 					onclick={() => selectCard(swatch.id)}
-					onmouseenter={() => selectCard(swatch.id)}
-					onfocus={() => selectCard(swatch.id)}
 					data-topology-reveal
 				>
 					<span class="card-meta">
@@ -617,6 +617,9 @@
 		opacity: 0.72;
 	}
 
+	/* Hover = preview lift. Active (clicked) = preview lift PLUS a clear
+	   outline ring + inset accent so users can see which card they picked
+	   even after the cursor moves away. */
 	.topology-card:hover,
 	.topology-card:focus-visible,
 	.topology-card.is-active {
@@ -625,6 +628,15 @@
 		transform: translate(-50%, -50%) translateZ(calc((var(--z) + 82) * 1px)) rotateZ(var(--r))
 			scale(1.03);
 		box-shadow:
+			0 34px 60px var(--topology-card-shadow-active),
+			0 0 0 1px rgba(255, 255, 255, 0.24) inset,
+			0 0 42px color-mix(in srgb, var(--tone), transparent 44%);
+	}
+
+	.topology-card.is-active {
+		box-shadow:
+			0 0 0 3px var(--text),
+			0 0 0 5px color-mix(in srgb, var(--tone), transparent 30%),
 			0 34px 60px var(--topology-card-shadow-active),
 			0 0 0 1px rgba(255, 255, 255, 0.24) inset,
 			0 0 42px color-mix(in srgb, var(--tone), transparent 44%);

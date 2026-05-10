@@ -74,18 +74,23 @@
 <div class="mh-surface" aria-hidden="true">
 	<svg class="mh-defs" width="0" height="0" focusable="false">
 		<defs>
+			<!-- The displacement map is re-rasterised every time the filter
+			     reads from feTurbulence. Single-octave noise + a smaller scale
+			     + a slower (28s) animation drops per-frame GPU cost enough
+			     that the Lissajous dot and any sibling motion no longer drop
+			     frames on mid-tier GPUs. The visual character is preserved. -->
 			<filter id={filterId} x="-10%" y="-10%" width="120%" height="120%">
-				<feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="2" seed="7">
+				<feTurbulence type="fractalNoise" baseFrequency="0.014" numOctaves="1" seed="7">
 					{#if !reduced}
 						<animate
 							attributeName="baseFrequency"
-							dur="14s"
-							values="0.012;0.024;0.012"
+							dur="28s"
+							values="0.013;0.020;0.013"
 							repeatCount="indefinite"
 						/>
 					{/if}
 				</feTurbulence>
-				<feDisplacementMap in="SourceGraphic" scale="38" />
+				<feDisplacementMap in="SourceGraphic" scale="22" />
 			</filter>
 		</defs>
 	</svg>
@@ -136,6 +141,9 @@
 		background-blend-mode: screen, screen, normal;
 		opacity: 0.92;
 		will-change: filter;
+		/* Promote to its own compositor layer so the per-frame filter rasterise
+		   doesn't take the rest of the page off the GPU. */
+		transform: translateZ(0);
 	}
 
 	.mh-veil {
