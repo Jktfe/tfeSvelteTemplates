@@ -357,14 +357,14 @@
 	}
 	.sf-flap-top {
 		top: 0;
-		align-items: flex-start;
+		align-items: flex-end;
 		padding-top: 0.04em;
 		background: linear-gradient(180deg, var(--sf-bg) 0%, var(--sf-bg-hi) 100%);
 		transform-origin: bottom center;
 	}
 	.sf-flap-bottom {
 		bottom: 0;
-		align-items: flex-end;
+		align-items: flex-start;
 		padding-bottom: 0.04em;
 		background: linear-gradient(180deg, var(--sf-bg-hi) 0%, var(--sf-bg) 100%);
 		transform-origin: top center;

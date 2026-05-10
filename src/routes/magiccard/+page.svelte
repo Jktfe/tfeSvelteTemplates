@@ -157,15 +157,16 @@
 		gap: 12px;
 	}
 
+	/* No background here — MagicCard's outer container provides its own
+	   surface, and an opaque background on the slotted article would sit
+	   above the spotlight overlay and hide the entire effect. */
 	.mc-feature {
 		display: grid;
 		gap: 8px;
 		padding: 24px;
-		border-radius: var(--r-2);
-		background: var(--surface);
-		border: 1px solid var(--border);
 		min-height: 180px;
 		color: var(--fg-1);
+		width: 100%;
 	}
 	.mc-feature--alt {
 		min-height: 120px;

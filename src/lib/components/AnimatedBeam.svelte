@@ -131,10 +131,25 @@
 					y2={path.y2}
 					stroke={gradient ? 'url(#beam-gradient)' : beamColor}
 					stroke-width={beamWidth}
-					class="beam {path.bidirectional ? 'bidirectional' : ''}"
+					class="beam beam--forward"
 					style="--beam-duration: {beamSpeed}s"
 					aria-hidden="true"
 				/>
+				{#if path.bidirectional}
+					<!-- Second line with reverse flow so a true bi-directional beam shows dashes
+					     moving both ways at once instead of replacing the forward animation. -->
+					<line
+						x1={path.x1}
+						y1={path.y1}
+						x2={path.x2}
+						y2={path.y2}
+						stroke={gradient ? 'url(#beam-gradient)' : beamColor}
+						stroke-width={beamWidth}
+						class="beam beam--reverse"
+						style="--beam-duration: {beamSpeed}s"
+						aria-hidden="true"
+					/>
+				{/if}
 			{/each}
 		</g>
 
@@ -182,30 +197,28 @@
 	/* [NTL] This is the magic! Dashed lines that appear to flow */
 	/* [CR] ============================================================ */
 
-	/* [CR] stroke-dasharray creates the dashed pattern */
-	/* [CR] Animating stroke-dashoffset makes dashes appear to move */
+	/* stroke-dashoffset travels exactly one dash period (8 + 8 = 16) per loop
+	   so the loop seam is invisible. Earlier `100 → 0` gave a 100 mod 16 = 4 px
+	   phase jump on every restart, which read as a jitter. */
 	.beam {
-		stroke-dasharray: 8 8;        /* [NTL] 8px dash, 8px gap */
-		stroke-linecap: round;        /* [NTL] Rounded dash ends look nicer */
+		stroke-dasharray: 8 8;
+		stroke-linecap: round;
+	}
+	.beam--forward {
 		animation: beam-flow var(--beam-duration, 2s) linear infinite;
 	}
-
-	/* [CR] Bi-directional beams flow in reverse */
-	.beam.bidirectional {
+	.beam--reverse {
 		animation: beam-flow-reverse var(--beam-duration, 2s) linear infinite;
 	}
 
-	/* [CR] Forward flow animation (source → target) */
-	/* [NTL] offset goes from 100 to 0, making dashes appear to move forward */
 	@keyframes beam-flow {
-		from { stroke-dashoffset: 100; }
+		from { stroke-dashoffset: 16; }
 		to { stroke-dashoffset: 0; }
 	}
 
-	/* [CR] Reverse flow animation (target → source) */
 	@keyframes beam-flow-reverse {
 		from { stroke-dashoffset: 0; }
-		to { stroke-dashoffset: 100; }
+		to { stroke-dashoffset: 16; }
 	}
 
 	/* [CR] ============================================================ */
@@ -214,13 +227,18 @@
 	/* [CR] ============================================================ */
 
 	.node {
-		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));  /* [NTL] Subtle depth */
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 		transition: transform 0.2s ease;
 		cursor: default;
+		/* Anchor scale at the circle's own bounding-box centre instead of the
+		   SVG origin (0,0) — without this the node visibly leaps across the
+		   canvas on hover. */
+		transform-box: fill-box;
+		transform-origin: center;
 	}
 
 	.node:hover {
-		transform: scale(1.2);  /* [NTL] Grow slightly on hover */
+		transform: scale(1.2);
 	}
 
 	/* [CR] Node label styling - positioned above each node */

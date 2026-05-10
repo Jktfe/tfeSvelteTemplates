@@ -244,7 +244,7 @@
 				window.innerWidth,
 				window.innerHeight
 			);
-			position = clamped;
+			position = adjustForContainingBlock(clamped.x, clamped.y);
 			focusActive();
 		});
 	}
@@ -346,6 +346,24 @@
 			event.preventDefault();
 			close();
 		}
+	}
+
+	/**
+	 * `position: fixed` resolves to the viewport UNLESS an ancestor
+	 * establishes a containing block (transform, perspective, filter,
+	 * contain: paint/layout, will-change). When that happens — e.g.
+	 * the menu mounts inside a `.cp-card { contain: paint }` demo
+	 * shell — viewport-coord clientX/Y values land at the wrong
+	 * place. Detect that case via offsetParent and subtract its
+	 * rect from the supplied coords so the menu still lands under
+	 * the cursor.
+	 */
+	function adjustForContainingBlock(x: number, y: number): { x: number; y: number } {
+		if (!menuEl) return { x, y };
+		const op = menuEl.offsetParent as HTMLElement | null;
+		if (!op || op === document.body) return { x, y };
+		const opRect = op.getBoundingClientRect();
+		return { x: x - opRect.left, y: y - opRect.top };
 	}
 </script>
 
