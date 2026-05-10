@@ -1632,6 +1632,50 @@ export function isCatalogComponentPath(href: string): boolean {
 	return Boolean(getCatalogEntryByHref(href));
 }
 
+export interface ShelfNavigationLink {
+	name: string;
+	href: string;
+	icon: string;
+	description: string;
+}
+
+export interface ShelfNavigation {
+	shelf: string;
+	index: number;
+	total: number;
+	previous?: ShelfNavigationLink;
+	next?: ShelfNavigationLink;
+}
+
+const toShelfNavigationLink = (item: ComponentCatalogItem): ShelfNavigationLink => ({
+	name: item.name,
+	href: item.href,
+	icon: item.icon,
+	description: item.description
+});
+
+export function getShelfNavigation(href: string): ShelfNavigation | undefined {
+	const currentPath = normalizeHref(href);
+	for (const category of componentCategories) {
+		const idx = category.components.findIndex(
+			(item) => normalizeHref(item.href) === currentPath
+		);
+		if (idx === -1) continue;
+
+		return {
+			shelf: category.name,
+			index: idx + 1,
+			total: category.components.length,
+			previous: idx > 0 ? toShelfNavigationLink(category.components[idx - 1]) : undefined,
+			next:
+				idx < category.components.length - 1
+					? toShelfNavigationLink(category.components[idx + 1])
+					: undefined
+		};
+	}
+	return undefined;
+}
+
 export function themeSupportLabel(themeSupport: ComponentCatalogItem['themeSupport']): string {
 	return themeSupport === 'dual' ? 'Light and dark mode' : 'Light mode';
 }
@@ -1669,6 +1713,8 @@ export interface CatalogShellProps {
 	codeFileName: string;
 	/** Pre-rendered HTML from the sibling .md, sanitised by `renderMarkdown`. */
 	docsHtml?: string;
+	/** Previous/next component links within the same catalog shelf. */
+	shelfNavigation?: ShelfNavigation;
 }
 
 const REPO_BLOB = 'https://github.com/Jktfe/tfeSvelteTemplates/blob/main/';
@@ -1703,7 +1749,8 @@ export function shellPropsFromCatalog(
 		install: `cp ${item.source} ./src/lib/components/`,
 		resources,
 		codeFileName: sourceFile,
-		docsHtml: getDocsHtmlForPath(item.docs)
+		docsHtml: getDocsHtmlForPath(item.docs),
+		shelfNavigation: getShelfNavigation(item.href)
 	};
 }
 
