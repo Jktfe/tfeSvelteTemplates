@@ -530,6 +530,29 @@
 		font-size: 18px;
 		line-height: 1;
 	}
+	.cp-shelf-nav__placeholder {
+		display: block;
+		min-width: 0;
+	}
+	.cp-shelf-nav--footer {
+		max-width: none;
+		margin-top: 56px;
+		padding-top: 32px;
+		border-top: 1px solid var(--border);
+	}
+	.cp-shelf-nav--footer .cp-shelf-nav__link {
+		min-height: 92px;
+		padding: 18px 22px;
+		font-size: 16px;
+	}
+	.cp-shelf-nav--footer .cp-shelf-nav__copy b {
+		font-size: 18px;
+	}
+	.cp-shelf-nav--footer .cp-shelf-nav__arrow {
+		width: 40px;
+		height: 40px;
+		font-size: 22px;
+	}
 
 	/* ===== Body ===== */
 	.cp-body {
