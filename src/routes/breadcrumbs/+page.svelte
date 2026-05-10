@@ -7,14 +7,14 @@
 
 	const shortTrail = [
 		{ label: 'Home', href: '/' },
-		{ label: 'Components', href: '/components' },
+		{ label: 'Components', href: '/#components' },
 		{ label: 'Breadcrumbs' }
 	];
 
 	const fullTrail = [
 		{ label: 'Home', href: '/' },
-		{ label: 'Components', href: '/components' },
-		{ label: 'Navigation', href: '/components/navigation' },
+		{ label: 'Components', href: '/#components' },
+		{ label: 'Navigation & Shell', href: '/navbar' },
 		{ label: 'Breadcrumbs' }
 	];
 

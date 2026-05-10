@@ -361,6 +361,29 @@
 		drawerOpen = !drawerOpen;
 	}
 
+	/**
+	 * Move the drawer element to <body> on mount so its position:fixed escapes
+	 * any ancestor containing block (transform, contain:paint, filter, etc.).
+	 * Without this the FAB anchors to the nearest contained ancestor and the
+	 * "floating drawer" stops floating.
+	 */
+	function bodyPortal(node: HTMLElement) {
+		if (typeof document === 'undefined') return;
+		const original = node.parentNode;
+		const placeholder = document.createComment('reading-toc-portal');
+		original?.insertBefore(placeholder, node);
+		document.body.appendChild(node);
+		return {
+			destroy() {
+				if (placeholder.parentNode) {
+					placeholder.parentNode.replaceChild(node, placeholder);
+				} else if (node.parentNode === document.body) {
+					document.body.removeChild(node);
+				}
+			}
+		};
+	}
+
 	function handleDrawerKey(e: KeyboardEvent): void {
 		if (e.key === 'Escape' && drawerOpen) {
 			drawerOpen = false;
@@ -420,7 +443,7 @@
 {/snippet}
 
 {#if resolvedVariant === 'drawer'}
-	<div class="reading-toc drawer size-{resolvedSize} {className}" class:reduced>
+	<div use:bodyPortal class="reading-toc drawer size-{resolvedSize} {className}" class:reduced>
 		<button
 			type="button"
 			class="drawer-toggle"

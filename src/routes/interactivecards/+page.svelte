@@ -37,7 +37,7 @@
 			own sticky pin and tall scroll spacer, so let it fill the route below.
 		</p>
 		<div class="ic-frame">
-			<InteractiveCards />
+			<InteractiveCards scrollHeight="220vh" />
 		</div>
 	{/snippet}
 
@@ -79,10 +79,16 @@
 	.ic-note strong {
 		color: var(--fg-1);
 	}
+	/* No overflow:hidden — sticky pinning inside InteractiveCards needs the
+	   page scroll, and clipping the wrapper would either break the sticky
+	   anchor or hide the cards as they fan/travel. The radius gets applied
+	   to the sticky surface instead. */
 	.ic-frame {
 		border-radius: var(--r-2);
-		overflow: hidden;
 		border: 1px solid var(--border);
 		background: var(--surface);
+	}
+	.ic-frame :global(.interactive-cards) {
+		border-radius: var(--r-2);
 	}
 </style>

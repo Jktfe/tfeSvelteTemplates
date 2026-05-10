@@ -221,12 +221,10 @@
 
 		const zIndex = getCardZIndex(displayIndex);
 
-		return `
-			transform: translateX(${x}px) translateY(${y}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale});
-			opacity: ${opacity};
-			z-index: ${zIndex};
-			transition: ${transition};
-		`.trim();
+		// Single-line so SSR serialisation can't drop properties on multi-line
+		// attribute strings — every card must declare its own z-index so the
+		// stack order survives without relying on document order.
+		return `transform: translateX(${x}px) translateY(${y}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${scale}); opacity: ${opacity}; z-index: ${zIndex}; transition: ${transition};`;
 	}
 
 	/**
