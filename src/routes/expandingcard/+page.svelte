@@ -310,18 +310,18 @@
 	.ec-stage {
 		display: grid;
 		place-items: center;
-		min-height: 460px;
-		padding: 24px;
+		min-height: clamp(320px, 46vw, 430px);
+		padding: clamp(14px, 4vw, 24px);
 		border-radius: var(--r-2);
 		background: var(--surface-2);
 		border: 1px solid var(--border);
 	}
 	.ec-stage--inner {
-		min-height: 380px;
-		padding: 18px;
+		min-height: clamp(300px, 42vw, 380px);
+		padding: clamp(12px, 3vw, 18px);
 	}
 	.ec-stage--tall {
-		min-height: 520px;
+		min-height: clamp(380px, 58vw, 520px);
 	}
 	.ec-stack {
 		display: grid;
@@ -329,7 +329,7 @@
 	}
 	.ec-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
 		gap: 12px;
 	}
 	.ec-narrow {

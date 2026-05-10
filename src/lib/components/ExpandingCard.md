@@ -2,7 +2,7 @@
 
 ## What Does It Do? (Plain English)
 
-ExpandingCard is a card that morphs between two layouts when clicked: a tall, vertical "compact" form with a square image above its heading, and a wide, horizontal "expanded" form with the image to the left of a longer body of text. The image, heading, and text don't fade in and out — they fly between positions. Click the card again and they fly back.
+ExpandingCard is a card that morphs between two layouts when clicked: a tall, vertical "compact" form with a square image above its heading, and a wide, horizontal "expanded" form with the image to the left of a longer body of text. On narrow containers the expanded form stacks again so the card stays inside its parent instead of clipping. The image, heading, and text don't fade in and out — they fly between positions. Click the card again and they fly back.
 
 Think of it like a business card folding open: it's the same card, the same content, just rearranged with a smooth animation linking the two states.
 

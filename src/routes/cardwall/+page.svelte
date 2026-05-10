@@ -11,7 +11,7 @@
 
 <Cardwall density="default" tilesPerRow={8} />
 <Cardwall density="sparse" tilesPerRow={6} />
-<Cardwall density="dense" tilesPerRow={10} tileWidth={180} tileGap={14} />`;
+<Cardwall density="dense" tilesPerRow={10} tileWidth={210} tileGap={14} />`;
 
 	const codeExplanation =
 		'Cardwall renders rows of CSS-gradient tiles drifting across a CSS perspective container. A single requestAnimationFrame loop wraps each row offset around its period for a seamless seam, and SSR-deterministic Halton(2,3) sequences pick the gradient + label for each tile so server and client agree byte-for-byte. Click any tile to pin it — the rest of the wall keeps drifting.';
@@ -55,10 +55,10 @@
 		<div class="cw-block">
 			<header class="cw-label">
 				<h3>Dense · 7 rows</h3>
-				<p>Cinematic city of tiles — pair with a foreground headline overlay.</p>
+				<p>Cinematic city of tiles — slightly wider cells keep dense labels readable.</p>
 			</header>
 			<div class="cw-frame">
-				<Cardwall density="dense" tilesPerRow={10} tileWidth={180} tileGap={14} />
+				<Cardwall density="dense" tilesPerRow={10} tileWidth={210} tileGap={14} />
 			</div>
 		</div>
 	{/snippet}

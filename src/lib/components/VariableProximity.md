@@ -2,7 +2,7 @@
 
 ## What Does It Do? (Plain English)
 
-VariableProximity splits a phrase into per-letter spans, then drives each letter's variable-font axes (weight, width, slant, optical size) by how close the cursor is. Letters near the pointer swell — heavier weight, wider letterforms, optional slant. Letters far away rest at their base. There is no timer; the effect is purely cursor-reactive. Move away and every letter relaxes back to base.
+VariableProximity splits a phrase into per-letter spans, then drives each letter's variable-font axes (weight, width, slant, optical size) by how close the cursor is. Letters near the pointer swell — heavier weight, wider letterforms, optional slant. Slant also gets a `skewX(...)` wrapper transform so the demo remains visible on system fonts that expose variable weight/width but not a true `slnt` axis. Letters far away rest at their base. There is no timer; the effect is purely cursor-reactive. Move away and every letter relaxes back to base.
 
 Think of it as a magnifying glass for typography. Where your finger lands, the glyphs respond.
 
@@ -63,7 +63,7 @@ applyAxesFromCursor():
 
 ## The Core Concept: Distance → Falloff → Axis Interpolation
 
-The component's "shape" comes from one composition: every pointermove writes a fresh `font-variation-settings` per letter, and CSS transitions interpolate to those new values. The chain has three stages.
+The component's "shape" comes from one composition: every pointermove writes a fresh `font-variation-settings` per letter, writes a matching `skewX(...)` transform when a `slnt` axis is configured, and CSS transitions interpolate to those new values. The chain has three stages.
 
 **Stage 1 — distance.** Euclidean distance between cursor and letter centre, in pixels relative to the wrapper:
 
@@ -105,7 +105,7 @@ CSS does not have a built-in interpolation for `font-variation-settings` between
 ## Performance
 
 - **rAF throttling.** A flood of `pointermove` events (some browsers fire 200+ per second on a fast trackpad) coalesces into at most one DOM-write pass per frame. `scheduleApply` short-circuits if `rafHandle` is already set.
-- **GPU-friendly.** `font-variation-settings` is a paint, not a layout — modern engines composite axis changes without reflowing the surrounding text. The wrapper's metrics stay stable.
+- **GPU-friendly.** `font-variation-settings` is a paint, not a layout, and the slant fallback is a transform — modern engines composite the effect without reflowing the surrounding text. The wrapper's metrics stay stable.
 - **No cache, no observer.** Letter rects are read fresh each frame. `getBoundingClientRect` is fast in a hot path; caching would mean tracking resize, scroll, zoom, and font-load events for marginal gain.
 - **Capability gate.** `isVariableFontSupported()` checks `CSS.supports('font-variation-settings: "wght" 400')` once at mount; on engines that don't support it, the pointermove handler bails immediately and the letters render flat.
 - **Reduced-motion gate.** `prefers-reduced-motion: reduce` also bails the handler — letters freeze at base, no inline writes, no CSS transitions.

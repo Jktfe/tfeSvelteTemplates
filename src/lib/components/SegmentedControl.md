@@ -124,7 +124,7 @@ The `name` prop seeds the radio group: each radio shares the same `name`, which 
 | Situation | Behaviour |
 |-----------|-----------|
 | `value` doesn't match any option (e.g. uninitialised state) | `findIndex` returns `-1`; clamped to `0` so the indicator parks on the first segment. The first segment is *not* selected — `value` stays unchanged. |
-| `equalWidth={false}` and segments have different label lengths | Indicator width still computes from `option-count`, which assumes equal segments. The slide will visually mis-align with content-fit segments. Stick to `equalWidth` unless you accept that compromise. |
+| `equalWidth={false}` and segments have different label lengths | The component swaps from the shared sliding indicator to an active-segment fill, so content-fit controls stay aligned even when labels have mixed widths. |
 | User has `prefers-reduced-motion: reduce` | The 180 ms slide is removed; the indicator teleports to the new position. |
 | Six or more segments | They get cramped on mobile and the joined affordance stops reading as "pick one". Switch to Tabs or a `<select>` dropdown. |
 | Two SegmentedControls on the same page without `name` overrides | Each gets an auto-generated `name`; the radio groups don't interfere. |

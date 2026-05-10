@@ -96,15 +96,16 @@
 				<p class="note">
 					Pass <code>multiple</code> to allow several panels open simultaneously.
 				</p>
-				<Accordion items={faqs} multiple defaultOpen={['shipping', 'returns']} />
+				<Accordion items={faqs} multiple />
 			</section>
 
 			<section>
 				<h3>Settings — always one open</h3>
 				<p class="note">
-					<code>preventCollapseLast</code> in single mode keeps at least one panel expanded.
+					<code>preventCollapseLast</code> in single mode keeps the currently open panel expanded
+					until another panel is chosen.
 				</p>
-				<Accordion items={settings} preventCollapseLast defaultOpen={['general']} />
+				<Accordion items={settings} preventCollapseLast />
 			</section>
 
 			<section>

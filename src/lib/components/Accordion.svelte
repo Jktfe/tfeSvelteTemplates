@@ -271,14 +271,23 @@
 	.accordion-content {
 		min-height: 0;
 		overflow: hidden;
-		padding: 0 1rem 0.875rem 1rem;
+		padding: 0 1rem;
 		color: #4b5563;
 		line-height: 1.6;
 	}
 
+	.accordion-item.open .accordion-content {
+		padding-bottom: 0.875rem;
+	}
+
 	.accordion-sm .accordion-content {
-		padding: 0 0.875rem 0.625rem 0.875rem;
+		padding: 0 0.875rem;
 		font-size: 0.875rem;
+	}
+
+	.accordion-sm.accordion-item.open .accordion-content,
+	.accordion-sm .accordion-item.open .accordion-content {
+		padding-bottom: 0.625rem;
 	}
 
 	@media (prefers-reduced-motion: reduce) {

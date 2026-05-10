@@ -79,7 +79,7 @@
 </script>
 
 <div
-	class="segmented segmented-{size} {equalWidth ? 'segmented-equal' : ''} {className}"
+	class="segmented segmented-{size} {equalWidth ? 'segmented-equal' : 'segmented-fit'} {className}"
 	role="radiogroup"
 	aria-label={ariaLabel}
 	style="--active-bg: {activeBg}; --active-text: {activeText}; --active-index: {activeIndex}; --option-count: {options.length};"
@@ -142,6 +142,17 @@
 
 	.segmented-equal .segment {
 		flex: 1 1 0;
+	}
+
+	.segmented-fit::before {
+		display: none;
+	}
+
+	.segmented-fit .segment.active {
+		background: var(--active-bg);
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.06),
+			0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
 	.segment {

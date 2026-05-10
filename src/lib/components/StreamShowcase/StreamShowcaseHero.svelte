@@ -2,7 +2,7 @@
 	StreamShowcaseHero — top half of the showcase section.
 
 	Renders the small "Now browsing" eyebrow pill above a two-line
-	brush-script title. The title is split per-letter into <span>s so
+	TFE display title. The title is split per-letter into <span>s so
 	we can stagger their entrance (opacity + translateY + rotate)
 	while the underlying DOM remains a real <h1> for screen readers.
 
@@ -142,11 +142,12 @@
 		align-items: center;
 		gap: 0;
 		margin: 0;
-		font-family: 'Caveat Brush', 'Caveat', 'Brush Script MT', 'Lucida Handwriting', cursive;
+		font-family: var(--font-display), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 		font-weight: 400;
-		font-size: clamp(3rem, 11vw, 8rem);
-		line-height: 0.95;
-		letter-spacing: -0.01em;
+		font-size: clamp(3rem, 10vw, 7.5rem);
+		line-height: 0.9;
+		letter-spacing: 0;
+		text-transform: uppercase;
 	}
 
 	.ssh-line {

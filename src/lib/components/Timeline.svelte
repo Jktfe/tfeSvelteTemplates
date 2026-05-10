@@ -645,7 +645,7 @@
 	@media (max-width: 768px) {
 		/* [CR] Force left alignment on mobile for vertical timeline */
 		.timeline--vertical {
-			padding-left: 3rem;
+			padding-left: 0;
 		}
 
 		.timeline--vertical .timeline-line {
@@ -660,7 +660,7 @@
 		.timeline--vertical .timeline-item.align-left,
 		.timeline--vertical .timeline-item.align-right {
 			flex-direction: row;
-			padding-left: 2rem;
+			padding-left: 3.25rem;
 			padding-right: 0;
 			margin-left: 0;
 			text-align: left;
@@ -675,6 +675,7 @@
 
 		.timeline-content {
 			max-width: none;
+			min-width: 0;
 		}
 
 		/* [CR] Smaller markers on mobile */
