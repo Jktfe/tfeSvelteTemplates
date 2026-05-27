@@ -63,7 +63,7 @@ export function perspectiveTransform(rowIdx: number, totalRows: number): string 
 	// Position relative to the middle row, in [-1, 1].
 	const rel = totalRows === 1 ? 0 : (rowIdx - mid) / mid;
 	// Tilt the upper rows forward (negative rotateX), lower rows back.
-	const tiltDeg = -rel * 14;
+	const tiltDeg = -rel * 10;
 	// Outer rows shrink slightly so the perspective reads.
 	const scale = 1 - Math.abs(rel) * 0.08;
 	// Outer rows nudge along Y to compress the apparent depth.

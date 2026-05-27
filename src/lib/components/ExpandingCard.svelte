@@ -50,7 +50,7 @@
 <script lang="ts">
 	// [CR] Svelte's built-in crossfade creates shared element transitions between layouts
 	// [NTL] This is what makes elements "fly" from their old position to their new one!
-	import { crossfade } from 'svelte/transition';
+	import { crossfade, fade } from 'svelte/transition';
 	import type { ExpandingCardProps } from '$lib/types';
 
 	// [CR] Props with sensible defaults - each controls a visual aspect of the card
@@ -87,7 +87,7 @@
 	// [CR] Elements with matching keys animate smoothly from old to new position
 	// [NTL] Think of it like magic teleportation - the image "flies" from one spot to another!
 	let [send, receive] = crossfade({
-		duration: 400 // [NTL] Animation takes 400ms (0.4 seconds) - fast but smooth
+		duration: 350 // [CR] Snappier crossfade keeps internal elements from lagging behind layout swap
 	});
 
 	// [CR] Toggle function - click handler for the entire card
@@ -104,8 +104,7 @@
 			type="button"
 			onclick={toggleLayout}
 			class="{bgColor} layouta expanding-card expanding-card--compact cursor-pointer overflow-hidden rounded-3xl"
-			in:receive={{ key: 'layouta' }}
-			out:send={{ key: 'layouta' }}
+			transition:fade={{ duration: 300 }}
 			aria-label="Expand card"
 			aria-expanded="false"
 			style="--ec-bg: {cardBackground};"
@@ -139,8 +138,7 @@
 			type="button"
 			onclick={toggleLayout}
 			class="{bgColor} layouta expanding-card expanding-card--expanded cursor-pointer overflow-hidden rounded-3xl"
-			in:receive={{ key: 'layouta' }}
-			out:send={{ key: 'layouta' }}
+			transition:fade={{ duration: 300 }}
 			aria-label="Collapse card"
 			aria-expanded="true"
 			style="--ec-bg: {cardBackground};"
@@ -179,6 +177,7 @@
 		max-width: 100%;
 		min-width: 0;
 		padding: clamp(0.5rem, 2vw, 1rem);
+		transition: grid-template-rows 300ms ease;
 	}
 
 	.layouta {

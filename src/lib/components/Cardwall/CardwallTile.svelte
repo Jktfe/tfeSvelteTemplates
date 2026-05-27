@@ -86,14 +86,14 @@
 		font-family: var(--font-display, ui-sans-serif), system-ui, sans-serif;
 		font-style: normal;
 		font-weight: 400;
-		font-size: clamp(1rem, 1.6vw, 1.45rem);
+		font-size: clamp(1.15rem, 1.8vw, 1.45rem);
 		line-height: 0.95;
 		letter-spacing: 0.02em;
 		text-align: center;
 		overflow-wrap: anywhere;
-		color: rgba(255, 255, 255, 0.94);
-		text-shadow: 0 2px 18px rgba(0, 0, 0, 0.45);
-		mix-blend-mode: screen;
+		color: rgba(255, 255, 255, 1);
+		text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 4px 20px rgba(0, 0, 0, 0.4);
+		mix-blend-mode: normal;
 		user-select: none;
 		pointer-events: none;
 	}

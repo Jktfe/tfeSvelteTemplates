@@ -85,13 +85,13 @@ describe('Cardwall helpers — perspectiveTransform', () => {
 
 	it('tilts upper rows forward (negative rotateX) and shrinks them slightly', () => {
 		const top = perspectiveTransform(0, 5);
-		expect(top).toMatch(/rotateX\(14\.00deg\)/);
+		expect(top).toMatch(/rotateX\(10.00deg\)/);
 		expect(top).toContain('scale(0.920)');
 	});
 
 	it('tilts lower rows back (positive rotateX) symmetrically', () => {
 		const bottom = perspectiveTransform(4, 5);
-		expect(bottom).toMatch(/rotateX\(-14\.00deg\)/);
+		expect(bottom).toMatch(/rotateX\(-10.00deg\)/);
 		expect(bottom).toContain('scale(0.920)');
 	});
 });
