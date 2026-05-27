@@ -145,6 +145,8 @@
 	let timers: ReturnType<typeof setTimeout>[] = [];
 	let mounted = $state(false);
 	let prefersReduced = $state(false);
+	// Previous char per cell during animation (bottom static + top flap)
+	let prevChar = $state<string[]>([]);
 
 	function clearTimers() {
 		for (const t of timers) clearTimeout(t);
@@ -162,12 +164,15 @@
 		const startDelay = frameDelay(idx, stagger, intensity);
 
 		sequence.forEach((char, step) => {
+			const prevStepChar = step === 0 ? from : sequence[step - 1];
 			const t = setTimeout(
 				() => {
+					prevChar[idx] = prevStepChar;
 					displayed[idx] = char;
 					flipping[idx] = true;
 					const settle = setTimeout(() => {
 						flipping[idx] = false;
+						prevChar[idx] = '';
 					}, flipDuration);
 					timers.push(settle);
 				},
@@ -232,6 +237,7 @@
 >
 	{#each cells as cellTarget, idx (idx)}
 		{@const char = mounted ? (displayed[idx] ?? cellTarget) : cellTarget}
+		{@const prev = prevChar[idx] || char}
 		<span
 			class="sf-cell"
 			class:sf-flipping={isFlipping(idx)}
@@ -239,10 +245,10 @@
 			style:--sf-duration="{flipDuration}ms"
 			aria-hidden="true"
 		>
-			<span class="sf-half sf-bottom">{char}</span>
+			<span class="sf-half sf-bottom">{prev}</span>
 			<span class="sf-half sf-top">{char}</span>
 			<span class="sf-flap sf-flap-bottom">{char}</span>
-			<span class="sf-flap sf-flap-top">{char}</span>
+			<span class="sf-flap sf-flap-top">{prev}</span>
 			<span class="sf-divider"></span>
 		</span>
 	{/each}
@@ -300,13 +306,13 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
-		height: 50%;
+		height: calc(50% - 1px);
 		overflow: hidden;
 		pointer-events: none;
 	}
 	.sf-top {
 		top: 0;
-		align-items: flex-end;
+		align-items: flex-start;
 	}
 	.sf-top :global(*),
 	.sf-top {
@@ -314,7 +320,7 @@
 	}
 	.sf-bottom {
 		bottom: 0;
-		align-items: flex-start;
+		align-items: flex-end;
 	}
 	.sf-half {
 		/* shift the glyph so each half shows the matching slice */
@@ -337,8 +343,11 @@
 		left: 0;
 		right: 0;
 		top: 50%;
-		height: 1px;
-		background: var(--sf-divider);
+		height: 2px;
+		transform: translateY(-50%);
+		background: var(--sf-bg);
+		box-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+		z-index: 2;
 		pointer-events: none;
 	}
 
@@ -346,7 +355,7 @@
 		position: absolute;
 		left: 0;
 		right: 0;
-		height: 50%;
+		height: calc(50% - 1px);
 		display: flex;
 		justify-content: center;
 		overflow: hidden;
@@ -357,14 +366,14 @@
 	}
 	.sf-flap-top {
 		top: 0;
-		align-items: flex-end;
+		align-items: flex-start;
 		padding-top: 0.04em;
 		background: linear-gradient(180deg, var(--sf-bg) 0%, var(--sf-bg-hi) 100%);
 		transform-origin: bottom center;
 	}
 	.sf-flap-bottom {
 		bottom: 0;
-		align-items: flex-start;
+		align-items: flex-end;
 		padding-bottom: 0.04em;
 		background: linear-gradient(180deg, var(--sf-bg-hi) 0%, var(--sf-bg) 100%);
 		transform-origin: top center;
