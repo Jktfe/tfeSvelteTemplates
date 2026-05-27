@@ -12,6 +12,9 @@
 <script lang="ts">
 	import MagicCard from '$lib/components/MagicCard.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
+	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
+
+	const shell = catalogShellPropsForSlug('/magiccard')!;
 
 	const features = [
 		{
@@ -55,24 +58,7 @@
 </svelte:head>
 
 <ComponentPageShell
-	name="MagicCard"
-	category="Cards & Layout"
-	description="Cards with a mouse-tracking spotlight and border glow. Pure CSS overlay, pointer-driven, theme-aware."
-	install="cp src/lib/components/MagicCard.svelte ./src/lib/components/"
-	dependencies={['Svelte 5+', 'Zero external dependencies', 'Scoped CSS only']}
-	source="src/lib/components/MagicCard.svelte"
-	demoPath="src/routes/magiccard/+page.svelte"
-	agentSteps={[
-		'Copy MagicCard.svelte into src/lib/components/.',
-		'Wrap the element you want to spotlight with <MagicCard>.',
-		'Tune gradientColor (hex) and gradientOpacity (0–1) to taste.'
-	]}
-	tags={['Svelte 5', 'Hover', 'CSS-only', 'Theme-aware']}
-	resources={[
-		{ label: 'Source · MagicCard.svelte', href: 'https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/MagicCard.svelte' },
-		{ label: 'Tests · MagicCard.test.ts', href: 'https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/MagicCard.test.ts' },
-		{ label: 'Component docs', href: 'https://github.com/Jktfe/tfeSvelteTemplates/blob/main/src/lib/components/MagicCard.md' }
-	]}
+	{...shell.props}
 	{usageSnippet}
 	{codeExplanation}
 >
