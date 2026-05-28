@@ -68,8 +68,8 @@
 		const delay = BASE_DELAYS[safeIdx];
 		// Alternate direction so neighbouring ribbons swirl against each other.
 		const direction = safeIdx % 2 === 0 ? 'normal' : 'reverse';
-		// Outer ribbons (idx 2 and 3) fade slightly so the centre reads brighter.
-		const opacity = safeIdx < 2 ? 0.85 : 0.6;
+		// Inner ribbons brighter, outer ribbons softer.
+		const opacity = safeIdx < 2 ? 0.9 : 0.7;
 		return { idx: safeIdx, period, delay, direction, opacity };
 	}
 
@@ -108,7 +108,7 @@
 	let {
 		palette: paletteName = 'classic',
 		intensity = 1,
-		blur = 60,
+		blur = 40,
 		class: className = ''
 	}: Props = $props();
 
@@ -149,7 +149,6 @@
 		min-height: 360px;
 		background: var(--ab-base);
 		overflow: hidden;
-		isolation: isolate;
 	}
 
 	.ab-ribbon {
@@ -180,9 +179,9 @@
 		background: radial-gradient(
 			ellipse at center,
 			transparent 0%,
-			transparent 55%,
-			rgba(0, 0, 0, 0.45) 90%,
-			rgba(0, 0, 0, 0.7) 100%
+			transparent 70%,
+			rgba(0, 0, 0, 0.25) 90%,
+			rgba(0, 0, 0, 0.4) 100%
 		);
 		z-index: 1;
 	}

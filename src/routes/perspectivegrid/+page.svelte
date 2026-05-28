@@ -173,8 +173,8 @@ $ pg --intensity=calm --mode=wireframe
 	}
 	.pg-content {
 		position: relative;
-		min-height: 240px;
-		padding: 2.5rem 1.5rem;
+		min-height: 420px;
+		padding: 3.5rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -203,8 +203,8 @@ $ pg --intensity=calm --mode=wireframe
 	.pg-terminal {
 		position: relative;
 		margin: 0;
-		padding: 2.5rem 1.5rem;
-		min-height: 220px;
+		padding: 3.5rem 1.5rem;
+		min-height: 380px;
 		font-family: 'Fira Code', ui-monospace, monospace;
 		font-size: 0.85rem;
 		color: #8ce4ff;
