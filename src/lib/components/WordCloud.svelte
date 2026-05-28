@@ -404,12 +404,11 @@
 	const items = $derived(cappedWords.map(buildItem));
 
 	// Compute spiral positions with collision detection
-	const spiralPositions = $derived(() => {
-		if (resolvedVariant !== 'spiral') return [];
-		return spiralPositionWithCollision(
+	const spiralPositions = $derived(() =>
+		resolvedVariant !== 'spiral' ? [] : spiralPositionWithCollision(
 			items.map((item) => ({ fontSize: item.fontSize, index: item.index }))
-		);
-	});
+		)
+	);
 </script>
 
 {#if cappedWords.length === 0}
