@@ -1,12 +1,4 @@
 <script lang="ts" module>
-	// ============================================================
-	// AuroraBackdrop — pure helpers + types
-	//
-	// Exported via module-script so the test suite can assert
-	// palette selection, ribbon configuration, and motion-gate
-	// behaviour without rendering a component.
-	// ============================================================
-
 	export type AuroraPaletteName = 'classic' | 'dawn' | 'deep';
 
 	export interface AuroraPalette {
@@ -19,81 +11,57 @@
 		classic: {
 			name: 'classic',
 			stops: ['#22d3ee', '#a78bfa', '#34d399', '#0ea5e9'],
-			base: '#04060d'
+			base: '#0a1020'
 		},
 		dawn: {
 			name: 'dawn',
 			stops: ['#f472b6', '#fbbf24', '#fb7185', '#a855f7'],
-			base: '#1a0710'
+			base: '#1a0a15'
 		},
 		deep: {
 			name: 'deep',
 			stops: ['#0ea5e9', '#1e293b', '#22d3ee', '#312e81'],
-			base: '#020617'
+			base: '#0a1025'
 		}
 	};
 
-	/**
-	 * Resolve a palette by name. Falls back to `classic` on any
-	 * unknown input so consumers passing user data never crash.
-	 */
 	export function pickPalette(name: string): AuroraPalette {
 		return PALETTES[name as AuroraPaletteName] ?? PALETTES.classic;
 	}
 
-	/**
-	 * Per-ribbon animation configuration. The four ribbons rotate
-	 * at deliberately non-harmonic periods so the composite never
-	 * loops cleanly to the eye, and start at staggered phase
-	 * offsets so the wall reads as alive on the first frame.
-	 *
-	 * `intensity` scales the base period — 1.0 is the default,
-	 * <1 speeds the rotation up (more energetic), >1 slows it
-	 * down (more meditative).
-	 */
 	export interface RibbonConfig {
 		idx: number;
-		period: number; // seconds per full rotation
-		delay: number; // seconds before the loop begins
+		period: number;
+		delay: number;
 		direction: 'normal' | 'reverse';
-		opacity: number; // 0..1 — outer ribbons fade slightly
+		opacity: number;
 	}
 
-	const BASE_PERIODS = [40, 65, 80, 110] as const;
-	const BASE_DELAYS = [0, -12, -34, -52] as const;
+	// Prime-based periods for non-harmonic rotation (no visible loops)
+	const BASE_PERIODS = [8, 13, 19, 29] as const;
+	const BASE_DELAYS = [0, -4, -9, -15] as const;
 
 	export function ribbonConfig(idx: number, intensity = 1): RibbonConfig {
 		const safeIdx = ((idx % 4) + 4) % 4;
 		const period = BASE_PERIODS[safeIdx] * Math.max(0.25, intensity);
 		const delay = BASE_DELAYS[safeIdx];
-		// Alternate direction so neighbouring ribbons swirl against each other.
 		const direction = safeIdx % 2 === 0 ? 'normal' : 'reverse';
-		// Inner ribbons brighter, outer ribbons softer.
-		const opacity = safeIdx < 2 ? 0.9 : 0.7;
+		const opacity = safeIdx < 2 ? 0.95 : 0.75;
 		return { idx: safeIdx, period, delay, direction, opacity };
 	}
 
-	/**
-	 * Build the CSS conic-gradient string for a ribbon, given a
-	 * palette and a rotation offset (degrees). The rotation offset
-	 * is applied as the gradient's `from` angle so each ribbon
-	 * starts pointing in a different direction even before any
-	 * animation runs.
-	 */
 	export function buildRibbonGradient(palette: AuroraPalette, fromAngle: number): string {
 		const [a, b, c, d] = palette.stops;
 		return `conic-gradient(from ${fromAngle.toFixed(0)}deg at 50% 50%, ${a}, ${b}, ${c}, ${d}, ${a})`;
 	}
 
-	/**
-	 * Read-only motion-preference probe. Returns `false` in non-DOM
-	 * environments so SSR + tests stay deterministic.
-	 */
 	export function isReducedMotion(): boolean {
-		if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+		if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+		try {
+			return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		} catch {
 			return false;
 		}
-		return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 	}
 </script>
 
@@ -108,7 +76,7 @@
 	let {
 		palette: paletteName = 'classic',
 		intensity = 1,
-		blur = 40,
+		blur = 20,
 		class: className = ''
 	}: Props = $props();
 
@@ -153,9 +121,9 @@
 
 	.ab-ribbon {
 		position: absolute;
-		inset: -25%;
+		inset: -12%;
 		filter: blur(var(--ab-blur));
-		mix-blend-mode: screen;
+		mix-blend-mode: lighten;
 		animation-name: ab-spin;
 		animation-iteration-count: infinite;
 		animation-timing-function: linear;
@@ -179,9 +147,9 @@
 		background: radial-gradient(
 			ellipse at center,
 			transparent 0%,
-			transparent 70%,
-			rgba(0, 0, 0, 0.25) 90%,
-			rgba(0, 0, 0, 0.4) 100%
+			transparent 75%,
+			rgba(0, 0, 0, 0.15) 92%,
+			rgba(0, 0, 0, 0.3) 100%
 		);
 		z-index: 1;
 	}

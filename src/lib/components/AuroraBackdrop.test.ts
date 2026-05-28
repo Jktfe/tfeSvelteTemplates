@@ -85,18 +85,18 @@ describe('AuroraBackdrop helpers — ribbonConfig', () => {
 		expect(ribbonConfig(1).opacity).toBeGreaterThan(ribbonConfig(3).opacity);
 	});
 
-	it('uses non-harmonic base periods (40, 65, 80, 110) so the composite never loops cleanly', () => {
-		expect(ribbonConfig(0).period).toBe(40);
-		expect(ribbonConfig(1).period).toBe(65);
-		expect(ribbonConfig(2).period).toBe(80);
-		expect(ribbonConfig(3).period).toBe(110);
+	it('uses non-harmonic base periods (8, 13, 19, 29) so the composite never loops cleanly', () => {
+		expect(ribbonConfig(0).period).toBe(8);
+		expect(ribbonConfig(1).period).toBe(13);
+		expect(ribbonConfig(2).period).toBe(19);
+		expect(ribbonConfig(3).period).toBe(29);
 	});
 
 	it('intensity scales the period — intensity<1 speeds up, >1 slows down', () => {
 		const fast = ribbonConfig(0, 0.5);
 		const slow = ribbonConfig(0, 2);
-		expect(fast.period).toBeLessThan(40);
-		expect(slow.period).toBeGreaterThan(40);
+		expect(fast.period).toBeLessThan(8);
+		expect(slow.period).toBeGreaterThan(8);
 	});
 
 	it('clamps intensity to a sensible minimum so periods never collapse to ~0', () => {
@@ -203,6 +203,6 @@ describe('AuroraBackdrop component', () => {
 			return m ? Number(m[1]) : NaN;
 		});
 		expect(new Set(durations).size).toBe(4);
-		expect(durations).toEqual(expect.arrayContaining([40, 65, 80, 110]));
+		expect(durations).toEqual(expect.arrayContaining([8, 13, 19, 29]));
 	});
 });
