@@ -177,7 +177,7 @@ describe('AuroraBackdrop component', () => {
 		const root = container.querySelector('.ab-root') as HTMLElement | null;
 		expect(root).not.toBeNull();
 		// dawn base is the very-dark plum
-		expect(root?.getAttribute('style')).toContain('#1a0710');
+		expect(root?.getAttribute('style')).toContain('#1a0a15');
 	});
 
 	it('paints each ribbon with a conic-gradient referencing the palette', () => {
