@@ -86,7 +86,7 @@
 	// When searching, override visible categories to those with matches
 	const searchVisibleIndices = $derived(
 		searchLower.length === 0
-			? null
+			? []
 			: categories
 				.map((_, i) => i)
 				.filter((i) => (filteredComponents[categorySlugs[i]]?.length ?? 0) > 0)
@@ -313,12 +313,12 @@
 	</section>
 
 	<!-- ===== Category shelves ===== -->
-	{#each (searchVisibleIndices ?? visibleCategoryIndices) as i (categories[i].name)}
+	{#each (searchLower.length > 0 ? searchVisibleIndices : visibleCategoryIndices) as i (categories[i].name)}
 		{@const cat = categories[i]}
 		{@const offset = offsets[i]}
 		{@const slug = categorySlugs[i]}
 		{@const collapsed = shelfTabs[slug] === 'hidden'}
-		@const displayComponents = searchLower.length > 0 ? (filteredComponents[slug] ?? cat.components) : cat.components;
+		{@const displayComponents = searchLower.length > 0 ? (filteredComponents[slug] ?? cat.components) : cat.components}
 		{@const sliderItems = displayComponents.map((item, j) => ({
 			id: item.href,
 			href: item.href,
@@ -392,7 +392,7 @@
 		</section>
 	{/each}
 
-	{#if (searchVisibleIndices ?? visibleCategoryIndices).length === 0}
+	{#if (searchLower.length > 0 ? searchVisibleIndices : visibleCategoryIndices).length === 0}
 		<section class="t-empty">
 			<div class="t-wrap">
 				<p>

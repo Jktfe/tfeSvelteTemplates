@@ -255,7 +255,7 @@
 	 */
 	export function spiralPosition(
 		index: number,
-		spacing = 4.5,
+		spacing = 10,
 		aspectRatio = 0.8
 	): SpiralPosition {
 		if (index === 0) return { left: 50, top: 50 };
@@ -296,40 +296,49 @@
 	 */
 	export function spiralPositionWithCollision(
 		words: { fontSize: number; index: number }[],
-		spacing = 4.5,
-		aspectRatio = 0.8,
-		gap = 0.8
+		spacing = 10,
+		aspectRatio = 0.75,
+		gap = 1.2
 	): SpiralPosition[] {
 		const positions: { left: number; top: number; r: number }[] = [];
+		const maxSize = words.length > 0 ? Math.max(...words.map((w) => w.fontSize)) : 48;
 
-		for (const word of words) {
-			// Estimate bounding circle radius from fontSize (in % units)
-			const wordRadius = (word.fontSize / 48) * spacing * 0.5 + gap;
-			let pos = spiralPosition(word.index, spacing, aspectRatio);
-			let radius = spacing * Math.sqrt(word.index || 1);
+		for (let i = 0; i < words.length; i++) {
+			const word = words[i];
+			// Estimate bounding circle radius relative to container percentages.
+			// Larger fonts need bigger radii; scale proportionally to the max font size.
+			const sizeRatio = word.fontSize / maxSize;
+			const wordRadius = sizeRatio * spacing * 0.55 + gap;
 
-			// Push away from overlapping placed words
-			let attempts = 0;
-			while (attempts < 50) {
+			// Start with golden angle position
+			const baseAngle = i * GOLDEN_ANGLE;
+			let spiralRadius = spacing * Math.sqrt(i + 1);
+			let pos = {
+				left: 50 + Math.cos(baseAngle) * spiralRadius,
+				top: 50 + Math.sin(baseAngle) * spiralRadius * aspectRatio
+			};
+
+			// Iterative collision resolution: push outward along spiral until no overlap
+			for (let attempt = 0; attempt < 80; attempt++) {
 				let overlaps = false;
 				for (const p of positions) {
 					const dx = pos.left - p.left;
 					const dy = (pos.top - p.top) / aspectRatio;
 					const dist = Math.sqrt(dx * dx + dy * dy);
-					if (dist < wordRadius + p.r + gap) {
+					const minDist = wordRadius + p.r;
+					if (dist < minDist) {
 						overlaps = true;
 						break;
 					}
 				}
 				if (!overlaps) break;
-				// Increase radius and recalculate position
-				radius += 0.5;
-				const angle = word.index * GOLDEN_ANGLE + attempts * 0.1;
+				// Push outward along an adjusted spiral angle
+				spiralRadius += spacing * 0.12;
+				const angle = baseAngle + attempt * 0.18;
 				pos = {
-					left: 50 + Math.cos(angle) * radius,
-					top: 50 + Math.sin(angle) * radius * aspectRatio
+					left: 50 + Math.cos(angle) * spiralRadius,
+					top: 50 + Math.sin(angle) * spiralRadius * aspectRatio
 				};
-				attempts++;
 			}
 
 			positions.push({ left: pos.left, top: pos.top, r: wordRadius });
