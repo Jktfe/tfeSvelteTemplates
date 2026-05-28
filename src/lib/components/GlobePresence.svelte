@@ -60,7 +60,7 @@
 
 		// Spherical to Cartesian
 		const x = radius * Math.sin(phi) * Math.cos(rotatedTheta);
-		const y = radius * Math.cos(phi);
+		const y = -radius * Math.cos(phi);
 		const z = radius * Math.sin(phi) * Math.sin(rotatedTheta);
 
 		// Simple perspective projection (orthogonal for this flat look)
@@ -136,9 +136,9 @@
 		markers.forEach(marker => {
 			// Convert lat/long to phi/theta
 			// lat: [-90, 90] -> phi: [PI, 0]
-			// long: [-180, 180] -> theta: [0, 2PI]
+			// long: prime meridian (0) at front, east right, west left
 			const phi = (90 - marker.lat) * (Math.PI / 180);
-			const theta = (marker.long + 180) * (Math.PI / 180);
+			const theta = (90 - marker.long) * (Math.PI / 180);
 
 			const { x, y, z } = project(phi, theta, radius, rotation);
 
@@ -180,8 +180,9 @@
 				if (isHovered || marker.label) {
 					ctx.fillStyle = theme === 'dark' ? '#fff' : '#000';
 					ctx.font = isHovered ? 'bold 12px Inter, system-ui' : '10px Inter, system-ui';
+					ctx.textBaseline = 'middle';
 					const labelText = isHovered ? marker.name : (marker.label || '');
-					ctx.fillText(labelText, screenX + 12, screenY + 4);
+					ctx.fillText(labelText, screenX + 14, screenY);
 				}
 			}
 		});
