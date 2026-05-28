@@ -5,22 +5,22 @@
 
 	[CR] WHAT IT DOES
 	Card component with two distinct layouts (compact/expanded) that
-	seamlessly transitions between them using Svelte's built-in crossfade.
+	seamlessly transitions between them using CSS transitions.
 	Clicking anywhere on the card toggles the layout state.
 
 	[NTL] THE SIMPLE VERSION
 	It's like a business card that can unfold! Click it once to see
 	more details, click again to fold it back up. The magic is in how
-	smoothly everything moves to its new position.
+	smoothly the card reshapes via CSS transitions.
 
 	============================================================
 
 	FEATURES:
-	- Smooth crossfade transitions between layouts
+	- Smooth CSS transitions between layouts
 	- Compact: Vertical layout (image top, text below)
 	- Expanded: Horizontal layout (image left, text right)
 	- Click anywhere to toggle
-	- Shared element transitions maintain visual continuity
+	- Single DOM element — no snap/recreate on toggle
 	- Responsive design with mobile optimisations
 	- Accessible with keyboard and ARIA labels
 
@@ -32,9 +32,8 @@
 	- FAQ sections with visual emphasis
 
 	DEPENDENCIES:
-	- svelte/transition (crossfade) - built into Svelte
 	- $lib/types (ExpandingCardProps)
-	- Scoped CSS for responsive sizing and theme-safe backgrounds
+	- Scoped CSS transitions for smooth layout changes
 
 	ACCESSIBILITY:
 	- Full button semantics (clickable, focusable)
@@ -48,20 +47,15 @@
 -->
 
 <script lang="ts">
-	// [CR] Svelte's built-in crossfade creates shared element transitions between layouts
-	// [NTL] This is what makes elements "fly" from their old position to their new one!
-	import { crossfade, fade } from 'svelte/transition';
 	import type { ExpandingCardProps } from '$lib/types';
 
-	// [CR] Props with sensible defaults - each controls a visual aspect of the card
-	// [NTL] These are all the things you can customise when using this card
 	let {
-		imageSrc = 'https://i.pinimg.com/564x/b3/7c/fa/b37cfa52ac8e142ffe42772712f6e33d.jpg', // [NTL] The picture shown on the card
-		imageAlt = 'Card Image',                                                             // [NTL] Description for screen readers
-		heading = 'Card Title',                                                              // [NTL] The big bold title
-		compactText = 'Hello Devs, welcome to our Website',                                  // [NTL] Short text when card is small
-		expandedText = 'Yoo devs, How you doing?',                                           // [NTL] Longer text when card opens up
-		bgColor = 'bg-lime-100'                                                              // [NTL] TailwindCSS background colour class
+		imageSrc = 'https://i.pinimg.com/564x/b3/7c/fa/b37cfa52ac8e142ffe42772712f6e33d.jpg',
+		imageAlt = 'Card Image',
+		heading = 'Card Title',
+		compactText = 'Hello Devs, welcome to our Website',
+		expandedText = 'Yoo devs, How you doing?',
+		bgColor = 'bg-lime-100'
 	}: ExpandingCardProps = $props();
 
 	const BG_CLASS_COLORS: Record<string, string> = {
@@ -79,94 +73,33 @@
 
 	const cardBackground = $derived(BG_CLASS_COLORS[bgColor] ?? BG_CLASS_COLORS['bg-lime-100']);
 
-	// [CR] Layout state machine - simple two-state toggle
-	// [NTL] This is the "open/closed" switch - compact = folded up, expanded = opened out
 	let layout: 'compact' | 'expanded' = $state('compact');
 
-	// [CR] Crossfade returns two transition functions: send (outgoing) and receive (incoming)
-	// [CR] Elements with matching keys animate smoothly from old to new position
-	// [NTL] Think of it like magic teleportation - the image "flies" from one spot to another!
-	let [send, receive] = crossfade({
-		duration: 350 // [CR] Snappier crossfade keeps internal elements from lagging behind layout swap
-	});
-
-	// [CR] Toggle function - click handler for the entire card
-	// [NTL] Flip the switch: if it's compact, expand it. If it's expanded, compact it.
+	// Single button with CSS transitions — no DOM destruction on toggle.
 	function toggleLayout() {
 		layout = layout === 'compact' ? 'expanded' : 'compact';
 	}
 </script>
 
 <div class="expanding-card-shell">
-	{#if layout === 'compact'}
-		<!-- Compact Layout: Vertical stack with image on top -->
-		<button
-			type="button"
-			onclick={toggleLayout}
-			class="{bgColor} layouta expanding-card expanding-card--compact cursor-pointer overflow-hidden rounded-3xl"
-			transition:fade={{ duration: 300 }}
-			aria-label="Expand card"
-			aria-expanded="false"
-			style="--ec-bg: {cardBackground};"
-		>
-			<!-- Image element with crossfade -->
-			<div class="imgTag expanding-card__media" in:receive={{ key: 'imgTag' }} out:send={{ key: 'imgTag' }}>
-				<img src={imageSrc} alt={imageAlt} />
-			</div>
+	<!-- Single button: layout class toggles, CSS transitions handle the rest -->
+	<button
+		type="button"
+		onclick={toggleLayout}
+		class="{bgColor} layouta expanding-card {layout === 'compact' ? 'expanding-card--compact' : 'expanding-card--expanded'} cursor-pointer overflow-hidden rounded-3xl"
+		aria-label={layout === 'compact' ? 'Expand card' : 'Collapse card'}
+		aria-expanded={layout === 'expanded'}
+		style="--ec-bg: {cardBackground};"
+	>
+		<div class="imgTag expanding-card__media">
+			<img src={imageSrc} alt={imageAlt} />
+		</div>
 
-			<!-- Content area -->
-			<div class="expanding-card__copy expanding-card__copy--compact">
-				<h1
-					class="heading"
-					in:receive={{ key: 'heading' }}
-					out:send={{ key: 'heading' }}
-				>
-					{heading}
-				</h1>
-				<p
-					class="para"
-					in:receive={{ key: 'para' }}
-					out:send={{ key: 'para' }}
-				>
-					{compactText}
-				</p>
-			</div>
-		</button>
-	{:else}
-		<!-- Expanded Layout: Horizontal with image on left -->
-		<button
-			type="button"
-			onclick={toggleLayout}
-			class="{bgColor} layouta expanding-card expanding-card--expanded cursor-pointer overflow-hidden rounded-3xl"
-			transition:fade={{ duration: 300 }}
-			aria-label="Collapse card"
-			aria-expanded="true"
-			style="--ec-bg: {cardBackground};"
-		>
-			<!-- Image element with crossfade -->
-			<div class="imgTag expanding-card__media" in:receive={{ key: 'imgTag' }} out:send={{ key: 'imgTag' }}>
-				<img src={imageSrc} alt={imageAlt} />
-			</div>
-
-			<!-- Content area -->
-			<div class="expanding-card__copy expanding-card__copy--expanded">
-				<h1
-					class="heading"
-					in:receive={{ key: 'heading' }}
-					out:send={{ key: 'heading' }}
-				>
-					{heading}
-				</h1>
-				<p
-					class="para"
-					in:receive={{ key: 'para' }}
-					out:send={{ key: 'para' }}
-				>
-					{expandedText}
-				</p>
-			</div>
-		</button>
-	{/if}
+		<div class="expanding-card__copy {layout === 'compact' ? 'expanding-card__copy--compact' : 'expanding-card__copy--expanded'}">
+			<h1 class="heading">{heading}</h1>
+			<p class="para">{layout === 'compact' ? compactText : expandedText}</p>
+		</div>
+	</button>
 </div>
 
 <style>
@@ -177,7 +110,6 @@
 		max-width: 100%;
 		min-width: 0;
 		padding: clamp(0.5rem, 2vw, 1rem);
-		transition: grid-template-rows 300ms ease;
 	}
 
 	.layouta {
@@ -211,18 +143,24 @@
 		display: grid;
 		min-width: 0;
 		text-align: left;
+		align-items: center;
+		transition:
+			width 350ms cubic-bezier(0.22, 1, 0.36, 1),
+			gap 350ms cubic-bezier(0.22, 1, 0.36, 1),
+			padding 350ms cubic-bezier(0.22, 1, 0.36, 1),
+			grid-template-columns 350ms cubic-bezier(0.22, 1, 0.36, 1);
 	}
 
 	.expanding-card--compact {
 		width: min(100%, 17.5rem);
 		gap: 0.9rem;
 		padding: 1rem;
+		grid-template-columns: 1fr;
 	}
 
 	.expanding-card--expanded {
 		width: min(100%, 40rem);
 		grid-template-columns: minmax(8.5rem, 13rem) minmax(0, 1fr);
-		align-items: center;
 		gap: clamp(0.85rem, 2vw, 1.35rem);
 		padding: clamp(0.85rem, 2.5vw, 1.15rem);
 	}
@@ -230,20 +168,12 @@
 	.imgTag {
 		overflow: hidden;
 		border-radius: 1rem;
+		width: 100%;
+		height: 12rem;
 		background: rgba(255, 255, 255, 0.35);
 		box-shadow:
 			0 1px 0 rgba(255, 255, 255, 0.65) inset,
 			0 18px 32px -26px rgba(15, 23, 42, 0.6);
-	}
-
-	.expanding-card--compact .imgTag {
-		width: 100%;
-		aspect-ratio: 1;
-	}
-
-	.expanding-card--expanded .imgTag {
-		width: 100%;
-		aspect-ratio: 1;
 	}
 
 	.imgTag img {
@@ -294,7 +224,7 @@
 		}
 
 		.expanding-card--expanded .imgTag {
-			aspect-ratio: 16 / 10;
+			height: 10rem;
 		}
 	}
 </style>
