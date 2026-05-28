@@ -24,7 +24,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { componentCategories, componentCount } from '$lib/componentCatalog';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import FilterChips from '$lib/components/FilterChips.svelte';
+	import SearchBar from '$lib/components/SearchBar.svelte';
 	import InfiniteCardSlider, { type SliderItem } from '$lib/components/InfiniteCardSlider.svelte';
 	import LiquidTabBar from '$lib/components/LiquidTabBar.svelte';
 
@@ -44,6 +47,9 @@
 	// only the matching ones. Driven by FilterChips (multi-select, removable).
 	let selectedCategories = $state<string[]>([]);
 
+	// Search state: filters components by name, description, category.
+	let searchQuery = $state('');
+
 	const filterOptions = categories.map((cat, i) => ({
 		value: categorySlugs[i],
 		label: cat.name,
@@ -57,6 +63,49 @@
 					.map((_, i) => i)
 					.filter((i) => selectedCategories.includes(categorySlugs[i]))
 	);
+
+	// Search filtering: match components across all categories
+	const searchLower = $derived(searchQuery.toLowerCase().trim());
+
+	// Per-category filtered component lists (empty = show all in that category)
+	const filteredComponents = $derived(
+		searchLower.length === 0
+			? {}
+			: Object.fromEntries(
+				categories.map((cat, i) => [
+					categorySlugs[i],
+					cat.components.filter((item) => {
+						const haystack = [item.name, item.description, cat.name, cat.summary]
+							.join(' ').toLowerCase();
+						return haystack.includes(searchLower);
+					})
+				])
+			)
+	);
+
+	// When searching, override visible categories to those with matches
+	const searchVisibleIndices = $derived(
+		searchLower.length === 0
+			? null
+			: categories
+				.map((_, i) => i)
+				.filter((i) => (filteredComponents[categorySlugs[i]]?.length ?? 0) > 0)
+	);
+
+	// Sync search query with URL ?q= param
+	let searchDebounce: ReturnType<typeof setTimeout>;
+	$effect(() => {
+		clearTimeout(searchDebounce);
+		searchDebounce = setTimeout(() => {
+			const url = new URL(window.location);
+			if (searchQuery) {
+				url.searchParams.set('q', searchQuery);
+			} else {
+				url.searchParams.delete('q');
+			}
+			goto(url.pathname + url.search, { replaceState: true, invalidateAll: false });
+		}, 300);
+	});
 
 	// Collapse state — each shelf gets its own LiquidTabBar tab id ('open' or
 	// 'hidden'). Default 'open' so the dogfood landing shows everything; the
@@ -74,6 +123,9 @@
 	let canvasEl = $state<HTMLCanvasElement | null>(null);
 
 	onMount(() => {
+		// Read initial search query from URL
+		const urlQ = new URL(window.location).searchParams.get('q');
+		if (urlQ) searchQuery = urlQ;
 		// Animated dot field for the GSAP feature visual.
 		let raf = 0;
 		let t = 0;
@@ -235,6 +287,7 @@
 				</div>
 			</div>
 			<div class="t-filters">
+			<SearchBar bind:value={searchQuery} />
 				<FilterChips
 					options={filterOptions}
 					bind:selected={selectedCategories}
@@ -260,12 +313,13 @@
 	</section>
 
 	<!-- ===== Category shelves ===== -->
-	{#each visibleCategoryIndices as i (categories[i].name)}
+	{#each (searchVisibleIndices ?? visibleCategoryIndices) as i (categories[i].name)}
 		{@const cat = categories[i]}
 		{@const offset = offsets[i]}
 		{@const slug = categorySlugs[i]}
 		{@const collapsed = shelfTabs[slug] === 'hidden'}
-		{@const sliderItems = cat.components.map((item, j) => ({
+		@const displayComponents = searchLower.length > 0 ? (filteredComponents[slug] ?? cat.components) : cat.components;
+		{@const sliderItems = displayComponents.map((item, j) => ({
 			id: item.href,
 			href: item.href,
 			name: item.name,
@@ -338,7 +392,7 @@
 		</section>
 	{/each}
 
-	{#if visibleCategoryIndices.length === 0}
+	{#if (searchVisibleIndices ?? visibleCategoryIndices).length === 0}
 		<section class="t-empty">
 			<div class="t-wrap">
 				<p>
