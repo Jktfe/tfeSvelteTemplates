@@ -191,6 +191,8 @@
 	const mask = $derived(brokenMask(value, broken));
 	const chars = $derived(value.split(''));
 	const [pulseMin, pulseMax] = $derived(normalisePulseRange(pulseRange));
+	// Key to restart pulse animation cleanly when range props change
+	const pulseKey = $derived(`${pulseMin.toFixed(2)}-${pulseMax.toFixed(2)}`);
 	// flickerSchedule is exposed for the test suite + advanced
 	// consumers; in CSS we use static keyframes and phase-shift
 	// per-sign via --neon-delay (driven by seed).
@@ -224,7 +226,13 @@
 	role="img"
 >
 	{#each chars as ch, idx (idx)}
-		<span class="neon-char" class:neon-broken={mask[idx]} aria-hidden="true">{ch}</span>
+		<span 
+			class="neon-char" 
+			class:neon-broken={mask[idx]}
+			class:neon-char--pulse-keyed={flicker === 'pulse'}
+			key={flicker === 'pulse' ? pulseKey : idx}
+			aria-hidden="true"
+		>{ch}</span>
 	{/each}
 </span>
 
@@ -304,6 +312,11 @@
 		0%   { opacity: var(--neon-pulse-max, 1); }
 		50%  { opacity: var(--neon-pulse-min, 0.55); }
 		100% { opacity: var(--neon-pulse-max, 1); }
+	}
+
+	/* When pulse props change, restart animation cleanly by keying the element */
+	.neon-char--pulse-keyed {
+		animation-name: neon-flicker-pulse;
 	}
 
 	.neon-on .neon-char {
