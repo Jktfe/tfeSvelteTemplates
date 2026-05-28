@@ -87,20 +87,20 @@
 
 <WordCloud
   words={tags}
-  variant="organic"
+  variant="spiral"
   minSize={14}
   maxSize={48}
 />`;
 
 	const codeExplanation =
-		'WordCloud takes an array of {text, weight, href?} tuples and renders them with size proportional to weight via a clamped linear scale. Three pure-CSS variants share the same data shape: organic uses flex-wrap, grid uses CSS grid with auto-fit columns, and radial places words in concentric rings. Palettes are deterministic — a hashed word always renders the same colour. Zero canvas, zero D3.';
+		'WordCloud takes an array of {text, weight, href?} tuples and renders them with size proportional to weight via a clamped linear scale. Three pure-CSS variants share the same data shape: organic uses flex-wrap, grid uses CSS grid with auto-fit columns, and spiral uses Fibonacci golden-angle packing. Palettes are deterministic — a hashed word always renders the same colour. Zero canvas, zero D3.';
 </script>
 
 <svelte:head>
 	<title>WordCloud — TFE / Svelte Templates</title>
 	<meta
 		name="description"
-		content="Frequency-weighted text-cloud component with organic, grid, and radial variants. Pure CSS layout, zero dependencies."
+		content="Frequency-weighted text-cloud component with organic, grid, and spiral variants. Pure CSS layout, zero dependencies."
 	/>
 </svelte:head>
 
@@ -117,7 +117,7 @@
 				<div class="wc-demo__container">
 					<WordCloud
 						words={blogTags}
-						variant="organic"
+						variant="spiral"
 						minSize={14}
 						maxSize={48}
 						aria-label="Top 20 blog tags by frequency"
@@ -140,11 +140,11 @@
 			</section>
 
 			<section class="wc-demo__block">
-				<h3>Radial — concentric rings (seeded random rotation)</h3>
-				<div class="wc-demo__container wc-demo__container--radial">
+				<h3>Spiral — Fibonacci golden-angle packing (seeded random rotation)</h3>
+				<div class="wc-demo__container wc-demo__container--spiral">
 					<WordCloud
 						words={aiTokens}
-						variant="radial"
+						variant="spiral"
 						rotation="random"
 						seed={42}
 						minSize={16}
@@ -159,7 +159,7 @@
 				<div class="wc-demo__container">
 					<WordCloud
 						words={surveyThemes}
-						variant="organic"
+						variant="spiral"
 						palette={['#6366f1', '#06b6d4', '#10b981']}
 						minSize={16}
 						maxSize={42}
@@ -197,9 +197,9 @@
 				</tr>
 				<tr>
 					<td><code>variant</code></td>
-					<td><code>'organic' | 'grid' | 'radial'</code></td>
+					<td><code>'organic' | 'grid' | 'spiral'</code></td>
 					<td><code>'organic'</code></td>
-					<td>Layout mode. Organic uses flex-wrap, grid uses CSS grid, radial uses polar rings.</td>
+					<td>Layout mode. Organic uses flex-wrap, grid uses CSS grid, spiral uses Fibonacci golden-angle packing.</td>
 				</tr>
 				<tr>
 					<td><code>rotation</code></td>
@@ -272,7 +272,7 @@
 		justify-content: center;
 		padding: 16px;
 	}
-	.wc-demo__container--radial {
+	.wc-demo__container--spiral {
 		min-height: 420px;
 		padding: 0;
 	}

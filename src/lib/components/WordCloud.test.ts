@@ -38,7 +38,7 @@ describe('isValidVariant', () => {
 	it('accepts the three known variants', () => {
 		expect(isValidVariant('organic')).toBe(true);
 		expect(isValidVariant('grid')).toBe(true);
-		expect(isValidVariant('radial')).toBe(true);
+		expect(isValidVariant('spiral')).toBe(true);
 	});
 
 	it('rejects unknown / nullish input', () => {
@@ -53,13 +53,13 @@ describe('pickVariant', () => {
 	it('returns the input when it is valid', () => {
 		expect(pickVariant('organic')).toBe('organic');
 		expect(pickVariant('grid')).toBe('grid');
-		expect(pickVariant('radial')).toBe('radial');
+		expect(pickVariant('spiral')).toBe('spiral');
 	});
 
 	it('falls back to organic for invalid input', () => {
-		expect(pickVariant('weird')).toBe('organic');
-		expect(pickVariant(undefined)).toBe('organic');
-		expect(pickVariant(null)).toBe('organic');
+		expect(pickVariant('weird')).toBe('spiral');
+		expect(pickVariant(undefined)).toBe('spiral');
+		expect(pickVariant(null)).toBe('spiral');
 	});
 });
 

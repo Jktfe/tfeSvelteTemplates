@@ -1,91 +1,60 @@
 <!--
-  ============================================================
-  WordCloud
+	============================================================
+	WordCloud
 
-  🎯 WHAT IT DOES
-  Frequency-weighted text-cloud primitive. N words sized
-  proportionally to their `weight`, packed into a container,
-  optionally rotated, coloured deterministically from a palette.
-  At-a-glance summary of token frequency in a corpus —
-  blog tags, search facets, AI prompt-token frequency,
-  customer-feedback sentiment, code-keyword analysis.
+	🎯 WHAT IT DOES
+	Frequency-weighted text-cloud primitive. N words sized
+	proportionally to their `weight`, packed into a container
+	using Fibonacci spiral placement with collision detection.
+	At-a-glance summary of token frequency — blog tags, search
+	facets, AI prompt-token frequency, sentiment, keyword analysis.
 
-  Pure CSS layout — no canvas, no D3, no rAF. Three variants
-  — organic flex-wrap, CSS-grid, polar radial — each shares
-  the same data shape (`{text, weight, href?}`).
+	Three layout variants share the same data shape:
+	- spiral: Fibonacci golden-angle packing with collision avoid
+	- organic: flex-wrap line flow
+	- grid: CSS grid typographic poster
 
-  ✨ FEATURES
-  • 3 variants — organic / grid / radial — each with its own
-    placement grammar; data shape is identical
-  • Linear weight→font-size scale clamped to [minSize, maxSize]
-  • Deterministic palette colour via hashed word text — same
-    word → same colour across renders, no flicker
-  • Optional rotation per word — none / alternating
-    (every 2nd at -90deg) / random (deterministic from seed)
-  • Optional `href` per word wraps it as an anchor; with
-    `onWordClick` it becomes a button; otherwise a span
-  • Hover lift (scale + translateZ) on interactive words
-  • Edge fade not needed — the cloud is bounded by its container
+	✨ FEATURES
+	• Fibonacci spiral placement (golden angle 137.5°)
+	• Circle-based collision detection with push-away
+	• Logarithmic weight scaling — prevents one heavy word from dominating
+	• HSL colour generation — even hue distribution, deterministic
+	• 3 variants — spiral / organic / grid
+	• maxWords prop to cap rendering
+	• Optional rotation, href, click handler
+	• Hover lift on interactive words
+	• prefers-reduced-motion safe
 
-  ♿ ACCESSIBILITY
-  • Outer wrapper is `role="list"` with `role="listitem"`
-    children when interactive — screen readers see each
-    word as a list element
-  • When decorative-only (no clicks/links) the wrapper carries
-    an `aria-label` summary; individual words are `aria-hidden`
-  • Visually-hidden top-N table emitted when `srTable` is
-    set — screen readers get an ordered ranked list
-  • Focus-visible ring on clickable / linked words
-  • `prefers-reduced-motion: reduce` → hover scale disabled
+	♿ ACCESSIBILITY
+	• role="list" with role="listitem" when interactive
+	• Decorative mode with aria-label
+	• Visually-hidden ranked table via srTable prop
+	• Focus-visible ring on clickable/linked words
 
-  📦 DEPENDENCIES
-  Zero external dependencies — pure Svelte 5 + scoped CSS.
+	📦 DEPENDENCIES
+	Zero external dependencies — pure Svelte 5 + scoped CSS.
 
-  ⚡ PERFORMANCE
-  • Single render pass — no measurement loop, no resize
-    observer, no rAF
-  • Polar coordinates for radial variant computed once per
-    word at render time (cheap — sin/cos × N words)
-  • Hover scale is GPU-composited (transform only)
+	📋 PROPS
+	| Prop          | Type                   | Default      |
+	|---------------|------------------------|--------------|
+	| words         | WordCloudWord[]        | []           |
+	| variant       | 'spiral'|'organic'|'grid' | 'spiral' |
+	| rotation      | 'none'|'alternating'|'random' | 'none' |
+	| minSize       | number (px)            | 14           |
+	| maxSize       | number (px)            | 48           |
+	| palette       | string[]               | (built-in)   |
+	| seed          | number                 | 0            |
+	| maxWords      | number                 | Infinity     |
+	| srTable       | boolean                | false        |
+	| onWordClick   | (w: WordCloudWord)→void | undefined   |
+	| aria-label    | string                 | 'Word cloud'  |
+	| class         | string                 | ''           |
 
-  🎨 USAGE
-  <WordCloud
-    words={[
-      { text: 'svelte', weight: 42 },
-      { text: 'rune',   weight: 28 },
-      { text: 'store',  weight: 18 }
-    ]}
-  />
-
-  <WordCloud
-    words={topics}
-    variant="radial"
-    rotation="alternating"
-    minSize={16}
-    maxSize={64}
-    palette={['#6366f1', '#06b6d4', '#10b981']}
-    onWordClick={(w) => console.log(w.text)}
-  />
-
-  📋 PROPS
-  | Prop          | Type                   | Default      |
-  |---------------|------------------------|--------------|
-  | words         | WordCloudWord[]        | []           |
-  | variant       | 'organic'\|'grid'\|'radial' | 'organic'|
-  | rotation      | 'none'\|'alternating'\|'random' | 'none' |
-  | minSize       | number (px)            | 14           |
-  | maxSize       | number (px)            | 48           |
-  | palette       | string[]               | (built-in)   |
-  | seed          | number                 | 0            |
-  | onWordClick   | (w: WordCloudWord)→void | undefined   |
-  | aria-label    | string                 | 'Word cloud' |
-  | class         | string                 | ''           |
-
-  ============================================================
+	============================================================
 -->
 
 <script lang="ts" module>
-	export type WordCloudVariant = 'organic' | 'grid' | 'radial';
+	export type WordCloudVariant = 'spiral' | 'organic' | 'grid';
 	export type WordCloudRotation = 'none' | 'alternating' | 'random';
 
 	export interface WordCloudWord {
@@ -99,7 +68,7 @@
 		max: number;
 	}
 
-	const VALID_VARIANTS: readonly WordCloudVariant[] = ['organic', 'grid', 'radial'];
+	const VALID_VARIANTS: readonly WordCloudVariant[] = ['spiral', 'organic', 'grid'];
 	const VALID_ROTATIONS: readonly WordCloudRotation[] = ['none', 'alternating', 'random'];
 
 	export const DEFAULT_PALETTE: readonly string[] = [
@@ -118,7 +87,7 @@
 	}
 
 	export function pickVariant(name: string | undefined | null): WordCloudVariant {
-		return isValidVariant(name) ? name : 'organic';
+		return isValidVariant(name) ? name : 'spiral';
 	}
 
 	export function isValidRotationStrategy(
@@ -138,11 +107,6 @@
 		return n;
 	}
 
-	/**
-	 * Deterministic 32-bit string hash. Same input → same output, every time.
-	 * Used to map a word to a palette index without needing externally-provided
-	 * colour fields — feed the same corpus twice, you get the same colours.
-	 */
 	export function hashWord(text: string): number {
 		let hash = 5381;
 		for (let i = 0; i < text.length; i++) {
@@ -151,6 +115,16 @@
 		return Math.abs(hash);
 	}
 
+	/**
+	 * HSL colour from word hash — even hue distribution.
+	 * Deterministic: same word always gets the same colour.
+	 */
+	export function hslColor(text: string, saturation = 70, lightness = 55): string {
+		const hue = (hashWord(text) * 137.508) % 360;
+		return `hsl(${hue.toFixed(1)}, ${saturation}%, ${lightness}%)`;
+	}
+
+	/** Legacy palette-based colour picker — kept for backward compat. */
 	export function pickPaletteColor(
 		text: string,
 		palette: readonly string[] | string[] | undefined | null
@@ -161,10 +135,30 @@
 	}
 
 	/**
-	 * Linear scale from a weight value to a pixel font-size, clamped to
-	 * [minSize, maxSize]. When all words share the same weight we collapse
-	 * to the midpoint — no division-by-zero, no tiny text.
+	 * Logarithmic weight → font-size scale.
+	 * Prevents one heavy word from dominating; compresses the
+	 * upper range while preserving visual differentiation.
 	 */
+	export function logScaleSize(
+		weight: number,
+		minWeight: number,
+		maxWeight: number,
+		minSize: number,
+		maxSize: number
+	): number {
+		if (!Number.isFinite(weight) || !Number.isFinite(minWeight) || !Number.isFinite(maxWeight)) {
+			return (minSize + maxSize) / 2;
+		}
+		if (maxWeight <= minWeight) return (minSize + maxSize) / 2;
+		const clampedWeight = Math.max(minWeight, Math.min(maxWeight, weight));
+		// Shift so minWeight maps to 1 (log(1)=0), avoiding log(0)=-Infinity
+		const shifted = clampedWeight - minWeight + 1;
+		const shiftedMax = maxWeight - minWeight + 1;
+		const t = Math.log(shifted) / Math.log(shiftedMax);
+		return minSize + t * (maxSize - minSize);
+	}
+
+	/** Legacy linear scale — kept for backward compat. */
 	export function scaleSize(
 		weight: number,
 		minWeight: number,
@@ -181,11 +175,6 @@
 		return minSize + t * (maxSize - minSize);
 	}
 
-	/**
-	 * Mulberry32 — tiny seeded PRNG. We use it for the 'random' rotation
-	 * strategy so re-renders with the same seed produce the same angles.
-	 * Deterministic > pretty.
-	 */
 	function seededRandom(seedInt: number): () => number {
 		let s = seedInt | 0;
 		return () => {
@@ -197,11 +186,6 @@
 		};
 	}
 
-	/**
-	 * Pick a rotation angle (degrees) for the word at `index` under the given
-	 * strategy. 'none' → 0, 'alternating' → 0/-90 swap, 'random' → seeded
-	 * pick from a small set so words still read horizontally most of the time.
-	 */
 	export function pickRotation(
 		strategy: WordCloudRotation,
 		index: number,
@@ -209,17 +193,11 @@
 	): number {
 		if (strategy === 'none') return 0;
 		if (strategy === 'alternating') return index % 2 === 0 ? 0 : -90;
-		// 'random' — deterministic from seed + index
 		const rng = seededRandom(seed + index);
 		const choices = [0, -90, 0, 0, 30, -30];
 		return choices[Math.floor(rng() * choices.length)];
 	}
 
-	/**
-	 * Sort words by weight (desc) and deduplicate by lowercase text.
-	 * The first occurrence wins on duplicates. Stable enough for typical
-	 * tag-cloud usage where input is already mostly clean.
-	 */
 	export function normaliseWords(words: readonly WordCloudWord[] | undefined | null): WordCloudWord[] {
 		if (!Array.isArray(words) || words.length === 0) return [];
 		const seen: Record<string, true> = Object.create(null);
@@ -261,15 +239,38 @@
 		}
 	}
 
+	/** Golden angle in radians (~137.508 degrees) */
+	const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+
+	export interface SpiralPosition {
+		left: number;
+		top: number;
+	}
+
 	/**
-	 * Compute polar (x%, y%) for the word at `index` for the radial variant.
-	 * Word 0 sits at the centre; subsequent words fan out in concentric rings
-	 * of 6 → 12 → 18 → 24… Every position is in the [0, 100] percent space
-	 * so the cloud scales with its container.
+	 * Fibonacci spiral placement using the golden angle.
+	 * Each word is placed at: angle = i * goldenAngle, radius = c * sqrt(i).
+	 * Produces even, non-overlapping distribution for circles.
+	 * Returns positions in [0, 100] percent space.
+	 */
+	export function spiralPosition(
+		index: number,
+		spacing = 4.5,
+		aspectRatio = 0.8
+	): SpiralPosition {
+		if (index === 0) return { left: 50, top: 50 };
+		const angle = index * GOLDEN_ANGLE;
+		const radius = spacing * Math.sqrt(index);
+		const left = 50 + Math.cos(angle) * radius;
+		const top = 50 + Math.sin(angle) * radius * aspectRatio;
+		return { left, top };
+	}
+
+	/**
+	 * Legacy concentric-ring placement — kept for backward compat.
 	 */
 	export function polarPosition(index: number): { left: number; top: number; ring: number } {
 		if (index === 0) return { left: 50, top: 50, ring: 0 };
-		// Determine ring by accumulating capacities: 6, 12, 18, 24…
 		let ring = 1;
 		let consumed = 1;
 		while (true) {
@@ -286,6 +287,56 @@
 		const top = 50 + Math.sin(angle) * radiusPct * 0.85;
 		return { left, top, ring };
 	}
+
+	/**
+	 * Collision-aware spiral placement.
+	 * Places words along the Fibonacci spiral and pushes overlapping
+	 * words outward. Uses circle-based bounding where each word's
+	 * radius is estimated from its font size.
+	 */
+	export function spiralPositionWithCollision(
+		words: { fontSize: number; index: number }[],
+		spacing = 4.5,
+		aspectRatio = 0.8,
+		gap = 0.8
+	): SpiralPosition[] {
+		const positions: { left: number; top: number; r: number }[] = [];
+
+		for (const word of words) {
+			// Estimate bounding circle radius from fontSize (in % units)
+			const wordRadius = (word.fontSize / 48) * spacing * 0.5 + gap;
+			let pos = spiralPosition(word.index, spacing, aspectRatio);
+			let radius = spacing * Math.sqrt(word.index || 1);
+
+			// Push away from overlapping placed words
+			let attempts = 0;
+			while (attempts < 50) {
+				let overlaps = false;
+				for (const p of positions) {
+					const dx = pos.left - p.left;
+					const dy = (pos.top - p.top) / aspectRatio;
+					const dist = Math.sqrt(dx * dx + dy * dy);
+					if (dist < wordRadius + p.r + gap) {
+						overlaps = true;
+						break;
+					}
+				}
+				if (!overlaps) break;
+				// Increase radius and recalculate position
+				radius += 0.5;
+				const angle = word.index * GOLDEN_ANGLE + attempts * 0.1;
+				pos = {
+					left: 50 + Math.cos(angle) * radius,
+					top: 50 + Math.sin(angle) * radius * aspectRatio
+				};
+				attempts++;
+			}
+
+			positions.push({ left: pos.left, top: pos.top, r: wordRadius });
+		}
+
+		return positions;
+	}
 </script>
 
 <script lang="ts">
@@ -299,21 +350,22 @@
 		maxSize?: number;
 		palette?: string[];
 		seed?: number;
+		maxWords?: number;
 		srTable?: boolean;
 		onWordClick?: (word: WordCloudWord) => void;
 		'aria-label'?: string;
 		class?: string;
 	}
 
-	// eslint-disable-next-line svelte/no-unused-props -- 'aria-label' is destructured to ariaLabel and used in template; rule false-positive on hyphenated keys
 	let {
 		words = [],
-		variant = 'organic',
+		variant = 'spiral',
 		rotation = 'none',
 		minSize = 14,
 		maxSize = 48,
-		palette = DEFAULT_PALETTE as string[],
+		palette,
 		seed = 0,
+		maxWords = Infinity,
 		srTable = false,
 		onWordClick,
 		'aria-label': ariaLabel = 'Word cloud',
@@ -324,11 +376,14 @@
 	const resolvedRotation = $derived(pickRotationStrategy(rotation));
 	const resolvedMin = $derived(clampSize(minSize, 14));
 	const resolvedMax = $derived(clampSize(maxSize, 48));
-	const safePalette = $derived(
-		Array.isArray(palette) && palette.length > 0 ? palette : (DEFAULT_PALETTE as string[])
-	);
+	const useHsl = $derived(!Array.isArray(palette) || palette.length === 0);
 	const normalisedWords = $derived(normaliseWords(words));
-	const extents = $derived(getWeightExtents(normalisedWords));
+	const cappedWords = $derived(
+		Number.isFinite(maxWords) && maxWords > 0
+			? normalisedWords.slice(0, maxWords)
+			: normalisedWords
+	);
+	const extents = $derived(getWeightExtents(cappedWords));
 	const interactive = $derived(typeof onWordClick === 'function');
 
 	let reduced = $state(false);
@@ -338,32 +393,42 @@
 	});
 
 	function buildItem(word: WordCloudWord, index: number) {
-		const fontSize = scaleSize(word.weight, extents.min, extents.max, resolvedMin, resolvedMax);
-		const colour = pickPaletteColor(word.text, safePalette);
+		const fontSize = logScaleSize(word.weight, extents.min, extents.max, resolvedMin, resolvedMax);
+		const colour = useHsl
+			? hslColor(word.text)
+			: pickPaletteColor(word.text, palette);
 		const angle = pickRotation(resolvedRotation, index, seed);
 		return { word, index, fontSize, colour, angle };
 	}
 
-	const items = $derived(normalisedWords.map(buildItem));
+	const items = $derived(cappedWords.map(buildItem));
+
+	// Compute spiral positions with collision detection
+	const spiralPositions = $derived(() => {
+		if (resolvedVariant !== 'spiral') return [];
+		return spiralPositionWithCollision(
+			items.map((item) => ({ fontSize: item.fontSize, index: item.index }))
+		);
+	});
 </script>
 
-{#if normalisedWords.length === 0}
-	<!-- Empty state — render nothing. The container would just be blank padding. -->
+{#if cappedWords.length === 0}
+	<!-- Empty state — render nothing -->
 {:else if interactive || words.some((w) => w.href)}
 	<!-- List mode — proper <ul><li> semantic when items are interactive -->
 	<ul
 		class="wordcloud {className}"
+		class:wordcloud--spiral={resolvedVariant === 'spiral'}
 		class:wordcloud--organic={resolvedVariant === 'organic'}
 		class:wordcloud--grid={resolvedVariant === 'grid'}
-		class:wordcloud--radial={resolvedVariant === 'radial'}
 		class:wordcloud--reduced={reduced}
 		aria-label={ariaLabel}
 	>
-		{#each items as item (item.word.text)}
+		{#each items as item, i (item.word.text)}
 			<li
 				class="wordcloud__cell"
-				style:--wc-x={resolvedVariant === 'radial' ? `${polarPosition(item.index).left}%` : ''}
-				style:--wc-y={resolvedVariant === 'radial' ? `${polarPosition(item.index).top}%` : ''}
+				style:--wc-x={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.left ?? 50}%` : ''}
+				style:--wc-y={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.top ?? 50}%` : ''}
 			>
 				{#if item.word.href}
 					<a
@@ -403,22 +468,22 @@
 	<!-- Decorative mode — span-only, role="group" -->
 	<div
 		class="wordcloud {className}"
+		class:wordcloud--spiral={resolvedVariant === 'spiral'}
 		class:wordcloud--organic={resolvedVariant === 'organic'}
 		class:wordcloud--grid={resolvedVariant === 'grid'}
-		class:wordcloud--radial={resolvedVariant === 'radial'}
 		class:wordcloud--reduced={reduced}
 		role="group"
 		aria-label={ariaLabel}
 	>
-		{#each items as item (item.word.text)}
+		{#each items as item, i (item.word.text)}
 			<span
 				class="wordcloud__word wordcloud__word--static"
 				aria-hidden={srTable ? 'true' : undefined}
 				style:font-size="{item.fontSize}px"
 				style:color={item.colour}
 				style:transform="rotate({item.angle}deg)"
-				style:--wc-x={resolvedVariant === 'radial' ? `${polarPosition(item.index).left}%` : ''}
-				style:--wc-y={resolvedVariant === 'radial' ? `${polarPosition(item.index).top}%` : ''}
+				style:--wc-x={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.left ?? 50}%` : ''}
+				style:--wc-y={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.top ?? 50}%` : ''}
 			>
 				{item.word.text}
 			</span>
@@ -463,20 +528,20 @@
 		font-weight: 600;
 	}
 
-	.wordcloud--grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-		gap: 0.5rem 0.75rem;
-		justify-items: center;
-		align-items: center;
-	}
-
-	.wordcloud--radial {
+	.wordcloud--spiral {
 		display: block;
 		position: relative;
 		min-height: 360px;
 		aspect-ratio: 4 / 3;
 		max-width: 100%;
+	}
+
+	.wordcloud--grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+		gap: 0.5rem 0.75rem;
+		justify-items: center;
+		align-items: center;
 	}
 
 	.wordcloud__cell {
@@ -486,15 +551,23 @@
 		list-style: none;
 	}
 
-	.wordcloud--radial .wordcloud__cell {
+	.wordcloud--spiral .wordcloud__cell {
 		position: absolute;
 		left: var(--wc-x, 50%);
 		top: var(--wc-y, 50%);
 		transform: translate(-50%, -50%);
 	}
 
-	.wordcloud--radial .wordcloud__word {
+	.wordcloud--spiral .wordcloud__word {
 		white-space: nowrap;
+	}
+
+	/* Spiral variant: decorative spans also need absolute positioning */
+	.wordcloud--spiral .wordcloud__word--static {
+		position: absolute;
+		left: var(--wc-x, 50%);
+		top: var(--wc-y, 50%);
+		transform: translate(-50%, -50%);
 	}
 
 	.wordcloud__word {
@@ -561,6 +634,12 @@
 		.wordcloud__word:hover {
 			transform: inherit;
 			filter: none;
+		}
+	}
+
+	@container (max-width: 480px) {
+		.wordcloud--spiral {
+			aspect-ratio: 3 / 4;
 		}
 	}
 </style>
