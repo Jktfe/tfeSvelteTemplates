@@ -46,7 +46,7 @@
 		type="search"
 		class="search-bar__input"
 		{placeholder}
-		{ariaLabel}
+		aria-label={ariaLabel}
 		{value}
 		oninput={handleInput}
 		autocomplete="off"

@@ -26,18 +26,23 @@ describe('componentCatalog agent metadata', () => {
 	});
 
 	it('derives previous and next component links inside the current shelf', () => {
-		const first = getShelfNavigation('/navbar');
-		const middle = getShelfNavigation('/speeddial/');
+		const sidebar = getShelfNavigation('/sidebar');
+		const navbar = getShelfNavigation('/navbar');
+		const speedDial = getShelfNavigation('/speeddial/');
 		const shell = catalogShellPropsForSlug('/navbar');
 
-		expect(first?.shelf).toBe('Navigation & Shell');
-		expect(first?.index).toBe(1);
-		expect(first?.previous).toBeUndefined();
-		expect(first?.next?.name).toBe('SpeedDial');
-		expect(first?.next?.href).toBe('/speeddial');
+		expect(sidebar?.shelf).toBe('Navigation & Shell');
+		expect(sidebar?.index).toBe(1);
+		expect(sidebar?.previous).toBeUndefined();
+		expect(sidebar?.next?.name).toBe('Navbar');
+		expect(sidebar?.next?.href).toBe('/navbar');
 
-		expect(middle?.previous?.name).toBe('Navbar');
-		expect(middle?.next?.name).toBe('FloatingDock');
+		expect(navbar?.index).toBe(2);
+		expect(navbar?.previous?.name).toBe('Sidebar');
+		expect(navbar?.next?.name).toBe('SpeedDial');
+
+		expect(speedDial?.previous?.name).toBe('Navbar');
+		expect(speedDial?.next?.name).toBe('FloatingDock');
 
 		expect(shell?.props.shelfNavigation?.next?.name).toBe('SpeedDial');
 		expect(getShelfNavigation('/not-a-template')).toBeUndefined();

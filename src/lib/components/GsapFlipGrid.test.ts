@@ -10,7 +10,23 @@
  */
 
 import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// Keep the component test on DOM structure/state. Loading the real GSAP Flip
+// plugin in Vitest can outlive worker teardown and report pending module fetches.
+vi.mock('gsap/Flip', () => ({
+	Flip: { fit: () => null, getState: () => null, from: () => null }
+}));
+
+vi.mock('$lib/gsap/context', () => ({
+	prefersReducedMotion: () => true,
+	registerGsapPlugins: () =>
+		Promise.resolve({
+			from: () => null,
+			killTweensOf: () => null
+		})
+}));
+
 import GsapFlipGrid, {
 	normalizeFlipGridItems,
 	normalizeFlipGridFilters,

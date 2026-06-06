@@ -9,8 +9,6 @@
   const repeatCount: number = 4; // Repeat to span the whole path
 
   let displayText: string;
-  let current = 'original';
-
   function setDisplay(text: string) {
     displayText = text.repeat(repeatCount);
   }
@@ -18,17 +16,21 @@
   onMount(() => setDisplay(originalText));
 
   function handleEnter() {
-    current = 'morphed';
     setDisplay(morphedText);
   }
 
   function handleLeave() {
-    current = 'original';
     setDisplay(originalText);
   }
 </script>
 
-<div class="signal-container" on:mouseenter={handleEnter} on:mouseleave={handleLeave}>
+<div
+  class="signal-container"
+  role="img"
+  aria-label={`${originalText} morphs to ${morphedText}`}
+  on:mouseenter={handleEnter}
+  on:mouseleave={handleLeave}
+>
   <svg viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice">
     <path
       id="wave-path"

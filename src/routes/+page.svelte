@@ -24,7 +24,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { componentCategories, componentCount } from '$lib/componentCatalog';
-	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import SearchBar from '$lib/components/SearchBar.svelte';
@@ -97,7 +96,7 @@
 	$effect(() => {
 		clearTimeout(searchDebounce);
 		searchDebounce = setTimeout(() => {
-			const url = new URL(window.location);
+			const url = new URL(window.location.href);
 			if (searchQuery) {
 				url.searchParams.set('q', searchQuery);
 			} else {
@@ -124,7 +123,7 @@
 
 	onMount(() => {
 		// Read initial search query from URL
-		const urlQ = new URL(window.location).searchParams.get('q');
+		const urlQ = new URL(window.location.href).searchParams.get('q');
 		if (urlQ) searchQuery = urlQ;
 		// Animated dot field for the GSAP feature visual.
 		let raf = 0;

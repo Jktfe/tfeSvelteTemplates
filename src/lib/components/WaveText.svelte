@@ -27,7 +27,8 @@
     return d;
   };
 
-  $: const pathData = generatePath();
+  let pathData = "";
+  $: pathData = generatePath();
 </script>
 
 <style>

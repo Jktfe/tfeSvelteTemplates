@@ -362,8 +362,8 @@
 		maxWords?: number;
 		srTable?: boolean;
 		onWordClick?: (word: WordCloudWord) => void;
-		'aria-label'?: string;
 		class?: string;
+		[key: string]: unknown;
 	}
 
 	let {
@@ -377,10 +377,13 @@
 		maxWords = Infinity,
 		srTable = false,
 		onWordClick,
-		'aria-label': ariaLabel = 'Word cloud',
-		class: className = ''
+		class: className = '',
+		...restProps
 	}: Props = $props();
 
+	const ariaLabel = $derived(
+		typeof restProps['aria-label'] === 'string' ? restProps['aria-label'] : 'Word cloud'
+	);
 	const resolvedVariant = $derived(pickVariant(variant));
 	const resolvedRotation = $derived(pickRotationStrategy(rotation));
 	const resolvedMin = $derived(clampSize(minSize, 14));

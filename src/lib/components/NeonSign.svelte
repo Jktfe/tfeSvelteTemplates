@@ -225,12 +225,11 @@
 	aria-label={value}
 	role="img"
 >
-	{#each chars as ch, idx (idx)}
+	{#each chars as ch, idx (flicker === 'pulse' ? `${pulseKey}-${idx}` : idx)}
 		<span 
 			class="neon-char" 
 			class:neon-broken={mask[idx]}
 			class:neon-char--pulse-keyed={flicker === 'pulse'}
-			key={flicker === 'pulse' ? pulseKey : idx}
 			aria-hidden="true"
 		>{ch}</span>
 	{/each}

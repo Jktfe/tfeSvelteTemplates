@@ -45,6 +45,14 @@ export default defineConfig({
 		// Simulates a browser environment for component testing
 		// Using happy-dom instead of jsdom for better ES Module support
 		environment: 'happy-dom',
+		environmentOptions: {
+			happyDOM: {
+				settings: {
+					disableCSSFileLoading: true,
+					handleDisabledFileLoadingAsSuccess: true
+				}
+			}
+		},
 
 		// Where to find test files - we're co-locating them with components
 		include: ['src/**/*.{test,spec}.ts'],
