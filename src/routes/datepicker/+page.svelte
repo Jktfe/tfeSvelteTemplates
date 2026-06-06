@@ -3,7 +3,7 @@
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import DatePicker from '$lib/components/DatePicker.svelte';
 
-	const shell = catalogShellPropsForSlug('datepicker')!;
+	const shell = catalogShellPropsForSlug('/datepicker')!;
 
 	const codeExplanation =
 		'DatePicker is a zero-dependency, accessible single-date picker. A trigger button opens a role="grid" month popover with a roving tabindex: arrow keys move by day, PageUp/PageDown change month, Home/End jump to week edges, Enter/Space select, Escape closes. The value is a bindable ISO yyyy-mm-dd string, min/max disable out-of-range days, and Intl.DateTimeFormat drives the locale-aware labels and first day of week. "Today" is passed in as an ISO string rather than read from the clock, keeping it deterministic and SSR-safe.';

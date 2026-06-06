@@ -3,7 +3,7 @@
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import BarChart from '$lib/components/BarChart.svelte';
 
-	const shell = catalogShellPropsForSlug('barchart')!;
+	const shell = catalogShellPropsForSlug('/barchart')!;
 
 	const codeExplanation =
 		'BarChart turns a list of categories and a list of series into a responsive SVG chart. It computes a tidy Y axis on its own (rounding tick steps to 1/2/5 × 10ⁿ), lays bars out grouped or stacked, animates them up from the baseline, and mirrors every value in a hidden data table for screen readers.';

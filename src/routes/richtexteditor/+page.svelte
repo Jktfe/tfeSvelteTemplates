@@ -3,7 +3,7 @@
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import RichTextEditor from '$lib/components/RichTextEditor.svelte';
 
-	const shell = catalogShellPropsForSlug('richtexteditor')!;
+	const shell = catalogShellPropsForSlug('/richtexteditor')!;
 
 	// Variant 1 — blank editor; show the sanitised output live.
 	let blankHtml = $state('');

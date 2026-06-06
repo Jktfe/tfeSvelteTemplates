@@ -3,7 +3,7 @@
 	import { catalogShellPropsForSlug } from '$lib/componentCatalog';
 	import RangeSlider from '$lib/components/RangeSlider.svelte';
 
-	const shell = catalogShellPropsForSlug('rangeslider')!;
+	const shell = catalogShellPropsForSlug('/rangeslider')!;
 
 	// Basic range
 	let basic = $state({ min: 20, max: 80 });
