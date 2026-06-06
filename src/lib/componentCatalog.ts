@@ -88,6 +88,21 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		icon: '☰',
 		summary: 'Application chrome, orientation, page position, and primary movement.',
 		components: [
+			component('Sidebar', '/sidebar', '▤', 'Collapsible navigation rail with sections, icons, active state, and a mobile drawer mode.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Sidebar from '$lib/components/Sidebar.svelte';
+
+  const items = [
+    { label: 'Dashboard', href: '/dashboard', icon: '▤' },
+    { label: 'Reports', href: '/reports', icon: '📊', children: [
+      { label: 'Sales', href: '/reports/sales', icon: '•' }
+    ] }
+  ];
+</script>
+
+<Sidebar {items} activeHref="/dashboard" title="Acme" />`
+			}),
 			component('Navbar', '/navbar', '☰', 'Responsive app navigation with a sliding panel.', {
 				screenshotFile: 'NavBarShot.png',
 				usage: `<script lang="ts">
@@ -247,6 +262,92 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		icon: '🎛️',
 		summary: 'Form fields, selectors, menus, and compact interaction controls.',
 		components: [
+			component('Combobox', '/combobox', '🔎', 'Typeahead select with filtering, keyboard navigation, and an optional multi-select chip mode.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Combobox from '$lib/components/Combobox.svelte';
+
+  const options = [
+    { value: 'gb', label: 'United Kingdom' },
+    { value: 'fr', label: 'France' },
+    { value: 'de', label: 'Germany' }
+  ];
+  let country = $state<string | null>(null);
+</script>
+
+<Combobox {options} bind:value={country} label="Country" placeholder="Search a country…" />`
+			}),
+			component('DatePicker', '/datepicker', '📅', 'Accessible single-date picker with a month grid and full keyboard navigation.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import DatePicker from '$lib/components/DatePicker.svelte';
+  let date = $state('2026-06-15');
+</script>
+
+<DatePicker bind:value={date} min="2026-01-01" max="2026-12-31" today="2026-06-06" locale="en-GB" label="Choose a date" />`
+			}),
+			component('DateRangePicker', '/daterangepicker', '🗓️', 'Two-month range picker with start/end selection and live hover-range preview.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import DateRangePicker from '$lib/components/DateRangePicker.svelte';
+  let range = $state<{ start: string | null; end: string | null }>({ start: null, end: null });
+</script>
+
+<DateRangePicker bind:value={range} min="2026-01-01" max="2026-12-31" />`
+			}),
+			component('TreeView', '/treeview', '🌲', 'Hierarchical tree with expand/collapse, roving-tabindex keyboard navigation, and tri-state checkbox cascade.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import TreeView, { type TreeNode } from '$lib/components/TreeView.svelte';
+
+  const nodes: TreeNode[] = [
+    { id: 'src', label: 'src', children: [
+      { id: 'lib', label: 'lib', children: [{ id: 'utils', label: 'utils.ts' }] },
+      { id: 'app', label: 'app.html' }
+    ] },
+    { id: 'readme', label: 'README.md' }
+  ];
+  let selected = $state(new Set<string>(['utils']));
+</script>
+
+<TreeView {nodes} checkboxes bind:selected defaultExpandAll label="Project files" />`
+			}),
+			component('RichTextEditor', '/richtexteditor', '✍️', 'Contenteditable rich-text editor with a formatting toolbar that outputs sanitised HTML.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import RichTextEditor from '$lib/components/RichTextEditor.svelte';
+  let html = $state('<p>Hello <strong>world</strong></p>');
+</script>
+
+<RichTextEditor bind:value={html} placeholder="Start writing…" />`
+			}),
+			component('ColorPicker', '/colorpicker', '🎨', 'HSV colour picker with a saturation/value field, hue slider, swatches, and hex input.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import ColorPicker from '$lib/components/ColorPicker.svelte';
+  let colour = $state('#4f7cff');
+</script>
+
+<ColorPicker bind:value={colour} label="Brand colour" />`
+			}),
+			component('TagInput', '/taginput', '🏷️', 'Token input — type to add tags, Backspace to remove, with paste-to-split and dedupe.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import TagInput from '$lib/components/TagInput.svelte';
+  let tags = $state<string[]>(['svelte', 'typescript']);
+</script>
+
+<TagInput bind:value={tags} placeholder="Add a tag…" max={8} />`
+			}),
+			component('RangeSlider', '/rangeslider', '↔️', 'Dual-thumb range slider with keyboard support and non-crossing thumbs.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import RangeSlider from '$lib/components/RangeSlider.svelte';
+  let price = $state({ min: 20, max: 80 });
+</script>
+
+<RangeSlider bind:value={price} min={0} max={100} step={5} label="Price range" />`
+			}),
 			component('Forms', '/forms', '📝', 'Reusable Svelte form field suite.', {
 				source: 'src/lib/components/forms/FormField.svelte',
 				docs: 'src/lib/components/forms/Forms.md',
@@ -459,6 +560,19 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		icon: '🔔',
 		summary: 'Status, loading, profile, and empty-state primitives.',
 		components: [
+			component('NotificationCentre', '/notificationcentre', '🔔', 'Bell trigger with a dropdown inbox: unread badge, grouping, and mark-as-read.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import NotificationCentre from '$lib/components/NotificationCentre.svelte';
+
+  const notifications = [
+    { id: '1', title: 'New comment', body: 'Ada replied to your thread.', timestamp: '2026-06-06T09:30:00Z', read: false },
+    { id: '2', title: 'Build passed', body: 'All checks green.', timestamp: '2026-06-05T18:00:00Z', read: true }
+  ];
+</script>
+
+<NotificationCentre {notifications} now="2026-06-06T10:00:00Z" />`
+			}),
 			component('ToastNotification', '/toastnotification', '🔔', 'Stackable global alerts with actions.', {
 				usage: `<script lang="ts">
   import ToastNotification from '$lib/components/ToastNotification.svelte';
@@ -712,6 +826,25 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		icon: '🃏',
 		summary: 'Composed surfaces, showcases, and reusable content layouts.',
 		components: [
+			component('Kanban', '/kanban', '🗂️', 'Drag-and-drop board with columns, card reordering, and keyboard move support.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Kanban, { type KanbanColumn } from '$lib/components/Kanban.svelte';
+
+  type Task = { id: string; title: string };
+  let columns = $state<KanbanColumn<Task>[]>([
+    { id: 'todo', title: 'To do', cards: [{ id: '1', title: 'Spec' }, { id: '2', title: 'Design' }] },
+    { id: 'doing', title: 'In progress', cards: [{ id: '3', title: 'Build' }] },
+    { id: 'done', title: 'Done', cards: [] }
+  ]);
+</script>
+
+<Kanban bind:columns getId={(t) => t.id}>
+  {#snippet card(task)}
+    <strong>{task.title}</strong>
+  {/snippet}
+</Kanban>`
+			}),
 			component('CardStack', '/cardstack', '🃏', 'Interactive horizontal card stack.', {
 				themeSupport: 'dual',
 				relatedFiles: [
@@ -1189,6 +1322,60 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		icon: '📊',
 		summary: 'Tables, charts, hierarchy, graph, and relationship visualisations.',
 		components: [
+			component('Sparkline', '/sparkline', '〰️', 'Tiny inline SVG trend line for tables, stat cards, and dashboards.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Sparkline from '$lib/components/Sparkline.svelte';
+  const data = [12, 15, 13, 19, 22, 21, 27];
+</script>
+
+<div style="width: 90px; height: 24px;">
+  <Sparkline {data} stroke="#16a34a" width={90} height={24} fill last label="Sessions" />
+</div>`
+			}),
+			component('LineChart', '/linechart', '📈', 'Responsive SVG line chart with axes, gridlines, and a hover crosshair tooltip.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import LineChart from '$lib/components/LineChart.svelte';
+
+  const series = [
+    { name: 'Revenue', colour: '#4f7cff', points: [{ x: 1, y: 12 }, { x: 2, y: 19 }, { x: 3, y: 17 }, { x: 4, y: 24 }] }
+  ];
+</script>
+
+<LineChart {series} xLabel="Quarter" yLabel="£m" />`
+			}),
+			component('BarChart', '/barchart', '📊', 'SVG bar chart supporting grouped and stacked modes with value labels.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import BarChart from '$lib/components/BarChart.svelte';
+
+  const categories = [
+    { label: 'Q1', values: [120, 80] },
+    { label: 'Q2', values: [150, 110] }
+  ];
+  const series = [
+    { name: 'Online', colour: '#6366f1' },
+    { name: 'Retail', colour: '#10b981' }
+  ];
+</script>
+
+<BarChart {categories} {series} mode="grouped" showValueLabels title="Revenue by channel" />`
+			}),
+			component('DonutChart', '/donutchart', '🍩', 'SVG donut and pie chart with legend, centre label, and arc hover.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import DonutChart from '$lib/components/DonutChart.svelte';
+
+  const data = [
+    { label: 'Direct', value: 45, colour: '#6366f1' },
+    { label: 'Search', value: 30, colour: '#10b981' },
+    { label: 'Social', value: 25, colour: '#f59e0b' }
+  ];
+</script>
+
+<DonutChart {data} centreLabel="100" centreSub="visits" />`
+			}),
 			component('DataGrid', '/datagrid', '📊', 'Two grid implementations for tabular data.', {
 				source: 'src/lib/components/DataGridBasic.svelte',
 				docs: 'src/lib/components/DataGrid.md',
@@ -1525,12 +1712,168 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </script>
 
 <GeoChoropleth {features} {values} />`,})
-		]
-	},
-	{
-		name: 'Auth & OSS Demo',
-		icon: '🔐',
-		summary: 'Better Auth flows and protected-route examples for public demos.',
+			]
+		},
+		{
+			name: 'Library Operations',
+			icon: '🧭',
+			summary: 'Maintenance, QA, delivery, and copy-paste tooling for the component catalogue.',
+			components: [
+				component(
+					'ComponentHealthMatrix',
+					'/componenthealthmatrix',
+					'🧭',
+					'Catalogue QA dashboard for docs, demos, screenshots, tests, and theme support.',
+					{
+						themeSupport: 'dual',
+						relatedFiles: [
+							'src/lib/componentCatalog.ts',
+							'src/lib/components/ComponentHealthMatrix.test.ts',
+							'src/routes/componenthealthmatrix/+page.svelte'
+						],
+						usage: `<script lang="ts">
+  import ComponentHealthMatrix, { createHealthRows } from '$lib/components/ComponentHealthMatrix.svelte';
+
+  const rows = createHealthRows(entries, availableFiles);
+</script>
+
+<ComponentHealthMatrix {rows} />`,
+						agentHint:
+							'Use this when auditing catalogue completeness; keep file availability route-supplied so the component remains reusable.'
+					}
+				),
+				component('EvidenceCard', '/evidencecard', '🧾', 'Compact delivery proof card for commands, files, screenshots, and blockers.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/EvidenceCard.test.ts'],
+					usage: `<script lang="ts">
+  import EvidenceCard from '$lib/components/EvidenceCard.svelte';
+</script>
+
+<EvidenceCard
+  title="Release gate"
+  owner="@tfecodex"
+  commands={[
+    { command: 'bun run check', status: 'pass', output: '0 errors, 0 warnings' },
+    { command: 'bun run test', status: 'pass', output: '3,790 tests passed' }
+  ]}
+/>`,
+					agentHint:
+						'Use this for proof surfaces; failed commands dominate the derived status so dashboards stay honest.'
+				}),
+				component('CopyPasteComposer', '/copypastecomposer', '📦', 'Build copy-ready file, dependency, and usage bundles from catalogue metadata.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/CopyPasteComposer.test.ts'],
+					usage: `<script lang="ts">
+  import CopyPasteComposer from '$lib/components/CopyPasteComposer.svelte';
+</script>
+
+<CopyPasteComposer {entries} />`,
+					agentHint:
+						'Supply entries from componentCatalogEntries; keep export choices explicit so copied bundles do not hide required files.'
+				}),
+				component('ThemeTokenInspector', '/themetokeninspector', '🎨', 'Live inspector for chrome, brand, and semantic theme-token behaviour.', {
+					themeSupport: 'dual',
+					relatedFiles: ['docs/THEMING.md', 'src/lib/components/ThemeTokenInspector.test.ts'],
+					usage: `<script lang="ts">
+  import ThemeTokenInspector from '$lib/components/ThemeTokenInspector.svelte';
+</script>
+
+<ThemeTokenInspector initialMode="dark" />`,
+					agentHint:
+						'Use this for dark-mode reviews; chrome tokens flip, brand and semantic tokens stay stable unless explicitly opted in.'
+				}),
+				component('AgentLaneBoard', '/agentlaneboard', '🧑‍💻', 'Room delivery board for agent owners, blockers, files, and acceptance gates.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/AgentLaneBoard.test.ts'],
+					usage: `<script lang="ts">
+  import AgentLaneBoard from '$lib/components/AgentLaneBoard.svelte';
+</script>
+
+<AgentLaneBoard
+  lanes={[
+    {
+      id: 'qa',
+      title: 'Claude QA sweep',
+      owner: '@claude',
+      status: 'review',
+      gate: 'Audit visible routes and test evidence'
+    }
+  ]}
+/>`,
+					agentHint:
+						'Use this to keep room-led implementation honest: one owner, one status, one acceptance gate, and explicit blockers per lane.'
+				}),
+				component('RoutePreviewRail', '/routepreviewrail', '🖼️', 'Scrollable visual QA rail for live component routes and screenshot proof.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/RoutePreviewRail.test.ts'],
+					usage: `<script lang="ts">
+  import RoutePreviewRail from '$lib/components/RoutePreviewRail.svelte';
+</script>
+
+<RoutePreviewRail
+  items={[
+    {
+      name: 'EvidenceCard',
+      href: '/evidencecard',
+      screenshot: '/ComponentScreenshots/EvidenceCardShot.png',
+      description: 'Compact delivery proof card.',
+      status: 'ready'
+    }
+  ]}
+/>`,
+					agentHint:
+						'Use this for visual QA sweeps; derive items from componentCatalogEntries and mark missing screenshots before claiming a route is live.'
+				}),
+				component('TokenSwatchGrid', '/tokenswatchgrid', '🎛️', 'Grouped theme-token swatches with usage notes and contrast labels.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/TokenSwatchGrid.test.ts'],
+					usage: `<script lang="ts">
+  import TokenSwatchGrid from '$lib/components/TokenSwatchGrid.svelte';
+</script>
+
+<TokenSwatchGrid {tokens} />`,
+					agentHint:
+						'Use this before theme QA; keep token groups explicit so chrome, brand, and semantic colors do not blur together.'
+				}),
+				component('InteractionLab', '/interactionlab', '🧪', 'Motion and interaction QA lab for timing, easing, risk, and reduced-motion review.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/InteractionLab.test.ts'],
+					usage: `<script lang="ts">
+  import InteractionLab from '$lib/components/InteractionLab.svelte';
+</script>
+
+<InteractionLab {scenarios} />`,
+					agentHint:
+						'Use this to review motion before copying it into components; high-risk drag scenarios need pointer edge-case tests.'
+				}),
+				component('DataVizInspector', '/datavizinspector', '📊', 'Chart QA inspector for source, rows, units, alt text, and legend readiness.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/DataVizInspector.test.ts'],
+					usage: `<script lang="ts">
+  import DataVizInspector from '$lib/components/DataVizInspector.svelte';
+</script>
+
+<DataVizInspector {specs} />`,
+					agentHint:
+						'Use this before shipping chart demos; a visual without source, units, or alt text should stay in review.'
+				}),
+				component('MediaLightboxPro', '/medialightboxpro', '🖼️', 'Dependency-free media proof gallery with modal viewing and wraparound navigation.', {
+					themeSupport: 'dual',
+					relatedFiles: ['src/lib/components/MediaLightboxPro.test.ts'],
+					usage: `<script lang="ts">
+  import MediaLightboxPro from '$lib/components/MediaLightboxPro.svelte';
+</script>
+
+<MediaLightboxPro {items} />`,
+					agentHint:
+						'Use this for screenshot galleries and proof packs; every media item needs meaningful alt text.'
+				})
+			]
+		},
+		{
+			name: 'Auth & OSS Demo',
+			icon: '🔐',
+			summary: 'Better Auth flows and protected-route examples for public demos.',
 		components: [
 			component('Auth Demo', '/auth', '🔐', 'Better Auth sign-in, sign-up, and demo-account entry.', {
 				screenshotFile: 'AuthShot.png',
@@ -1862,7 +2205,10 @@ export const iconColors: Record<string, { bg: string; text: string }> = {
 	'💻': { bg: '#0d1117', text: '#79c0ff' },
 	'〰️': { bg: '#e0f2fe', text: '#0e7490' },
 	'🎞️': { bg: '#111827', text: '#f9a8d4' },
-	'🧬': { bg: '#1c1917', text: '#fbbf24' }
+	'🧬': { bg: '#1c1917', text: '#fbbf24' },
+	'🧭': { bg: '#ecfeff', text: '#0e7490' },
+	'🧾': { bg: '#f8fafc', text: '#334155' },
+	'📦': { bg: '#fef3c7', text: '#92400e' }
 };
 
 export function getIconColors(icon: string) {

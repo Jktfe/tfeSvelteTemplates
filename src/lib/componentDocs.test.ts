@@ -158,7 +158,24 @@ const GOLD_STANDARD_DOCS = [
 	'src/lib/components/GeoViz.md',
 
 	// Auth & OSS Demo (one shared file documenting the auth system)
-	'src/lib/components/AuthStatus.md'
+	'src/lib/components/AuthStatus.md',
+
+	// Pitch batch (June 2026): Tier 1–3 workhorse components
+	'src/lib/components/Combobox.md',
+	'src/lib/components/DatePicker.md',
+	'src/lib/components/DateRangePicker.md',
+	'src/lib/components/TreeView.md',
+	'src/lib/components/RichTextEditor.md',
+	'src/lib/components/ColorPicker.md',
+	'src/lib/components/TagInput.md',
+	'src/lib/components/RangeSlider.md',
+	'src/lib/components/Sparkline.md',
+	'src/lib/components/LineChart.md',
+	'src/lib/components/BarChart.md',
+	'src/lib/components/DonutChart.md',
+	'src/lib/components/Kanban.md',
+	'src/lib/components/Sidebar.md',
+	'src/lib/components/NotificationCentre.md'
 ] as const;
 
 // UTF-8 BOM (U+FEFF) — constructed via String.fromCharCode so the literal
