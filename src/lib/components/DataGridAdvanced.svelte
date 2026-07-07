@@ -382,7 +382,6 @@
 	 */
 	async function handleEdit(event: CustomEvent) {
 		const { id, col, value } = event.detail;
-		console.log('[DataGridAdvanced] Cell edited:', { id, col, value });
 
 		// Find the row being edited
 		const rowIndex = data.findIndex((row) => row.id === id);
@@ -467,7 +466,6 @@
 				throw new Error(result.error || 'Update failed');
 			}
 
-			console.log('[DataGridAdvanced] Successfully updated employee:', result.data);
 
 			// Update with server response (in case server modified the data)
 			if (result.data) {
@@ -494,7 +492,6 @@
 	 */
 	function handleSelection(event: CustomEvent) {
 		selectedIds = event.detail;
-		console.log('[DataGridAdvanced] Rows selected:', selectedIds);
 	}
 
 	/**
@@ -527,7 +524,6 @@
 				throw new Error(result.error || 'Delete failed');
 			}
 
-			console.log('[DataGridAdvanced] Deleted employees:', result);
 
 			// Remove deleted rows from local data
 			data = data.filter((row) => !selectedIds.includes(row.id!));

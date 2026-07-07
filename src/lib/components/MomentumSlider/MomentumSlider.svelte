@@ -275,7 +275,9 @@
 		(async () => {
 			gsapInstance = await loadGsap();
 			if (prefersReduced) return;
-			const cards = document.querySelectorAll<HTMLElement>('.momentum-slider .ms-card');
+			// Scope to this instance's track — a global query would animate every
+			// MomentumSlider's cards when more than one is mounted on a page.
+			const cards = trackEl?.querySelectorAll<HTMLElement>('.ms-card') ?? [];
 			if (cards.length > 0) {
 				gsapInstance.from(cards, {
 					y: 24,
