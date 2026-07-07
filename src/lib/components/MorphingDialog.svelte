@@ -200,6 +200,18 @@
 		}
 	}
 
+	// Make bind:open genuinely two-way: a parent flipping `open` drives the morph,
+	// not just the trigger click. Internal writes to `open` are no-ops here because
+	// they only happen once `phase` has already left 'idle'/'open', so the guards
+	// below skip them (no feedback loop).
+	$effect(() => {
+		if (open && phase === 'idle') {
+			openDialog();
+		} else if (!open && phase === 'open') {
+			closeDialog();
+		}
+	});
+
 	// =========================================================================
 	// [CR] FOCUS MANAGEMENT
 	// [NTL] When the dialog opens, we trap focus inside it so keyboard users

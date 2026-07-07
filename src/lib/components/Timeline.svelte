@@ -336,7 +336,10 @@
 
 	<!-- [CR] Timeline events -->
 	{#each events as event, index (event.id)}
-		{@const isClickable = !!onEventClick || !!event.href}
+		<!-- Row is a button only for a click handler without an href; an href event
+		     is navigated by its inner <a> (handleEventClick doesn't navigate), so
+		     making the row a button too would nest interactive elements. -->
+		{@const isClickable = !!onEventClick && !event.href}
 		{@const alignClass = getAlignmentClass(index)}
 
 		<!-- svelte-ignore a11y_no_noninteractive_tabindex -->

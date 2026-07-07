@@ -34,14 +34,51 @@
 
 	let open = $state(false);
 	let activeIndex = $state(0);
+	let panelEl = $state<HTMLElement | null>(null);
+	let previouslyFocused: HTMLElement | null = null;
 
 	const active = $derived(items[activeIndex]);
 
 	function openAt(index: number) {
+		previouslyFocused = document.activeElement as HTMLElement | null;
 		activeIndex = index;
 		open = true;
 	}
+
+	function close() {
+		open = false;
+		// Restore focus to the thumbnail that opened the lightbox.
+		previouslyFocused?.focus();
+		previouslyFocused = null;
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (!open) return;
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			close();
+		} else if (event.key === 'ArrowLeft') {
+			event.preventDefault();
+			activeIndex = previousMediaIndex(activeIndex, items.length);
+		} else if (event.key === 'ArrowRight') {
+			event.preventDefault();
+			activeIndex = nextMediaIndex(activeIndex, items.length);
+		}
+	}
+
+	// On open: move focus into the dialog and lock body scroll; restore on close.
+	$effect(() => {
+		if (!open || typeof document === 'undefined') return;
+		panelEl?.focus();
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	});
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <section class="media-lightbox {extraClass}" aria-labelledby="media-lightbox-title">
 	<header>
@@ -60,17 +97,22 @@
 
 	{#if open && active}
 		<div class="ml-dialog" role="dialog" aria-modal="true" aria-label={active.title}>
-			<div class="ml-panel">
+			<div class="ml-panel" bind:this={panelEl} tabindex="-1">
 				<header>
 					<div>
 						<p>{mediaCounter(activeIndex, items.length)}</p>
 						<h3>{active.title}</h3>
 					</div>
-					<button type="button" aria-label="Close lightbox" onclick={() => (open = false)}>Close</button>
+					<button type="button" aria-label="Close lightbox" onclick={close}>Close</button>
 				</header>
 
 				<figure>
-					<img src={active.src} alt={active.alt} />
+					{#if active.type === 'video'}
+						<!-- svelte-ignore a11y_media_has_caption -->
+						<video src={active.src} controls aria-label={active.alt}></video>
+					{:else}
+						<img src={active.src} alt={active.alt} />
+					{/if}
 					{#if active.caption}<figcaption>{active.caption}</figcaption>{/if}
 				</figure>
 
@@ -186,7 +228,8 @@
 		margin: 0;
 	}
 
-	.ml-panel figure img {
+	.ml-panel figure img,
+	.ml-panel figure video {
 		width: 100%;
 		max-height: 64vh;
 		object-fit: contain;
