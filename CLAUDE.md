@@ -43,7 +43,7 @@ Additional reading:
 | Search | `fuse.js` | |
 | Interaction | `@panzoom/panzoom` | Pan/zoom for diagrams/maps |
 | Analytics | `@vercel/analytics` | |
-| Deployment | Vercel | `@sveltejs/adapter-vercel`, Node 20.x runtime (Neon driver requirement) |
+| Deployment | Vercel | `@sveltejs/adapter-vercel`, Node 22.x runtime (Neon driver needs 20+; pinned to current LTS) |
 | Test | Vitest + `@testing-library/svelte`; Playwright for E2E | |
 | Package manager | bun | |
 
@@ -365,7 +365,7 @@ Authoring a doc:
 3. Add `DATABASE_URL=postgresql://...?sslmode=require` to `.env`
 4. Restart the dev server
 
-`@neondatabase/serverless` requires Node 20+ — already configured in `svelte.config.js` (`runtime: 'nodejs20.x'`).
+`@neondatabase/serverless` requires Node 20+ — already configured in `svelte.config.js` (`runtime: 'nodejs22.x'`).
 
 ## Better Auth setup (optional)
 
@@ -424,7 +424,7 @@ Each component has an interactive storyboard at `/storyboard/[component]`. Data 
 
 **"Auth Offline" on `/auth/*` pages** — `isBetterAuthConfigured()` is false. Check that `DATABASE_URL` is not the placeholder, `BETTER_AUTH_SECRET` is set to a real value, and `BETTER_AUTH_URL` is set.
 
-**Build error referencing `@neondatabase/serverless`** — verify `svelte.config.js` has `runtime: 'nodejs20.x'` and Node 20+ locally.
+**Build error referencing `@neondatabase/serverless`** — verify `svelte.config.js` has `runtime: 'nodejs22.x'` and Node 20+ locally.
 
 **Component not displaying** — check the page-level `data` prop, browser console, and that any image URLs resolve. If the page wraps in `ComponentPageShell`, confirm the snippets are named correctly.
 

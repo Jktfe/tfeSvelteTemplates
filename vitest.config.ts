@@ -42,6 +42,16 @@ export default defineConfig({
 		// Makes describe, it, expect available globally (no imports needed)
 		globals: true,
 
+		// Heavy-module tests (gsap in TopologyColorGrid; Leaflet in GeoViz /
+		// GeoBubbleMap / GeoChoropleth / GeoSpikeMap) dynamically import large
+		// libraries. Under the worker-thread pool those imports race the worker
+		// rpc and occasionally fail with "Closing rpc while fetch was pending".
+		// The process-based `forks` pool doesn't share that rpc channel, and a
+		// larger timeout gives the big imports room to resolve.
+		pool: 'forks',
+		testTimeout: 15000,
+		hookTimeout: 15000,
+
 		// Simulates a browser environment for component testing
 		// Using happy-dom instead of jsdom for better ES Module support
 		environment: 'happy-dom',

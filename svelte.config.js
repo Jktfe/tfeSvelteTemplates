@@ -18,12 +18,10 @@ const config = {
 	kit: {
 		// Vercel adapter for serverless deployment.
 		//
-		// Node 22.x is required because `isomorphic-dompurify` (used by the
-		// component-docs markdown pipeline) pulls in `jsdom`, which does
-		// `require('parse5')`. parse5 is now pure ESM — `require()` of an
-		// ESM module is only supported from Node 22.12+. On Node 20 it fails
-		// at runtime with ERR_REQUIRE_ESM and every SSR page returns 500.
-		// Neon's serverless driver is happy on Node 22+ as well.
+		// Pinned to Node 22.x (current LTS) to stay ahead of the Neon serverless
+		// driver's Node 20+ requirement and to track a maintained runtime. The
+		// markdown pipeline uses pure-JS `sanitize-html` (no jsdom/parse5), so
+		// no ESM-require constraint forces a specific minor.
 		adapter: adapter({
 			runtime: 'nodejs22.x'
 		})
