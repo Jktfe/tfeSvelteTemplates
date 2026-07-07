@@ -254,6 +254,18 @@ export const componentCategories: ComponentCatalogCategory[] = [
   position="top"
   color="#6366f1"
 />`
+			}),
+			component('BackToTop', '/backtotop', '⬆️', 'Floating scroll-to-top button that appears past a threshold and glides back to the top.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import BackToTop from '$lib/components/BackToTop.svelte';
+</script>
+
+<!-- Watches the window by default; fades in after 300px of scroll -->
+<BackToTop />
+
+<!-- Or scope it to a scrollable element, bottom-left, with visible text -->
+<BackToTop threshold={600} position="bottom-left" showLabel label="Back to top" />`
 			})
 		]
 	},
@@ -552,6 +564,23 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </Tooltip>`,
 				agentHint:
 					'Wrap any focusable trigger; pass plain text or a `tip` snippet for rich content. Dark-aware via three CSS custom properties (--tooltip-fg / --tooltip-bg / --tooltip-shadow) that flip under prefers-color-scheme: dark.'
+			}),
+			component('PasswordStrengthMeter', '/passwordstrengthmeter', '🔒', 'Rule-based password strength meter with a segmented bar and pass/fail checklist.', {
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/components/PasswordStrengthMeter.test.ts'],
+				usage: `<script lang="ts">
+  import PasswordStrengthMeter from '$lib/components/PasswordStrengthMeter.svelte';
+
+  // You own the input — the meter is read-only and just reads \`value\`.
+  let password = $state('');
+</script>
+
+<label for="pw">Password</label>
+<input id="pw" type="password" bind:value={password} autocomplete="new-password" />
+
+<PasswordStrengthMeter value={password} />`,
+				agentHint:
+					'Meter only — it does NOT contain the password input. Consumers bind their own <input> and pass its value in. Pure $derived scoring: runs each rule’s test, counts passes, maps the fraction onto 4 buckets (Weak/Fair/Good/Strong). Default rules: min length 8, lowercase, uppercase, digit, symbol — override wholesale via the rules prop (PasswordRule[] = {id,label,test}). Only the concise status line is aria-live=polite and it never contains the password.'
 			})
 		]
 	},
@@ -683,6 +712,25 @@ export const componentCategories: ComponentCatalogCategory[] = [
 
 <StatCard title="Revenue" value="£12,450" delta={8.2} deltaSuffix="%" deltaLabel="vs last week" />
 <StatCard title="Page load" value="1.4s" delta={-12} deltaSuffix="%" positiveDirection="down" />`
+			}),
+			component('Popover', '/popover', '💬', 'Click-anchored, edge-aware floating panel for interactive content — flips placement on overflow, returns focus on close.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Popover from '$lib/components/Popover.svelte';
+  let open = $state(false);
+</script>
+
+<Popover bind:open placement="bottom" ariaLabel="Actions menu">
+  {#snippet trigger(props)}
+    <button {...props}>Actions ▾</button>
+  {/snippet}
+
+  <ul>
+    <li><button onclick={() => (open = false)}>Edit</button></li>
+    <li><button onclick={() => (open = false)}>Duplicate</button></li>
+    <li><button onclick={() => (open = false)}>Delete</button></li>
+  </ul>
+</Popover>`
 			})
 		]
 	},
@@ -1035,6 +1083,49 @@ export const componentCategories: ComponentCatalogCategory[] = [
     The dialog grew out of the button you just clicked.
   </p>
 </MorphingDialog>`
+			}),
+			component('Masonry', '/masonry', '🧱', 'Responsive masonry layout that packs items into height-balanced columns, shortest-column-first.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import Masonry from '$lib/components/Masonry.svelte';
+
+  const photos = [
+    { id: 1, src: '/img/1.jpg', alt: 'Sunrise', h: 220 },
+    { id: 2, src: '/img/2.jpg', alt: 'Harbour', h: 140 },
+    { id: 3, src: '/img/3.jpg', alt: 'Forest', h: 300 },
+    { id: 4, src: '/img/4.jpg', alt: 'Desert', h: 180 },
+    { id: 5, src: '/img/5.jpg', alt: 'City', h: 260 }
+  ];
+</script>
+
+<Masonry items={photos} columns={{ base: 1, sm: 2, lg: 3 }} gap={16}>
+  {#snippet item(photo, index)}
+    <figure>
+      <img src={photo.src} alt={photo.alt} style="height:{photo.h}px" />
+      <figcaption>{index + 1}. {photo.alt}</figcaption>
+    </figure>
+  {/snippet}
+</Masonry>`
+			}),
+			component('SplitPane', '/splitpane', '▥', 'Resizable two-pane split with a draggable, keyboard-accessible divider — horizontal or vertical.', {
+				themeSupport: 'dual',
+				usage: `<script lang="ts">
+  import SplitPane from '$lib/components/SplitPane.svelte';
+
+  // Bindable: the % of the container the FIRST pane occupies.
+  let size = $state(45);
+</script>
+
+<div style="height: 320px">
+  <SplitPane direction="horizontal" bind:size min={20} max={80}>
+    {#snippet start()}
+      <div style="padding: 16px">Left pane — {Math.round(size)}%</div>
+    {/snippet}
+    {#snippet end()}
+      <div style="padding: 16px">Right pane — {Math.round(100 - size)}%</div>
+    {/snippet}
+  </SplitPane>
+</div>`
 			})
 		]
 	},
