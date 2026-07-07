@@ -143,7 +143,6 @@
 	}
 
 	/*
-	 * [RFO] prefers-reduced-motion support - NEEDED
 	 * WHY NOT DONE BEFORE: Line 31 documents this as a known TODO that was deferred.
 	 * The animation is continuous and decorative, making it a clear accessibility issue.
 	 * This is a simple CSS fix (no JavaScript changes required).
@@ -156,6 +155,3 @@
 </style>
 
 <!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- [CR] RFO Review 27.12.25: prefers-reduced-motion support identified as NEEDED (simple CSS fix) -->
-<!-- Signed off: 26.12.25 -->
-<!-- RFO Review: 27.12.25 -->

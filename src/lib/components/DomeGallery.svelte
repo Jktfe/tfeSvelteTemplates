@@ -1451,24 +1451,20 @@
 
 	/*
 	 * ============================================================
-	 * [RFO] OPTIMISATION REVIEW - 27.12.25
 	 * ============================================================
 	 *
-	 * [RFO] Lazy loading images - INTENTIONALLY NOT DONE
 	 * Adding loading="lazy" to images may seem sensible, but in practice we
 	 * shouldn't because: galleries typically have <30 images, eager loading
 	 * gives a smoother mobile experience (no pop-in as user rotates), and
 	 * the 3D effect looks broken with placeholder gaps. The performance
 	 * cost of ~30 small images is negligible vs. the UX improvement.
 	 *
-	 * [RFO] Virtual scrolling/DOM recycling - INTENTIONALLY NOT DONE
 	 * Virtualising the image tiles may seem sensible for large galleries,
 	 * but in practice we shouldn't because: the 3D sphere requires all
 	 * elements to exist for correct perspective/occlusion, galleries are
 	 * capped at ~50 images max for visual clarity, and the DOM cost of
 	 * 50 divs is trivial on modern browsers.
 	 *
-	 * [RFO] prefers-reduced-motion - OPTIONAL/USEFUL (complex)
 	 * Disabling physics may seem sensible for accessibility, but in practice
 	 * the motion IS the component's purpose - it's a physics-based interactive
 	 * gallery. The dragDampening prop exists for tuning. A full fix would
@@ -1485,5 +1481,3 @@
 </style>
 
 <!-- [CR] Component reviewed. Zero dependencies, pure Svelte 5 implementation. -->
-<!-- [CR] RFO Review 27.12.25: Documented intentional design decisions vs apparent optimisations. -->
-<!-- RFO Review: 27.12.25 -->
