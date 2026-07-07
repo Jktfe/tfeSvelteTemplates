@@ -416,7 +416,7 @@
 	const items = $derived(cappedWords.map(buildItem));
 
 	// Compute spiral positions with collision detection
-	const spiralPositions = $derived(() =>
+	const spiralPositions = $derived.by(() =>
 		resolvedVariant !== 'spiral' ? [] : spiralPositionWithCollision(
 			items.map((item) => ({ fontSize: item.fontSize, index: item.index }))
 		)
@@ -438,8 +438,8 @@
 		{#each items as item, i (item.word.text)}
 			<li
 				class="wordcloud__cell"
-				style:--wc-x={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.left ?? 50}%` : ''}
-				style:--wc-y={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.top ?? 50}%` : ''}
+				style:--wc-x={resolvedVariant === 'spiral' ? `${spiralPositions[i]?.left ?? 50}%` : ''}
+				style:--wc-y={resolvedVariant === 'spiral' ? `${spiralPositions[i]?.top ?? 50}%` : ''}
 			>
 				{#if item.word.href}
 					<a
@@ -493,8 +493,8 @@
 				style:font-size="{item.fontSize}px"
 				style:color={item.colour}
 				style:transform="rotate({item.angle}deg)"
-				style:--wc-x={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.left ?? 50}%` : ''}
-				style:--wc-y={resolvedVariant === 'spiral' ? `${spiralPositions()[i]?.top ?? 50}%` : ''}
+				style:--wc-x={resolvedVariant === 'spiral' ? `${spiralPositions[i]?.left ?? 50}%` : ''}
+				style:--wc-y={resolvedVariant === 'spiral' ? `${spiralPositions[i]?.top ?? 50}%` : ''}
 			>
 				{item.word.text}
 			</span>

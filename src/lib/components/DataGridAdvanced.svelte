@@ -146,7 +146,7 @@
 	 *
 	 * Note: For date fields, template + editor work together (template for display, editor for editing)
 	 */
-	const gridColumns = $derived(() => {
+	const gridColumns = $derived.by(() => {
 		// If custom columns provided, use them
 		if (columns) {
 			return columns.map((col) => {
@@ -326,7 +326,7 @@
 	 * - Converts hireDate strings to Date objects for datepicker editor
 	 * - Applies global search filter across all columns
 	 */
-	const gridData = $derived(() => {
+	const gridData = $derived.by(() => {
 		let filteredData = data;
 
 		// Apply global search filter
@@ -553,7 +553,7 @@
 		}
 
 		// Get column headers
-		const cols = gridColumns();
+		const cols = gridColumns;
 		const headers = cols.map((col) => col.header).join(',');
 
 		// Convert data rows to CSV format
@@ -616,9 +616,9 @@
 				✕
 			</button>
 		{/if}
-		{#if searchQuery && gridData().length !== data.length}
+		{#if searchQuery && gridData.length !== data.length}
 			<span class="search-results" aria-live="polite">
-				{gridData().length} of {data.length} rows
+				{gridData.length} of {data.length} rows
 			</span>
 		{/if}
 	</div>
@@ -663,13 +663,13 @@
 
 	<!-- SVAR Grid with type compatibility layer -->
 	{#if theme === 'willowDark'}
-		{@const gridCols = gridColumns() as any}
+		{@const gridCols = gridColumns as any}
 		{@const gridProps = editable ? { edit: true } : {}}
 		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
 		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
 		<WillowDark>
 			<Grid
-				data={gridData()}
+				data={gridData}
 				columns={gridCols}
 				selection={selectable ? 'row' : false}
 				rowHeight={40}
@@ -679,13 +679,13 @@
 			/>
 		</WillowDark>
 	{:else}
-		{@const gridCols = gridColumns() as any}
+		{@const gridCols = gridColumns as any}
 		{@const gridProps = editable ? { edit: true } : {}}
 		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
 		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
 		<Willow>
 			<Grid
-				data={gridData()}
+				data={gridData}
 				columns={gridCols}
 				selection={selectable ? 'row' : false}
 				rowHeight={40}

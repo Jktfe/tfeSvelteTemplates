@@ -23,7 +23,7 @@
 	let renderedContent = $derived(content ? renderMarkdown(content) : '');
 
 	// Tooltip positioning with viewport constraints
-	let tooltipStyle = $derived(() => {
+	let tooltipStyle = $derived.by(() => {
 		if (!visible) return 'display: none;';
 
 		// Position tooltip above the cursor with some offset
@@ -42,7 +42,7 @@
 {#if visible && content}
 	<div
 		class="tooltip-portal"
-		style={tooltipStyle()}
+		style={tooltipStyle}
 		role="tooltip"
 		aria-live="polite"
 	>

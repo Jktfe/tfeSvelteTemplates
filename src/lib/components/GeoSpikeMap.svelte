@@ -87,16 +87,16 @@
 	let tooltipY = $state(0);
 
 	// Calculate value domain for height scaling
-	const valueDomain = $derived(() => {
+	const valueDomain = $derived.by(() => {
 		const values = data.map((d) => d.value);
 		if (values.length === 0) return [0, 100] as [number, number];
 		return [Math.min(...values), Math.max(...values)] as [number, number];
 	});
 
 	// Create height scale
-	const heightScale = $derived(() => {
+	const heightScale = $derived.by(() => {
 		return scaleLinear()
-			.domain(valueDomain())
+			.domain(valueDomain)
 			.range([minSpikeHeight, maxSpikeHeight]);
 	});
 
@@ -104,7 +104,7 @@
 	 * Get spike height for a data point
 	 */
 	function getSpikeHeight(point: GeoDataPoint): number {
-		return heightScale()(point.value);
+		return heightScale(point.value);
 	}
 
 	/**
@@ -154,7 +154,7 @@
 	);
 
 	// Create fit geometry
-	const fitGeojson = $derived((): GeoJSON.FeatureCollection | undefined => {
+	const fitGeojson = $derived.by((): GeoJSON.FeatureCollection | undefined => {
 		if (geojson) return geojson;
 		if (data.length === 0) return undefined;
 		const longs = data.map((d) => d.long);
@@ -199,7 +199,7 @@
 
 			<!-- [CR] Using let:projection to access the projection function directly -->
 			<!-- [NTL] The projection is like GPS in reverse - it converts real-world coordinates into positions on our screen canvas! -->
-			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()} let:projection>
+			<GeoContext projection={geoMercator} fitGeojson={fitGeojson} let:projection>
 				<!-- Background geography if provided -->
 				{#if geojson}
 					{#each bgFeatures as feature, i (feature.id ?? feature.properties?.id ?? i)}
@@ -285,7 +285,7 @@
 						fill={spikeColor}
 					/>
 				</svg>
-				<span>{valueDomain()[0].toLocaleString('en-GB')}</span>
+				<span>{valueDomain[0].toLocaleString('en-GB')}</span>
 			</div>
 			<div class="legend-item">
 				<svg width={spikeWidth * 2 + 4} height={maxSpikeHeight + 4}>
@@ -295,7 +295,7 @@
 						fill={spikeColor}
 					/>
 				</svg>
-				<span>{valueDomain()[1].toLocaleString('en-GB')}</span>
+				<span>{valueDomain[1].toLocaleString('en-GB')}</span>
 			</div>
 		</div>
 	</div>

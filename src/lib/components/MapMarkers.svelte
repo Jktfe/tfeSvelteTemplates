@@ -101,20 +101,20 @@
 	const isBrowser = typeof window !== 'undefined';
 
 	/** Get unique categories from markers */
-	let categories = $derived(() => {
+	let categories = $derived.by(() => {
 		const cats = new Set(markers.map((m) => m.category).filter(Boolean));
 		return Array.from(cats).sort() as string[];
 	});
 
 	/** Filter markers by active category */
-	let filteredMarkers = $derived(() => {
+	let filteredMarkers = $derived.by(() => {
 		if (!activeCategory) return markers;
 		return markers.filter((m) => m.category === activeCategory);
 	});
 
 	/** Calculate bounds for all visible markers */
-	let markerBounds = $derived(() => {
-		const visible = filteredMarkers();
+	let markerBounds = $derived.by(() => {
+		const visible = filteredMarkers;
 		if (visible.length === 0) {
 			return { center: DEFAULT_MAP_CENTER, zoom: 13 };
 		}
@@ -163,7 +163,7 @@
 			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 			// Use provided center/zoom or calculate from markers
-			const initialBounds = markerBounds();
+			const initialBounds = markerBounds;
 			const initialCenter = center ?? initialBounds.center;
 			const initialZoom = zoom ?? initialBounds.zoom;
 
@@ -192,7 +192,7 @@
 			map = mapInstance;
 
 			// Add initial markers
-			addMarkersToMap(filteredMarkers());
+			addMarkersToMap(filteredMarkers);
 		})();
 
 		return () => {
@@ -211,7 +211,7 @@
 	 */
 	$effect(() => {
 		if (map && markerLayer) {
-			addMarkersToMap(filteredMarkers());
+			addMarkersToMap(filteredMarkers);
 		}
 	});
 
@@ -335,7 +335,7 @@
 -->
 <div class="map-markers-container" style="--map-height: {height}px">
 	<!-- Category Filter Bar -->
-	{#if showCategories && categories().length > 1}
+	{#if showCategories && categories.length > 1}
 		<div class="filter-bar" role="group" aria-label="Filter markers by category">
 			<button
 				type="button"
@@ -347,7 +347,7 @@
 				All ({markers.length})
 			</button>
 
-			{#each categories() as category (category)}
+			{#each categories as category (category)}
 				<button
 					type="button"
 					class="filter-pill"
@@ -364,7 +364,7 @@
 
 	<!-- Marker Count Indicator -->
 	<div class="marker-count" aria-live="polite">
-		Showing {filteredMarkers().length} of {markers.length} locations
+		Showing {filteredMarkers.length} of {markers.length} locations
 	</div>
 
 	<!-- Map Element -->

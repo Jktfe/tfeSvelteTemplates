@@ -287,7 +287,7 @@
 	 * [CR] Build legend data showing each group and its colour.
 	 * [NTL] The legend shows what each colour means - like a key on a map.
 	 */
-	let legendGroups = $derived(() => {
+	let legendGroups = $derived.by(() => {
 		const groups = getGroups(data);
 		return groups.map((group, i) => ({
 			group,
@@ -482,9 +482,9 @@
 	{/if}
 
 	<!-- Legend -->
-	{#if legendGroups().length > 1}
+	{#if legendGroups.length > 1}
 		<div class="legend">
-			{#each legendGroups() as { group, color } (group)}
+			{#each legendGroups as { group, color } (group)}
 				<div class="legend-item">
 					<div class="legend-color" style:background-color={color}></div>
 					<span class="legend-label">{group}</span>
