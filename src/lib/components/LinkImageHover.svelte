@@ -143,7 +143,9 @@
 	function handlePreviewClick(event: MouseEvent) {
 		event.stopPropagation(); // [CR] Prevent triggering link click
 		showPreviewMobile = false; // [CR] Hide preview
-		window.open(href, target); // [CR] Follow the link
+		// noopener,noreferrer stops the opened page reaching back through
+		// window.opener (reverse tab-nabbing); the <a> fallback sets rel likewise.
+		window.open(href, target, 'noopener,noreferrer');
 	}
 
 	// [CR] Svelte action to handle mouse enter/leave events for desktop hover

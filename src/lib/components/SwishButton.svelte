@@ -111,6 +111,7 @@
 	<!-- [NTL] This is waiting in the wings (off to the right). On hover, it glides in like a performer! -->
 	<div
 		class="absolute top-0 z-10 flex h-full w-full translate-x-12 items-center justify-center gap-2 text-primary-foreground opacity-0 transition-all duration-300 group-hover:-translate-x-1 group-hover:opacity-100"
+		aria-hidden="true"
 	>
 		<span>{text}</span>
 		<!-- [CR] Conditional icon based on button state/type - all inline SVGs for zero deps -->

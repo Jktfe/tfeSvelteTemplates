@@ -197,7 +197,12 @@
 					{@const glyph = trendGlyph(trend)}
 					{@const deltaText = formatDelta(item.delta)}
 					{#if item.href}
-						<a class="tickertape__item" href={item.href} aria-hidden={copy === 1 ? 'true' : undefined}>
+						<a
+							class="tickertape__item"
+							href={item.href}
+							aria-hidden={copy === 1 ? 'true' : undefined}
+							tabindex={copy === 1 ? -1 : undefined}
+						>
 							<span class="tickertape__label">{item.label}</span>
 							<span class="tickertape__value">{item.value}</span>
 							{#if deltaText || trend !== 'flat'}

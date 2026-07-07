@@ -362,6 +362,7 @@
 	class={panelClass}
 	aria-label="Main navigation"
 	tabindex="-1"
+	inert={!isPanelOpen}
 	onkeydown={handlePanelKeydown}
 	use:setupFocusTrap
 >

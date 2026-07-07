@@ -254,7 +254,6 @@
 		class="countdown countdown--{format}"
 		role="timer"
 		aria-label="Countdown timer"
-		aria-live="polite"
 	>
 		{#if isComplete}
 			<!-- [CR] Completion message displayed when countdown reaches zero -->

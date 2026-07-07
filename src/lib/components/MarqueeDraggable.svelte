@@ -214,6 +214,13 @@
 
 	// [CR] Start the automatic scrolling animation
 	function startAnimation() {
+		// Respect prefers-reduced-motion: skip the autonomous auto-scroll loop
+		// (manual dragging still works — that's user-initiated, not autoplay).
+		if (
+			typeof window !== 'undefined' &&
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		)
+			return;
 		// [CR] Don't animate if dragging, no content, or not visible
 		if (isDragging || !contentWidth || !isVisible) return;
 

@@ -142,16 +142,11 @@
 		width: 100%;
 	}
 
-	/*
-	 * WHY NOT DONE BEFORE: Line 31 documents this as a known TODO that was deferred.
-	 * The animation is continuous and decorative, making it a clear accessibility issue.
-	 * This is a simple CSS fix (no JavaScript changes required).
-	 *
-	 * Implementation:
-	 * @media (prefers-reduced-motion: reduce) {
-	 *   .shine-border-wrapper { animation-duration: 0.01s; }
-	 * }
-	 */
+	/* The shine is continuous, decorative motion — disable it for users who
+	   prefer reduced motion (the static gradient border remains). */
+	@media (prefers-reduced-motion: reduce) {
+		.shine-border-wrapper {
+			animation: none;
+		}
+	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
