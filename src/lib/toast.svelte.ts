@@ -38,10 +38,3 @@ export function dismissToast(id: string) {
 		toastState.stack.splice(index, 1);
 	}
 }
-
-/**
- * Get the current toast stack (legacy accessor, prefer using toastState directly in Svelte 5)
- */
-export function getToasts() {
-	return toastState.stack;
-}
