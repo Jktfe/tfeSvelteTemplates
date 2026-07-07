@@ -79,6 +79,9 @@
 	let copied = $state(false);
 	let resetTimer: ReturnType<typeof setTimeout> | undefined;
 
+	// Clear the pending reset timer if the button unmounts within copiedDuration.
+	$effect(() => () => clearTimeout(resetTimer));
+
 	async function handleClick() {
 		try {
 			await navigator.clipboard.writeText(value);

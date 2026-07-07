@@ -1016,6 +1016,9 @@
 	$effect(() => {
 		return () => {
 			document.body.classList.remove('dg-scroll-lock');
+			// Stop the inertia rAF loop too — otherwise unmounting mid-spin leaves
+			// it rescheduling and writing rotation state on a destroyed component.
+			stopInertia();
 		};
 	});
 </script>

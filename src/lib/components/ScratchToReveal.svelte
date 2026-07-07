@@ -134,6 +134,12 @@
 					resizeObserver.disconnect();
 					resizeObserver = null;
 				}
+				// Cancel any in-flight scratch frame so its callback can't run
+				// against a torn-down canvas (the callback uses non-null assertions).
+				if (rafId !== null) {
+					cancelAnimationFrame(rafId);
+					rafId = null;
+				}
 			};
 		}
 	});

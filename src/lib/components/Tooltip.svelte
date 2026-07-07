@@ -118,6 +118,9 @@
 	let showTimer: ReturnType<typeof setTimeout> | undefined;
 	let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
+	// Clear any pending show/hide timers when the tooltip unmounts.
+	$effect(() => clearTimers);
+
 	function clearTimers() {
 		if (showTimer) {
 			clearTimeout(showTimer);
