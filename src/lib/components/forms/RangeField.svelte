@@ -12,8 +12,8 @@
 		readonly = false,
 		error = '',
 		touched = false,
-		min,
-		max,
+		min = 0,
+		max = 100,
 		step = 1,
 		showValue = false,
 		showMinMax = false,
@@ -36,7 +36,7 @@
 	/**
 	 * Calculate percentage for visual indicator
 	 */
-	let percentage = $derived(((value - min) / (max - min)) * 100);
+	let percentage = $derived(max === min ? 0 : ((value - min) / (max - min)) * 100);
 
 	/**
 	 * Handle input changes

@@ -343,6 +343,11 @@
 			return;
 		}
 
+		// Cancel any in-flight burst before starting a new one — otherwise a rapid
+		// second fire() overwrites rafId and leaves two rAF loops fighting over the
+		// same particle state.
+		stop();
+
 		const w = typeof window !== 'undefined' ? window.innerWidth : 0;
 		const h = typeof window !== 'undefined' ? window.innerHeight : 0;
 		const resolvedOrigin = parseOrigin(opts?.origin ?? origin, w, h);

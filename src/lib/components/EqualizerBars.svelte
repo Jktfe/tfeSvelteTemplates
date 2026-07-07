@@ -156,7 +156,6 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
 
 	type Props = {
 		bars?: number;
@@ -203,17 +202,12 @@
 	// case where the JS probe ever drifts).
 	let runAnimation = $state(true);
 
-	onMount(() => {
-		if (active && !isReducedMotion()) {
-			runAnimation = true;
-		} else {
-			runAnimation = false;
-		}
-	});
-
 	$effect(() => {
-		// React to the `active` prop flipping at runtime.
-		if (!active) runAnimation = false;
+		// Keep the animation gate in sync with `active` and the motion preference.
+		// Runs on mount (client only — SSR keeps the `true` default so static markup
+		// matches) and whenever `active` flips at runtime, so re-enabling `active`
+		// correctly restarts the bars (previously the gate only ever turned off).
+		runAnimation = active && !isReducedMotion();
 	});
 </script>
 

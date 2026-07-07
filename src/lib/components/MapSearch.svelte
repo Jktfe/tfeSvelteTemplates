@@ -99,6 +99,15 @@
 	/** Whether the dropdown is open */
 	let isDropdownOpen = $state(false);
 
+	/**
+	 * The name a selection wrote into `searchQuery`. Selecting a result sets the
+	 * query to the chosen place name; without this guard the debounced effect
+	 * would treat that as new input and immediately re-search + re-open the
+	 * dropdown. Written only in selectResult (never in the effect) so it can't
+	 * self-trigger the effect.
+	 */
+	let lastSelectedName = $state('');
+
 	/** Currently highlighted result index for keyboard navigation */
 	let highlightedIndex = $state(-1);
 
@@ -175,6 +184,13 @@
 		// Don't search if query is too short
 		if (searchQuery.length < 3) {
 			searchResults = [];
+			isDropdownOpen = false;
+			return;
+		}
+
+		// A selection just wrote the chosen place name into the query — don't
+		// re-search or re-open the dropdown for it.
+		if (searchQuery === lastSelectedName) {
 			isDropdownOpen = false;
 			return;
 		}
@@ -261,7 +277,8 @@
 		const L = await import('leaflet');
 
 		// Update search query to selected location name
-		searchQuery = result.displayName.split(',')[0]; // Just the main name
+		lastSelectedName = result.displayName.split(',')[0];
+		searchQuery = lastSelectedName; // Just the main name
 		isDropdownOpen = false;
 		searchResults = [];
 

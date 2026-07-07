@@ -86,7 +86,7 @@
 		class:horizontal={orientation === 'horizontal'}
 		class:vertical={orientation === 'vertical'}
 		class:error={hasError}
-		onblur={handleBlur}
+		onfocusout={handleBlur}
 	>
 		{#each options as option, index (option.value)}
 			{@const optionId = `${name}-${index}`}

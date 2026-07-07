@@ -61,7 +61,7 @@
 		aria-describedby={helpText ? helpId : undefined}
 		aria-errormessage={hasError ? errorId : undefined}
 		aria-required={required}
-		onblur={handleBlur}
+		onfocusout={handleBlur}
 	>
 		{#each options as option, index (option.value)}
 			{@const optionId = `${name}-${index}`}

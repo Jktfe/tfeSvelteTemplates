@@ -268,7 +268,13 @@
 		tabindex="-1"
 		use:setupFocusTrap
 		onclick={(e) => e.stopPropagation()}
-		onkeydown={(e) => e.stopPropagation()}
+		onkeydown={(e) => {
+			// Handle Escape here: the focus trap keeps focus inside the modal, so
+			// stopping propagation (to isolate the editor's keys) would otherwise
+			// prevent Escape from ever reaching the window handler.
+			if (e.key === 'Escape') handleCancel();
+			e.stopPropagation();
+		}}
 	>
 		<!-- Modal Header -->
 		<header class="editor-header">
