@@ -30,14 +30,6 @@
 		'MagnetGrid renders a fixed grid of cells and applies a per-cell translate based on the cursor distance, with quadratic falloff to zero at the radius edge. Each cell is a separate composited layer, so the GPU runs the displacement; CSS handles the smoothing. Switch policy to "repel" and the cells flee instead of chasing.';
 </script>
 
-<svelte:head>
-	<title>MagnetGrid — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Cursor-driven displacement field. Cells attract or repel from the pointer with smooth falloff."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Cursor', 'Snippets', 'GPU-composited']}

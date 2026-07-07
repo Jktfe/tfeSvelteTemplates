@@ -142,6 +142,7 @@
 	import AgentPromptCopy from './AgentPromptCopy.svelte';
 	import CodeBlock from './CodeBlock.svelte';
 	import CopyButton from './CopyButton.svelte';
+	import { page } from '$app/stores';
 
 	let {
 		name,
@@ -165,7 +166,26 @@
 	}: ComponentPageShellProps = $props();
 
 	const resolvedFileName = $derived(codeFileName ?? `${name}.svelte`);
+
+	// Page metadata lives here, in the one shell every demo page wraps, so title,
+	// description, canonical and social tags stay consistent site-wide and are
+	// authored once (from the catalog) instead of hand-copied into ~120 pages.
+	const pageTitle = $derived(`${name} — TFE / Svelte Templates`);
+	const canonicalUrl = $derived(`${$page.url.origin}${$page.url.pathname}`);
 </script>
+
+<svelte:head>
+	<title>{pageTitle}</title>
+	<meta name="description" content={description} />
+	<link rel="canonical" href={canonicalUrl} />
+	<meta property="og:type" content="website" />
+	<meta property="og:title" content={pageTitle} />
+	<meta property="og:description" content={description} />
+	<meta property="og:url" content={canonicalUrl} />
+	<meta name="twitter:card" content="summary_large_image" />
+	<meta name="twitter:title" content={pageTitle} />
+	<meta name="twitter:description" content={description} />
+</svelte:head>
 
 {#snippet shelfNavBlock(placement: 'header' | 'footer')}
 	{#if shelfNavigation && (shelfNavigation.previous || shelfNavigation.next)}

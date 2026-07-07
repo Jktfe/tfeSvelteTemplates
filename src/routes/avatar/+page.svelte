@@ -9,11 +9,6 @@
 	let liveSrc = $derived(broken ? 'https://broken.example/nope.png' : 'https://i.pravatar.cc/150?img=12');
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Identity', 'A11y', 'Theme-aware']}

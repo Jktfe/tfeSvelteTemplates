@@ -28,11 +28,6 @@
 		'Each cell is a real input, so keyboard, paste, and autofill semantics come from the platform. Typing advances focus, Backspace on an empty cell jumps back, and a multi-character paste fans out across the cells in one operation. Setting type="numeric" pairs with inputmode and autocomplete="one-time-code" so iOS and Android offer SMS-delivered codes automatically.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'OTP', 'A11y', 'Mobile', 'Zero deps']}

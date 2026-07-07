@@ -42,14 +42,6 @@
 	];
 </script>
 
-<svelte:head>
-	<title>Marquee — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Continuous scrolling marquee — static (CSS only, pause-on-hover) and interactive (click-and-drag with momentum) variants share an API."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Marquee', 'Database', 'A11y']}

@@ -72,14 +72,6 @@
 		'CalendarHeatmap renders a 52×7 SVG grid spanning the date range, with each cell coloured by quantised activity level (default 5 levels). Data lookups use a Map for O(1) access, so the component handles a year of cells without re-render churn. Keyboard navigation (arrows + Enter), ARIA labels, and viewBox-based scaling come for free.';
 </script>
 
-<svelte:head>
-	<title>CalendarHeatmap — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="GitHub-style contribution calendar heatmap with tooltips, keyboard navigation and customisable colours."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

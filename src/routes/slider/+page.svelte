@@ -26,11 +26,6 @@
 		'Slider wraps a native <input type="range">, so <code>role="slider"</code>, full keyboard navigation, and form participation are inherited from the platform. The custom track and thumb are drawn entirely with CSS variables and a CSS background gradient that follows the bound value, leaving the input itself transparent on top to capture pointer and key events. <code>formatValue</code> is rendered into an optional bubble for currency, percentages, or any unit.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Range', 'A11y', 'Keyboard', 'Theme-aware']}

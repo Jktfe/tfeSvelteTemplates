@@ -62,14 +62,6 @@
 		'RadialCluster lays out hierarchical data in a circular dendrogram. The cluster algorithm places leaf nodes at equal radius from the centre; internal nodes sit at the angular mean of their descendants. Cubic Bézier curves connect parents to children along radial paths. Labels can rotate to follow each leaf node’s angle so they read cleanly around the circle.';
 </script>
 
-<svelte:head>
-	<title>RadialCluster — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Native Svelte 5 radial cluster (circular dendrogram) for hierarchical data. Zero charting dependencies."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

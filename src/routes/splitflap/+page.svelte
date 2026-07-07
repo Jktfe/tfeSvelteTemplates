@@ -41,14 +41,6 @@
 	});
 </script>
 
-<svelte:head>
-	<title>SplitFlap — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Mechanical Solari-board character flip — 3D top-half drops down through intermediate charset positions, bottom catches the new glyph, per-character stagger creates a left-to-right cascade."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', '3D CSS', 'A11y', 'Zero deps']}

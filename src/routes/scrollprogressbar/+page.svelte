@@ -27,11 +27,6 @@
 		'ScrollProgressBar attaches a single passive scroll listener and updates a CSS custom property per requestAnimationFrame tick. The fill itself is a CSS width transition (80ms linear) so the bar smooths between rAF samples without visible jitter. The wrapper has pointer-events: none so it never intercepts clicks. role="progressbar" + aria-valuenow keeps screen-reader users informed regardless of variant.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ScrollProgressBar variant={activeVariant} position={activePosition} color={activeColor} />
 
 <ComponentPageShell

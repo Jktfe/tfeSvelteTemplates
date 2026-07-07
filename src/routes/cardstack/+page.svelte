@@ -45,14 +45,6 @@
 		'CardStack arranges cards in a horizontal overlapping row. Hover detects entry direction and lifts each card outward; click selects and reveals it fully. Arrow keys, swipe gestures and prefers-reduced-motion are all wired in scoped CSS — no animation library required.';
 </script>
 
-<svelte:head>
-	<title>CardStack — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive horizontal card stack for Svelte 5 with hover, swipe and keyboard support."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

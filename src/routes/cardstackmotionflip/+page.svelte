@@ -29,14 +29,6 @@
 		'CardStackMotionFlip is a focused 3D deck. Drag in any direction to roll the top card off-screen with full rotation, then watch it reappear at the back of the stack. Keyboard control is intentionally scoped to focus inside the deck so global arrow handlers stay free for page navigation.';
 </script>
 
-<svelte:head>
-	<title>CardStackMotionFlip — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="A focused 3D deck template for swipeable Svelte 5 product, gallery, and profile stacks."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

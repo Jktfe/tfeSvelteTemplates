@@ -40,11 +40,6 @@
 		'Breadcrumbs render as a real nav > ol > li tree. Separators are aria-hidden so screen readers only hear the labels; the final crumb gets aria-current="page". When maxVisible is hit, the middle crumbs are replaced by an ellipsis token while the first and last crumbs survive — the "where I started" and "where I am" anchors that matter most to the user.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Zero-deps', 'Semantic HTML']}

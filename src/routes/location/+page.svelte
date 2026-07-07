@@ -96,14 +96,6 @@
 		'MapLocateMe wraps the browser Geolocation API with permission prompts, an accuracy circle, and an optional watchPosition mode — coordinates and altitude come back through the onLocate callback. MapRouting takes two LatLng waypoints, calls the public OSRM demo endpoint, and renders a polyline plus distance, duration, and turn-by-turn steps. Both components are mounted with `bind:` props so the parent always sees the latest origin / destination / location.';
 </script>
 
-<svelte:head>
-	<title>Location Services — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Geolocation and routing for Svelte 5: locate-me with accuracy radius, plus A→B routing via OSRM."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Leaflet', 'Geolocation API', 'OSRM routing', 'HTTPS required']}

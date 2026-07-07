@@ -62,14 +62,6 @@
 	];
 </script>
 
-<svelte:head>
-	<title>TickerTape — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Horizontal infinite-scroll display of structured data points — Bloomberg / airport-info energy as a portable Svelte 5 primitive."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Marquee', 'Theme-aware', 'A11y']}

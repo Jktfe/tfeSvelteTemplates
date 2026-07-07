@@ -35,14 +35,6 @@
 		'Tilt3D wraps any element in a perspective container and rotates it on hover by mapping the cursor offset to two rotation axes. The optional glare layer is a single radial gradient pinned to the cursor. Three reset modes (spring, instant, none) cover the common leave behaviours; reduced-motion users see a flat card.';
 </script>
 
-<svelte:head>
-	<title>Tilt3D — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Cursor-driven 3D rotation wrapper with glare highlight and three reset modes."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Hover', 'CSS-only', 'Reduced-motion safe']}

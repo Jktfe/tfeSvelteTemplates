@@ -26,14 +26,6 @@
 		'AuroraBackdrop stacks four CSS conic-gradient ribbons with mix-blend-mode: screen, each rotating at a deliberately non-harmonic period (40 / 65 / 80 / 110 seconds) so the composite never visibly loops. A radial veil fades the corners, keeping the wash contained. Pure CSS — no canvas, no rAF — and prefers-reduced-motion freezes the ribbons at a deliberately staggered static frame.';
 </script>
 
-<svelte:head>
-	<title>AuroraBackdrop — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Full-bleed pure-CSS aurora backdrop with four rotating conic-gradient ribbons and a radial veil. Three palettes, asset-free, prefers-reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Ambient', 'Reduced-motion safe']}

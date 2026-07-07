@@ -9,11 +9,6 @@
 		'Tooltip wraps any focusable trigger and links the tooltip surface via aria-describedby, so screen readers announce the tip alongside the trigger\'s own label rather than replacing it. It listens for both pointer and focus events (so keyboard users see the tip when tabbing in) and dismisses on Escape while a tip is visible. Pass plain text via the text prop, or a tip snippet for rich content like keyboard hints.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Hover', 'Focus', 'Theme-aware']}

@@ -189,11 +189,6 @@
 		'BentoGrid is a CSS-grid layout primitive: each item declares its colSpan and rowSpan, the grid auto-flows the rest. Pair it with image-only items for a gallery, or icon + description items for a feature wall.';
 </script>
 
-<svelte:head>
-	<title>Bento Grid — TFE / Svelte Templates</title>
-	<meta name="description" content="Responsive Bento-box style grid component for Svelte 5." />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

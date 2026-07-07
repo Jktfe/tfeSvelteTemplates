@@ -49,14 +49,6 @@
 		'MagicCard tracks the pointer relative to its bounding box and writes the position into a CSS custom property. A radial gradient overlay uses that property as its centre, creating the spotlight. On pointer leave the gradient fades via a CSS transition. Everything is scoped — no globals leak.';
 </script>
 
-<svelte:head>
-	<title>MagicCard — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive Svelte 5 cards with mouse-tracking spotlight and border glow. Light and dark mode support."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

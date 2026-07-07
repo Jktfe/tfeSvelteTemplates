@@ -21,14 +21,6 @@
 		'MagneticButton wraps any focusable element and pulls it toward the cursor when the pointer enters its radius. The translation is interpolated each frame using a critically-damped easing (the damping prop), so motion stays smooth even when the cursor changes direction sharply. Touch and reduced-motion users see a static control — the wrapper short-circuits before binding listeners.';
 </script>
 
-<svelte:head>
-	<title>MagneticButton — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Wrap any button or link in a subtle magnetic pull toward the cursor. Reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Hover', 'Reduced-motion safe', 'Zero deps']}

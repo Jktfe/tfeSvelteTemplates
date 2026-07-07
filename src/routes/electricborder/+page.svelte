@@ -18,14 +18,6 @@
 		'ElectricBorder distorts a stroked rectangle with SVG <feTurbulence> + <feDisplacementMap>, with <animate> driving the turbulence baseFrequency for a live crackling perimeter. Three intensities (mild / crackling / lightning) tune turbulence frequency, distortion scale, animation speed, stroke width, and glow blur together. A module-scoped counter assigns a unique <filter id> per instance so multiple borders on the same page never collide. Reduced motion freezes the animation.';
 </script>
 
-<svelte:head>
-	<title>ElectricBorder — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated electric-arc border for any element. SVG filter + animate, three intensities, three palettes, composes with Tilt3D."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'SVG filter', 'Wrapper', 'Reduced-motion safe']}

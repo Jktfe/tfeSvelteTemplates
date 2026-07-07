@@ -25,14 +25,6 @@
 		'CRTScreen wraps any content in a CRT frame. Scanlines come from a single repeating-linear-gradient under mix-blend-mode: multiply; chromatic aberration is a two-stop text-shadow on the slot; tracking roll is one keyframe drifting a soft band top to bottom; vignette is a corner-darkening radial-gradient. Four named profiles (amber, green, broadcast, modern) preset every colour together. Reduced motion strips the roll and the channel-split shadow.';
 </script>
 
-<svelte:head>
-	<title>CRTScreen — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Retro CRT-monitor frame for arbitrary content. Scanlines, chromatic aberration, optional roll, four named profiles."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Retro', 'Reduced-motion safe']}

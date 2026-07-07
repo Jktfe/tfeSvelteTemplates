@@ -106,14 +106,6 @@ done`
 +}`;
 </script>
 
-<svelte:head>
-	<title>CodeBlock — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Token-coloured source-code display with five variants, three sizes, six languages, and a copy button — built on a tiny in-house tokenizer."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Code', 'Theme-aware', 'Zero deps']}

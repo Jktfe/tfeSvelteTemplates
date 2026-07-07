@@ -23,11 +23,6 @@
 		'ColorPicker keeps HSV (hue, saturation, value) as its source of truth and derives the hex string on the way out, so dragging brightness or saturation to an extreme never loses the hue. The square plane sets saturation (left→right) and brightness (bottom→top), the vertical bar spins the hue, and both are role="slider" with arrow-key control. A live hex field, preset swatches, and a feature-detected native EyeDropper round it out. The chosen colour flows back through bind:value as a 6-digit hex.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Zero-deps']}

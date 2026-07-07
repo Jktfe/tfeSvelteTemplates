@@ -17,14 +17,6 @@
 		'Cardwall renders rows of CSS-gradient tiles drifting across a CSS perspective container. A single requestAnimationFrame loop wraps each row offset around its period for a seamless seam, and SSR-deterministic Halton(2,3) sequences pick the gradient + label for each tile so server and client agree byte-for-byte. Click any tile to pin it — the rest of the wall keeps drifting.';
 </script>
 
-<svelte:head>
-	<title>Cardwall — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Full-bleed perspective billboard wall of CSS-gradient tiles drifting on a tilted plane."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

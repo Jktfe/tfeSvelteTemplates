@@ -69,14 +69,6 @@
 		'Items are positioned on a sphere using rotateX, rotateY, and translateZ inside a CSS perspective stage. Pointer events track velocity each frame, then on release a friction-based inertia loop coasts the rotation to a stop. Click-to-enlarge uses a FLIP-style transform from the tile rectangle to a centred overlay. ResizeObserver keeps the radius proportional to the container, and the whole thing degrades cleanly when prefers-reduced-motion is set.';
 </script>
 
-<svelte:head>
-	<title>DomeGallery — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive 3D spherical Svelte 5 gallery with drag-to-rotate, momentum, and click-to-enlarge. Pure CSS 3D — no Three.js."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

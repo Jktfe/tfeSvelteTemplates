@@ -18,14 +18,6 @@
 	}
 </script>
 
-<svelte:head>
-	<title>GlitchText — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="RGB-channel-split text glitch with optional clip-path tear bands. Three intensities, three triggers, asset-free."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Effects', 'Theme-aware', 'A11y']}

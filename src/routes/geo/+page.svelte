@@ -56,14 +56,6 @@
 		'All three components share a server loader that fetches UK GeoJSON from the ONS Open Geography Portal with a hand-built fallback for offline development. GeoChoropleth tints each region by a sequential colour scale, GeoBubbleMap renders sized circles at each lat/long, and GeoSpikeMap projects vertical magnitude bars. They all use D3 projections under the hood via LayerChart, so swapping country boundaries is a one-line change.';
 </script>
 
-<svelte:head>
-	<title>GeoViz — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="SVG choropleth, bubble, and spike maps for UK regions. Server-loaded GeoJSON with offline fallback."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'LayerChart', 'D3 geo', 'SVG', 'Server-loaded GeoJSON']}

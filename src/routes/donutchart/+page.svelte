@@ -36,11 +36,6 @@
 		'DonutChart stacks N identical SVG <circle> elements that share a centre and radius, then uses stroke-dasharray to reveal only each slice’s share of the circumference and stroke-dashoffset to rotate it into place. No path trigonometry is involved, so a percentage becomes a single multiply. Donut versus pie is one continuous knob: thickness maps to the SVG stroke-width, and a stroke as thick as the radius fills the hole to make a solid pie.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'SVG', 'Zero-dep']}

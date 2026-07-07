@@ -6,14 +6,6 @@
 	const shell = catalogShellPropsForSlug('/truefocus')!;
 </script>
 
-<svelte:head>
-	<title>TrueFocus — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Word-by-word phrase focus with a single morphing frame. Hover-pause, click-to-pin, ResizeObserver-aware."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Typography', 'Hover', 'A11y']}

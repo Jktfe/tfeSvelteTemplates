@@ -59,14 +59,6 @@
 		'ConfettiBurst is an imperative wrapper. Mount once, call fire() when something deserves a celebration. The canvas only mounts during a burst; idle DOM cost is zero. Per-shot opts can override origin and palette without remounting, and prefers-reduced-motion bypasses the canvas while still firing onComplete so consumer logic still runs.';
 </script>
 
-<svelte:head>
-	<title>ConfettiBurst — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Imperative canvas celebration burst with per-shot origin and palette overrides."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Canvas', 'Imperative API', 'Reduced-motion safe']}

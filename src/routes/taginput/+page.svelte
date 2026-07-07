@@ -22,11 +22,6 @@
 		'TagInput wraps a chip list and a text input in a single role="group". Enter or comma commits the draft through one tryAdd() gate that trims, dedupes (case-insensitive by default), checks the max cap, and runs your optional validate(tag). Backspace on an empty input arms then removes the last chip — a two-step gesture that protects fast typists. Pasting a comma- or newline-separated list splits and adds each piece, and every rejection is announced through a polite aria-live region.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Zero-deps', 'Bindable']}

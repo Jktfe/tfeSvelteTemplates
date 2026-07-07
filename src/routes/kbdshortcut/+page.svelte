@@ -9,11 +9,6 @@
 		'KbdShortcut renders each key as a real <kbd> element so screen readers know it represents keyboard input. The component auto-detects Mac vs Windows from navigator.platform (default to Mac on the server so SSR content matches the most common laptop locale, then corrects on hydration) and substitutes Cmd → ⌘, Ctrl → ⌃ on Mac, leaving readable text on Windows. The default aria-label spells the keys as words ("Cmd plus K") so screen readers say words, not glyphs.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Keyboard', 'CSS-only', 'Theme-aware']}

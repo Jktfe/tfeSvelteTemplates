@@ -25,11 +25,6 @@
 		'Sparkline maps a numeric series onto a tiny SVG box. It auto-scales to the data range — the smallest value sits at the bottom edge, the largest at the top — using t = (v - lo) / (hi - lo) and inverting for SVG\'s downward y-axis. A single point is pinned to the left edge and drawn as a dot; a flat series rests on the centre line. Optional area fill and a last-point dot are extra SVG nodes layered over the polyline. A computed aria-label summarises the trend (direction and percentage change) for screen readers.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'SVG', 'Zero-dep']}

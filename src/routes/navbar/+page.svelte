@@ -33,11 +33,6 @@
 		'Navbar renders a sticky logo + hamburger trigger that opens a left-sliding panel. Categories collapse/expand independently; the category containing the active route auto-expands on mount. Body scroll locks while the panel is open, focus is trapped inside it, and Escape or backdrop click closes it. Better Auth integration is opt-in via isAuthConfigured.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Focus trap', 'Responsive']}

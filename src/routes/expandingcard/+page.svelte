@@ -32,14 +32,6 @@
 		'ExpandingCard uses Svelte\'s built-in crossfade transition to morph the image, heading and copy between a compact (vertical) and expanded (horizontal) layout. Each ExpandingCard owns its open state — click the card to toggle.';
 </script>
 
-<svelte:head>
-	<title>ExpandingCard — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive card with expandable layouts using Svelte crossfade transitions."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

@@ -70,11 +70,6 @@
 		'ContextMenu intercepts the contextmenu event on its trigger and renders the menu only while open, so when closed there is zero DOM cost beyond the wrapper. Right-click opens at the click point; Shift+F10 and the dedicated menu key open anchored to the trigger. ↑/↓ navigate (skipping dividers and disabled items), Home/End jump to the ends, Enter activates, Esc closes — full WAI-ARIA menu pattern. clampToViewport flips the menu after mount when it would overflow, with an 8px safety padding.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Keyboard', 'A11y', 'Pointer', 'WAI-ARIA']}

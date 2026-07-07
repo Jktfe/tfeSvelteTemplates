@@ -22,14 +22,6 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Timeline — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated chronological timeline with vertical (alternating, left, right) and horizontal layouts, four animation styles, and progress tracking."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Animation', 'A11y', 'Theme-aware']}

@@ -76,11 +76,6 @@
 		'TreeView follows the WAI-ARIA tree pattern: a role=tree container, role=treeitem rows, and role=group child lists, with a single roving tabindex so the whole widget is one Tab stop. Rendering is a self-referencing Svelte 5 snippet, so arbitrary depth needs no child component. The keyboard model walks a derived "visible order" flattening (depth-first, skipping collapsed subtrees) so Up/Down are a single index step. Tri-state checkboxes store only checked leaf ids; every branch state — checked, unchecked, indeterminate — is derived from its descendants, so parent and child can never drift apart.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Keyboard', 'WAI-ARIA tree']}

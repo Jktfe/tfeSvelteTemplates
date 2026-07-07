@@ -21,11 +21,6 @@
 		'The editor is a single contenteditable region driven by document.execCommand for formatting (deprecated but still universally implemented). On every edit it parses its own innerHTML inside a detached, inert document, walks the tree against a strict tag allowlist — keeping b/i/u/strong/em/a[href]/h2/ul/ol/li/p/br, unwrapping everything else, and rejecting unsafe link schemes — then emits the cleaned HTML through a bindable value and an onChange callback.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Zero-dependency', 'Sanitised HTML']}

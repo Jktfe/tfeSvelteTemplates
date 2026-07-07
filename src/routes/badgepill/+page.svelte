@@ -13,11 +13,6 @@
 	const variants = ['soft', 'solid', 'outline'] as const;
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Status', 'Tags', 'Theme-aware']}

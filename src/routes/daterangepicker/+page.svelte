@@ -34,11 +34,6 @@
 		'The picker keeps the start and end as a single bindable { start, end } object of ISO strings. The first click sets the start, the second sets the end, and a click before the current start quietly restarts the selection. While only the start is committed, the day under the pointer (or keyboard focus) feeds a derived preview span so the in-range band updates live before you commit the second endpoint.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Calendar', 'Zero-dep']}

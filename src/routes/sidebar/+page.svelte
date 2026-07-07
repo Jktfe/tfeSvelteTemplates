@@ -29,11 +29,6 @@
 		'Sidebar is the left rail of an app shell. On the desktop it toggles between a labelled expanded state and an icon-only collapsed state (with hover tooltips), persisting the choice to localStorage. Nested groups expand inline and the active route is highlighted with aria-current="page". Below 640px it becomes an off-canvas drawer: a hamburger opens it, a backdrop or Escape closes it, and focus is trapped while open then restored to the trigger. It uses position:absolute so it stays inside its positioned wrapper rather than the viewport.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Zero-deps', 'Navigation']}

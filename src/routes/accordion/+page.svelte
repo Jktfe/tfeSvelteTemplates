@@ -73,11 +73,6 @@
 		'The expand/collapse animation uses a CSS-only grid trick: each panel is a single grid row that animates between grid-template-rows: 0fr and 1fr. Because the inner content is auto-sized at 1fr, you get a real "open to fit content" animation without measuring heights in JavaScript or hard-coding max-height. Triggers are real buttons with aria-expanded and aria-controls so screen readers announce state correctly.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Keyboard', 'CSS-only', 'Disclosure']}

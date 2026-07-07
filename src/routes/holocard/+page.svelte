@@ -21,14 +21,6 @@
 		'HoloCard wraps any element with a cursor-driven holographic foil. A conic-gradient ring rotates with the cursor angle from the centre of the host while a diagonal sheen tracks the pointer position. Three intensities and four palettes preset the foil and sheen strengths together. HoloCard does not rotate — wrap it inside Tilt3D for the full Pokemon-card foil-on-tilt feel. Reduced motion locks the foil to a low-opacity static appearance.';
 </script>
 
-<svelte:head>
-	<title>HoloCard — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Cursor-driven holographic-foil shimmer wrapper. Three intensities, four palettes, composes with Tilt3D, reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Pointer', 'CSS-only', 'Reduced-motion safe']}

@@ -47,14 +47,6 @@
 	const driftSpeedPct = $derived(Math.round((36 / playDuration) * 100));
 </script>
 
-<svelte:head>
-	<title>PortfolioPhotographer — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Editorial photographer-portfolio hero for Svelte 5: wireframe lens, drifting photo reel, Halton-scatter focal dots. Asset-free CSS gradients."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

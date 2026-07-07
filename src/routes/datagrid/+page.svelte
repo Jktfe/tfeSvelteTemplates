@@ -177,14 +177,6 @@
 	];
 </script>
 
-<svelte:head>
-	<title>DataGrid — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Two data grid implementations: a self-contained DataGridBasic and an SVAR-powered DataGridAdvanced with virtual scrolling and editing."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

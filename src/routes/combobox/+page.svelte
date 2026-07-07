@@ -41,11 +41,6 @@
 		'Combobox fuses a text input with a filtered dropdown. Type to substring-match option labels; drive it entirely from the keyboard with ArrowUp/Down, Home/End, Enter and Escape. The selection lives in a bindable value prop — a string | null in single mode, a string[] in multiple mode where each pick becomes a removable chip and Backspace on an empty field pops the last one. role="combobox" with aria-activedescendant keeps focus on the input while screen readers announce the active option.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Zero-deps', 'Typeahead']}

@@ -16,14 +16,6 @@
 		'InteractiveCards is a multi-phase scroll-driven gallery: cards rise from below, fan into a parabolic arc, then travel along a curved diagonal conveyor. Click a card for a detail view with size, material and add-to-cart pills. Layout pinning uses native position: sticky inside a tall outer spacer — no GSAP required — and per-frame spring interpolation runs through requestAnimationFrame.';
 </script>
 
-<svelte:head>
-	<title>InteractiveCards — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Scroll-driven Svelte 5 paintings portfolio with fan-to-conveyor card animation and detail view."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

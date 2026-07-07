@@ -47,11 +47,6 @@
 		'LiquidTabBar uses an SVG goo filter so the active "pill" appears to flow between tabs as it transitions. Each tab button is measured with bind:this and offsetWidth/offsetLeft, then the pill width and translateX are animated. Arrow keys, Home, and End move focus along the row; reduced-motion users get an instant snap rather than the gooey transition.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'SVG filter', 'Animation']}
