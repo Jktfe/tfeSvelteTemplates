@@ -71,10 +71,19 @@
 	});
 
 	/**
-	 * [CR] Validation errors state - key is field name, value is error message
-	 * [NTL] If something's wrong with your input, the error message goes here
+	 * Validation errors, keyed by field name. Derived from formData — Svelte 5
+	 * tracks the field reads automatically, so there's no need for an $effect that
+	 * JSON.stringify's the whole form to force a dependency.
 	 */
-	let errors = $state<Record<string, string>>({});
+	const errors = $derived.by<Record<string, string>>(() => {
+		const result: Record<string, string> = {};
+		Object.entries(formData).forEach(([key, value]) => {
+			if (key === 'id') return; // Skip ID field
+			const error = validateField(key, String(value || ''));
+			if (error) result[key] = error;
+		});
+		return result;
+	});
 
 	/**
 	 * [CR] Field "touched" state - only show errors after user interaction
@@ -127,36 +136,6 @@
 
 		return '';
 	}
-
-	/**
-	 * Validate all fields
-	 * Updates the errors state object
-	 */
-	function validateForm() {
-		const newErrors: Record<string, string> = {};
-
-		// Validate each field
-		Object.entries(formData).forEach(([key, value]) => {
-			if (key === 'id') return; // Skip ID field
-			const error = validateField(key, String(value || ''));
-			if (error) {
-				newErrors[key] = error;
-			}
-		});
-
-		errors = newErrors;
-	}
-
-	/**
-	 * Effect to validate form whenever formData changes
-	 * Uses Svelte 5 $effect rune for reactive validation
-	 */
-	$effect(() => {
-		// Re-run validation when any form field changes
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _ = JSON.stringify(formData);
-		validateForm();
-	});
 
 	/**
 	 * Handle field blur - mark as touched

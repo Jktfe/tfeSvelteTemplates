@@ -72,10 +72,16 @@
 		placeholder = 'Search…',
 		emptyMessage = 'No matches',
 		disabled = false,
-		id = `combobox-${Math.random().toString(36).slice(2, 9)}`,
+		id,
 		label = 'Combobox',
 		class: className = ''
 	}: Props = $props();
+
+	// SSR-safe unique id: $props.id() is deterministic across server render and
+	// client hydration (unlike Math.random(), which mismatched and broke the ARIA
+	// wiring at hydration). A caller-supplied id still wins.
+	const autoId = $props.id();
+	const resolvedId = $derived(id ?? autoId);
 
 	// Local UI state. The selection itself lives in the bindable `value` prop.
 	let query = $state('');
@@ -117,7 +123,7 @@
 
 	const activeDescendantId = $derived(
 		open && activeIndex >= 0 && activeIndex < filtered.length
-			? `${id}-opt-${activeIndex}`
+			? `${resolvedId}-opt-${activeIndex}`
 			: undefined
 	);
 
@@ -237,7 +243,7 @@
 	class:is-disabled={disabled}
 	onfocusout={onFocusOut}
 >
-	<span id="{id}-label" class="cb-visually-hidden">{label}</span>
+	<span id="{resolvedId}-label" class="cb-visually-hidden">{label}</span>
 
 	<div class="cb-field" class:is-open={open}>
 		{#if multiple}
@@ -284,9 +290,9 @@
 			type="text"
 			role="combobox"
 			aria-expanded={open}
-			aria-controls="{id}-listbox"
+			aria-controls="{resolvedId}-listbox"
 			aria-activedescendant={activeDescendantId}
-			aria-labelledby="{id}-label"
+			aria-labelledby="{resolvedId}-label"
 			aria-autocomplete="list"
 			autocomplete="off"
 			{placeholder}
@@ -299,13 +305,13 @@
 	</div>
 
 	{#if open}
-		<ul class="cb-listbox" id="{id}-listbox" role="listbox" aria-label={label}>
+		<ul class="cb-listbox" id="{resolvedId}-listbox" role="listbox" aria-label={label}>
 			{#if filtered.length === 0}
 				<li class="cb-empty" role="presentation">{emptyMessage}</li>
 			{:else}
 				{#each filtered as option, i (option.value)}
 					<li
-						id="{id}-opt-{i}"
+						id="{resolvedId}-opt-{i}"
 						class="cb-option"
 						class:is-active={i === activeIndex}
 						role="option"
