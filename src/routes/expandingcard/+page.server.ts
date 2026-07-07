@@ -5,6 +5,7 @@
  */
 
 import { loadExpandingCardsFromDatabase } from '$lib/server/expandingCards';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import type { ExpandingCardData } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -21,7 +22,7 @@ export const load: PageServerLoad = async (): Promise<{
 	const expandingCards = await loadExpandingCardsFromDatabase();
 
 	// Determine if we're using the database or fallback data
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		expandingCards,

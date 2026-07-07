@@ -8,6 +8,7 @@
  */
 
 import { loadEmployeesFromDatabase, getEmployeeStatistics } from '$lib/server/dataGrid';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -29,7 +30,7 @@ export const load: PageServerLoad = async () => {
 	const employees = await loadEmployeesFromDatabase();
 
 	// Check if DATABASE_URL is configured
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	// Load statistics for display
 	const stats = await getEmployeeStatistics();

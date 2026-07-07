@@ -28,6 +28,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { ExpandingCardData, ExpandingCardRow } from '$lib/types';
 import { FALLBACK_EXPANDING_CARDS } from '$lib/constants';
+import { getConfiguredDatabaseUrl } from './dataSource';
 
 /**
  * Loads expanding card data from the Neon database
@@ -53,8 +54,9 @@ export async function loadExpandingCardsFromDatabase(
 	category?: string
 ): Promise<ExpandingCardData[]> {
 	try {
-		// Get database connection string from environment variable
-		const databaseUrl = process.env.DATABASE_URL;
+		// Resolve the real connection string (the .env.example placeholder is
+		// treated as unconfigured, so we fall back cleanly instead of erroring).
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		// If DATABASE_URL is not configured, return fallback expanding cards
 		// This allows the app to work without a database connection
@@ -143,4 +145,3 @@ export async function loadExpandingCardsFromDatabase(
 		return FALLBACK_EXPANDING_CARDS;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.

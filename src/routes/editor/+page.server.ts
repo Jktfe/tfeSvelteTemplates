@@ -9,6 +9,7 @@
  */
 
 import type { PageServerLoad } from './$types';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import { loadEditorDataFromDatabase } from '$lib/server/editorData';
 
 /**
@@ -24,7 +25,7 @@ export const load: PageServerLoad = async () => {
 	const editorData = await loadEditorDataFromDatabase('editor-demo');
 
 	// Check if database is configured
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		editorData,

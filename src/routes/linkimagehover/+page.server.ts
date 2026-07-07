@@ -6,6 +6,7 @@
  */
 
 import { loadLinkPreviewsFromDatabase } from '$lib/server/linkPreviews';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import type { LinkPreview } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -28,7 +29,7 @@ export const load: PageServerLoad = async (): Promise<{
 	const natureLinks = await loadLinkPreviewsFromDatabase('nature');
 
 	// Determine if we're using the database or fallback data
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		cityLinks,

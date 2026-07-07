@@ -7,6 +7,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { SankeyNode, SankeyLink } from '$lib/types';
 import { FALLBACK_SANKEY_DATA } from '$lib/constants';
+import { getConfiguredDatabaseUrl } from './dataSource';
 
 /**
  * Load Sankey nodes and links from Neon database
@@ -28,7 +29,7 @@ export async function loadSankeyDataFromDatabase(
 	category: string = 'energy'
 ): Promise<{ nodes: SankeyNode[]; links: SankeyLink[] }> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[SankeyData] DATABASE_URL not configured, using fallback data');
@@ -100,7 +101,7 @@ export async function loadSankeyDataFromDatabase(
  */
 export async function getSankeyCategories(): Promise<string[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			return ['energy'];

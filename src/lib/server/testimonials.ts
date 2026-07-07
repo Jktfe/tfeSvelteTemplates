@@ -29,6 +29,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { Testimonial, TestimonialRow } from '$lib/types';
 import { FALLBACK_TESTIMONIALS } from '$lib/constants';
+import { getConfiguredDatabaseUrl } from './dataSource';
 
 /**
  * Loads testimonial data from the Neon database
@@ -55,8 +56,9 @@ import { FALLBACK_TESTIMONIALS } from '$lib/constants';
  */
 export async function loadTestimonialsFromDatabase(category?: string): Promise<Testimonial[]> {
 	try {
-		// Get database connection string from environment variable
-		const databaseUrl = process.env.DATABASE_URL;
+		// Resolve the real connection string (the .env.example placeholder is
+		// treated as unconfigured, so we fall back cleanly instead of erroring).
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		// If DATABASE_URL is not configured, return fallback testimonials
 		// This allows the app to work without a database connection
@@ -142,4 +144,3 @@ export async function loadTestimonialsFromDatabase(category?: string): Promise<T
 		return FALLBACK_TESTIMONIALS;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.

@@ -9,6 +9,7 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { getConfiguredDatabaseUrl } from './dataSource';
 import type { Employee, EmployeeRow } from '$lib/types';
 import { FALLBACK_EMPLOYEES } from '$lib/constants';
 
@@ -26,7 +27,7 @@ import { FALLBACK_EMPLOYEES } from '$lib/constants';
  */
 export async function loadEmployeesFromDatabase(): Promise<Employee[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[DataGrid] DATABASE_URL not configured, using fallback employee data');
@@ -165,7 +166,7 @@ export async function updateEmployee(
 	data: Partial<Omit<Employee, 'id'>>
 ): Promise<Employee | null> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[DataGrid] DATABASE_URL not configured, cannot update employee');
@@ -235,7 +236,7 @@ export async function updateEmployee(
  */
 export async function deleteEmployee(id: number): Promise<boolean> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[DataGrid] DATABASE_URL not configured, cannot delete employee');
@@ -244,14 +245,16 @@ export async function deleteEmployee(id: number): Promise<boolean> {
 
 		const sql = neon(databaseUrl);
 
+		// RETURNING makes the affected row observable: the neon driver resolves
+		// to the returned rows, so an empty array means nothing matched.
 		const result = await sql`
 			UPDATE employees
 			SET is_active = FALSE
 			WHERE id = ${id} AND is_active = TRUE
+			RETURNING id
 		`;
 
-		// Type assertion: Neon result has count property for UPDATE queries
-		const success = (result as any).count > 0;
+		const success = result.length > 0;
 		if (success) {
 			console.log(`[DataGrid] Deleted employee ${id}`);
 		} else {
@@ -273,7 +276,7 @@ export async function deleteEmployee(id: number): Promise<boolean> {
  */
 export async function deleteEmployees(ids: number[]): Promise<number> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[DataGrid] DATABASE_URL not configured, cannot delete employees');
@@ -286,10 +289,10 @@ export async function deleteEmployees(ids: number[]): Promise<number> {
 			UPDATE employees
 			SET is_active = FALSE
 			WHERE id = ANY(${ids}) AND is_active = TRUE
+			RETURNING id
 		`;
 
-		// Type assertion: Neon result has count property for UPDATE queries
-		const count = (result as any).count;
+		const count = result.length;
 		console.log(`[DataGrid] Bulk deleted ${count} employees`);
 		return count;
 	} catch (error) {
@@ -308,7 +311,7 @@ export async function createEmployee(
 	data: Omit<Employee, 'id'>
 ): Promise<Employee | null> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[DataGrid] DATABASE_URL not configured, cannot create employee');

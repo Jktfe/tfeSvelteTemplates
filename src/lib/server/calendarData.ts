@@ -7,6 +7,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { CalendarDataPoint } from '$lib/types';
 import { FALLBACK_CALENDAR_DATA } from '$lib/constants';
+import { getConfiguredDatabaseUrl } from './dataSource';
 
 /**
  * Load calendar activity data from Neon database
@@ -32,7 +33,7 @@ export async function loadCalendarDataFromDatabase(
 	days: number = 365
 ): Promise<CalendarDataPoint[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[CalendarData] DATABASE_URL not configured, using fallback data');
@@ -93,7 +94,7 @@ export async function loadCalendarDataFromDatabase(
  */
 export async function getCalendarCategories(userId: number = 1): Promise<string[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			return ['general'];
@@ -133,7 +134,7 @@ export async function getCalendarStats(
 	totalActivity: number;
 } | null> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			return null;

@@ -23,6 +23,7 @@ import {
 	deleteEmployee,
 	deleteEmployees
 } from '$lib/server/dataGrid';
+import { requireAuthAPI } from '$lib/server/auth';
 import { VALIDATION_FIELDS } from '$lib/constants';
 
 /**
@@ -91,7 +92,11 @@ export const GET: RequestHandler = async ({ url }) => {
  *
  * Body: Employee data (without id)
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	// Auth guard runs before the try/catch so a thrown 401/403 keeps its status
+	// instead of being flattened to a generic 500 by the error handler below.
+	requireAuthAPI(event);
+	const { request } = event;
 	try {
 		const data = await request.json();
 
@@ -155,7 +160,9 @@ export const POST: RequestHandler = async ({ request }) => {
  *
  * Body: Partial employee data with id
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async (event) => {
+	requireAuthAPI(event);
+	const { request } = event;
 	try {
 		const data = await request.json();
 
@@ -218,7 +225,9 @@ export const PUT: RequestHandler = async ({ request }) => {
  * - id: Single employee ID to delete
  * - ids: Comma-separated employee IDs for bulk delete
  */
-export const DELETE: RequestHandler = async ({ url }) => {
+export const DELETE: RequestHandler = async (event) => {
+	requireAuthAPI(event);
+	const { url } = event;
 	try {
 		const id = url.searchParams.get('id');
 		const idsParam = url.searchParams.get('ids');
