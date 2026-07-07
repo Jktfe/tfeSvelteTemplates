@@ -195,20 +195,13 @@
 	const baseDurationS = $derived(1.2 / safeSpeed);
 	const staggerStepS = $derived(baseDurationS * 0.09);
 
-	// runAnimation gates whether the CSS animation is applied
-	// at all. SSR starts true so the static markup matches a
-	// fully-animated client render; onMount drops to false for
-	// reduced-motion users (the @media query also handles the
-	// case where the JS probe ever drifts).
-	let runAnimation = $state(true);
-
-	$effect(() => {
-		// Keep the animation gate in sync with `active` and the motion preference.
-		// Runs on mount (client only — SSR keeps the `true` default so static markup
-		// matches) and whenever `active` flips at runtime, so re-enabling `active`
-		// correctly restarts the bars (previously the gate only ever turned off).
-		runAnimation = active && !isReducedMotion();
-	});
+	// runAnimation gates whether the CSS animation is applied at all. Derived from
+	// `active` and the motion preference, so re-enabling `active` restarts the bars
+	// (the old gate only ever turned off). isReducedMotion() is SSR-safe (returns
+	// false with no window), so on the server this is just `active` — the static
+	// markup matches a fully-animated client render, and the @media query is the
+	// backstop if the JS probe ever drifts.
+	const runAnimation = $derived(active && !isReducedMotion());
 </script>
 
 <div
