@@ -156,7 +156,6 @@
 </script>
 
 <script lang="ts">
-	import { onMount } from 'svelte';
 
 	type Props = {
 		bars?: number;
@@ -196,25 +195,13 @@
 	const baseDurationS = $derived(1.2 / safeSpeed);
 	const staggerStepS = $derived(baseDurationS * 0.09);
 
-	// runAnimation gates whether the CSS animation is applied
-	// at all. SSR starts true so the static markup matches a
-	// fully-animated client render; onMount drops to false for
-	// reduced-motion users (the @media query also handles the
-	// case where the JS probe ever drifts).
-	let runAnimation = $state(true);
-
-	onMount(() => {
-		if (active && !isReducedMotion()) {
-			runAnimation = true;
-		} else {
-			runAnimation = false;
-		}
-	});
-
-	$effect(() => {
-		// React to the `active` prop flipping at runtime.
-		if (!active) runAnimation = false;
-	});
+	// runAnimation gates whether the CSS animation is applied at all. Derived from
+	// `active` and the motion preference, so re-enabling `active` restarts the bars
+	// (the old gate only ever turned off). isReducedMotion() is SSR-safe (returns
+	// false with no window), so on the server this is just `active` — the static
+	// markup matches a fully-animated client render, and the @media query is the
+	// backstop if the JS probe ever drifts.
+	const runAnimation = $derived(active && !isReducedMotion());
 </script>
 
 <div

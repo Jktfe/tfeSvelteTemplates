@@ -145,11 +145,6 @@
 		'CommandPalette wires CMD/Ctrl+K to a global keydown listener and traps focus inside the dialog while open. Each result is scored against the query (label > description > hidden keywords) using a tiny in-file fuzzy ranker that exits early once enough matches are found, so even hundreds of items stay snappy. Up/Down arrows roll over, Enter activates, Escape closes — the underlying state is a single bindable isOpen so parents can open the palette programmatically.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Keyboard', 'A11y', 'Search', 'CMD-K']}

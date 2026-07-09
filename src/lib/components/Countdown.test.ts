@@ -280,8 +280,10 @@ describe('Countdown', () => {
 		expect(value).toBeInTheDocument();
 	});
 
-	// Test aria-live for accessibility
-	it('has aria-live for screen reader updates', () => {
+	// The timer uses role="timer" WITHOUT aria-live: a polite live region on a
+	// container that updates every second re-announces the whole countdown each
+	// tick, which is extremely noisy. role="timer" already conveys the semantic.
+	it('exposes a timer role and does not spam a per-second live region', () => {
 		const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
 		render(Countdown, {
@@ -289,7 +291,7 @@ describe('Countdown', () => {
 		});
 
 		const timer = screen.getByRole('timer');
-		expect(timer.getAttribute('aria-live')).toBe('polite');
+		expect(timer.getAttribute('aria-live')).toBeNull();
 	});
 
 	// Test that different date input formats work

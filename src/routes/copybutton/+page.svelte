@@ -17,11 +17,6 @@
 		'CopyButton wraps navigator.clipboard.writeText, then flips a copied state for copiedDuration ms (default 2000). The success message lives in an aria-live region so screen readers announce it without moving focus. Variants control whether you see the icon, the label, or both — useful when packing a copy action into tight inline contexts like API key rows.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Clipboard', 'A11y', 'Live region', 'Zero deps']}

@@ -7,6 +7,7 @@
  */
 
 import type { PageServerLoad } from './$types';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import { loadFoldersFromDatabase, loadFilesFromDatabase } from '$lib/server/folderFiles';
 
 export const load: PageServerLoad = async () => {
@@ -15,7 +16,7 @@ export const load: PageServerLoad = async () => {
 	const files = await loadFilesFromDatabase();
 
 	// Check if database is configured
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		folders,

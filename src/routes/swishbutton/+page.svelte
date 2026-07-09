@@ -23,14 +23,6 @@
 		'SwishButton swaps a static label for a sliding text track on hover. The accent dot expands behind the arrow on the same timeline, so the motion always reads as one gesture. Native button semantics, focus ring, and disabled state all stay intact — extra Tailwind utilities can be passed via the class prop without touching the component source.';
 </script>
 
-<svelte:head>
-	<title>SwishButton — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated button with sliding text and an expanding accent. Pure Svelte 5, native button semantics."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Hover', 'Tailwind-friendly', 'Accessible']}

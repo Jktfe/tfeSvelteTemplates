@@ -362,6 +362,7 @@
 	class={panelClass}
 	aria-label="Main navigation"
 	tabindex="-1"
+	inert={!isPanelOpen}
 	onkeydown={handlePanelKeydown}
 	use:setupFocusTrap
 >
@@ -1276,6 +1277,4 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

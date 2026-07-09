@@ -81,7 +81,7 @@
 	 * Count active filters for badge display
 	 * A filter is "active" if it differs from the default/empty state
 	 */
-	let activeFilterCount = $derived(() => {
+	let activeFilterCount = $derived.by(() => {
 		let count = 0;
 		if (filters.departments.length > 0) count++;
 		if (filters.statuses.length > 0) count++;
@@ -163,15 +163,15 @@
 			</span>
 			<span class="filter-title">
 				Filters
-				{#if activeFilterCount() > 0}
-					<span class="filter-badge" aria-label="{activeFilterCount()} active filters">
-						{activeFilterCount()}
+				{#if activeFilterCount > 0}
+					<span class="filter-badge" aria-label="{activeFilterCount} active filters">
+						{activeFilterCount}
 					</span>
 				{/if}
 			</span>
 		</button>
 
-		{#if activeFilterCount() > 0}
+		{#if activeFilterCount > 0}
 			<button
 				class="clear-button"
 				onclick={clearAllFilters}
@@ -554,6 +554,4 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

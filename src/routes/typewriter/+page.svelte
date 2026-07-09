@@ -43,14 +43,6 @@
 	});
 </script>
 
-<svelte:head>
-	<title>Typewriter — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated text that types and deletes characters one-by-one with a blinking cursor, cycling through phrases. Zero dependencies."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Text', 'A11y', 'Zero deps']}

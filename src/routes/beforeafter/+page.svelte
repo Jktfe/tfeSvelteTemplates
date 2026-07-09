@@ -39,14 +39,6 @@
 		'BeforeAfter stacks two images and uses CSS clip-path: inset() to reveal the "after" panel. Pointer Events drive the divider with pointer capture so dragging stays smooth even when the cursor leaves the bounds, and arrow keys nudge the slider for keyboard users. Fully GPU-accelerated, zero canvas, zero dependencies.';
 </script>
 
-<svelte:head>
-	<title>BeforeAfter — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive Svelte 5 before/after comparison with draggable divider, keyboard nav, and zero dependencies."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

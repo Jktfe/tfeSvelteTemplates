@@ -96,14 +96,6 @@
 		'WordCloud takes an array of {text, weight, href?} tuples and renders them with size proportional to weight via a clamped linear scale. Three pure-CSS variants share the same data shape: organic uses flex-wrap, grid uses CSS grid with auto-fit columns, and spiral uses Fibonacci golden-angle packing. Palettes are deterministic — a hashed word always renders the same colour. Zero canvas, zero D3.';
 </script>
 
-<svelte:head>
-	<title>WordCloud — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Frequency-weighted text-cloud component with organic, grid, and spiral variants. Pure CSS layout, zero dependencies."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

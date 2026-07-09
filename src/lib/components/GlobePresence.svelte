@@ -156,8 +156,13 @@
 				const isHovered = hoveredMarkerId === marker.id;
 				const color = marker.color || (theme === 'dark' ? '#00f2ff' : '#0066cc');
 				
-				// Pulse effect
-				const pulse = isHovered ? 1.2 : (Math.sin(time) * 0.3 + 0.7);
+				// Pulse effect — frozen to a steady size under reduced motion so
+				// markers don't animate for users who opted out.
+				const pulse = isHovered
+					? 1.2
+					: respectReducedMotion
+						? 1
+						: Math.sin(time) * 0.3 + 0.7;
 				const glowSize = (isHovered ? 15 : 10) * pulse;
 				
 				// Draw glow

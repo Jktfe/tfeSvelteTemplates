@@ -70,6 +70,7 @@
 
 <script lang="ts">
 	import { untrack, type Snippet } from 'svelte';
+	import { lockScroll } from '$lib/scrollLock';
 
 	export type DrawerPosition = 'left' | 'right' | 'top' | 'bottom';
 
@@ -108,7 +109,7 @@
 	// We need to remember three things while the drawer is open so
 	// that we can restore them cleanly on close.
 	let previouslyFocused: HTMLElement | null = null;
-	let previousBodyOverflow = '';
+	let releaseScrollLock: (() => void) | null = null;
 
 	// Forward `size` as an inline width (left/right) or height (top/bottom).
 	// Numbers become px; any CSS length string (`'70vh'`, `'24rem'`) is
@@ -130,8 +131,9 @@
 
 		untrack(() => {
 			previouslyFocused = document.activeElement as HTMLElement | null;
-			previousBodyOverflow = document.body.style.overflow;
-			document.body.style.overflow = 'hidden';
+			// Reference-counted lock so a Drawer stacked over another overlay
+			// (modal, Navbar menu, …) doesn't clobber the shared overflow state.
+			releaseScrollLock = lockScroll();
 		});
 
 		// Wait one frame so Svelte has bound `drawerEl` and child
@@ -145,7 +147,8 @@
 		return () => {
 			cancelAnimationFrame(rafId);
 			if (typeof document === 'undefined') return;
-			document.body.style.overflow = previousBodyOverflow;
+			releaseScrollLock?.();
+			releaseScrollLock = null;
 			if (previouslyFocused && document.body.contains(previouslyFocused)) {
 				previouslyFocused.focus();
 			}

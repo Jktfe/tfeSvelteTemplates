@@ -84,14 +84,6 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Gantt — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Native SVG Gantt chart with task bars, milestones, dependency arrows, today marker, weekend shading, % complete, light + dark, and mobile horizontal scrolling."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'SVG', 'Schedule', 'A11y', 'Theme-aware', 'Zero-dep']}

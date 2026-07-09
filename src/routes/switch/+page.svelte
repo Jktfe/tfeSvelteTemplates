@@ -21,11 +21,6 @@
 		'Switch is a button with role="switch" and aria-checked, so assistive tech announces it correctly without re-implementing focus or activation. Click or Space toggles the bound checked value; the optional <label for> binding means clicking the label flips the switch too. Sizes and variants are pure CSS classes — no inline styles, no animation libraries.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Toggle', 'CSS-only']}

@@ -16,6 +16,7 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { getConfiguredDatabaseUrl } from './dataSource';
 import type { EditorData, EditorDataRow } from '$lib/types';
 import { FALLBACK_EDITOR_DATA } from '$lib/constants';
 
@@ -35,7 +36,7 @@ export async function loadEditorDataFromDatabase(
 	category?: string
 ): Promise<EditorData[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		// Fallback to constants if DATABASE_URL not configured
 		if (!databaseUrl) {
@@ -105,7 +106,7 @@ export async function loadEditorDataFromDatabase(
 export async function createEditorData(
 	data: Omit<EditorData, 'id'>
 ): Promise<EditorData | null> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	// Cannot create without database - throw error for caller to handle
 	if (!databaseUrl) {
@@ -187,7 +188,7 @@ export async function updateEditorData(
 	id: number,
 	data: Partial<EditorData>
 ): Promise<EditorData | null> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	// Cannot update without database
 	if (!databaseUrl) {
@@ -254,7 +255,7 @@ export async function updateEditorData(
  * ```
  */
 export async function deleteEditorData(id: number): Promise<boolean> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	// Cannot delete without database
 	if (!databaseUrl) {
@@ -264,18 +265,19 @@ export async function deleteEditorData(id: number): Promise<boolean> {
 	try {
 		const sql = neon(databaseUrl);
 
-		// Soft delete: set is_active to FALSE
+		// Soft delete: set is_active to FALSE. RETURNING is required for the row
+		// count to be observable — without it the neon driver resolves to an empty
+		// array even on a successful update, so the caller can never see success.
 		const result = (await sql`
 			UPDATE editor_data
 			SET is_active = FALSE
 			WHERE id = ${id} AND is_active = TRUE
-		`) as Array<Record<string, any>>;
+			RETURNING id
+		`) as Array<Record<string, unknown>>;
 
-		// Check if any rows were affected (length > 0 means success)
 		return result.length > 0;
 	} catch (err) {
 		console.error('Error deleting editor data:', err);
 		return false;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.

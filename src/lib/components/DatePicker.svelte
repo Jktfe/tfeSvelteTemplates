@@ -169,6 +169,18 @@
 			: placeholder
 	);
 
+	// One formatter for all 42 day cells, rebuilt only when `locale` changes.
+	// Constructing Intl.DateTimeFormat per cell per render (the grid re-renders on
+	// every arrow-key focus move) is measurably expensive.
+	const dayLabelFormatter = $derived(
+		new Intl.DateTimeFormat(locale, {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric'
+		})
+	);
+
 	/** Weekday short names, ordered to match the locale's first day of week. */
 	const weekdayNames = $derived.by(() => {
 		const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
@@ -464,12 +476,7 @@
 									disabled={!cell.selectable}
 									aria-disabled={!cell.selectable}
 									aria-current={isToday ? 'date' : undefined}
-									aria-label={new Intl.DateTimeFormat(locale, {
-										weekday: 'long',
-										day: 'numeric',
-										month: 'long',
-										year: 'numeric'
-									}).format(cell.date)}
+									aria-label={dayLabelFormatter.format(cell.date)}
 									onclick={() => selectDate(cell.date)}
 								>
 									{cell.date.getDate()}

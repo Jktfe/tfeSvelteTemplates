@@ -310,6 +310,10 @@
 	 * Update markers and route when origin/destination changes
 	 */
 	$effect(() => {
+		// Reference `profile` synchronously so switching driving/walking/cycling
+		// re-runs this effect — calculateRoute() only reads profile after an
+		// `await import`, which wouldn't register it as a dependency.
+		void profile;
 		if (map) {
 			updateMarkers();
 			if (origin && destination) {

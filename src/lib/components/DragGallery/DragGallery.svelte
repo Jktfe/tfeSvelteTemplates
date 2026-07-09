@@ -187,7 +187,9 @@
 			if (prefersReduced) return;
 			// Entrance: stagger the cards in via gsap.from so the deck arrives
 			// already kinetic instead of static.
-			const cards = document.querySelectorAll<HTMLElement>('.drag-gallery .dg-card');
+			// Scope to this instance's track — a global query would animate every
+			// DragGallery's cards when more than one is mounted on a page.
+			const cards = trackEl?.querySelectorAll<HTMLElement>('.dg-card') ?? [];
 			if (cards.length > 0) {
 				gsapInstance.from(cards, {
 					y: 20,

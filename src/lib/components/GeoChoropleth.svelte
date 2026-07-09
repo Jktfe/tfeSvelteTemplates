@@ -90,14 +90,14 @@
 	let tooltipY = $state(0);
 
 	// Create a lookup map from regionId to value
-	const dataLookup = $derived(() => {
+	const dataLookup = $derived.by(() => {
 		const map = new SvelteMap<string, GeoRegionData>();
 		data.forEach((d) => map.set(d.regionId, d));
 		return map;
 	});
 
 	// Calculate min/max values for color scale
-	const valueDomain = $derived(() => {
+	const valueDomain = $derived.by(() => {
 		if (colorScale.domain) return colorScale.domain;
 		const values = data.map((d) => d.value);
 		if (values.length === 0) return [0, 100] as [number, number];
@@ -105,8 +105,8 @@
 	});
 
 	// Create color scale function
-	const getColor = $derived(() => {
-		const [min, max] = valueDomain();
+	const getColor = $derived.by(() => {
+		const [min, max] = valueDomain;
 		if (colorScale.type === 'sequential') {
 			// Check if using default blue scale
 			const isBlueScale = colorScale.colors.length === GEO_COLOR_SCALES.blues.length &&
@@ -145,9 +145,9 @@
 		const props = feature.properties as Record<string, unknown>;
 		// [NTL] ONS uses year-based property names like RGN22CD, RGN23CD, RGN24CD
 		const regionId = (props?.RGN24CD || props?.RGN23CD || props?.RGN22CD || props?.CTRY22CD || props?.id || feature.id) as string;
-		const regionData = dataLookup().get(regionId);
+		const regionData = dataLookup.get(regionId);
 		if (regionData) {
-			return getColor()(regionData.value) as string;
+			return getColor(regionData.value) as string;
 		}
 		return '#e5e7eb'; // Default gray for regions without data
 	}
@@ -161,7 +161,7 @@
 		// [NTL] ONS uses year-based property names - we check multiple years for flexibility
 		const regionId = (props?.RGN24CD || props?.RGN23CD || props?.RGN22CD || props?.CTRY22CD || props?.id || feature.id) as string;
 		const regionName = (props?.RGN24NM || props?.RGN23NM || props?.RGN22NM || props?.CTRY22NM || props?.name || 'Unknown') as string;
-		const regionData = dataLookup().get(regionId);
+		const regionData = dataLookup.get(regionId);
 		return {
 			id: regionId,
 			name: regionName,
@@ -198,15 +198,15 @@
 	}
 
 	// Legend items for display
-	const legendItems = $derived(() => {
-		const [min, max] = valueDomain();
+	const legendItems = $derived.by(() => {
+		const [min, max] = valueDomain;
 		const steps = 5;
 		const items: { value: number; color: string; label: string }[] = [];
 		for (let i = 0; i <= steps; i++) {
 			const value = min + (max - min) * (i / steps);
 			items.push({
 				value,
-				color: getColor()(value) as string,
+				color: getColor(value) as string,
 				label: value.toFixed(1)
 			});
 		}
@@ -254,7 +254,7 @@
 	{#if showLegend && data.length > 0}
 		<div class="legend">
 			<div class="legend-gradient">
-				{#each legendItems() as item (item.value)}
+				{#each legendItems as item (item.value)}
 					<div
 						class="legend-color"
 						style="background-color: {item.color}"
@@ -262,8 +262,8 @@
 				{/each}
 			</div>
 			<div class="legend-labels">
-				<span>{valueDomain()[0].toFixed(1)}</span>
-				<span>{valueDomain()[1].toFixed(1)}</span>
+				<span>{valueDomain[0].toFixed(1)}</span>
+				<span>{valueDomain[1].toFixed(1)}</span>
 			</div>
 		</div>
 	{/if}
@@ -340,7 +340,6 @@
 	}
 
 	/*
-	 * [RFO] prefers-reduced-motion support - OPTIONAL/USEFUL
 	 * WHY NOT DONE BEFORE: Very subtle hover transition (0.15s opacity change).
 	 * Only triggered on user hover interaction, not continuous animation.
 	 * WCAG 2.3.3 is AAA level (not required for A/AA compliance).
@@ -353,5 +352,3 @@
 </style>
 
 <!-- [CR] Component uses LayerChart + d3 (justified dependencies for choropleth viz). -->
-<!-- [CR] RFO Review 27.12.25: Subtle hover effects only. OPTIONAL/USEFUL for completeness. -->
-<!-- RFO Review: 27.12.25 -->

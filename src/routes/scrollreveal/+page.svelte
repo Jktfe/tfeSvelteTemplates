@@ -72,14 +72,6 @@
 		'ScrollReveal is one IntersectionObserver wrapping the children you pass. Each direct child receives a CSS-variable-driven delay so reveals cascade without per-frame JavaScript. Direction, distance, duration, and replay are all overridable per call site.';
 </script>
 
-<svelte:head>
-	<title>ScrollReveal — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Viewport-entry stagger reveal primitive. Six directions, replay-on-leave option, reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'IntersectionObserver', 'Reduced-motion safe', 'Zero deps']}

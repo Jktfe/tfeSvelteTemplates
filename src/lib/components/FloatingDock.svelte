@@ -91,12 +91,32 @@
 		mouseX = null;
 	}
 
-	// Calculate scale for an item
-	function calculateScale(el: HTMLElement | null, currentMouseX: number | null): number {
-		if (!el || currentMouseX === null || isMobile) return 1;
+	// Cached resting centre-x of each item. Items scale via `transform: scale()`,
+	// which is symmetric about the centre and doesn't reflow, so the centre stays
+	// put during hover — measuring once (and on resize) avoids a getBoundingClientRect
+	// per item on every mousemove (N synchronous layout reads per pointer move).
+	let itemCenters: number[] = $state([]);
 
-		const rect = el.getBoundingClientRect();
-		const centerX = rect.left + rect.width / 2;
+	function measureCenters() {
+		itemCenters = itemElements.map((el) => {
+			if (!el) return NaN;
+			const rect = el.getBoundingClientRect();
+			return rect.left + rect.width / 2;
+		});
+	}
+
+	$effect(() => {
+		// Re-measure when the item set changes, and on resize.
+		void items.length;
+		measureCenters();
+		window.addEventListener('resize', measureCenters);
+		return () => window.removeEventListener('resize', measureCenters);
+	});
+
+	// Calculate scale for an item from its cached centre.
+	function calculateScale(centerX: number, currentMouseX: number | null): number {
+		if (currentMouseX === null || isMobile || Number.isNaN(centerX)) return 1;
+
 		const dist = currentMouseX - centerX;
 
 		if (Math.abs(dist) < distance) {
@@ -107,7 +127,7 @@
 
 	// Reactive scales
 	let scales = $derived.by(() => {
-		return items.map((_, i) => calculateScale(itemElements[i] ?? null, mouseX));
+		return items.map((_, i) => calculateScale(itemCenters[i] ?? NaN, mouseX));
 	});
 </script>
 
@@ -300,4 +320,3 @@
 </style>
 
 <!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.04.26 -->

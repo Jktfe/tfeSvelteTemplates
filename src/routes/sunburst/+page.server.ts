@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import { FALLBACK_SUNBURST_DATA, FALLBACK_SUNBURST_SALES } from '$lib/constants';
 
 /**
@@ -7,7 +8,7 @@ import { FALLBACK_SUNBURST_DATA, FALLBACK_SUNBURST_SALES } from '$lib/constants'
  */
 export const load: PageServerLoad = async () => {
 	// Check if using database (for future integration)
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		fileSystemData: FALLBACK_SUNBURST_DATA,

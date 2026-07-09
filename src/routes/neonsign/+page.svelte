@@ -29,14 +29,6 @@
 		'NeonSign builds a five-stop text-shadow stack on a single span: a hard white core, two saturated palette stops at 4px and 8px, and two soft halo stops at 16px and 32px. All radii scale with intensity. The flicker animation dips opacity at deterministic per-seed beats; broken indices drop characters out of the stack and into the palette dim shade. prefers-reduced-motion disables the flicker keyframe — the steady glow remains.';
 </script>
 
-<svelte:head>
-	<title>NeonSign — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Glowing neon-tube text. Five-stop text-shadow stack, six palettes, deterministic flicker, per-character burnt-out mode, on/off power state."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Neon', 'Reduced-motion safe']}

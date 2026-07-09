@@ -111,14 +111,6 @@
 		'StreamShowcase pairs a brush-script hero with a 10-card fan carousel. Side cards splay around a pivot below the deck; click a side card to bring it to centre, drag horizontally to spin, or use Arrow / Home / End / Enter for keyboard control. No external assets — card art is pure CSS gradients with color-mix tints.';
 </script>
 
-<svelte:head>
-	<title>StreamShowcase — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Editorial streaming-platform shelf with brush-script hero and 10-card fan carousel."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

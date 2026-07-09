@@ -29,11 +29,6 @@
 		'HoldToConfirm uses pointer capture (setPointerCapture on pointerdown) so the gesture stays alive even if the user drags outside the button — release anywhere cancels. Keyboard parity is intentional: Enter and Space start a programmatic hold cycle, repeat events are filtered, and releasing the key before completion cancels exactly like releasing the pointer. Visual progress is pure CSS (stroke-dashoffset for ring, width for bar, opacity+scale for glow); JavaScript only fires the setTimeout that calls onConfirm.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Pointer', 'Keyboard', 'A11y', 'Destructive']}

@@ -16,14 +16,6 @@
 	let runToken = $state(0);
 </script>
 
-<svelte:head>
-	<title>CountUp — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Number-animation primitive — eases a value from start → end on viewport entry, mount, or manual trigger. Locale-aware Intl.NumberFormat, prefix/suffix, decimals."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Numbers', 'A11y', 'Zero deps']}

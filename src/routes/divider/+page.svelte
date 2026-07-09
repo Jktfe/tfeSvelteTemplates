@@ -19,14 +19,6 @@
 		'Divider is a structural separator. With no label it renders a native <hr> for free role="separator". With a label it becomes a div[role="separator"] flanked by two lines, and switches to a vertical bar with aria-orientation when orientation="vertical".';
 </script>
 
-<svelte:head>
-	<title>Divider — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Section separator with optional label, horizontal and vertical orientation, three thicknesses and three line styles."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

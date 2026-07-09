@@ -27,11 +27,6 @@
 		'SpeedDial wraps a primary FAB with a list of actions that animate out around it. The type prop chooses the geometry — linear (a row), circle (full 360°), semi-circle (180°), or quarter-circle (90° corner). Each action is staggered by transitionDelay; tooltips auto-position relative to the trigger so labels never collide with screen edges. Press Esc or click outside to close — focus returns to the trigger.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Animation', 'Zero-deps']}

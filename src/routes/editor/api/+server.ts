@@ -20,6 +20,7 @@ import {
 	updateEditorData,
 	deleteEditorData
 } from '$lib/server/editorData';
+import { requireAuthAPI } from '$lib/server/auth';
 
 /**
  * GET - Read all editor data items
@@ -87,7 +88,10 @@ export const GET: RequestHandler = async ({ url }) => {
  * const { data } = await res.json();
  * ```
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	// Auth guard first: 401 for anonymous callers, 403 for the read-only demo user.
+	requireAuthAPI(event);
+	const { request } = event;
 	try {
 		const body = await request.json();
 
@@ -148,7 +152,9 @@ export const POST: RequestHandler = async ({ request }) => {
  * const { data } = await res.json();
  * ```
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async (event) => {
+	requireAuthAPI(event);
+	const { request } = event;
 	try {
 		const { id, ...data } = await request.json();
 
@@ -196,7 +202,9 @@ export const PUT: RequestHandler = async ({ request }) => {
  * const { success } = await res.json();
  * ```
  */
-export const DELETE: RequestHandler = async ({ url }) => {
+export const DELETE: RequestHandler = async (event) => {
+	requireAuthAPI(event);
+	const { url } = event;
 	try {
 		const id = parseInt(url.searchParams.get('id') || '');
 

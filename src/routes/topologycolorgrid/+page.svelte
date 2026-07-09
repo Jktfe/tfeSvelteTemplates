@@ -50,14 +50,6 @@
 		'TopologyColorGrid mounts a Three.js wireframe plane on a client-side canvas and uses GSAP to choreograph a staggered card reveal. The Three.js renderer, geometry, material, and the GSAP context are all torn down in onMount’s cleanup return, so unmount disposes the WebGL resources cleanly. The component owns the canvas; do not duplicate the renderer in a parent. WebGL is feature-detected before mount, so the cards still render if the GPU path is unavailable.';
 </script>
 
-<svelte:head>
-	<title>TopologyColorGrid — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Three.js + GSAP colour topology grid. Wireframe plane backdrop, staggered card reveal, swatches presented as accessible buttons."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Three.js', 'GSAP', 'Client-only']}

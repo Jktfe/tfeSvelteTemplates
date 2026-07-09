@@ -62,11 +62,6 @@
 		'The chart derives a "nice" Y scale by rounding the data extent out to a tidy step (1/2/5 × 10ⁿ), then maps each point to pixels inside a responsive viewBox whose width is tracked by a ResizeObserver. Hovering or arrowing snaps a crosshair to the nearest x-value and reads every series value into an HTML tooltip overlay; the same numbers are mirrored in a visually-hidden table so screen-reader users get the full dataset.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'SVG', 'Zero-deps']}

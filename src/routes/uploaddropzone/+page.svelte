@@ -128,11 +128,6 @@
 		'UploadDropzone keeps file state outside the network: it accepts drag/drop, paste, and browse, validates type/size/count, and emits typed callbacks (onFilesAdded, onFilesRejected, onRemove, onRetry) so your code owns the actual upload. The component renders preview rows with progress, success, and error states which the parent drives by feeding back UploadDropzoneItem updates.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Drag & drop', 'Paste', 'A11y', 'Validation']}

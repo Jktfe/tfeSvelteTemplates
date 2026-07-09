@@ -4,11 +4,12 @@
  */
 
 import { loadSankeyDataFromDatabase } from '$lib/server/sankeyData';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	const sankeyData = await loadSankeyDataFromDatabase('energy');
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		sankeyData,

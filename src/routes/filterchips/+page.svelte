@@ -46,11 +46,6 @@
 		'Each chip is a real <button> with aria-pressed, so the toggle state is announced correctly and Tab/Space/Enter all work without extra plumbing. Multi-select keeps the selected array in sync with bind:selected; single-select replaces the array on every click. Removable chips show an × control and emit onRemove so you can double-bind to a parent "active filters" row.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Filtering', 'A11y', 'Multi-select', 'Keyboard']}

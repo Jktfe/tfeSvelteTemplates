@@ -6,14 +6,6 @@
 	const shell = catalogShellPropsForSlug('/scrambledtext')!;
 </script>
 
-<svelte:head>
-	<title>ScrambledText — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Glyph-shuffle reveal that resolves into readable copy. Pure JS state machine on requestAnimationFrame, zero dependencies, prefers-reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Typography', 'Hover', 'A11y']}

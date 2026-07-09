@@ -21,11 +21,6 @@
 	let usDate = $state('2026-07-04');
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Keyboard', 'Intl', 'Zero-dep']}

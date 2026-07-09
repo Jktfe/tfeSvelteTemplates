@@ -89,6 +89,16 @@
 	// [CR] Scroll lock cleanup function - prevents body scroll while modal is open
 	let unlockScroll: (() => void) | null = null;
 
+	// Release the scroll lock if the component is destroyed while the modal is
+	// still open — otherwise closeFolderView never runs and body scroll stays
+	// locked for the rest of the page's life.
+	$effect(() => {
+		return () => {
+			unlockScroll?.();
+			unlockScroll = null;
+		};
+	});
+
 	// ============================================================
 	// [CR] MOBILE DETECTION EFFECT
 	// [NTL] Figure out if the user is on a phone (finger-based input)
@@ -1282,4 +1292,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

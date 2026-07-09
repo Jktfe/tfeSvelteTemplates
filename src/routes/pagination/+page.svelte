@@ -26,11 +26,6 @@
 		'Pagination computes a list of page tokens — numbers and ellipsis sentinels — based on current page, total pages, and the siblings count. The first and last pages are always shown; siblings expands the window around current. Prev/Next buttons use the real disabled attribute at the edges, and the active page button carries aria-current="page" so assistive tech announces position correctly.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Zero-deps', 'Bindable']}

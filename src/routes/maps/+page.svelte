@@ -97,14 +97,6 @@
 		'Each map component wraps Leaflet behind a typed Svelte 5 surface. MapBasic mounts a tile layer plus pan/zoom; MapSearch hits the Nominatim geocoder for live suggestions; MapMarkers renders database-loaded points with category filtering; MapLive lets users add and drag markers, syncing via $bindable state. Leaflet only runs client-side, so the demo is gated on `browser` from $app/environment.';
 </script>
 
-<svelte:head>
-	<title>Maps — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Leaflet-powered Svelte 5 maps: basic display, location search, database markers, and live marker editing."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Leaflet', 'OpenStreetMap', 'Geocoding', 'Database-aware']}

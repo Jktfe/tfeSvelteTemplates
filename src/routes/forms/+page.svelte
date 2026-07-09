@@ -162,11 +162,6 @@
 		'The Forms suite is a set of small field components that share a FormField wrapper for label, error, and help-text rendering. Each field owns its own input element so native validation, keyboard handling, and screen-reader semantics come for free; you compose the ones you need rather than configuring one mega component. Here we hook three steps to a Stepper so a single currentStep index drives both navigation and progress.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Forms', 'Validation', 'A11y', 'Composable', 'Multi-step']}

@@ -34,11 +34,6 @@
 		'Stepper derives done / current / pending states from a single currentStep index, so parent state stays trivially small. The checkmark on completed steps is inline SVG (no icon font) and the orientation prop simply swaps the connector axis between row and column. With clickable enabled, completed and current steps become buttons that call onSelect, while pending steps stay locked so users can\'t skip ahead.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Progress', 'A11y', 'Wizards']}

@@ -22,11 +22,6 @@
 		'Two role="slider" thumbs share one track. Their positions are derived percentages fed straight into style:left, and the coloured fill spans the gap between them. setThumb clamps each thumb against the other thumb’s current value (not the track bound), so they can never cross — the same live values feed aria-valuemin/aria-valuemax so screen readers always hear the true range.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Pointer Events', 'Form control']}

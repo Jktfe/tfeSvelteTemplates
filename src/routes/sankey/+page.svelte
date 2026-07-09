@@ -108,14 +108,6 @@
 		'ExpandableSankey wraps Unovis to render a Sankey diagram with click-to-expand nodes. The createSankeyData() helper tracks expanded state and recursively collapses children. Aggregate links collapse to summary flows when a node is closed; detailed child links appear when it is expanded. Unovis owns the SVG layer and tooltips. Every variant on this page is the same component — only the data and pre-expansion state differs.';
 </script>
 
-<svelte:head>
-	<title>Sankey — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive expandable Sankey flow visualisation built on Unovis. Click nodes to drill down."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

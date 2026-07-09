@@ -53,14 +53,6 @@
 		'ClickSpark is a wrap-anything decoration. Each click spawns an independent burst of CSS-keyframed particles that origin from the actual click point — never the wrapper centre — so the burst feels tied to the gesture. Bursts self-clean on animation end, and reduced-motion users get the click semantics with no particles at all.';
 </script>
 
-<svelte:head>
-	<title>ClickSpark — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Wrap any element to spray a configurable particle burst on click. Pure CSS, four shapes."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Click', 'CSS-only', 'Reduced-motion safe']}

@@ -244,9 +244,37 @@
 			autoPanPaddingBottomRight: L.point(50, 50)
 		});
 
-		// Handle popup open - set up form handlers
+		// Handle popup open — wire the Save/Delete buttons, and remove those
+		// listeners again on popupclose so re-opening the same marker doesn't
+		// stack duplicate handlers (which previously made a single click fire
+		// the action N times).
 		leafletMarker.on('popupopen', () => {
-			setupPopupHandlers(markerData);
+			const popup = document.querySelector(`.live-popup[data-marker-id="${markerData.id}"]`);
+			if (!popup) return;
+
+			const titleInput = popup.querySelector('.popup-title-input') as HTMLInputElement | null;
+			const descInput = popup.querySelector('.popup-description-input') as HTMLTextAreaElement | null;
+			const saveBtn = popup.querySelector('.popup-save-btn');
+			const deleteBtn = popup.querySelector('.popup-delete-btn');
+
+			// stopPropagation keeps the map's add-marker click from firing.
+			const onSave = (event: Event) => {
+				event.stopPropagation();
+				updateMarkerDetails(markerData.id, titleInput?.value || 'Untitled', descInput?.value || '');
+				markerMap.get(markerData.id)?.closePopup();
+			};
+			const onDelete = (event: Event) => {
+				event.stopPropagation();
+				removeMarker(markerData.id);
+			};
+
+			saveBtn?.addEventListener('click', onSave);
+			deleteBtn?.addEventListener('click', onDelete);
+
+			leafletMarker.once('popupclose', () => {
+				saveBtn?.removeEventListener('click', onSave);
+				deleteBtn?.removeEventListener('click', onDelete);
+			});
 		});
 
 		// Handle drag end - update marker position
@@ -301,40 +329,6 @@
 				</div>
 			</div>
 		`;
-	}
-
-	/**
-	 * Set up event handlers for popup form
-	 */
-	function setupPopupHandlers(markerData: MapMarker): void {
-		// Small delay to ensure popup is rendered
-		setTimeout(() => {
-			const popup = document.querySelector(`.live-popup[data-marker-id="${markerData.id}"]`);
-			if (!popup) return;
-
-			const titleInput = popup.querySelector('.popup-title-input') as HTMLInputElement;
-			const descInput = popup.querySelector('.popup-description-input') as HTMLTextAreaElement;
-			const saveBtn = popup.querySelector('.popup-save-btn');
-			const deleteBtn = popup.querySelector('.popup-delete-btn');
-
-			// Save handler - stop propagation to prevent map click adding new marker
-			saveBtn?.addEventListener('click', (e) => {
-				e.stopPropagation();
-				const newTitle = titleInput?.value || 'Untitled';
-				const newDesc = descInput?.value || '';
-				updateMarkerDetails(markerData.id, newTitle, newDesc);
-
-				// Close popup
-				const leafletMarker = markerMap.get(markerData.id);
-				leafletMarker?.closePopup();
-			});
-
-			// Delete handler - stop propagation to prevent map click adding new marker
-			deleteBtn?.addEventListener('click', (e) => {
-				e.stopPropagation();
-				removeMarker(markerData.id);
-			});
-		}, 50);
 	}
 
 	/**
@@ -756,4 +750,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

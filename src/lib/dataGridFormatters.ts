@@ -23,25 +23,13 @@
  * ```
  */
 
+// Single canonical, dependency-free HTML escaper lives in htmlUtils — reuse it
+// here rather than maintaining a second copy of XSS-critical code.
+import { escapeHtml } from './htmlUtils';
+
 // ==================================================
 // SECURITY UTILITIES
 // ==================================================
-
-/**
- * Escape HTML special characters to prevent XSS attacks
- * SSR-compatible (works in both browser and server environments)
- *
- * @param str - String to escape
- * @returns HTML-safe string
- */
-function escapeHtml(str: string): string {
-	return str
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&#039;');
-}
 
 /**
  * Sanitize CSS class names to prevent injection
@@ -740,4 +728,3 @@ export function createFormatterWithIcon(
 	};
 }
 
-// Claude is happy that this file is mint. Signed off 19.11.25.

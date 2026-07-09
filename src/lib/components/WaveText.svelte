@@ -1,59 +1,76 @@
+<!--
+  ===========================================================
+  WAVE TEXT
+  ===========================================================
+  WHAT — Text laid along a sine-wave SVG path.
+  FEATURES
+    • Sine path generated from amplitude + wavelength
+    • Centred along the curve via <textPath startOffset="50%">
+  ACCESSIBILITY — static text; readable by screen readers as the SVG
+                  <text> content. No motion.
+  DEPENDENCIES — zero (pure SVG + CSS)
+  PERFORMANCE — path recomputed only when amplitude/wavelength change
+  USAGE
+    <WaveText text="HELLO" amplitude={24} wavelength={180} />
+  PROPS
+    | Prop       | Type   | Default        | Description                     |
+    | text       | string | 'WAVING TEXT'  | Text to lay along the wave      |
+    | amplitude  | number | 20             | Vertical wave height in px      |
+    | wavelength | number | 200            | Horizontal distance per peak    |
+  ===========================================================
+-->
 <script lang="ts">
-  /**
-   * WaveText component displays text that follows a sine wave path.
-   * It uses an SVG <path> and <textPath> with calcMode="linear".
-   *
-   * Props:
-   *  - text: string to display
-   *  - amplitude: vertical wave amplitude in pixels (default 20)
-   *  - wavelength: horizontal distance between peaks (default 200)
-   */
-  export let text = "WAVING TEXT";
-  export let amplitude = 20;
-  export let wavelength = 200;
+	interface Props {
+		/** Text to lay along the wave. */
+		text?: string;
+		/** Vertical wave amplitude in pixels. */
+		amplitude?: number;
+		/** Horizontal distance between peaks in pixels. */
+		wavelength?: number;
+	}
 
-  // Generate a path data string for a sine wave.
-  const generatePath = () => {
-    const points: Array<[number, number]> = [];
-    const totalWidth = 1200; // keep constant width for consistency
-    const step = wavelength / 20;
-    for (let x = 0; x <= totalWidth + step; x += step) {
-      const y = amplitude * Math.sin((2 * Math.PI * x) / wavelength);
-      points.push([x, y + 150]); // center at 150
-    }
-    const d = points
-      .map((p, i) => (i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`))
-      .join(" ");
-    return d;
-  };
+	let { text = 'WAVING TEXT', amplitude = 20, wavelength = 200 }: Props = $props();
 
-  let pathData = "";
-  $: pathData = generatePath();
+	// Build an SVG path string tracing a sine wave across a constant width.
+	function generatePath(amp: number, wave: number): string {
+		const points: Array<[number, number]> = [];
+		const totalWidth = 1200;
+		const step = wave / 20;
+		for (let x = 0; x <= totalWidth + step; x += step) {
+			const y = amp * Math.sin((2 * Math.PI * x) / wave);
+			points.push([x, y + 150]); // centre vertically at 150
+		}
+		return points
+			.map((p, i) => (i === 0 ? `M ${p[0]} ${p[1]}` : `L ${p[0]} ${p[1]}`))
+			.join(' ');
+	}
+
+	const pathData = $derived(generatePath(amplitude, wavelength));
 </script>
 
-<style>
-  :global(svg) {
-    width: 100%;
-    height: 300px;
-    display: block;
-  }
-
-  :global(text) {
-    font-family: "Space Mono", monospace;
-    font-size: 32px;
-    fill: #111;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-  }
-</style>
-
-<svg viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid meet">
-  <defs>
-    <path id="wave" d={pathData} fill="none" stroke="transparent" />
-  </defs>
-  <text>
-    <textPath href="#wave" startOffset="50%" method="align" spacing="auto" calcMode="linear">
-      {text}
-    </textPath>
-  </text>
+<svg class="wave-svg" viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid meet">
+	<defs>
+		<path id="wave" d={pathData} fill="none" stroke="transparent" />
+	</defs>
+	<text class="wave-text">
+		<textPath href="#wave" startOffset="50%" method="align" spacing="auto">
+			{text}
+		</textPath>
+	</text>
 </svg>
+
+<style>
+	.wave-svg {
+		width: 100%;
+		height: 300px;
+		display: block;
+	}
+
+	.wave-text {
+		font-family: 'Space Mono', monospace;
+		font-size: 32px;
+		fill: var(--fg, #111);
+		letter-spacing: 0.15em;
+		text-transform: uppercase;
+	}
+</style>

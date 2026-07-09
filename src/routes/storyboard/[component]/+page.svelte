@@ -96,18 +96,20 @@
 		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
+		background: var(--bg);
+		color: var(--fg);
 	}
 
 	/* Breadcrumb navigation */
 	.breadcrumb {
 		padding: 1rem 2rem;
-		background: #f8fafc;
-		border-bottom: 1px solid #e2e8f0;
+		background: var(--surface-2);
+		border-bottom: 1px solid var(--border);
 		font-size: 0.875rem;
 	}
 
 	.breadcrumb a {
-		color: #3b82f6;
+		color: var(--accent);
 		text-decoration: none;
 	}
 
@@ -117,11 +119,11 @@
 
 	.breadcrumb .separator {
 		margin: 0 0.5rem;
-		color: #94a3b8;
+		color: var(--fg-3);
 	}
 
 	.breadcrumb .current {
-		color: #64748b;
+		color: var(--fg-2);
 	}
 
 	/* Canvas container - takes up most of the screen */
@@ -133,8 +135,8 @@
 	/* Footer with hints */
 	.storyboard-footer {
 		padding: 1rem 2rem;
-		background: #f8fafc;
-		border-top: 1px solid #e2e8f0;
+		background: var(--surface-2);
+		border-top: 1px solid var(--border);
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
@@ -143,13 +145,13 @@
 	}
 
 	.hint {
-		color: #64748b;
+		color: var(--fg-2);
 		font-size: 0.875rem;
 		margin: 0;
 	}
 
 	.hint kbd {
-		background: #e2e8f0;
+		background: var(--border);
 		padding: 0.125rem 0.375rem;
 		border-radius: 4px;
 		font-family: inherit;
@@ -157,7 +159,7 @@
 	}
 
 	.back-link {
-		color: #3b82f6;
+		color: var(--accent);
 		text-decoration: none;
 		font-size: 0.875rem;
 	}
@@ -176,17 +178,17 @@
 
 	.not-found h1 {
 		font-size: 2rem;
-		color: #1e293b;
+		color: var(--fg);
 		margin-bottom: 1rem;
 	}
 
 	.not-found p {
-		color: #64748b;
+		color: var(--fg-2);
 		margin-bottom: 2rem;
 	}
 
 	.not-found code {
-		background: #f1f5f9;
+		background: var(--surface-2);
 		padding: 0.25rem 0.5rem;
 		border-radius: 4px;
 		font-size: 0.875rem;
@@ -194,7 +196,7 @@
 
 	.not-found h2 {
 		font-size: 1.25rem;
-		color: #1e293b;
+		color: var(--fg);
 		margin-bottom: 1rem;
 	}
 
@@ -209,7 +211,7 @@
 	}
 
 	.storyboard-list a {
-		color: #3b82f6;
+		color: var(--accent);
 		text-decoration: none;
 		text-transform: capitalize;
 	}
@@ -220,17 +222,17 @@
 
 	.home-link {
 		display: inline-block;
-		color: #3b82f6;
+		color: var(--accent);
 		text-decoration: none;
 		padding: 0.5rem 1rem;
-		border: 1px solid #3b82f6;
+		border: 1px solid var(--accent);
 		border-radius: 8px;
 		transition: all 0.2s ease;
 	}
 
 	.home-link:hover {
-		background: #3b82f6;
-		color: white;
+		background: var(--accent);
+		color: var(--fg-on-blue);
 	}
 
 	/* Responsive */

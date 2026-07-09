@@ -65,14 +65,6 @@
 		'Sunburst computes a partition layout natively (no D3) and renders concentric SVG arcs. Click a segment to zoom in; click the centre circle to zoom back out. Colours cascade from each top-level branch to its descendants, and CSS transitions handle the zoom animation. Keyboard navigation (Tab + Enter/Space, Escape to zoom out) and ARIA labels are baked in.';
 </script>
 
-<svelte:head>
-	<title>Sunburst — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Zoomable hierarchical sunburst chart with custom colour schemes. Pure Svelte 5, zero charting dependencies."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

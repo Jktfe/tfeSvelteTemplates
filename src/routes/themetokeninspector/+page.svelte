@@ -48,11 +48,6 @@
 <ThemeTokenInspector initialMode="dark" />`;
 </script>
 
-<svelte:head>
-	<title>{shellProps.name} - TFE / Svelte Templates</title>
-	<meta name="description" content={shellProps.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shellProps}
 	{usageSnippet}

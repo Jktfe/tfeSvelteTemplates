@@ -82,6 +82,14 @@
 	/* svelte-ignore state_referenced_locally */
 	let cardOrder = $state<number[]>([...Array(cards.length).keys()]);
 
+	// Re-sync the rotation order if the `cards` prop changes length — otherwise it
+	// keeps stale indices that point past the new array (cards[i] === undefined).
+	$effect(() => {
+		if (cardOrder.length !== cards.length) {
+			cardOrder = [...Array(cards.length).keys()];
+		}
+	});
+
 	// [CR] Pointer tracking state for drag calculations
 	let touchStartX = $state(0);
 	let touchStartY = $state(0);
@@ -461,11 +469,11 @@
 			onpointercancel={handlePointerUp}
 		>
 			<div class="card-content">
-				{#if card.image}
+				{#if card?.image}
 					<img src={card.image} alt={card.title || ''} class="card-image" draggable="false" />
 				{/if}
 
-				{#if card.title || card.content}
+				{#if card?.title || card?.content}
 					<div class="card-overlay">
 						{#if card.title}
 							<h3 class="card-title">{card.title}</h3>

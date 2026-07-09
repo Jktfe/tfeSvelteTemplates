@@ -30,14 +30,6 @@
 		'LinkImageHover keeps the link as a real anchor — accessible by default — and conditionally renders a floating preview while the cursor is over it. Svelte transitions handle the blur fade-in, so there is no animation library to import. Touch users get the link without the preview because the hover state never activates.';
 </script>
 
-<svelte:head>
-	<title>LinkImageHover — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Inline links that reveal an image preview on hover. Pure Svelte 5, accessible by default."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Hover', 'Accessible', 'Database-backed']}

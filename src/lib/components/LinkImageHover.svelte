@@ -143,7 +143,9 @@
 	function handlePreviewClick(event: MouseEvent) {
 		event.stopPropagation(); // [CR] Prevent triggering link click
 		showPreviewMobile = false; // [CR] Hide preview
-		window.open(href, target); // [CR] Follow the link
+		// noopener,noreferrer stops the opened page reaching back through
+		// window.opener (reverse tab-nabbing); the <a> fallback sets rel likewise.
+		window.open(href, target, 'noopener,noreferrer');
 	}
 
 	// [CR] Svelte action to handle mouse enter/leave events for desktop hover
@@ -223,6 +225,4 @@
 </style>
 
 <!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

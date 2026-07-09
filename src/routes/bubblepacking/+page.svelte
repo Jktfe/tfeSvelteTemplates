@@ -85,14 +85,6 @@
 		'BubblePacking lays bubbles out with iterative collision resolution: bubbles are pulled toward the centre while colliding pairs are pushed apart. Sizes use square-root scaling so bubble area (not radius) is proportional to value. Disable force simulation via useForce={false} for instant placement when you have a small dataset and need a static layout.';
 </script>
 
-<svelte:head>
-	<title>BubblePacking — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Force-directed circle packing visualisation with group colouring, tooltips and click-through."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

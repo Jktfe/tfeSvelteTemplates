@@ -29,14 +29,6 @@
 	}
 </script>
 
-<svelte:head>
-	<title>Countdown — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated countdown timer with cards, labels, and compact formats. Configurable units, completion callback, accessible."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Time', 'A11y', 'Zero deps']}

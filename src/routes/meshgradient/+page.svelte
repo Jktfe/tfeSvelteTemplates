@@ -27,14 +27,6 @@
 		'MeshGradient renders a small set of large, blurred radial-gradient blobs that drift on independent CSS keyframes. A single filter: blur composites them into a single soft wash. There is no canvas, no requestAnimationFrame, and no per-frame JS — every prop change just updates inline custom properties.';
 </script>
 
-<svelte:head>
-	<title>MeshGradient — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated mesh-gradient backdrop made of large blurred radial blobs. Six palettes, configurable blob count, blur, opacity, and speed."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Ambient', 'Animated']}

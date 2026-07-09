@@ -27,14 +27,6 @@
 		'MorphingDialog measures the trigger\'s bounding rect, then transitions a clone from that rect to the centred dialog rect. Closing reverses the morph. Focus is trapped while open, Escape and overlay clicks close it, and prefers-reduced-motion skips the morph entirely while keeping all interaction.';
 </script>
 
-<svelte:head>
-	<title>MorphingDialog — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Shared-element transition dialog that morphs from trigger to full modal for Svelte 5."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

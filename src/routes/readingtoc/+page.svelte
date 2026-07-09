@@ -30,11 +30,6 @@
 		'ReadingTOC walks the target container once on mount, collects the requested heading levels, and registers each one with a single IntersectionObserver. The observer rootMargin is "0px 0px -60% 0px" so a heading is "active" the moment it enters the top 40% of the viewport. When several headings overlap, the resolver picks the highest intersection ratio and falls back to the previous active id past the last heading. Click handlers smooth-scroll (or instant-scroll under reduced motion) without breaking the underlying anchor link.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'IntersectionObserver', 'Long-form']}

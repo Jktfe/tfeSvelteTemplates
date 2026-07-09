@@ -38,11 +38,6 @@
 		'FloatingDock listens to mousemove relative to the dock element and feeds each icon a distance. A cosine-based scaling function spreads magnification across neighbouring icons so the result feels like a smooth wave rather than a binary hover. Below 768px the dock falls back to a simple horizontal scrollable bar — magnification only kicks in on pointer-friendly devices.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Hover', 'CSS transforms', 'Responsive']}

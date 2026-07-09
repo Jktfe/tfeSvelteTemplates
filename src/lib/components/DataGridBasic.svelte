@@ -113,7 +113,7 @@
 	// [CR] Filtered Data - apply global search filter
 	// [NTL] When you type in the search box, this filters your data to only
 	// [NTL] show rows where ANY column contains your search text
-	const filteredData = $derived(() => {
+	const filteredData = $derived.by(() => {
 		if (!filterable || !filterText.trim()) {
 			return data;
 		}
@@ -133,13 +133,13 @@
 	// [CR] Sorted Data - apply sorting to the already-filtered data
 	// [NTL] After filtering, this puts the results in order based on
 	// [NTL] which column header you clicked (A-Z, Z-A, 1-9, 9-1)
-	const sortedData = $derived(() => {
+	const sortedData = $derived.by(() => {
 		if (!sortable || !sortColumn) {
-			return filteredData();
+			return filteredData;
 		}
 
 		// [CR] Create a copy to avoid mutating the original array
-		const sorted = [...filteredData()];
+		const sorted = [...filteredData];
 		const columnKey = sortColumn;
 
 		sorted.sort((a, b) => {
@@ -169,19 +169,19 @@
 
 	// [CR] Pagination calculations
 	// [NTL] Figure out how many pages we have and which rows to show
-	const totalRows = $derived(sortedData().length);
+	const totalRows = $derived(sortedData.length);
 	const totalPages = $derived(pageSize > 0 ? Math.ceil(totalRows / pageSize) : 1);
 
 	// [CR] Paginated data - slice out just the rows for the current page
 	// [NTL] If you're on page 2 with 10 rows per page, this grabs rows 11-20
-	const paginatedData = $derived(() => {
+	const paginatedData = $derived.by(() => {
 		if (pageSize === 0) {
-			return sortedData(); // [NTL] pageSize of 0 means "show everything"
+			return sortedData; // [NTL] pageSize of 0 means "show everything"
 		}
 
 		const startIndex = (currentPage - 1) * pageSize;
 		const endIndex = startIndex + pageSize;
-		return sortedData().slice(startIndex, endIndex);
+		return sortedData.slice(startIndex, endIndex);
 	});
 
 	// [CR] ============================================================
@@ -321,7 +321,7 @@
 			/>
 			{#if filterText}
 				<span class="filter-count">
-					{filteredData().length} result{filteredData().length === 1 ? '' : 's'}
+					{filteredData.length} result{filteredData.length === 1 ? '' : 's'}
 				</span>
 			{/if}
 		</div>
@@ -368,14 +368,14 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#if paginatedData().length === 0}
+				{#if paginatedData.length === 0}
 					<tr>
 						<td colspan={columns.length} class="empty-state">
 							{filterText ? 'No results found' : 'No data available'}
 						</td>
 					</tr>
 				{:else}
-					{#each paginatedData() as row, rowIndex (row.id ?? rowIndex)}
+					{#each paginatedData as row, rowIndex (row.id ?? rowIndex)}
 						<tr>
 							{#each columns as column, columnIndex (`${columnIndex}-${column.id}`)}
 								{@const cellValue = getRowValue(row, column.id)}
@@ -748,6 +748,4 @@
 </style>
 
 <!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

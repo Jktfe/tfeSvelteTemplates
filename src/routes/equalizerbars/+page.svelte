@@ -19,14 +19,6 @@
 		'EqualizerBars draws N vertical bars and animates each with a CSS keyframe at a phase-shifted negative animation-delay. The visible wave is an illusion built from N independent CSS clocks — no JS clock, no rAF. Variants swap the keyframe shape (sine, peak-biased, binary, double-spike). Inactive mode freezes the bars at deterministic seeded heights for SSR-stable empty states.';
 </script>
 
-<svelte:head>
-	<title>EqualizerBars — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Compact 'things are alive' indicator. Four variants, four sizes, fully decorative."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Decorative', 'Reduced-motion safe']}

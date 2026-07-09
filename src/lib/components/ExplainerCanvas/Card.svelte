@@ -108,7 +108,7 @@
 	/**
 	 * Build tooltip text showing children names
 	 */
-	let childrenTooltip = $derived(() => {
+	let childrenTooltip = $derived.by(() => {
 		if (!hasChildren || childrenNames.length === 0) return 'Has nested content';
 		if (childrenNames.length <= 3) {
 			return `Contains: ${childrenNames.join(', ')}`;
@@ -206,7 +206,7 @@
 			</button>
 			<h3 class="card-title">{card.title}</h3>
 			{#if hasChildren}
-				<span class="children-indicator" data-tooltip={childrenTooltip()}>
+				<span class="children-indicator" data-tooltip={childrenTooltip}>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<rect x="3" y="3" width="7" height="7" rx="1" />
 						<rect x="14" y="3" width="7" height="7" rx="1" />
@@ -565,4 +565,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

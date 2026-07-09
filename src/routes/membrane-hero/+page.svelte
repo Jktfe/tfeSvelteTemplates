@@ -30,14 +30,6 @@
 		'MembraneHero stacks a CSS conic-gradient base under an inline SVG <feTurbulence> + <feDisplacementMap> filter. SMIL animates the turbulence baseFrequency so the surface ripples like a fluid film. A Lissajous focal dot, per-glyph headline deal-in, and three palette presets layer on top. Reduced motion freezes the turbulence, drops the dot loop, and disables the deal-in.';
 </script>
 
-<svelte:head>
-	<title>MembraneHero — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Warped-fluid-mesh full-bleed editorial hero with SVG displacement, Lissajous focal dot, per-glyph deal-in, and three palette presets."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'SVG filter', 'Editorial', 'Reduced-motion safe']}

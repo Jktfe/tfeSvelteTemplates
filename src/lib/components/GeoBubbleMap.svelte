@@ -87,16 +87,16 @@
 	let tooltipY = $state(0);
 
 	// Calculate value domain for radius scaling
-	const valueDomain = $derived(() => {
+	const valueDomain = $derived.by(() => {
 		const values = data.map((d) => d.value);
 		if (values.length === 0) return [0, 100] as [number, number];
 		return [Math.min(...values), Math.max(...values)] as [number, number];
 	});
 
 	// Create radius scale (square root for perceptually accurate area scaling)
-	const radiusScale = $derived(() => {
+	const radiusScale = $derived.by(() => {
 		return scaleSqrt()
-			.domain(valueDomain())
+			.domain(valueDomain)
 			.range([minRadius, maxRadius]);
 	});
 
@@ -104,7 +104,7 @@
 	 * Get radius for a data point
 	 */
 	function getRadius(point: GeoDataPoint): number {
-		return radiusScale()(point.value);
+		return radiusScale(point.value);
 	}
 
 	/**
@@ -145,7 +145,7 @@
 	);
 
 	// Create fit geometry combining geojson and point bounds
-	const fitGeojson = $derived((): GeoJSON.FeatureCollection | undefined => {
+	const fitGeojson = $derived.by((): GeoJSON.FeatureCollection | undefined => {
 		if (geojson) return geojson;
 		// Create a bounding box from points if no geojson
 		if (data.length === 0) return undefined;
@@ -179,7 +179,7 @@
 		<Svg>
 			<!-- [CR] Using let:projection to access the projection function directly -->
 			<!-- [NTL] Think of the projection like a translator that converts real-world coordinates (lat/long) into pixel positions on our screen! -->
-			<GeoContext projection={geoMercator} fitGeojson={fitGeojson()} let:projection>
+			<GeoContext projection={geoMercator} fitGeojson={fitGeojson} let:projection>
 				<!-- Background geography if provided -->
 				{#if geojson}
 					{#each bgFeatures as feature, i (feature.id ?? feature.properties?.id ?? i)}
@@ -274,7 +274,7 @@
 						stroke-width="1"
 					/>
 				</svg>
-				<span>{valueDomain()[0].toLocaleString('en-GB')}</span>
+				<span>{valueDomain[0].toLocaleString('en-GB')}</span>
 			</div>
 			<div class="legend-item">
 				<svg width={maxRadius * 2 + 4} height={maxRadius * 2 + 4}>
@@ -287,7 +287,7 @@
 						stroke-width="1"
 					/>
 				</svg>
-				<span>{valueDomain()[1].toLocaleString('en-GB')}</span>
+				<span>{valueDomain[1].toLocaleString('en-GB')}</span>
 			</div>
 		</div>
 	</div>
@@ -389,7 +389,6 @@
 	}
 
 	/*
-	 * [RFO] prefers-reduced-motion support - OPTIONAL/USEFUL
 	 * WHY NOT DONE BEFORE: These are very subtle hover transitions (0.15s opacity).
 	 * Only triggered on user hover interaction, not continuous animation.
 	 * WCAG 2.3.3 is AAA level (not required for A/AA compliance).
@@ -402,5 +401,3 @@
 </style>
 
 <!-- [CR] Component uses LayerChart + d3-geo (justified dependencies for geo viz). -->
-<!-- [CR] RFO Review 27.12.25: Subtle hover effects only. OPTIONAL/USEFUL for completeness. -->
-<!-- RFO Review: 27.12.25 -->

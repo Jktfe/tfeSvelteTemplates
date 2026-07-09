@@ -19,14 +19,6 @@
 		'PerspectiveGrid puts a real CSS-3D plane (or two — floor + optional ceiling) inside a perspective context, then drifts a repeating-linear-gradient across each plane via a single background-position keyframe. Three intensities bundle drift duration, cell size, and line opacity; three modes switch between mono, neon, and wireframe looks. Pure CSS — no canvas, no rAF, no resize observer — and reduced-motion freezes the keyframe.';
 </script>
 
-<svelte:head>
-	<title>PerspectiveGrid — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="3D perspective grid backdrop using CSS preserve-3d. Three intensities, three modes, optional ceiling, reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS 3D', 'Synthwave', 'Reduced-motion safe']}

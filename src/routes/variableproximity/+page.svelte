@@ -6,14 +6,6 @@
 	const shell = catalogShellPropsForSlug('/variableproximity')!;
 </script>
 
-<svelte:head>
-	<title>VariableProximity — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Per-letter variable-font morph that follows cursor proximity. rAF-throttled writes, CSS-eased transitions."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Typography', 'Hover', 'A11y']}

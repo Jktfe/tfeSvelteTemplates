@@ -102,14 +102,6 @@
 		'GlobePresence renders an interactive sphere on a single &lt;canvas&gt; with a custom 60fps loop — no Three.js scene graph required. Markers are projected from latitude/longitude onto the sphere surface and tinted with a soft glow; pointer drag rotates the globe, and autoRotate keeps it drifting when idle. Each marker can carry a `color` to brand the dot. The render loop disposes its raf handle on destroy, so navigating away leaves no zombies.';
 </script>
 
-<svelte:head>
-	<title>GlobePresence — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Canvas-based 3D globe with plottable markers, 60fps rotation, and pointer drag navigation."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Canvas 3D', '60fps', 'Pointer drag', 'Zero deps']}

@@ -6,14 +6,6 @@
 	const shell = catalogShellPropsForSlug('/shinytext')!;
 </script>
 
-<svelte:head>
-	<title>ShinyText — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Pure-CSS shimmer band that sweeps across text. GPU-composited, prefers-reduced-motion safe, zero JavaScript at runtime."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Theme-aware', 'A11y']}

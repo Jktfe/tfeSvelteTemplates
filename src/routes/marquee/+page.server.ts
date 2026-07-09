@@ -6,6 +6,7 @@
  */
 
 import { loadTestimonialsFromDatabase } from '$lib/server/testimonials';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import type { Testimonial } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -28,7 +29,7 @@ export const load: PageServerLoad = async (): Promise<{
 	const interactiveTestimonials = await loadTestimonialsFromDatabase('interactive');
 
 	// Determine if we're using the database or fallback data
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		staticTestimonials,

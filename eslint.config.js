@@ -44,10 +44,15 @@ export default ts.config(
 		}
 	},
 	{
-		// Allow 'any' types in TypeScript files for flexible utilities
+		// Template *components* are intentionally flexible with `any` (see the
+		// .svelte override above). Plain .ts files — server utilities, shared
+		// types — should keep type safety honest, so surface `any` as a warning
+		// rather than silencing it outright. Warnings don't fail CI but make new
+		// `any` in the data/type layer visible in review.
 		files: ['**/*.ts', '**/*.tsx'],
+		ignores: ['**/*.svelte.ts'],
 		rules: {
-			'@typescript-eslint/no-explicit-any': 'off'
+			'@typescript-eslint/no-explicit-any': 'warn'
 		}
 	},
 	{

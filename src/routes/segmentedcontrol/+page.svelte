@@ -69,11 +69,6 @@
 		'Each segment is a hidden native radio input wrapped by a label, so a single arrow-key tab handles selection — no JS keyboard plumbing required. The visual "pill" you see is a single transform: translateX() shifted to match the active index, which means the slide animation stays smooth no matter how many segments you add.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Radio', 'A11y', 'Keyboard', 'CSS-only']}

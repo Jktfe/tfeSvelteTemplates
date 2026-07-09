@@ -180,6 +180,15 @@
 		}
 		const p = clamp(-rect.top / range, 0, 1);
 		scrollProgress = p;
+
+		// Under reduced motion there's no continuous rAF loop, so drive the layout
+		// straight from the scroll event to keep the composition tracking the
+		// scrollbar.
+		if (reducedMotion && entranceDone) {
+			computeTargets();
+			applyCards();
+			updateHero();
+		}
 	}
 
 	// ------------------------------------------------------------------
@@ -389,9 +398,17 @@
 	// ------------------------------------------------------------------
 	function tick(now: number) {
 		if (!entranceDone) {
-			if (!entranceStart) entranceStart = now;
-			const t = clamp((now - entranceStart) / ENTRANCE_DURATION, 0, 1);
-			stepEntrance(t);
+			if (reducedMotion) {
+				// Skip the spring entrance entirely: jump to the finished state and
+				// settle into the scroll-driven layout, so reduced-motion users see
+				// the composed gallery instead of the off-screen start pose.
+				stepEntrance(1);
+				computeTargets();
+			} else {
+				if (!entranceStart) entranceStart = now;
+				const t = clamp((now - entranceStart) / ENTRANCE_DURATION, 0, 1);
+				stepEntrance(t);
+			}
 		} else {
 			computeTargets();
 		}

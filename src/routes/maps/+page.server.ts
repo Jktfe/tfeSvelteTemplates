@@ -6,12 +6,13 @@
  */
 
 import { loadMapMarkersFromDatabase, getMarkerCategories } from '$lib/server/maps';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
 	const markers = await loadMapMarkersFromDatabase();
 	const categories = await getMarkerCategories();
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		markers,

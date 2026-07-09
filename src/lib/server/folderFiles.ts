@@ -8,6 +8,7 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { getConfiguredDatabaseUrl } from './dataSource';
 import type {
 	Folder,
 	FolderRow,
@@ -30,7 +31,7 @@ import { FALLBACK_FOLDERS, FALLBACK_FILES } from '$lib/constants';
  */
 export async function loadFoldersFromDatabase(category?: string): Promise<Folder[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[FolderFiles] DATABASE_URL not configured, using fallback folders');
@@ -80,7 +81,7 @@ export async function loadFoldersFromDatabase(category?: string): Promise<Folder
  */
 export async function loadFilesFromDatabase(folderId?: number): Promise<FileItem[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[FolderFiles] DATABASE_URL not configured, using fallback files');
@@ -152,7 +153,7 @@ export async function loadFolderStructure(category?: string): Promise<FolderWith
  * @returns Promise resolving to created folder or null on error
  */
 export async function createFolder(folder: Omit<Folder, 'id'>): Promise<Folder | null> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error('Cannot create: DATABASE_URL not configured');
@@ -207,7 +208,7 @@ export async function createFolder(folder: Omit<Folder, 'id'>): Promise<Folder |
  * @returns Promise resolving to created file or null on error
  */
 export async function createFile(file: Omit<FileItem, 'id'>): Promise<FileItem | null> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error('Cannot create: DATABASE_URL not configured');
@@ -274,7 +275,7 @@ export async function createFile(file: Omit<FileItem, 'id'>): Promise<FileItem |
  * @returns Promise resolving to updated folder or null
  */
 export async function updateFolder(id: number, folder: Partial<Folder>): Promise<Folder | null> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error('Cannot update: DATABASE_URL not configured');
@@ -321,7 +322,7 @@ export async function updateFolder(id: number, folder: Partial<Folder>): Promise
  * @returns Promise resolving to updated file or null
  */
 export async function updateFile(id: number, file: Partial<FileItem>): Promise<FileItem | null> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error('Cannot update: DATABASE_URL not configured');
@@ -377,7 +378,7 @@ export async function updateFile(id: number, file: Partial<FileItem>): Promise<F
  * @returns Promise resolving to true if deleted, false otherwise
  */
 export async function deleteFolder(id: number): Promise<boolean> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error('Cannot delete: DATABASE_URL not configured');
@@ -393,10 +394,13 @@ export async function deleteFolder(id: number): Promise<boolean> {
       WHERE folder_id = ${id}
     `;
 
+		// RETURNING makes the affected row observable; without it the neon driver
+		// resolves to an empty array even when the update succeeded.
 		const result = (await sql`
       UPDATE folders
       SET is_active = FALSE
       WHERE id = ${id} AND is_active = TRUE
+      RETURNING id
     `) as Array<Record<string, unknown>>;
 
 		return result.length > 0;
@@ -413,7 +417,7 @@ export async function deleteFolder(id: number): Promise<boolean> {
  * @returns Promise resolving to true if deleted, false otherwise
  */
 export async function deleteFile(id: number): Promise<boolean> {
-	const databaseUrl = process.env.DATABASE_URL;
+	const databaseUrl = getConfiguredDatabaseUrl();
 
 	if (!databaseUrl) {
 		throw new Error('Cannot delete: DATABASE_URL not configured');
@@ -426,6 +430,7 @@ export async function deleteFile(id: number): Promise<boolean> {
       UPDATE files
       SET is_active = FALSE
       WHERE id = ${id} AND is_active = TRUE
+      RETURNING id
     `) as Array<Record<string, unknown>>;
 
 		return result.length > 0;

@@ -28,11 +28,6 @@
 		'Drawer mounts a fixed-position panel that slides from any of four edges. On open it snapshots the active element, locks body scroll, and runs a manual focus trap so Tab and Shift+Tab cycle inside the dialog. On close it restores focus and unlocks scroll. Backdrop click and Escape both dismiss unless persistent is set; reduced-motion swaps the slide for a calm opacity fade.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Focus trap', 'Modal']}

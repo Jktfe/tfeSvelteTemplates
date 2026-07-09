@@ -29,6 +29,7 @@
 import { neon } from '@neondatabase/serverless';
 import type { LinkPreview, LinkPreviewRow } from '$lib/types';
 import { FALLBACK_LINK_PREVIEWS } from '$lib/constants';
+import { getConfiguredDatabaseUrl } from './dataSource';
 
 /**
  * Loads link preview data from the Neon database
@@ -55,8 +56,9 @@ import { FALLBACK_LINK_PREVIEWS } from '$lib/constants';
  */
 export async function loadLinkPreviewsFromDatabase(category?: string): Promise<LinkPreview[]> {
 	try {
-		// Get database connection string from environment variable
-		const databaseUrl = process.env.DATABASE_URL;
+		// Resolve the real connection string (the .env.example placeholder is
+		// treated as unconfigured, so we fall back cleanly instead of erroring).
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		// If DATABASE_URL is not configured, return fallback link previews
 		// This allows the app to work without a database connection
@@ -148,4 +150,3 @@ export async function loadLinkPreviewsFromDatabase(category?: string): Promise<L
 		return FALLBACK_LINK_PREVIEWS;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.

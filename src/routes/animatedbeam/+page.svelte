@@ -33,14 +33,6 @@
 		'AnimatedBeam draws SVG paths between user-positioned nodes and animates a dashed stroke along each path. Bidirectional connections receive a counter-rotating second beam, and gradient mode swaps the dashes for a soft moving fade — useful for ambient flow diagrams. The component is pure SVG + CSS, so the runtime cost stays close to a static diagram.';
 </script>
 
-<svelte:head>
-	<title>AnimatedBeam — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="SVG beams for connected-flow diagrams. Uni-, bi-, and multi-input flows with theme-aware colours."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'SVG', 'CSS-only', 'Diagrams']}

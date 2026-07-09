@@ -34,14 +34,6 @@
 		'ScratchToReveal layers an HTML5 canvas above a Svelte snippet. Pointer events sample alpha pixels each frame to track scratched percentage; when it crosses revealThreshold the canvas fades out. Pointer/touch/pen all share a single pointer-event path so mobile is first-class.';
 </script>
 
-<svelte:head>
-	<title>ScratchToReveal — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive scratch-off component revealing hidden content with HTML5 Canvas and zero dependencies."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

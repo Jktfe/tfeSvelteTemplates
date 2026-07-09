@@ -60,11 +60,6 @@
 		'Tabs implements the WAI-ARIA tablist pattern: each trigger is a button with role="tab", the panels carry role="tabpanel", and a roving tabindex keeps only the active trigger reachable by Tab. Arrow keys (←/→ or ↑/↓ depending on orientation) move between tabs, Home/End jump to the ends, and Enter activates. Disabled tabs are skipped automatically by the keyboard handler.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Keyboard', 'WAI-ARIA', 'Disclosure']}

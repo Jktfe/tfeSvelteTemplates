@@ -64,11 +64,6 @@
 		'NotificationCentre is a bell trigger with a dropdown inbox. The unread badge tracks how many items have read=false; the panel groups them into Today / Earlier by comparing each timestamp against a provided now prop (so relative time stays deterministic across SSR and tests). Clicking a row marks it read, "Mark all as read" clears every dot, and an optional × dismisses a row. notifications is bindable and onChange fires after each mutation for persistence.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'Zero-deps']}

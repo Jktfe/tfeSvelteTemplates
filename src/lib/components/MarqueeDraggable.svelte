@@ -214,6 +214,13 @@
 
 	// [CR] Start the automatic scrolling animation
 	function startAnimation() {
+		// Respect prefers-reduced-motion: skip the autonomous auto-scroll loop
+		// (manual dragging still works — that's user-initiated, not autoplay).
+		if (
+			typeof window !== 'undefined' &&
+			window.matchMedia('(prefers-reduced-motion: reduce)').matches
+		)
+			return;
 		// [CR] Don't animate if dragging, no content, or not visible
 		if (isDragging || !contentWidth || !isVisible) return;
 
@@ -423,6 +430,4 @@
 </style>
 
 <!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

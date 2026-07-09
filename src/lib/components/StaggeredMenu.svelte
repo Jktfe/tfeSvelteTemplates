@@ -3,8 +3,7 @@
  * StaggeredMenu - Animated navigation menu with cascading entrance effects
  *
  * Features:
- * - Staggered entrance animations for menu items
- * - Smooth fly-in transitions using Svelte transitions
+ * - Staggered entrance animations for menu items (pure CSS, reduced-motion safe)
  * - Active state highlighting with visual indicators
  * - Optional icon support for menu items
  * - Bindable isOpen state for toggling visibility
@@ -20,8 +19,7 @@
  * - Header navigation with toggle
  *
  * Technical Implementation:
- * - Svelte's built-in fly() transition for entrance
- * - Cascading delays calculated from item index
+ * - CSS keyframe entrance with cascading delays calculated from item index
  * - CSS custom properties for flexible timing
  * - ARIA current-page indicator for active items
  * - Bindable props with Svelte 5 $bindable rune
@@ -49,7 +47,6 @@
  */
 -->
 <script lang="ts">
-	import { fly } from 'svelte/transition';
 	import type { MenuItem } from '$lib/types';
 
 	interface Props {
@@ -64,11 +61,7 @@
 	{#if isOpen}
 		<ul class="menu-list">
 			{#each items as item, index (item.href)}
-				<li
-					class="menu-item"
-					style="--stagger-delay: {index * 0.05}s"
-					in:fly={{ y: -10, duration: 300, delay: index * 50 }}
-				>
+				<li class="menu-item" style="--stagger-delay: {index * 0.05}s">
 					<a
 						href={item.href}
 						class="menu-link"
@@ -104,6 +97,13 @@
 		opacity: 0;
 		animation: fade-in 0.3s ease-out forwards;
 		animation-delay: var(--stagger-delay, 0s);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.menu-item {
+			animation: none;
+			opacity: 1;
+		}
 	}
 
 	@keyframes fade-in {
@@ -188,6 +188,4 @@
 	}
 </style>
 
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

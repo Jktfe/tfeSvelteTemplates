@@ -42,14 +42,6 @@
 		'Pendulum wraps any element and animates a damped harmonic swing about a configurable pivot. The motion is driven by a single rAF loop that ticks an analytic damped sine — no animation library, no spring solver. Triggers cover mount, viewport entry, click, and an imperative swing()/stop() API for parent-controlled choreography.';
 </script>
 
-<svelte:head>
-	<title>Pendulum — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Damped swing wrapper with mount, viewport, click, and imperative triggers."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'rAF', 'Imperative API', 'Reduced-motion safe']}

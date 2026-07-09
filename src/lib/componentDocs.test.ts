@@ -175,7 +175,14 @@ const GOLD_STANDARD_DOCS = [
 	'src/lib/components/DonutChart.md',
 	'src/lib/components/Kanban.md',
 	'src/lib/components/Sidebar.md',
-	'src/lib/components/NotificationCentre.md'
+	'src/lib/components/NotificationCentre.md',
+
+	// Swarm batch (July 2026)
+	'src/lib/components/Masonry.md',
+	'src/lib/components/SplitPane.md',
+	'src/lib/components/Popover.md',
+	'src/lib/components/BackToTop.md',
+	'src/lib/components/PasswordStrengthMeter.md'
 ] as const;
 
 // UTF-8 BOM (U+FEFF) — constructed via String.fromCharCode so the literal

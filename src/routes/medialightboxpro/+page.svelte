@@ -37,11 +37,6 @@ const usageSnippet = `<script lang="ts">
 <MediaLightboxPro {items} />`;
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} - TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

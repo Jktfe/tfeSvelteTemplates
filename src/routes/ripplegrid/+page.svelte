@@ -27,14 +27,6 @@
 		'RippleGrid renders a grid of cells that fire one-shot CSS keyframes when clicked. Each cell\'s arrival delay is its grid distance from the click — Manhattan, Chebyshev, or Euclidean — so the wave shape is configurable. Multiple ripples compose using mix-blend-mode: screen, and a maxConcurrent cap keeps DOM cost bounded under rapid clicking.';
 </script>
 
-<svelte:head>
-	<title>RippleGrid — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Interactive grid where clicks become animated waves. Configurable wavefront, density, and palette."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Click', 'CSS-only', 'Keyboard-accessible']}

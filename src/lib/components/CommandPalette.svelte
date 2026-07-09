@@ -196,9 +196,12 @@
 	function close() {
 		isOpen = false;
 		query = '';
-		// Return focus to the element that was focused before we opened
-		requestAnimationFrame(() => previouslyFocused?.focus());
+		// Return focus to the element that was focused before we opened.
+		// Capture into a local first — the rAF callback runs after this function
+		// returns, by which point the field has been nulled.
+		const toFocus = previouslyFocused;
 		previouslyFocused = null;
+		requestAnimationFrame(() => toFocus?.focus());
 		onClose?.();
 	}
 

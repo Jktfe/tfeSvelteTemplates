@@ -18,11 +18,6 @@
 		'Each star is a real input[type="radio"] inside a radiogroup, so the keyboard story (Left/Right to move, Space/Enter to commit) comes from the platform. Hover styling is pure CSS sibling selectors — no JS hover state. Read-only mode swaps to role="img" with an aria-label of the value, and supports fractional values that render the trailing star half-filled via a clip-path overlay.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Radio', 'A11y', 'Keyboard', 'Theme-aware']}

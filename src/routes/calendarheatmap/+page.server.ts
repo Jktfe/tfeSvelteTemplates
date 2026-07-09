@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 import { loadCalendarDataFromDatabase, getCalendarStats } from '$lib/server/calendarData';
 
 /**
@@ -13,7 +14,7 @@ export const load: PageServerLoad = async () => {
 	const stats = await getCalendarStats('general');
 
 	// Check if using database
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const usingDatabase = isDatabaseConfigured();
 
 	return {
 		calendarData,

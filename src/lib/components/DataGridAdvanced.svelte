@@ -146,7 +146,7 @@
 	 *
 	 * Note: For date fields, template + editor work together (template for display, editor for editing)
 	 */
-	const gridColumns = $derived(() => {
+	const gridColumns = $derived.by(() => {
 		// If custom columns provided, use them
 		if (columns) {
 			return columns.map((col) => {
@@ -326,7 +326,7 @@
 	 * - Converts hireDate strings to Date objects for datepicker editor
 	 * - Applies global search filter across all columns
 	 */
-	const gridData = $derived(() => {
+	const gridData = $derived.by(() => {
 		let filteredData = data;
 
 		// Apply global search filter
@@ -382,7 +382,6 @@
 	 */
 	async function handleEdit(event: CustomEvent) {
 		const { id, col, value } = event.detail;
-		console.log('[DataGridAdvanced] Cell edited:', { id, col, value });
 
 		// Find the row being edited
 		const rowIndex = data.findIndex((row) => row.id === id);
@@ -467,7 +466,6 @@
 				throw new Error(result.error || 'Update failed');
 			}
 
-			console.log('[DataGridAdvanced] Successfully updated employee:', result.data);
 
 			// Update with server response (in case server modified the data)
 			if (result.data) {
@@ -494,7 +492,6 @@
 	 */
 	function handleSelection(event: CustomEvent) {
 		selectedIds = event.detail;
-		console.log('[DataGridAdvanced] Rows selected:', selectedIds);
 	}
 
 	/**
@@ -527,7 +524,6 @@
 				throw new Error(result.error || 'Delete failed');
 			}
 
-			console.log('[DataGridAdvanced] Deleted employees:', result);
 
 			// Remove deleted rows from local data
 			data = data.filter((row) => !selectedIds.includes(row.id!));
@@ -553,7 +549,7 @@
 		}
 
 		// Get column headers
-		const cols = gridColumns();
+		const cols = gridColumns;
 		const headers = cols.map((col) => col.header).join(',');
 
 		// Convert data rows to CSV format
@@ -616,9 +612,9 @@
 				✕
 			</button>
 		{/if}
-		{#if searchQuery && gridData().length !== data.length}
+		{#if searchQuery && gridData.length !== data.length}
 			<span class="search-results" aria-live="polite">
-				{gridData().length} of {data.length} rows
+				{gridData.length} of {data.length} rows
 			</span>
 		{/if}
 	</div>
@@ -663,13 +659,13 @@
 
 	<!-- SVAR Grid with type compatibility layer -->
 	{#if theme === 'willowDark'}
-		{@const gridCols = gridColumns() as any}
+		{@const gridCols = gridColumns as any}
 		{@const gridProps = editable ? { edit: true } : {}}
 		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
 		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
 		<WillowDark>
 			<Grid
-				data={gridData()}
+				data={gridData}
 				columns={gridCols}
 				selection={selectable ? 'row' : false}
 				rowHeight={40}
@@ -679,13 +675,13 @@
 			/>
 		</WillowDark>
 	{:else}
-		{@const gridCols = gridColumns() as any}
+		{@const gridCols = gridColumns as any}
 		{@const gridProps = editable ? { edit: true } : {}}
 		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
 		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
 		<Willow>
 			<Grid
-				data={gridData()}
+				data={gridData}
 				columns={gridCols}
 				selection={selectable ? 'row' : false}
 				rowHeight={40}
@@ -926,6 +922,4 @@
 </style>
 
 <!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

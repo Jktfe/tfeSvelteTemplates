@@ -39,14 +39,6 @@
 		'NoiseField paints SVG <feTurbulence> + <feColorMatrix> grain into a single <rect> and layers it over its slot via mix-blend-mode. Three intensities pair baseFrequency with numOctaves so grain size and richness scale together; three modes cover mono, chroma RGB, and retro chromatic-plus-scanlines. The filter ID swaps from a static SSR token to a unique nf-N on mount, so hydration mismatch never shows.';
 </script>
 
-<svelte:head>
-	<title>NoiseField — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Ambient grain, film-noise, and TV-static overlay built from a single SVG feTurbulence filter. Three intensities, three modes, reduced-motion safe."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'SVG filter', 'Overlay', 'Reduced-motion safe']}

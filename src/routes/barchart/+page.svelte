@@ -36,11 +36,6 @@
 	const compact = (n: number) => new Intl.NumberFormat('en-GB', { notation: 'compact' }).format(n);
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'A11y', 'Theme-aware', 'SVG', 'Zero-dependency']}

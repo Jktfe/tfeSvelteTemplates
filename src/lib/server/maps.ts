@@ -10,6 +10,7 @@
  */
 
 import { neon } from '@neondatabase/serverless';
+import { getConfiguredDatabaseUrl } from './dataSource';
 import type { MapMarker, MapMarkerRow, MapMarkerMetadata } from '$lib/types';
 import { FALLBACK_MAP_MARKERS } from '$lib/constants';
 import { calculateMapBounds } from '$lib/mapUtils';
@@ -28,7 +29,7 @@ import { calculateMapBounds } from '$lib/mapUtils';
  */
 export async function loadMapMarkersFromDatabase(category?: string): Promise<MapMarker[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[Maps] DATABASE_URL not configured, using fallback marker data');
@@ -107,7 +108,7 @@ function transformRowToMarker(row: MapMarkerRow): MapMarker {
  */
 export async function getMarkerCategories(): Promise<string[]> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			// Extract unique categories from fallback data
@@ -144,7 +145,7 @@ export async function createMapMarker(
 	marker: Omit<MapMarker, 'id'>
 ): Promise<MapMarker | null> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[Maps] DATABASE_URL not configured, cannot create marker');
@@ -189,7 +190,7 @@ export async function createMapMarker(
  */
 export async function deleteMapMarker(id: number): Promise<boolean> {
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
+		const databaseUrl = getConfiguredDatabaseUrl();
 
 		if (!databaseUrl) {
 			console.warn('[Maps] DATABASE_URL not configured, cannot delete marker');
@@ -198,11 +199,17 @@ export async function deleteMapMarker(id: number): Promise<boolean> {
 
 		const sql = neon(databaseUrl);
 
-		await sql`
+		const result = await sql`
 			UPDATE map_markers
 			SET is_active = FALSE
 			WHERE id = ${id} AND is_active = TRUE
+			RETURNING id
 		`;
+
+		if (result.length === 0) {
+			console.warn(`[Maps] Marker ${id} not found or already deleted`);
+			return false;
+		}
 
 		console.log(`[Maps] Deleted marker ${id}`);
 		return true;

@@ -103,14 +103,6 @@
 		'ExplainerCanvas builds a pannable / zoomable concept map from structured data. Each card holds markdown content, optional images and embeds, links to related cards, and an optional nested sub-canvas for unlimited drill-down. Search uses fuzzy matching across the whole tree, and breadcrumbs track the navigation path. Keyboard, focus management, and ARIA labels are baked in. The component accepts data three ways — a `data` prop for in-memory content, a `src` URL for static JSON, or a `loader` async function for dynamic / authenticated fetches.';
 </script>
 
-<svelte:head>
-	<title>ExplainerCanvas — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Pan/zoom concept-mapping canvas with nested hierarchies, fuzzy search and markdown content."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	{usageSnippet}

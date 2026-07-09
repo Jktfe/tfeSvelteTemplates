@@ -53,14 +53,6 @@
 		'OrbitalRing distributes any list of items evenly around a circle and rotates the ring with a CSS animation. Each item can be drawn through a snippet, so you keep full control of the inner DOM. Counter-rotation keeps content upright in world frame; switch it off and items rotate with the ring (constellation-style).';
 </script>
 
-<svelte:head>
-	<title>OrbitalRing — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Circular orbital layout with auto-rotation, counter-rotation, and snippet-driven contents."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Snippets', 'Hover-pause']}

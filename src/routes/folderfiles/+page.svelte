@@ -38,11 +38,6 @@
 		'FolderFiles renders a 3D filing-cabinet metaphor. Folders stack with subtle depth shading; hovering a folder drops the ones beneath it to reveal more tabs. Selecting a folder swaps a two-panel drag-and-drop surface for organising the nested file items. Server-loaded folders/files flow straight through the props; database fallback is handled in the load function.';
 </script>
 
-<svelte:head>
-	<title>{shell.item.name} — TFE / Svelte Templates</title>
-	<meta name="description" content={shell.item.description} />
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Drag & Drop', '3D', 'Database', 'A11y']}

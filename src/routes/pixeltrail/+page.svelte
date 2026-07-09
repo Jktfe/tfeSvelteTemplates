@@ -21,14 +21,6 @@
 		'PixelTrail wraps any region and spawns a small <span> at the cursor every few pixels of travel. Each span has a CSS keyframe animation that fades, scales, and drifts before the per-pixel setTimeout removes it. Distance throttling keeps trail density consistent at any cursor speed; reduced-motion users see the underlying region untouched.';
 </script>
 
-<svelte:head>
-	<title>PixelTrail — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Cursor-tracked decaying pixel trail with three sizes and three palettes."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'Cursor', 'CSS-only', 'Reduced-motion safe']}

@@ -30,14 +30,6 @@
 		'ShineBorder paints a conic-gradient sweep onto a pseudo-element that masks the wrapped content. The animation runs purely in CSS (no rAF, no JS state), so it stays cheap regardless of how many borders are on the page. Colour, duration, width, and radius are all standalone props — change one without touching the others.';
 </script>
 
-<svelte:head>
-	<title>ShineBorder — TFE / Svelte Templates</title>
-	<meta
-		name="description"
-		content="Animated border with a sweeping shine. Pure CSS, configurable colour, speed, width, and radius."
-	/>
-</svelte:head>
-
 <ComponentPageShell
 	{...shell.props}
 	tags={['Svelte 5', 'CSS-only', 'Animated', 'Theme-aware']}
