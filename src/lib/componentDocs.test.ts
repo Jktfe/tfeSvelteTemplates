@@ -92,6 +92,7 @@ const GOLD_STANDARD_DOCS = [
 	'src/lib/components/ScratchToReveal.md',
 	'src/lib/components/StreamShowcase.md',
 	'src/lib/components/Cardwall.md',
+	'src/lib/components/InteractiveCards.md',
 	'src/lib/components/MagicCard.md',
 	'src/lib/components/MorphingDialog.md',
 
