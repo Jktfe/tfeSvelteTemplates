@@ -7,89 +7,89 @@
 import { neon } from '@neondatabase/serverless';
 import type { SankeyNode, SankeyLink } from '$lib/types';
 import { FALLBACK_SANKEY_DATA } from '$lib/constants';
+import { getConfiguredDatabaseUrl, loadWithFallback, type DataSourceResult } from './dataSource';
+
+export interface SankeyData {
+	nodes: SankeyNode[];
+	links: SankeyLink[];
+}
 
 /**
- * Load Sankey nodes and links from Neon database
- * Falls back to FALLBACK_SANKEY_DATA if database is not configured or query fails
+ * Load Sankey nodes and links plus where they came from (database / fallback / error).
+ * Falls back to FALLBACK_SANKEY_DATA if the database is not configured or the query fails.
  *
  * @param category - Optional category filter (default: 'energy')
- * @returns Object containing nodes and links arrays
  *
  * @example
  * ```typescript
  * // In +page.server.ts
  * export const load: PageServerLoad = async () => {
- *   const sankeyData = await loadSankeyDataFromDatabase('energy');
- *   return { sankeyData };
+ *   const result = await loadSankeyDataWithSource('energy');
+ *   return { sankeyData: result.data, usingDatabase: result.usingDatabase };
  * };
  * ```
  */
-export async function loadSankeyDataFromDatabase(
+export async function loadSankeyDataWithSource(
 	category: string = 'energy'
-): Promise<{ nodes: SankeyNode[]; links: SankeyLink[] }> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
+): Promise<DataSourceResult<SankeyData>> {
+	return loadWithFallback<SankeyData>(
+		FALLBACK_SANKEY_DATA,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
 
-		if (!databaseUrl) {
-			console.warn('[SankeyData] DATABASE_URL not configured, using fallback data');
-			return FALLBACK_SANKEY_DATA;
-		}
+			const nodeRows = await sql`
+				SELECT
+					id,
+					label,
+					color,
+					expandable,
+					parent,
+					display_order
+				FROM sankey_nodes
+				WHERE
+					category = ${category}
+					AND is_active = TRUE
+				ORDER BY display_order ASC
+			`;
 
-		const sql = neon(databaseUrl);
+			const linkRows = await sql`
+				SELECT
+					source,
+					target,
+					value
+				FROM sankey_links
+				WHERE
+					category = ${category}
+					AND is_active = TRUE
+			`;
 
-		// Query nodes
-		const nodeRows = await sql`
-			SELECT
-				id,
-				label,
-				color,
-				expandable,
-				parent,
-				display_order
-			FROM sankey_nodes
-			WHERE
-				category = ${category}
-				AND is_active = TRUE
-			ORDER BY display_order ASC
-		`;
+			const nodes: SankeyNode[] = nodeRows.map((row) => ({
+				id: row.id,
+				label: row.label,
+				color: row.color || undefined,
+				expandable: row.expandable || undefined,
+				parent: row.parent || undefined
+			}));
 
-		// Query links
-		const linkRows = await sql`
-			SELECT
-				source,
-				target,
-				value
-			FROM sankey_links
-			WHERE
-				category = ${category}
-				AND is_active = TRUE
-		`;
+			const links: SankeyLink[] = linkRows.map((row) => ({
+				source: row.source,
+				target: row.target,
+				value: Number(row.value)
+			}));
 
-		// Transform database rows to component format
-		const nodes: SankeyNode[] = nodeRows.map((row) => ({
-			id: row.id,
-			label: row.label,
-			color: row.color || undefined,
-			expandable: row.expandable || undefined,
-			parent: row.parent || undefined
-		}));
+			return { nodes, links };
+		},
+		{ label: 'SankeyData' }
+	);
+}
 
-		const links: SankeyLink[] = linkRows.map((row) => ({
-			source: row.source,
-			target: row.target,
-			value: Number(row.value)
-		}));
-
-		console.log(
-			`[SankeyData] Loaded ${nodes.length} nodes and ${links.length} links for category "${category}"`
-		);
-
-		return { nodes, links };
-	} catch (error) {
-		console.error('[SankeyData] Error loading from database:', error);
-		console.warn('[SankeyData] Falling back to constant data');
-		return FALLBACK_SANKEY_DATA;
-	}
+/**
+ * Load Sankey nodes and links (data only).
+ *
+ * @param category - Optional category filter (default: 'energy')
+ */
+export async function loadSankeyDataFromDatabase(category: string = 'energy'): Promise<SankeyData> {
+	return (await loadSankeyDataWithSource(category)).data;
 }
 
 /**
@@ -99,13 +99,13 @@ export async function loadSankeyDataFromDatabase(
  * @returns Array of category names
  */
 export async function getSankeyCategories(): Promise<string[]> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		return ['energy'];
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			return ['energy'];
-		}
-
 		const sql = neon(databaseUrl);
 
 		const rows = await sql`

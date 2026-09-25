@@ -108,3 +108,58 @@ export const combineDataSources = (
 		databaseConfigured: false
 	};
 };
+
+export interface LoadWithFallbackOptions {
+	/** Short tag used in log lines, e.g. `'DataGrid'`. */
+	label: string;
+	/**
+	 * Schema file under `database/` that creates the table(s) this loader reads.
+	 * When set, a "relation does not exist" error becomes a friendly fallback
+	 * pointing at that file rather than a red error badge.
+	 */
+	schemaFile?: string;
+}
+
+/**
+ * The standard "try the database, otherwise use the fixture" read path, kept in
+ * one place so every server utility reports its status the same way.
+ *
+ * The query receives the connection string rather than a ready-made client so
+ * each module keeps its own `neon()` import — that keeps modules copy-paste
+ * portable and lets tests mock `@neondatabase/serverless` per file.
+ */
+export async function loadWithFallback<T>(
+	fallback: T,
+	query: (databaseUrl: string) => Promise<T>,
+	{ label, schemaFile }: LoadWithFallbackOptions
+): Promise<DataSourceResult<T>> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn(`[${label}] DATABASE_URL not configured, using fallback data`);
+		return fromFallback(fallback);
+	}
+
+	try {
+		return fromDatabase(await query(databaseUrl));
+	} catch (err) {
+		if (schemaFile && isMissingTableError(err)) {
+			return fromMissingTable(fallback, schemaFile);
+		}
+		console.error(`[${label}] Error loading from database:`, err);
+		return fromDatabaseError(fallback, err);
+	}
+}
+
+/**
+ * Write paths have nothing sensible to fall back to, so they insist on a real
+ * connection string. The message deliberately contains `DATABASE_URL` — API
+ * routes match on it to answer 503 instead of a generic 500.
+ */
+export function requireDatabaseUrl(action: string): string {
+	const databaseUrl = getConfiguredDatabaseUrl();
+	if (!databaseUrl) {
+		throw new Error(`Cannot ${action}: DATABASE_URL not configured`);
+	}
+	return databaseUrl;
+}
