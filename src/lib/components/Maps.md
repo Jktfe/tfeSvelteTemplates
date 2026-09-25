@@ -146,6 +146,35 @@ What the component cannot do is describe map content semantically — there is n
 | `onMarkerAdd` | `(m: MapMarker) => void` | `undefined` | Fires after a marker is placed. |
 | `onMarkerRemove` | `(m: MapMarker) => void` | `undefined` | Fires after a marker is deleted (including via Clear all). |
 
+## Theming
+
+`MapBasic`, `MapSearch`, `MapMarkers`, and `MapLive` share one token vocabulary (`--map-*`) declared on each container, following `docs/THEMING.md`. Light defaults are inline; `@media (prefers-color-scheme: dark)` flips the chrome — zoom buttons, search box and results, filter pills, control bar, popups (including Leaflet's own popup wrapper, tip, and close button), attribution strip, and the canvas shown behind not-yet-loaded tiles.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--map-canvas` | `#f0f0f0` | `#111827` | Container and tile-gap background |
+| `--map-surface` | `#ffffff` | `#1f2937` | Zoom buttons, search box, results, popups |
+| `--map-surface-hover` | `#f5f5f5` | `#374151` | Hover rows and buttons |
+| `--map-panel-bg` | `rgba(255,255,255,0.95)` | `rgba(31,41,55,0.95)` | Filter bar, control bar, marker count |
+| `--map-fg` / `--map-fg-muted` / `--map-fg-subtle` | `#333` / `#666` / `#888`–`#999` | `#f3f4f6` / `#9ca3af` / `#9ca3af` | Text tiers |
+| `--map-pill-bg` / `--map-pill-fg` / `--map-pill-hover` | `#f0f0f0` / `#555` / `#e0e0e0` | `#374151` / `#e5e7eb` / `#4b5563` | Filter pills, control buttons, clear button |
+| `--map-border` / `--map-divider` | `#ddd` / `#eee` | `#4b5563` / `#374151` | Popup inputs, list dividers |
+| `--map-input-bg` | `#ffffff` | `#111827` | MapLive popup inputs |
+| `--map-link` | `#146ef5` | `#60a5fa` | Popup links, result icons, category chips |
+| `--map-attribution-bg` / `--map-attribution-fg` | translucent white / `#333` | translucent navy / `#d1d5db` | Leaflet attribution |
+| `--map-danger-fg` / `--map-danger-bg` | `#dc2626` / `#fee2e2` | `#f87171` / translucent red | MapLive delete + clear-all |
+| `--map-accent` | `#146ef5` | *(unchanged)* | Brand: active pill, save button, focus rings |
+
+`--map-accent` is brand and deliberately not in the dark block. The danger pair is semantic: it stays red on both schemes and only lightens its text / darkens its tint for contrast. The OpenStreetMap tiles themselves are content and are not recoloured.
+
+```css
+/* Pin every map on the page to your brand colour */
+body .map-markers-container.map-markers-container {
+  --map-accent: #7c3aed;
+  --map-link: #7c3aed;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |
