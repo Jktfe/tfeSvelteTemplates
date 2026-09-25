@@ -1377,12 +1377,14 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <DonutChart {data} centreLabel="100" centreSub="visits" />`
 			}),
 			component('DataGrid', '/datagrid', '📊', 'Two grid implementations for tabular data.', {
+				themeSupport: 'dual',
 				source: 'src/lib/components/DataGridBasic.svelte',
 				docs: 'src/lib/components/DataGrid.md',
 				dependencies: ['@svar-ui/svelte-grid'],
 				relatedFiles: [
 					'src/lib/components/DataGridAdvanced.svelte',
 					'src/lib/components/DataGridFilters.svelte',
+					'src/lib/components/DataGridBasic.md',
 					'src/lib/components/DataGridAdvanced.md',
 					'src/lib/components/DataGridFilters.md'
 				],
@@ -1404,7 +1406,8 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </script>
 
 <DataGridBasic {data} {columns} pageSize={10} />`,
-				agentHint: 'Use DataGridBasic for copy-paste portability; include DataGridAdvanced only when SVAR Grid is acceptable.'
+				agentHint:
+					'Use DataGridBasic for copy-paste portability; include DataGridAdvanced only when SVAR Grid is acceptable. DataGridAdvanced never fetches — wire persistence through onCellEdit / onDelete (throw to roll back).'
 			}),
 			component('CalendarHeatmap', '/calendarheatmap', '📅', 'GitHub-style contribution calendar.', {
 				usage: `<script lang="ts">

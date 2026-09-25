@@ -26,6 +26,7 @@
  */
 
 import { render, screen } from '@testing-library/svelte';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
 import DataGridBasic from './DataGridBasic.svelte';
 import type { DataGridColumn } from '$lib/types';
@@ -257,5 +258,115 @@ describe('DataGridBasic', () => {
 
 		const prevButton = screen.getByLabelText('Previous page');
 		expect(prevButton).toBeDisabled();
+	});
+});
+
+describe('DataGridBasic — interaction', () => {
+	function firstColumnValues(container: HTMLElement): string[] {
+		return [...container.querySelectorAll('tbody tr')].map(
+			(tr) => tr.querySelector('td')?.textContent?.trim() ?? ''
+		);
+	}
+
+	it('sorts ascending then descending on header clicks', async () => {
+		const user = userEvent.setup();
+		const { container } = render(DataGridBasic, {
+			props: { columns: sampleColumns, data: sampleData }
+		});
+		const idHeader = screen.getByRole('button', { name: /ID/ });
+
+		await user.click(idHeader);
+		expect(idHeader).toHaveAttribute('aria-sort', 'ascending');
+		expect(firstColumnValues(container)).toEqual(['1', '2', '3']);
+
+		await user.click(idHeader);
+		expect(idHeader).toHaveAttribute('aria-sort', 'descending');
+		expect(firstColumnValues(container)).toEqual(['3', '2', '1']);
+	});
+
+	it('sorts from the keyboard with Enter and Space', async () => {
+		const user = userEvent.setup();
+		render(DataGridBasic, { props: { columns: sampleColumns, data: sampleData } });
+		const nameHeader = screen.getByRole('button', { name: /Name/ });
+
+		nameHeader.focus();
+		await user.keyboard('{Enter}');
+		expect(nameHeader).toHaveAttribute('aria-sort', 'ascending');
+		await user.keyboard(' ');
+		expect(nameHeader).toHaveAttribute('aria-sort', 'descending');
+	});
+
+	it('filters rows and shows the result count', async () => {
+		const user = userEvent.setup();
+		render(DataGridBasic, { props: { columns: sampleColumns, data: sampleData } });
+		await user.type(screen.getByLabelText('Filter table data'), 'bob');
+		expect(screen.getByText('1 result')).toBeInTheDocument();
+		expect(screen.getByText('Bob Jones')).toBeInTheDocument();
+		expect(screen.queryByText('Alice Smith')).not.toBeInTheDocument();
+	});
+
+	it('shows "No results found" when the filter matches nothing', async () => {
+		const user = userEvent.setup();
+		render(DataGridBasic, { props: { columns: sampleColumns, data: sampleData } });
+		await user.type(screen.getByLabelText('Filter table data'), 'zzz');
+		expect(screen.getByText('No results found')).toBeInTheDocument();
+	});
+
+	it('sorts blank values to the end in both directions', async () => {
+		const user = userEvent.setup();
+		const rows = [
+			{ id: 1, name: 'Bea', email: null },
+			{ id: 2, name: 'Al', email: 'a@example.com' },
+			{ id: 3, name: 'Cy', email: 'c@example.com' }
+		];
+		const { container } = render(DataGridBasic, { props: { columns: sampleColumns, data: rows } });
+		const emailHeader = screen.getByRole('button', { name: /Email/ });
+
+		await user.click(emailHeader);
+		expect(firstColumnValues(container)).toEqual(['2', '3', '1']);
+		await user.click(emailHeader);
+		expect(firstColumnValues(container)).toEqual(['3', '2', '1']);
+	});
+
+	it('moves between pages with next / previous', async () => {
+		const user = userEvent.setup();
+		const manyRows = Array.from({ length: 12 }, (_, i) => ({
+			id: i + 1,
+			name: `User ${i + 1}`,
+			email: `user${i + 1}@example.com`
+		}));
+		render(DataGridBasic, { props: { columns: sampleColumns, data: manyRows, pageSize: 5 } });
+
+		await user.click(screen.getByLabelText('Next page'));
+		expect(screen.getByLabelText('Go to page 2')).toHaveAttribute('aria-current', 'page');
+		expect(screen.getByText('User 6')).toBeInTheDocument();
+
+		await user.click(screen.getByLabelText('Previous page'));
+		expect(screen.getByLabelText('Go to page 1')).toHaveAttribute('aria-current', 'page');
+	});
+
+	it('renders cellRenderer HTML and applies sanitised cellClass', () => {
+		const columns: DataGridColumn[] = [
+			{
+				id: 'name',
+				header: 'Name',
+				cellRenderer: (value) => `<strong>${value}</strong>`,
+				cellClass: () => 'highlight"><script>'
+			}
+		];
+		const { container } = render(DataGridBasic, { props: { columns, data: sampleData } });
+		const firstCell = container.querySelector('tbody td') as HTMLElement;
+		expect(firstCell.querySelector('strong')?.textContent).toBe('Alice Smith');
+		expect(firstCell.className).toContain('highlightscript');
+		expect(firstCell.className).not.toContain('<');
+	});
+
+	it('does not mutate the caller’s array when sorting', async () => {
+		const user = userEvent.setup();
+		const rows = [...sampleData].reverse();
+		const snapshot = rows.map((r) => r.id);
+		render(DataGridBasic, { props: { columns: sampleColumns, data: rows } });
+		await user.click(screen.getByRole('button', { name: /ID/ }));
+		expect(rows.map((r) => r.id)).toEqual(snapshot);
 	});
 });

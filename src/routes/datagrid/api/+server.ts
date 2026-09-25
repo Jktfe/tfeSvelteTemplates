@@ -12,6 +12,7 @@
  */
 
 import { json } from '@sveltejs/kit';
+import type { RequestEvent } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { Employee } from '$lib/types';
 import {
@@ -24,6 +25,21 @@ import {
 	deleteEmployees
 } from '$lib/server/dataGrid';
 import { VALIDATION_FIELDS } from '$lib/constants';
+import { isDemoUser } from '$lib/server/auth';
+
+/**
+ * The public demo account is read-only everywhere (see requireAuthAPI).
+ * This endpoint stays open to anonymous visitors so the showcase works
+ * without auth, but a signed-in demo user must never be able to write.
+ * The demo page turns this 403 into a friendly "read-only" message.
+ */
+function demoUserWriteBlocked(event: RequestEvent) {
+	if (!isDemoUser(event)) return null;
+	return json(
+		{ success: false, error: 'The public demo account is read-only' },
+		{ status: 403 }
+	);
+}
 
 /**
  * Validate dropdown field values against allowed options
@@ -91,7 +107,11 @@ export const GET: RequestHandler = async ({ url }) => {
  *
  * Body: Employee data (without id)
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const blocked = demoUserWriteBlocked(event);
+	if (blocked) return blocked;
+	const { request } = event;
+
 	try {
 		const data = await request.json();
 
@@ -155,7 +175,11 @@ export const POST: RequestHandler = async ({ request }) => {
  *
  * Body: Partial employee data with id
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async (event) => {
+	const blocked = demoUserWriteBlocked(event);
+	if (blocked) return blocked;
+	const { request } = event;
+
 	try {
 		const data = await request.json();
 
@@ -218,7 +242,11 @@ export const PUT: RequestHandler = async ({ request }) => {
  * - id: Single employee ID to delete
  * - ids: Comma-separated employee IDs for bulk delete
  */
-export const DELETE: RequestHandler = async ({ url }) => {
+export const DELETE: RequestHandler = async (event) => {
+	const blocked = demoUserWriteBlocked(event);
+	if (blocked) return blocked;
+	const { url } = event;
+
 	try {
 		const id = url.searchParams.get('id');
 		const idsParam = url.searchParams.get('ids');

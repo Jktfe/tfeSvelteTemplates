@@ -1,121 +1,200 @@
-# DataGridBasic - Technical Logic Explainer
+# DataGridBasic — Technical Logic Explainer
 
-## Overview
+## What Does It Do? (Plain English)
 
-DataGridBasic is a **zero-dependency** data grid implementing sorting, filtering, and pagination using pure Svelte 5 reactivity. It's designed to be copy-paste ready into any project.
+DataGridBasic turns an array of objects into a proper table: click a header to sort, type in the search box to narrow the rows, and flip through pages when there are too many to show at once. It's one Svelte file with no external packages, so you can copy it into any project and read every line.
 
-## The Flow: How Data Moves Through the Grid
+**Think of it like:** a paper ledger with a very patient clerk. You say "sort by salary" or "only the rows mentioning Leeds", and the clerk rewrites the page for you — the ledger itself never changes.
 
-```
-Raw Data Array
-     ↓
-[1. Filter] → Search text filters across all columns
-     ↓
-[2. Sort] → Click column header to sort filtered results
-     ↓
-[3. Paginate] → Slice into pages of configurable size
-     ↓
-Rendered Rows
-```
+---
 
-## Key Concepts
-
-### 1. Derived Chains (Reactive Pipelines)
-
-The grid uses chained `$derived()` runes that automatically recompute:
+## How It Works (Pseudo-Code)
 
 ```
-data → filteredData() → sortedData() → paginatedData()
+state:
+  sortColumn    = null          # which column id is sorted
+  sortDirection = 'asc'
+  filterText    = ''
+  currentPage   = 1
+
+derived (recomputed only when their inputs change):
+  filteredData  = filterText ? rows where ANY column contains filterText : data
+  sortedData    = sortColumn ? copy(filteredData).sort(compare) : filteredData
+  totalPages    = pageSize > 0 ? ceil(sortedData.length / pageSize) : 1
+  paginatedData = pageSize > 0 ? slice of sortedData for currentPage : sortedData
+  pageWindow    = up to 7 page numbers: first, neighbours of current, last
+
+events:
+  on header click / Enter / Space:
+    if column is not sortable: ignore
+    if same column: flip sortDirection
+    else: sortColumn = column, sortDirection = 'asc'
+    currentPage = 1
+
+  on search input:
+    filterText = value
+    currentPage = 1                # effect: new search starts from the top
+
+  when data shrinks and currentPage > totalPages:
+    currentPage = totalPages       # effect: never strand the user on an empty page
+
+render each cell:
+  cellRenderer? → {@html sanitizeHTML(renderer(value, row))}
+  formatter?    → text(formatter(value, row))
+  type number   → value.toLocaleString('en-GB')
+  type date     → dd/mm/yyyy
+  otherwise     → String(value)
 ```
 
-When ANY upstream value changes (filter text, sort column, page number), downstream values automatically update. This is Svelte 5's reactive magic!
+---
 
-### 2. Global Search Filter
+## The Core Concept: A Three-Stage `$derived` Pipeline
 
-The filter searches **all columns** for matches:
+The whole grid is three pure transformations chained together:
 
-```typescript
-// Pseudocode for filtering
-for each row in data:
-  for each column in columns:
-    if column.value contains searchText:
-      include row in results
-      break  // Found match, no need to check other columns
+```
+ data ──▶ filteredData ──▶ sortedData ──▶ paginatedData ──▶ <tbody>
+            ▲                 ▲               ▲
+        filterText      sortColumn,      currentPage,
+                        sortDirection     pageSize
 ```
 
-### 3. Sorting Logic
+Because each stage is its own `$derived.by`, Svelte only re-runs the stages downstream of whatever changed:
 
-Column headers toggle through states: `unsorted → ascending → descending → ascending...`
+- Clicking **Next page** re-slices `paginatedData` — the filter and sort don't run again.
+- Clicking a **header** re-sorts, then re-slices — the filter doesn't run again.
+- Typing in **search** re-runs all three, because everything downstream depends on it.
 
-```typescript
-// Sort comparison (simplified)
-if column is numeric:
-  compare as numbers (a - b)
-else:
-  compare as strings (localeCompare)
+The sort always works on a copy (`[...filteredData].sort(...)`), so the caller's array is never mutated. Comparison rules:
 
-if direction is 'desc':
-  reverse the order
-```
+| Values | Comparison |
+|---|---|
+| Both numbers | Numeric (`a - b`) |
+| Anything else | Lower-cased string compare |
+| `null` / `undefined` | Always sink to the bottom, in both directions |
 
-### 4. Pagination Math
+---
 
-```typescript
-totalPages = ceil(totalRows / pageSize)
-startIndex = (currentPage - 1) * pageSize
-endIndex = startIndex + pageSize
-displayedRows = sortedData.slice(startIndex, endIndex)
-```
+## Theming
 
-## State Management
+DataGridBasic follows the project convention in `docs/THEMING.md`: every colour is a CSS custom property with a light default on `.datagrid-basic-wrapper`, and chrome tokens flip under `prefers-color-scheme: dark`. The accent is brand and deliberately stays the same on both schemes.
 
-| State | Type | Purpose |
-|-------|------|---------|
-| `sortColumn` | `string \| null` | Currently sorted column ID |
-| `sortDirection` | `'asc' \| 'desc'` | Sort order |
-| `filterText` | `string` | Search box value |
-| `currentPage` | `number` | Active page (1-indexed) |
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--dgb-bg` | `#ffffff` | `#1f2937` | Table background |
+| `--dgb-header-bg` | `#f9fafb` | `#111827` | Header row |
+| `--dgb-header-hover-bg` | `#f3f4f6` | `#1f2937` | Sortable header hover |
+| `--dgb-stripe-bg` | `#f9fafb` | `#111827` | Even rows when `striped` |
+| `--dgb-row-hover-bg` | `#f3f4f6` | `#374151` | Row hover when `hoverable` |
+| `--dgb-border` | `#e5e7eb` | `#374151` | Table frame, row dividers |
+| `--dgb-input-border` | `#d1d5db` | `#4b5563` | Search box, page buttons |
+| `--dgb-input-bg` | `#ffffff` | `#1f2937` | Search box |
+| `--dgb-header-fg` | `#374151` | `#f9fafb` | Header text |
+| `--dgb-cell-fg` | `#1f2937` | `#e5e7eb` | Cell text |
+| `--dgb-muted-fg` | `#6b7280` | `#9ca3af` | Result count, "Showing x–y of z" |
+| `--dgb-empty-fg` | `#9ca3af` | `#6b7280` | Empty-state message |
+| `--dgb-button-bg` / `-fg` / `-hover-bg` | white / slate / grey | slate / white / grey | Pagination buttons |
+| `--dgb-accent` *(brand)* | `#146ef5` | *unchanged* | Focus ring, sorted arrow, active page |
+| `--dgb-on-accent` *(brand)* | `#ffffff` | *unchanged* | Active page text |
+| `--dgb-focus-ring` *(brand)* | `rgba(20,110,245,.2)` | *unchanged* | Search focus halo |
 
-## Performance Considerations
+Override for one area of your app (the doubled class beats Svelte's scoped specificity):
 
-- **Dataset Limits**: Works well up to ~500 rows. Beyond that, consider DataGridAdvanced with virtual scrolling.
-- **No Debounce on Filter**: Filters on every keystroke. For large datasets, add debounce.
-- **Full Re-render**: Changes to sort/filter/page cause full table re-render.
-
-## Accessibility Features
-
-| Feature | Implementation |
-|---------|---------------|
-| Sortable columns | `aria-sort="ascending/descending/none"` |
-| Keyboard nav | Tab to headers, Enter to sort |
-| Results count | Screen reader announcement |
-| Pagination | `aria-label` on all buttons |
-
-## Props Quick Reference
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `data` | `Employee[]` | `[]` | Array of row objects |
-| `columns` | `DataGridColumn[]` | required | Column definitions |
-| `sortable` | `boolean` | `true` | Enable column sorting |
-| `filterable` | `boolean` | `true` | Show search input |
-| `pageSize` | `number` | `10` | Rows per page (0 = all) |
-| `striped` | `boolean` | `true` | Alternating row colors |
-| `hoverable` | `boolean` | `true` | Highlight on hover |
-| `compact` | `boolean` | `false` | Dense row padding |
-
-## Column Definition
-
-```typescript
-interface DataGridColumn {
-  id: string;          // Must match data key
-  header: string;      // Display text
-  width?: number;      // Pixel width (optional)
-  type?: 'text' | 'number' | 'date' | 'email' | 'tel';
-  formatter?: (value: any) => string;  // Custom display
+```css
+.reports :global(.datagrid-basic-wrapper.datagrid-basic-wrapper) {
+  --dgb-accent: #0f766e;
+  --dgb-header-bg: #f0fdfa;
 }
 ```
 
-## Security
+---
 
-All cell content is sanitized using `sanitizeClassName()` to prevent XSS attacks when rendering custom formatters.
+## Performance
+
+| Dataset | Experience |
+|---|---|
+| ≤ 500 rows | Instant. The sweet spot. |
+| 500 – 2 000 rows | Fine; search runs a full scan per keystroke. Add a debounce if it feels sticky. |
+| 2 000+ rows | Switch to **DataGridAdvanced** — virtual scrolling keeps the DOM small and the search pass is the only cost. |
+
+Pagination is what keeps the DOM cheap: only `pageSize` rows are ever rendered. `pageSize={0}` renders everything, so reserve it for small tables.
+
+---
+
+## State Flow Diagram
+
+```
+                 ┌──────────────────────────┐
+                 │ idle                     │
+                 │ sortColumn=null, page=1  │
+                 └────────────┬─────────────┘
+          ┌───────────────────┼────────────────────┐
+     type in search      header click/Enter/Space   page button
+          │                   │                    │
+          ▼                   ▼                    ▼
+   filterText=value    same col? flip dir     currentPage=n
+   currentPage=1       new col? set, 'asc'         │
+          │            currentPage=1               │
+          └───────────────────┼────────────────────┘
+                              ▼
+               filter ─▶ sort ─▶ paginate ─▶ render
+                              │
+                 data prop shrinks below current page
+                              ▼
+                    currentPage = totalPages
+```
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `data` | `T[]` (`T extends object`) | `[]` | Rows to display; keys match `column.id`. |
+| `columns` | `DataGridColumn[]` | required | Column definitions (header, width, type, formatter, cellStyle, cellClass, cellRenderer). |
+| `sortable` | `boolean` | `true` | Header-click sorting; a column's `sortable: false` opts it out. |
+| `filterable` | `boolean` | `true` | Show the global search box. |
+| `pageSize` | `number` | `10` | Rows per page; `0` disables pagination. |
+| `striped` | `boolean` | `true` | Alternating row backgrounds. |
+| `hoverable` | `boolean` | `true` | Highlight the row under the pointer. |
+| `compact` | `boolean` | `false` | Tighter cell padding for dense tables. |
+
+---
+
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| `data` is empty | One full-width "No data available" cell; pagination hidden. |
+| Search matches nothing | "No results found"; the count reads `0 results`. |
+| `null` / `undefined` in the sorted column | Sorted to the bottom in both directions. |
+| Mixed numbers and strings in one column | Falls back to lower-cased string comparison. |
+| Parent narrows `data` while you're on page 5 of 5 | `currentPage` clamps to the new last page. |
+| Rows without an `id` | `{#each}` keys fall back to the row index. |
+| Two columns share an `id` (e.g. salary shown three ways) | Both render; keys include the column index so nothing collides. |
+| `cellClass` returns odd characters | `sanitizeClassName` strips everything except letters, digits, `-`, `_` and spaces. |
+| `cellRenderer` returns HTML | Rendered via `{@html sanitizeHTML(...)}`. `sanitizeHTML` is currently a pass-through seam — only feed it developer-authored HTML. |
+| `prefers-reduced-motion: reduce` | Hover/background transitions are switched off. |
+
+---
+
+## Dependencies
+
+- **Svelte 5.x** — `$state`, `$derived.by` and `$effect` drive the filter → sort → paginate pipeline.
+- **`$lib/dataGridFormatters.sanitizeClassName`** — one-line class-name sanitiser for `cellClass` output.
+- **`$lib/utils.sanitizeHTML`** — the seam for `cellRenderer` HTML (pass-through today; swap in `sanitize-html` before rendering user content).
+- Zero external packages.
+
+---
+
+## File Structure
+
+```
+src/lib/components/DataGridBasic.svelte      # implementation
+src/lib/components/DataGridBasic.md          # this file
+src/lib/components/DataGridBasic.test.ts     # vitest unit + interaction tests
+src/lib/components/DataGrid.md               # family overview (rendered on /datagrid)
+src/lib/dataGridFormatters.ts                # formatCurrency, createStatusBadge, sanitizeClassName, …
+src/lib/types.ts                             # DataGridColumn, DataGridBasicProps
+src/routes/datagrid/+page.svelte             # demo page (playground + variants)
+```

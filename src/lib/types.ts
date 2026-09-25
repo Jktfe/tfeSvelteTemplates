@@ -791,24 +791,83 @@ export interface DataGridColumn {
 }
 
 /**
+ * Identifier for a DataGrid row. SVAR Grid (and most databases) key rows by
+ * a number or a string, so both are accepted.
+ */
+export type DataGridRowId = string | number;
+
+/**
+ * Minimum shape a DataGridAdvanced row must satisfy. Any object with an
+ * optional `id` works — the grid never assumes a particular domain.
+ * Rows need a stable `id` for editing, selection and deletion to target
+ * the right record.
+ */
+export interface DataGridRow {
+	id?: DataGridRowId;
+}
+
+/**
+ * Payload handed to DataGridAdvanced's `onCellEdit` callback.
+ *
+ * @property id - Id of the row that was edited
+ * @property column - Column id (the row key) that changed
+ * @property value - The new, already-coerced value (number for `type: 'number'`, Date for `type: 'date'`)
+ * @property previousValue - The value before the edit (what a rollback restores)
+ * @property row - The row as it looks *after* the edit is applied
+ */
+export interface DataGridCellEdit<T extends DataGridRow = DataGridRow> {
+	id: DataGridRowId;
+	column: string;
+	value: unknown;
+	previousValue: unknown;
+	row: T;
+}
+
+/**
  * Props for DataGridAdvanced component (SVAR Grid wrapper)
  *
- * @property data - Array of employee records to display
- * @property columns - Optional custom column definitions (auto-generated if not provided)
+ * Persistence is entirely callback-driven: the component never talks to a
+ * network itself. Resolve from a callback to commit a change; throw (or
+ * reject) to roll it back.
+ *
+ * @property data - Array of row objects to display (any shape with an optional `id`)
+ * @property columns - Optional column definitions (inferred from the first row if omitted)
  * @property editable - Enable inline editing (default: false)
- * @property selectable - Enable row selection (default: false)
- * @property pageSize - Number of rows per page for pagination (default: 20, 0 = no pagination)
- * @property exportable - Show export to CSV button (default: false)
- * @property theme - Theme name: 'willow' (light) or 'willowDark' (default: 'willow')
+ * @property selectable - Enable multi-row selection (default: false)
+ * @property exportable - Show the "Export CSV" button (default: false)
+ * @property searchable - Show the global search box (default: true)
+ * @property theme - 'willow' (light), 'willowDark' (dark) or 'auto' to follow the OS (default: 'auto')
+ * @property height - CSS height of the whole component (default: '600px')
+ * @property rowHeight - Row height in pixels (default: 40)
+ * @property ariaLabel - Accessible name for the grid region (default: 'Data grid')
+ * @property searchLabel - Accessible name for the search box (default: 'Search rows')
+ * @property searchPlaceholder - Placeholder text for the search box
+ * @property exportFilename - Base filename for CSV export; the date is appended (default: 'data')
+ * @property onCellEdit - Persist a cell edit; throw/reject to roll back, resolve a partial row to merge server changes
+ * @property onDelete - Persist a bulk delete; the Delete button only renders when this is supplied
+ * @property confirmDelete - Confirmation step before deleting (default: window.confirm)
+ * @property onSelectionChange - Fires with the selected row ids whenever the selection changes
+ * @property onError - Fires when an edit or delete fails (the inline status message still shows)
  */
-export interface DataGridAdvancedProps {
-	data: any[];
+export interface DataGridAdvancedProps<T extends DataGridRow = DataGridRow> {
+	data: T[];
 	columns?: DataGridColumn[];
 	editable?: boolean;
 	selectable?: boolean;
-	pageSize?: number;
 	exportable?: boolean;
-	theme?: 'willow' | 'willowDark';
+	searchable?: boolean;
+	theme?: 'willow' | 'willowDark' | 'auto';
+	height?: string;
+	rowHeight?: number;
+	ariaLabel?: string;
+	searchLabel?: string;
+	searchPlaceholder?: string;
+	exportFilename?: string;
+	onCellEdit?: (edit: DataGridCellEdit<T>) => void | Partial<T> | Promise<void | Partial<T>>;
+	onDelete?: (ids: DataGridRowId[]) => void | Promise<void>;
+	confirmDelete?: (count: number) => boolean | Promise<boolean>;
+	onSelectionChange?: (ids: DataGridRowId[]) => void;
+	onError?: (message: string, error: unknown) => void;
 }
 
 /**
@@ -823,8 +882,8 @@ export interface DataGridAdvancedProps {
  * @property hoverable - Highlight row on hover (default: true)
  * @property compact - Compact row spacing (default: false)
  */
-export interface DataGridBasicProps {
-	data: any[];
+export interface DataGridBasicProps<T extends object = Record<string, unknown>> {
+	data: T[];
 	columns: DataGridColumn[];
 	sortable?: boolean;
 	filterable?: boolean;
