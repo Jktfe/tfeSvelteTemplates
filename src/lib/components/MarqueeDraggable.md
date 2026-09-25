@@ -14,7 +14,9 @@ MarqueeDraggable is an enhanced Marquee component that adds manual control. Cont
 WHEN component mounts:
   1. MEASURE container and content widths
   2. SET UP Intersection Observer (pause when off-screen)
-  3. START automatic animation loop
+  3. READ prefers-reduced-motion (and listen for changes)
+  4. START automatic animation loop — unless reduced motion is on
+     or the region has keyboard focus
 
 ANIMATION LOOP (runs ~60fps):
   1. CALCULATE time since last frame (delta)
@@ -38,6 +40,12 @@ WHEN user releases:
      SET direction based on drag velocity
   2. RESTART automatic animation
   3. Content now scrolls in the direction you pushed!
+     (under reduced motion it simply stays where you left it)
+
+WHEN the region has focus:
+  1. PAUSE automatic animation
+  2. ArrowLeft/ArrowRight (ArrowUp/ArrowDown when vertical) nudge 80px
+  3. RESUME auto-scroll once focus leaves the region
 ```
 
 ---
@@ -177,6 +185,26 @@ observer = new IntersectionObserver((entries) => {
 
 ---
 
+## Reduced Motion & Keyboard Control
+
+Continuously moving content can be distracting or cause discomfort, so the
+component reads `prefers-reduced-motion: reduce` on mount and listens for
+changes:
+
+| Situation | Auto-scroll | Drag | Arrow keys |
+|-----------|-------------|------|------------|
+| No preference | Runs | Works | Works (auto-scroll pauses while focused) |
+| `reduce` | Never starts; stops if the setting flips mid-session | Works (no momentum drift afterwards) | Works |
+
+The region is focusable (`tabindex="0"`, `aria-roledescription="marquee"`)
+with a visible `:focus-visible` outline. While it holds focus the
+auto-scroll pauses so keyboard users can read at their own pace; the arrow
+keys along the scroll axis move the strip in 80px steps. The region carries
+`data-reduced-motion="true"` while the preference is active, which is handy
+for styling or tests.
+
+---
+
 ## Momentum After Drag
 
 ```
@@ -273,4 +301,3 @@ MarqueeDraggable.svelte  # The component
 MarqueeDraggable.test.ts # Unit tests
 MarqueeDraggable.md      # This explainer
 ```
-

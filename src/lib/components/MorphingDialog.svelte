@@ -37,7 +37,8 @@
 
 	ACCESSIBILITY:
 	- Keyboard: Escape to close, Tab/Shift+Tab focus trap
-	- Screen readers: role="dialog", aria-modal, aria-labelledby
+	- Screen readers: role="dialog", aria-modal, named via ariaLabelledBy
+	  (preferred, points at a heading inside) or ariaLabel (default 'Dialog')
 	- Focus: Returns focus to trigger on close
 	- Motion: Respects prefers-reduced-motion
 
@@ -62,6 +63,8 @@
 	| borderRadius   | string  | '16px'                            | Dialog border radius             |
 	| closeOnOverlay | boolean | true                              | Close when overlay is clicked    |
 	| closeOnEscape  | boolean | true                              | Close when Escape is pressed     |
+	| ariaLabel      | string  | 'Dialog'                          | Accessible name (no heading id)  |
+	| ariaLabelledBy | string  | undefined                         | id of the element naming it      |
 	| class          | string  | ''                                | Additional CSS classes           |
 
 	============================================================
@@ -69,7 +72,7 @@
 
 <script lang="ts">
 	import type { MorphingDialogProps } from '$lib/types';
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { lockScroll } from '$lib/scrollLock';
 
 	// =========================================================================
@@ -88,6 +91,8 @@
 		borderRadius = '16px',
 		closeOnOverlay = true,
 		closeOnEscape = true,
+		ariaLabel = 'Dialog',
+		ariaLabelledBy,
 		class: className = '',
 		trigger,
 		children
@@ -122,6 +127,15 @@
 	// Check reduced motion preference
 	let prefersReducedMotion = $state(false);
 
+	// Pending morph timers — cleared on unmount so a half-finished animation
+	// can't fire after the component is gone and leave the page scroll-locked.
+	let morphTimer: ReturnType<typeof setTimeout> | null = null;
+
+	// Elements the browser would actually stop on with Tab. Disabled controls
+	// are skipped so the focus trap never tries to land on something inert.
+	const TABBABLE_SELECTOR =
+		'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 	// =========================================================================
 	// [CR] OPEN / CLOSE LOGIC
 	// [NTL] The clever bit! We capture where the trigger is on screen, then
@@ -154,9 +168,12 @@
 			phase = 'morphing-open';
 
 			// After the morph completes, settle into 'open' state
-			setTimeout(() => {
+			morphTimer = setTimeout(() => {
+				morphTimer = null;
 				phase = 'open';
 				focusDialog();
+				// The parent may have flipped bind:open back to false mid-morph.
+				if (!open) closeDialog();
 			}, duration);
 		}
 	}
@@ -178,7 +195,8 @@
 			phase = 'morphing-close';
 
 			// After the morph completes, fully close
-			setTimeout(() => {
+			morphTimer = setTimeout(() => {
+				morphTimer = null;
 				phase = 'idle';
 				open = false;
 				cleanup();
@@ -193,12 +211,36 @@
 			unlockScroll = null;
 		}
 
-		// Restore focus to the trigger element
-		if (previousFocus) {
+		// Restore focus to the trigger element (if it is still on the page)
+		if (previousFocus && document.body.contains(previousFocus)) {
 			previousFocus.focus();
-			previousFocus = null;
 		}
+		previousFocus = null;
 	}
+
+	// Keep the dialog in step with a parent driving `bind:open`. Internal
+	// open/close already move `phase` off its resting value before this runs,
+	// so the effect only acts on genuinely external changes.
+	$effect(() => {
+		const wantOpen = open;
+		untrack(() => {
+			if (wantOpen && phase === 'idle') openDialog();
+			else if (!wantOpen && phase === 'open') closeDialog();
+		});
+	});
+
+	// Unmounting mid-animation or while open: cancel the timer and release
+	// the scroll lock we took, so the host page isn't left frozen.
+	$effect(() => {
+		return () => {
+			if (morphTimer) clearTimeout(morphTimer);
+			morphTimer = null;
+			if (unlockScroll) {
+				unlockScroll();
+				unlockScroll = null;
+			}
+		};
+	});
 
 	// =========================================================================
 	// [CR] FOCUS MANAGEMENT
@@ -210,9 +252,7 @@
 		if (!dialogEl) return;
 
 		// Find the first focusable element inside the dialog
-		const focusable = dialogEl.querySelectorAll<HTMLElement>(
-			'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-		);
+		const focusable = dialogEl.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR);
 
 		if (focusable.length > 0) {
 			focusable[0].focus();
@@ -231,26 +271,31 @@
 			return;
 		}
 
-		// Focus trap: cycle Tab within the dialog
-		if (event.key === 'Tab' && dialogEl && phase === 'open') {
-			const focusable = dialogEl.querySelectorAll<HTMLElement>(
-				'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-			);
+		// Focus trap: cycle Tab within the dialog. It also applies while the
+		// morph is still running, so an early Tab can't escape to the page.
+		if (event.key === 'Tab' && dialogEl) {
+			const focusable = dialogEl.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR);
 
-			if (focusable.length === 0) return;
+			if (focusable.length === 0) {
+				event.preventDefault();
+				dialogEl.focus();
+				return;
+			}
 
 			const first = focusable[0];
 			const last = focusable[focusable.length - 1];
+			// If focus has slipped outside the dialog, the next Tab pulls it back in.
+			const outside = !dialogEl.contains(document.activeElement);
 
 			if (event.shiftKey) {
 				// Shift+Tab: wrap from first to last
-				if (document.activeElement === first) {
+				if (outside || document.activeElement === first) {
 					event.preventDefault();
 					last.focus();
 				}
 			} else {
 				// Tab: wrap from last to first
-				if (document.activeElement === last) {
+				if (outside || document.activeElement === last) {
 					event.preventDefault();
 					first.focus();
 				}
@@ -370,6 +415,8 @@
 			"
 			role="dialog"
 			aria-modal="true"
+			aria-label={ariaLabelledBy ? undefined : ariaLabel}
+			aria-labelledby={ariaLabelledBy}
 			tabindex="-1"
 		>
 			<!-- Close button -->

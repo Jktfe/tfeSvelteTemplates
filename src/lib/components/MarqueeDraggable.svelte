@@ -35,9 +35,12 @@
 	- Zero external dependencies
 
 	ACCESSIBILITY:
-	- role="region" with aria-label
-	- Supports keyboard navigation
-	- Respects prefers-reduced-motion
+	- role="region" with aria-label, focusable with Tab
+	- Arrow keys nudge the strip along its axis (Left/Right, or Up/Down
+	  when vertical); auto-scroll pauses while the region has focus so
+	  keyboard users can read at their own pace
+	- Respects prefers-reduced-motion: auto-scroll never starts (and stops
+	  if the setting flips mid-session), but drag and arrow keys still work
 
 	WARNINGS: None expected
 
@@ -120,6 +123,16 @@
 	let isVisible = $state(true);
 	let observer: IntersectionObserver | null = null;
 
+	// [CR] Motion preference + keyboard focus both pause the auto-scroll.
+	// [NTL] Some people find constantly moving content distracting or even
+	// [NTL] nauseating, so if their OS says "reduce motion" we stay still and
+	// [NTL] let them drag (or arrow-key) through the content themselves.
+	let prefersReducedMotion = $state(false);
+	let hasFocus = $state(false);
+
+	// [CR] How far one arrow-key press moves the strip, in pixels.
+	const KEY_STEP = 80;
+
 	// [CR] ============================================================
 	// [CR] DYNAMIC REPEAT CALCULATION
 	// [NTL] We calculate how many copies are needed to always fill the screen
@@ -154,6 +167,18 @@
 	// [CR] ============================================================
 
 	onMount(() => {
+		// [CR] Read the reduced-motion preference and follow live changes, so
+		// [CR] toggling the OS setting mid-session pauses or resumes the scroll.
+		let motionQuery: MediaQueryList | null = null;
+		const handleMotionChange = (event: MediaQueryListEvent) => {
+			prefersReducedMotion = event.matches;
+		};
+		if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+			motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+			prefersReducedMotion = motionQuery.matches;
+			motionQuery.addEventListener?.('change', handleMotionChange);
+		}
+
 		// [CR] Use RAF to ensure DOM is fully rendered before measuring
 		requestAnimationFrame(() => {
 			if (containerEl && contentEl) {
@@ -202,6 +227,7 @@
 		window.addEventListener('resize', handleResize);
 		return () => {
 			window.removeEventListener('resize', handleResize);
+			motionQuery?.removeEventListener?.('change', handleMotionChange);
 			stopAnimation();
 			observer?.disconnect();
 		};
@@ -214,8 +240,9 @@
 
 	// [CR] Start the automatic scrolling animation
 	function startAnimation() {
-		// [CR] Don't animate if dragging, no content, or not visible
-		if (isDragging || !contentWidth || !isVisible) return;
+		// [CR] Don't animate if dragging, no content, not visible, the user has
+		// [CR] asked for reduced motion, or the region has keyboard focus
+		if (isDragging || !contentWidth || !isVisible || prefersReducedMotion || hasFocus) return;
 
 		stopAnimation();
 		lastTimestamp = 0;
@@ -315,6 +342,17 @@
 		startAnimation();
 	}
 
+	// [CR] Keyboard control: arrow keys along the scroll axis nudge the strip.
+	// [NTL] The same offset maths as dragging, just in fixed-size steps.
+	function handleKeydown(e: KeyboardEvent) {
+		const back = vertical ? 'ArrowUp' : 'ArrowLeft';
+		const forward = vertical ? 'ArrowDown' : 'ArrowRight';
+		if (e.key !== back && e.key !== forward) return;
+		e.preventDefault();
+		// [CR] Moving content "forward" means translating it backwards
+		currentOffset += e.key === forward ? -KEY_STEP : KEY_STEP;
+	}
+
 	// [CR] ============================================================
 	// [CR] COMPUTED VALUES & EFFECTS
 	// [NTL] Svelte automatically recalculates these when dependencies change
@@ -344,17 +382,25 @@
 		return `translate${axis}(${wrappedOffset}px)`;
 	});
 
-	// [CR] Restart animation when direction or duration changes
+	// [CR] Restart animation when direction, duration, motion preference or
+	// [CR] focus changes — startAnimation() itself bails out when it should
+	// [CR] stay paused, so stop-then-start is always safe here.
 	$effect(() => {
 		if (!isDragging && isVisible) {
 			void duration;
 			void currentDirection;
+			void prefersReducedMotion;
+			void hasFocus;
 			stopAnimation();
 			startAnimation();
 		}
 	});
 </script>
 
+<!-- A focusable scrolling region is the recommended pattern for keyboard
+     access to moving content (see axe "scrollable-region-focusable"), so the
+     tabindex + arrow-key handler on role="region" is intentional here. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
 	bind:this={containerEl}
 	class={cn(
@@ -367,6 +413,15 @@
 	)}
 	role="region"
 	aria-label="Draggable scrolling content"
+	aria-roledescription="marquee"
+	tabindex="0"
+	data-reduced-motion={prefersReducedMotion ? 'true' : undefined}
+	onkeydown={handleKeydown}
+	onfocusin={() => (hasFocus = true)}
+	onfocusout={(e) => {
+		// [CR] Only resume once focus has genuinely left the region
+		if (!containerEl?.contains(e.relatedTarget as Node | null)) hasFocus = false;
+	}}
 	style="touch-action: {vertical ? 'pan-x' : 'pan-y'}; user-select: none;"
 >
 	<div
@@ -420,9 +475,10 @@
 		transform-style: preserve-3d;
 		backface-visibility: hidden;
 	}
+
+	div[role='region']:focus-visible {
+		outline: 2px solid currentColor;
+		outline-offset: 2px;
+	}
 </style>
 
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

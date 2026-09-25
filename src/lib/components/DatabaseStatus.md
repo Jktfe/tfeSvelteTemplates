@@ -99,6 +99,22 @@ export const load: PageServerLoad = async () => {
 
 Under `prefers-color-scheme: dark` the same four hues switch to translucent rgba tints so the pill sits on dark chrome without glaring. Below 640px the pill shrinks its font, padding and icon.
 
+### Transitions
+Only the properties that actually change between states are animated:
+
+```css
+transition:
+  background-color 0.3s ease,
+  border-color 0.3s ease,
+  color 0.3s ease;
+
+@media (prefers-reduced-motion: reduce) {
+  .database-status { transition: none; }
+}
+```
+
+Listing the properties (rather than `transition: all`) stops the padding and font-size from animating when the mobile breakpoint kicks in.
+
 ---
 
 ## State Flow Diagram

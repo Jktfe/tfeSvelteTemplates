@@ -21,7 +21,8 @@
  * Technical Implementation:
  * - Svelte 5 $derived rune for reactive status computation
  * - ARIA live region (role="status") for accessibility
- * - CSS transitions for smooth state changes (disabled under prefers-reduced-motion)
+ * - Colour-only CSS transitions for smooth state changes (disabled under
+ *   prefers-reduced-motion)
  * - Responsive design with mobile-optimised sizing
  * - Scoped CSS with no external dependencies
  *
@@ -93,7 +94,13 @@
 		font-size: 0.875rem;
 		font-weight: 500;
 		border: 1px solid;
-		transition: all 0.3s ease;
+		/* Only the colours change between states, so only they transition.
+		   `transition: all` would also animate padding/font-size when the
+		   mobile breakpoint kicks in, which reads as a jarring jiggle. */
+		transition:
+			background-color 0.3s ease,
+			border-color 0.3s ease,
+			color 0.3s ease;
 	}
 
 	.database-status.connected {

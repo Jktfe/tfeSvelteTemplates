@@ -14,22 +14,29 @@ MediaLightboxPro renders a responsive grid of thumbnails and, when one is clicke
 state:
   open        = false
   activeIndex = 0
+  opener      = null        # the thumbnail that opened the viewer
 
 derived:
   active = items[activeIndex]
 
 ON thumbnail click (index):
+  opener = that thumbnail
   activeIndex = index
   open = true
+  lock body scroll, move focus to the Close button
 
-ON Next click:
+ON Next click / ArrowRight (more than one item):
   activeIndex = nextMediaIndex(activeIndex, items.length)       # (i + 1) mod n
 
-ON Previous click:
+ON Previous click / ArrowLeft (more than one item):
   activeIndex = previousMediaIndex(activeIndex, items.length)   # (i - 1 + n) mod n
 
-ON Close click:
+ON Tab / Shift+Tab inside the dialog:
+  wrap focus between the first and last control (focus trap)
+
+ON Close click / Escape / backdrop click:
   open = false
+  restore body scroll, return focus to opener
 
 RENDER dialog only when open AND active exists:
   counter = mediaCounter(activeIndex, items.length)             # "i+1 / n"
@@ -60,16 +67,29 @@ previous:   4   0   1   2   3   ← wraps back
 
 ---
 
+## Keyboard & Accessibility
+
+| Key | Action |
+| --- | --- |
+| `Enter` / `Space` on a thumbnail | Opens the viewer at that item |
+| `ArrowRight` / `ArrowLeft` | Next / previous item (wraps; ignored with a single item) |
+| `Tab` / `Shift+Tab` | Cycles through the dialog's controls without escaping |
+| `Escape` | Closes the viewer and returns focus to the thumbnail |
+
+The viewer panel is a `role="dialog"` with `aria-modal="true"`, labelled by the active item's title. Previous/next controls are hidden when there is only one item. The backdrop fade is disabled under `prefers-reduced-motion: reduce`.
+
+---
+
 ## State Flow Diagram
 
 ```
    ┌──────────────────────┐   click thumbnail i   ┌───────────────────────────┐
    │  GRID                │ ────────────────────▶ │  VIEWER OPEN              │
    │  open = false        │                       │  activeIndex = i          │
-   │  thumbnails visible  │ ◀──────────────────── │  role="dialog"            │
-   └──────────────────────┘      click Close      │  counter + caption        │
-                                                  └──────┬─────────────┬──────┘
-                                           Previous      │             │ Next
+   │  thumbnails visible  │ ◀──────────────────── │  role="dialog", trapped   │
+   └──────────────────────┘  Close / Escape /     │  counter + caption        │
+     (focus back on the       backdrop click      └──────┬─────────────┬──────┘
+      opening thumbnail)                   Previous / ←  │             │ Next / →
                                            (wraps)       ▼             ▼ (wraps)
                                                   activeIndex ± 1 mod n
                                                          │
@@ -94,11 +114,11 @@ previous:   4   0   1   2   3   ← wraps back
 | Situation | Behaviour |
 |-----------|-----------|
 | `items` is empty | Grid renders empty; the viewer cannot open. |
-| Only one item | Previous and Next both stay on the same item. |
+| Only one item | Previous/Next are hidden and the arrow keys do nothing. |
 | `items` shrinks while the viewer is open on a removed index | `active` becomes `undefined` and the viewer closes itself. |
+| Unmounted while open | Body scroll lock is released so the page is not left frozen. |
 | Item has no `caption` | The `<figcaption>` is omitted. |
 | `type: 'video'` | Currently rendered as an `<img>`; the field is reserved for a future video viewer. |
-| Keyboard users | All controls are native buttons, but Escape-to-close and a focus trap are not built in — add them if the viewer is used as a true modal. |
 | Many thumbnails | Thumbnails use `loading="lazy"` so off-screen images do not block first paint. |
 
 ---

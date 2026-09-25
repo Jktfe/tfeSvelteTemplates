@@ -23,8 +23,8 @@
  * ============================================================
  */
 
-import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import MarqueeDraggable from './MarqueeDraggable.svelte';
 
 describe('MarqueeDraggable', () => {
@@ -128,5 +128,115 @@ describe('MarqueeDraggable', () => {
 		const { container } = render(MarqueeDraggable);
 		const gapElements = container.querySelectorAll('[class*="gap"]');
 		expect(gapElements.length).toBeGreaterThan(0);
+	});
+});
+
+/**
+ * Motion + keyboard behaviour. happy-dom reports every element as 0px wide,
+ * which would keep the RAF loop idle regardless of preference, so we stub a
+ * non-zero offsetWidth to give the animation something to move.
+ */
+describe('MarqueeDraggable motion preferences and keyboard control', () => {
+	let widthSpy: ReturnType<typeof vi.spyOn>;
+	let reducedMotion = false;
+	const listeners = new Set<(e: MediaQueryListEvent) => void>();
+	const originalMatchMedia = window.matchMedia;
+
+	beforeEach(() => {
+		reducedMotion = false;
+		listeners.clear();
+		widthSpy = vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockReturnValue(200);
+		window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+			matches: query.includes('reduce') ? reducedMotion : false,
+			media: query,
+			addEventListener: (_: string, cb: (e: MediaQueryListEvent) => void) => listeners.add(cb),
+			removeEventListener: (_: string, cb: (e: MediaQueryListEvent) => void) =>
+				listeners.delete(cb)
+		})) as unknown as typeof window.matchMedia;
+	});
+
+	afterEach(() => {
+		widthSpy.mockRestore();
+		window.matchMedia = originalMatchMedia;
+	});
+
+	const getTransform = (container: HTMLElement) =>
+		(container.querySelector('[role="presentation"]') as HTMLElement).style.transform;
+
+	// Let onMount's measuring frame run, then a few more animation frames.
+	const settle = () => new Promise((resolve) => setTimeout(resolve, 120));
+
+	it('auto-scrolls when the user has no motion preference', async () => {
+		const { container } = render(MarqueeDraggable, { props: { duration: 1 } });
+		await settle();
+		const first = getTransform(container);
+		await settle();
+		expect(getTransform(container)).not.toBe(first);
+	});
+
+	it('does not auto-scroll under prefers-reduced-motion: reduce', async () => {
+		reducedMotion = true;
+		const { container } = render(MarqueeDraggable, { props: { duration: 1 } });
+		await settle();
+		const region = screen.getByRole('region');
+		expect(region).toHaveAttribute('data-reduced-motion', 'true');
+		const first = getTransform(container);
+		await settle();
+		expect(getTransform(container)).toBe(first);
+	});
+
+	it('stops auto-scrolling when the preference flips to reduce mid-session', async () => {
+		const { container } = render(MarqueeDraggable, { props: { duration: 1 } });
+		await settle();
+		for (const cb of listeners) cb({ matches: true } as MediaQueryListEvent);
+		await settle();
+		const paused = getTransform(container);
+		await settle();
+		expect(getTransform(container)).toBe(paused);
+	});
+
+	it('still allows dragging under reduced motion', async () => {
+		reducedMotion = true;
+		const { container } = render(MarqueeDraggable);
+		await settle();
+		const strip = container.querySelector('[role="presentation"]') as HTMLElement;
+		strip.setPointerCapture = vi.fn();
+		strip.releasePointerCapture = vi.fn();
+		const before = getTransform(container);
+		await fireEvent.pointerDown(strip, { clientX: 100, clientY: 0, pointerId: 1 });
+		await fireEvent.pointerMove(strip, { clientX: 40, clientY: 0, pointerId: 1 });
+		expect(getTransform(container)).not.toBe(before);
+		await fireEvent.pointerUp(strip, { clientX: 40, clientY: 0, pointerId: 1 });
+		const released = getTransform(container);
+		await settle();
+		expect(getTransform(container)).toBe(released);
+	});
+
+	it('is focusable and nudges the strip with the arrow keys', async () => {
+		reducedMotion = true;
+		const { container } = render(MarqueeDraggable);
+		await settle();
+		const region = screen.getByRole('region');
+		expect(region).toHaveAttribute('tabindex', '0');
+		const before = getTransform(container);
+		await fireEvent.keyDown(region, { key: 'ArrowRight' });
+		const afterRight = getTransform(container);
+		expect(afterRight).not.toBe(before);
+		await fireEvent.keyDown(region, { key: 'ArrowLeft' });
+		expect(getTransform(container)).toBe(before);
+	});
+
+	it('pauses auto-scroll while the region has keyboard focus', async () => {
+		const { container } = render(MarqueeDraggable, { props: { duration: 1 } });
+		await settle();
+		const region = screen.getByRole('region');
+		await fireEvent.focusIn(region);
+		await settle();
+		const paused = getTransform(container);
+		await settle();
+		expect(getTransform(container)).toBe(paused);
+		await fireEvent.focusOut(region, { relatedTarget: null });
+		await settle();
+		expect(getTransform(container)).not.toBe(paused);
 	});
 });

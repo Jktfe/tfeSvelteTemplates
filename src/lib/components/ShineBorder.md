@@ -70,15 +70,15 @@ Everything is GPU-friendly. The only animated property is `background-position`,
 }
 ```
 
-Reduced motion is documented in the component as a known TODO. The recommended override is:
+Reduced motion is honoured automatically by the component's scoped CSS:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  .shine-border-wrapper { animation-duration: 0.01s; }
+  .shine-border-wrapper { animation: none; }
 }
 ```
 
-This freezes the gradient at its starting offset rather than disabling it entirely — the static band still reads as a styled border for users who would otherwise lose the visual cue.
+This parks the gradient at its default `background-position` rather than removing it — the static band still reads as a styled border for users who would otherwise lose the visual cue.
 
 ## State Flow Diagram
 
@@ -103,11 +103,11 @@ This freezes the gradient at its starting offset rather than disabling it entire
        │  animation continues from current pos  │
        └────────────────────────────────────────┘
 
-       prefers-reduced-motion: reduce (recommended override)
+       prefers-reduced-motion: reduce (built in)
                              │
                              ▼
        ┌────────────────────────────────────────┐
-       │  duration ≈ 0s → effectively static    │
+       │  animation: none → static band         │
        └────────────────────────────────────────┘
 ```
 
@@ -130,9 +130,9 @@ There is no runtime state to track — the component is a thin bag of CSS variab
 | `children` omitted | Empty bordered box renders. The shimmer still runs but there is no content slot. |
 | `borderWidth = 0` | The inner div fills the wrapper exactly. The gradient is fully covered and you see no shine. |
 | `borderRadius < borderWidth` | The inner radius is computed as `radius − width` and clamps to `0` in CSS — the inner corners become sharp while the outer keeps the requested radius. Content inside the inner div may sit awkwardly close to the edge; pad your child element. |
-| `duration = 0` | Browsers treat it as no animation; the gradient renders frozen at its starting offset (`-200%` — band offstage left). Visually, the border appears solid-transparent. Avoid; use the reduced-motion override instead. |
+| `duration = 0` | Browsers treat it as no animation; the gradient renders frozen at its starting offset (`-200%` — band offstage left). Visually, the border appears solid-transparent. Avoid; the built-in reduced-motion rule is the better way to get a static border. |
 | Very small wrapper (e.g. 24×24 px) | The 200% gradient is still wider than the wrapper — no visual problem — but the `borderRadius − borderWidth` calc may produce a tiny inner radius that looks inconsistent with the outer. |
-| `prefers-reduced-motion: reduce` | Component does not yet honour this automatically. Consumers should either layer the recommended `@media` override, or omit ShineBorder for users with the preference set. |
+| `prefers-reduced-motion: reduce` | Honoured automatically: the scoped `@media` rule sets `animation: none`, leaving a static gradient band as the border. |
 | Multiple ShineBorders on one page | Each runs independently; there is no shared timer. They will drift out of phase, which usually looks better than synchronised shimmer. |
 
 ## Dependencies

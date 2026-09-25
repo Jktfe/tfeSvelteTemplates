@@ -2984,6 +2984,10 @@ export interface MorphingDialogProps {
 	borderRadius?: string;
 	closeOnOverlay?: boolean;
 	closeOnEscape?: boolean;
+	/** Accessible name for the dialog when no visible heading is referenced. */
+	ariaLabel?: string;
+	/** id of an element inside the dialog that names it (wins over ariaLabel). */
+	ariaLabelledBy?: string;
 	class?: string;
 }
 
