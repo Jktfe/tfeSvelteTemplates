@@ -96,8 +96,9 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
   headline?: string;
   eyebrow?: string;
   copy?: string;
-  initialMode?: 'chars' | 'words' | 'lines';
-  theme?: 'light' | 'dark';
+  initialMode?: 'chars' | 'words' | 'lines';  // default 'chars'
+  theme?: 'light' | 'dark';  // omit to follow prefers-color-scheme
+  class?: string;
 }`,
 		usageExample: `<GsapSplitTextHero
   headline="Motion primitives with manners"
@@ -127,6 +128,8 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
   delay?: number;           // default 0
   stagger?: number;         // default 0.08
   ease?: string;            // default 'power3.out'
+  children?: Snippet;
+  class?: string;
 }`,
 		usageExample: `<GsapRevealSequence stagger={0.12} distance={42}>
   {#each cards as card (card.title)}
@@ -148,16 +151,19 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
 		demoUrl: '/gsap-suite#kinetic-canvas',
 		inspiredBy: DAVE_VAULT('Liquid Type cursor trail'),
 		propsSignature: `{
-  density?: number;         // default 96
-  palette?: 'aurora' | 'mono' | 'amber';
+  density?: number;         // default 72 (burst size; clamped to [8, 260])
+  trail?: boolean;          // default true — emit a light trail on pointermove
+  palette?: 'aurora' | 'ember' | 'mono';  // default 'aurora'
   children?: Snippet;
+  class?: string;
 }`,
 		usageExample: `<KineticCanvasField density={96} palette="aurora">
   <div class="kinetic-panel">
     <h2>Move, press, release</h2>
   </div>
 </KineticCanvasField>`,
-		agentNotes: 'Caps particle budget at 240; resizes the canvas on devicePixelRatio changes.',
+		agentNotes:
+			'Caps the live particle budget at 260; a ResizeObserver resizes the canvas (devicePixelRatio capped at 2). gsap.ticker time is in seconds, so frame deltas need no /1000 conversion (see tickerFrameDelta).',
 		category: 'canvas'
 	},
 	{
@@ -173,8 +179,9 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
 		demoUrl: '/gsap-suite#fan-deck',
 		inspiredBy: DAVE_VAULT('Drag Gallery'),
 		propsSignature: `{
-  items: FanDeckItem[];
-  initialIndex?: number;
+  items?: FanDeckItem[];     // built-in sample deck when omitted
+  initialIndex?: number;    // default 0
+  class?: string;
 }`,
 		usageExample: `<FanDeckCarousel items={deckItems} />`,
 		category: 'deck'
@@ -199,13 +206,18 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
 		propsSignature: `{
   items?: GsapFlipGridItem[];
   filters?: GsapFlipGridFilter[];
-  initialFilter?: string;
+  title?: string;
+  eyebrow?: string;
+  description?: string;
+  initialFilter?: string;   // default 'all'
   initialFeaturedId?: string;
   initialDensity?: 'featured' | 'compact';
   initialSort?: 'curated' | 'alpha';
   showHeader?: boolean;
   showControls?: boolean;
   promoteOnClick?: boolean;
+  controlsLabel?: string;
+  class?: string;
 }`,
 		usageExample: `<GsapFlipGrid
   items={gridItems}
@@ -286,8 +298,11 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
 		inspiredBy: DAVE_VAULT('Cardwall'),
 		plugins: ['Flip'],
 		propsSignature: `{
-  cards?: CardDesign[];     // defaults to 14-palette × 3-tile internal set
-  repeats?: number;         // 3
+  density?: 'sparse' | 'default' | 'dense';  // 'default'
+  tilesPerRow?: number;     // 8
+  tileWidth?: number;       // 220 px
+  tileGap?: number;         // 16 px
+  class?: string;
 }`,
 		category: 'flip'
 	},
@@ -302,9 +317,16 @@ export const gsapSuiteRegistry: GsapSuiteEntry[] = [
 		componentName: 'MembraneHero',
 		inspiredBy: DAVE_VAULT('Membrane'),
 		propsSignature: `{
-  resolution?: number;      // 28
-  tension?: number;         // 0.025
-  damping?: number;         // 0.92
+  palette?: 'aurora' | 'sunset' | 'polar';   // 'aurora'
+  eyebrow?: string;         // 'Now in beta'
+  headline?: string;        // 'A new kind of canvas'
+  subhead?: string;
+  primaryCta?: string;      // 'Start building'
+  secondaryCta?: string;    // 'See the docs'
+  primaryHref?: string;     // '#'
+  secondaryHref?: string;   // '#'
+  showDot?: boolean;        // true
+  class?: string;
 }`,
 		category: 'canvas'
 	},
