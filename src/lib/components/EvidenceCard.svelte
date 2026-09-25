@@ -130,21 +130,72 @@
 </article>
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md. Chrome tokens read the host's shared
+	 * tokens (--fg-1, --surface, --border, ...) first and fall back to
+	 * built-in light/dark values, so the component works standalone too.
+	 * Status tones are semantic: each keeps its hue on both schemes and only
+	 * lightens its text / deepens its tint in dark mode for legibility.
+	 */
+	.evidence-card {
+		--evc-fg-1: var(--fg-1, #111827);
+		--evc-fg-2: var(--fg-2, #4b5563);
+		--evc-fg-3: var(--fg-3, #6b7280);
+		--evc-border: var(--border, #d9dde5);
+		--evc-surface: var(--surface, #fff);
+		--evc-surface-2: var(--surface-2, #f8fafc);
+		--evc-good-accent: #15803d;
+		--evc-good-bg: #dcfce7;
+		--evc-good-border: #86efac;
+		--evc-bad-accent: #b91c1c;
+		--evc-bad-bg: #fee2e2;
+		--evc-bad-border: #fca5a5;
+		--evc-warn-accent: #92400e;
+		--evc-warn-bg: #fef3c7;
+		--evc-warn-border: #fcd34d;
+		--evc-neutral-accent: #315f9f;
+		--evc-neutral-bg: #dbeafe;
+		--evc-neutral-border: #93c5fd;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.evidence-card {
+			--evc-fg-1: var(--fg-1, #f3f4f6);
+			--evc-fg-2: var(--fg-2, #cbd5e1);
+			--evc-fg-3: var(--fg-3, #94a3b8);
+			--evc-border: var(--border, #334155);
+			--evc-surface: var(--surface, #111827);
+			--evc-surface-2: var(--surface-2, #1f2937);
+			--evc-good-accent: #86efac;
+			--evc-good-bg: rgba(22, 163, 74, 0.2);
+			--evc-good-border: #166534;
+			--evc-bad-accent: #fca5a5;
+			--evc-bad-bg: rgba(220, 38, 38, 0.2);
+			--evc-bad-border: #991b1b;
+			--evc-warn-accent: #fcd34d;
+			--evc-warn-bg: rgba(245, 158, 11, 0.18);
+			--evc-warn-border: #92400e;
+			--evc-neutral-accent: #93c5fd;
+			--evc-neutral-bg: rgba(37, 99, 235, 0.22);
+			--evc-neutral-border: #1e40af;
+		}
+	}
+
 	.evidence-card {
 		display: grid;
 		gap: 14px;
 		padding: 18px;
-		border: 1px solid var(--ev-border, #d9dde5);
+		border: 1px solid var(--ev-border, var(--evc-border));
 		border-left-width: 4px;
 		border-radius: 6px;
-		background: var(--surface, #fff);
-		color: var(--fg-1, #111827);
+		background: var(--evc-surface);
+		color: var(--evc-fg-1);
 	}
 
-	.evidence-card--good { --ev-accent: #15803d; --ev-bg: #dcfce7; --ev-border: #86efac; }
-	.evidence-card--bad { --ev-accent: #b91c1c; --ev-bg: #fee2e2; --ev-border: #fca5a5; }
-	.evidence-card--warn { --ev-accent: #92400e; --ev-bg: #fef3c7; --ev-border: #fcd34d; }
-	.evidence-card--neutral { --ev-accent: #315f9f; --ev-bg: #dbeafe; --ev-border: #93c5fd; }
+	.evidence-card--good { --ev-accent: var(--evc-good-accent); --ev-bg: var(--evc-good-bg); --ev-border: var(--evc-good-border); }
+	.evidence-card--bad { --ev-accent: var(--evc-bad-accent); --ev-bg: var(--evc-bad-bg); --ev-border: var(--evc-bad-border); }
+	.evidence-card--warn { --ev-accent: var(--evc-warn-accent); --ev-bg: var(--evc-warn-bg); --ev-border: var(--evc-warn-border); }
+	.evidence-card--neutral { --ev-accent: var(--evc-neutral-accent); --ev-bg: var(--evc-neutral-bg); --ev-border: var(--evc-neutral-border); }
 
 	.ev-head {
 		display: flex;
@@ -180,12 +231,12 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 8px 14px;
-		color: var(--fg-2, #4b5563);
+		color: var(--evc-fg-2);
 		font-size: 12px;
 	}
 
 	.ev-meta b {
-		color: var(--fg-1, #111827);
+		color: var(--evc-fg-1);
 	}
 
 	.ev-meta a,
@@ -196,7 +247,7 @@
 
 	.ev-summary {
 		margin: 0;
-		color: var(--fg-2, #4b5563);
+		color: var(--evc-fg-2);
 	}
 
 	.ev-items {
@@ -208,13 +259,13 @@
 
 	.ev-items div {
 		padding: 10px;
-		border: 1px solid var(--border, #d9dde5);
-		background: var(--surface-2, #f8fafc);
+		border: 1px solid var(--evc-border);
+		background: var(--evc-surface-2);
 	}
 
 	.ev-items dt {
 		margin-bottom: 4px;
-		color: var(--fg-3, #6b7280);
+		color: var(--evc-fg-3);
 		font: 800 10px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
 	}
@@ -231,7 +282,7 @@
 	}
 
 	.ev-command {
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--evc-border);
 		background: #0d1117;
 		color: #e5edf5;
 	}

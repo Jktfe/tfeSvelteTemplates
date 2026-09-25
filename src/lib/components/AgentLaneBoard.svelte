@@ -158,10 +158,80 @@
 </section>
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md. Chrome tokens read the host's shared
+	 * tokens (--fg-1, --surface, --border, ...) first and fall back to
+	 * built-in light/dark values, so the board works standalone too.
+	 * Lane tones are semantic: each keeps its hue on both schemes and only
+	 * lightens its text / deepens its tint in dark mode for legibility.
+	 */
+	.lane-board {
+		--lb-fg: var(--fg-1, #111827);
+		--lb-fg-2: var(--lb-fg-2);
+		--lb-fg-3: var(--lb-fg-3);
+		--lb-border: var(--lb-border);
+		--lb-surface: var(--lb-surface);
+		--lb-surface-2: var(--lb-surface-2);
+		--lb-hero-bg: linear-gradient(135deg, #f8fafc, #ecfdf5);
+		--lb-kicker: #047857;
+		--lb-score-bg: #dcfce7;
+		--lb-score-border: #86efac;
+		--lb-score-fg: #14532d;
+		--lb-active-ring: #0f766e;
+		--lb-active-glow: rgba(15, 118, 110, 0.14);
+		--lb-next-bg: #fffbeb;
+		--lb-next-border: #f59e0b;
+		--lb-next-fg: #78350f;
+		--lb-progress-accent: #2563eb;
+		--lb-progress-bg: #dbeafe;
+		--lb-progress-border: #93c5fd;
+		--lb-warn-accent: #92400e;
+		--lb-warn-bg: #fef3c7;
+		--lb-warn-border: #fcd34d;
+		--lb-bad-accent: #b91c1c;
+		--lb-bad-bg: #fee2e2;
+		--lb-bad-border: #fca5a5;
+		--lb-good-accent: #15803d;
+		--lb-good-bg: #dcfce7;
+		--lb-good-border: #86efac;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.lane-board {
+			--lb-fg: var(--fg-1, #f3f4f6);
+			--lb-fg-2: var(--fg-2, #cbd5e1);
+			--lb-fg-3: var(--fg-3, #94a3b8);
+			--lb-border: var(--border, #334155);
+			--lb-surface: var(--surface, #111827);
+			--lb-surface-2: var(--surface-2, #1f2937);
+			--lb-hero-bg: linear-gradient(135deg, #111827, #052e24);
+			--lb-kicker: #34d399;
+			--lb-score-bg: rgba(22, 163, 74, 0.18);
+			--lb-score-border: #166534;
+			--lb-score-fg: #bbf7d0;
+			--lb-active-ring: #2dd4bf;
+			--lb-active-glow: rgba(45, 212, 191, 0.2);
+			--lb-next-bg: rgba(245, 158, 11, 0.14);
+			--lb-next-fg: #fde68a;
+			--lb-progress-accent: #93c5fd;
+			--lb-progress-bg: rgba(37, 99, 235, 0.22);
+			--lb-progress-border: #1e40af;
+			--lb-warn-accent: #fcd34d;
+			--lb-warn-bg: rgba(245, 158, 11, 0.18);
+			--lb-warn-border: #92400e;
+			--lb-bad-accent: #fca5a5;
+			--lb-bad-bg: rgba(220, 38, 38, 0.2);
+			--lb-bad-border: #991b1b;
+			--lb-good-accent: #86efac;
+			--lb-good-bg: rgba(22, 163, 74, 0.2);
+			--lb-good-border: #166534;
+		}
+	}
+
 	.lane-board {
 		display: grid;
 		gap: 18px;
-		color: var(--fg-1, #111827);
+		color: var(--lb-fg);
 	}
 
 	.lb-head {
@@ -170,14 +240,14 @@
 		gap: 18px;
 		align-items: end;
 		padding: 20px;
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--lb-border);
 		border-radius: 6px;
-		background: linear-gradient(135deg, #f8fafc, #ecfdf5);
+		background: var(--lb-hero-bg);
 	}
 
 	.lb-kicker {
 		margin: 0 0 6px;
-		color: #047857;
+		color: var(--lb-kicker);
 		font: 900 11px/1 var(--font-mono, ui-monospace, monospace);
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -191,7 +261,7 @@
 	.lb-head p:not(.lb-kicker) {
 		max-width: 64ch;
 		margin: 8px 0 0;
-		color: var(--fg-2, #4b5563);
+		color: var(--lb-fg-2);
 	}
 
 	.lb-score {
@@ -199,10 +269,10 @@
 		min-width: 112px;
 		place-items: center;
 		padding: 16px;
-		border: 1px solid #86efac;
+		border: 1px solid var(--lb-score-border);
 		border-radius: 6px;
-		background: #dcfce7;
-		color: #14532d;
+		background: var(--lb-score-bg);
+		color: var(--lb-score-fg);
 	}
 
 	.lb-score strong {
@@ -225,16 +295,16 @@
 		justify-content: space-between;
 		gap: 12px;
 		padding: 12px;
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--lb-border);
 		border-radius: 6px;
-		background: var(--surface, #fff);
+		background: var(--lb-surface);
 		color: inherit;
 		cursor: pointer;
 	}
 
 	.lb-summary button.active {
-		border-color: #0f766e;
-		box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.14);
+		border-color: var(--lb-active-ring);
+		box-shadow: 0 0 0 2px var(--lb-active-glow);
 	}
 
 	.lb-summary span {
@@ -252,9 +322,9 @@
 		gap: 8px 14px;
 		align-items: baseline;
 		padding: 12px 14px;
-		border-left: 4px solid #f59e0b;
-		background: #fffbeb;
-		color: #78350f;
+		border-left: 4px solid var(--lb-next-border);
+		background: var(--lb-next-bg);
+		color: var(--lb-next-fg);
 	}
 
 	.lb-next span,
@@ -278,16 +348,16 @@
 		display: grid;
 		gap: 14px;
 		padding: 16px;
-		border: 1px solid var(--lane-border, #d9dde5);
+		border: 1px solid var(--lane-border, var(--lb-border));
 		border-top-width: 4px;
 		border-radius: 6px;
-		background: var(--surface, #fff);
+		background: var(--lb-surface);
 	}
 
-	.lb-card--progress { --lane-accent: #2563eb; --lane-bg: #dbeafe; --lane-border: #93c5fd; }
-	.lb-card--warn { --lane-accent: #92400e; --lane-bg: #fef3c7; --lane-border: #fcd34d; }
-	.lb-card--bad { --lane-accent: #b91c1c; --lane-bg: #fee2e2; --lane-border: #fca5a5; }
-	.lb-card--good { --lane-accent: #15803d; --lane-bg: #dcfce7; --lane-border: #86efac; }
+	.lb-card--progress { --lane-accent: var(--lb-progress-accent); --lane-bg: var(--lb-progress-bg); --lane-border: var(--lb-progress-border); }
+	.lb-card--warn { --lane-accent: var(--lb-warn-accent); --lane-bg: var(--lb-warn-bg); --lane-border: var(--lb-warn-border); }
+	.lb-card--bad { --lane-accent: var(--lb-bad-accent); --lane-bg: var(--lb-bad-bg); --lane-border: var(--lb-bad-border); }
+	.lb-card--good { --lane-accent: var(--lb-good-accent); --lane-bg: var(--lb-good-bg); --lane-border: var(--lb-good-border); }
 
 	.lb-card header {
 		display: flex;
@@ -325,14 +395,14 @@
 
 	.lb-card dt {
 		margin-bottom: 4px;
-		color: var(--fg-3, #6b7280);
+		color: var(--lb-fg-3);
 		font: 800 10px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
 	}
 
 	.lb-card dd {
 		margin: 0;
-		color: var(--fg-2, #4b5563);
+		color: var(--lb-fg-2);
 		font-weight: 700;
 	}
 
@@ -348,8 +418,8 @@
 	.lb-files code {
 		display: block;
 		padding: 7px 8px;
-		background: var(--surface-2, #f8fafc);
-		border: 1px solid var(--border, #d9dde5);
+		background: var(--lb-surface-2);
+		border: 1px solid var(--lb-border);
 		font-size: 12px;
 		overflow-wrap: anywhere;
 	}
@@ -357,7 +427,7 @@
 	.lb-evidence li {
 		padding-left: 10px;
 		border-left: 2px solid var(--lane-border);
-		color: var(--fg-2, #4b5563);
+		color: var(--lb-fg-2);
 	}
 
 	@media (max-width: 760px) {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/svelte';
+import { fireEvent, render, screen } from '@testing-library/svelte';
 import ThemeTokenInspector, {
 	contrastLabel,
 	contrastRatio,
@@ -8,6 +8,7 @@ import ThemeTokenInspector, {
 	flipsInDark,
 	groupTokenRows,
 	hexToRgb,
+	resolvePreviewMode,
 	tokenValueForMode,
 	type ThemeTokenRow
 } from './ThemeTokenInspector.svelte';
@@ -77,7 +78,40 @@ describe('ThemeTokenInspector helpers', () => {
 	});
 });
 
+describe('ThemeTokenInspector preview mode resolution', () => {
+	it('follows the OS scheme until the viewer picks a mode', () => {
+		expect(resolvePreviewMode(null, false)).toBe('light');
+		expect(resolvePreviewMode(null, true)).toBe('dark');
+		expect(resolvePreviewMode('light', true)).toBe('light');
+		expect(resolvePreviewMode('dark', false)).toBe('dark');
+	});
+});
+
 describe('ThemeTokenInspector component', () => {
+	it('defaults to auto so CSS can follow prefers-color-scheme', async () => {
+		const { container } = render(ThemeTokenInspector);
+		const root = container.querySelector('section.tti');
+
+		expect(root?.classList.contains('tti-auto')).toBe(true);
+		expect(root?.classList.contains('tti-dark')).toBe(false);
+
+		// An explicit pick takes over from the OS scheme.
+		await fireEvent.click(screen.getByRole('button', { name: /Dark/i }));
+		expect(root?.classList.contains('tti-auto')).toBe(false);
+		expect(root?.classList.contains('tti-dark')).toBe(true);
+
+		await fireEvent.click(screen.getByRole('button', { name: /Light/i }));
+		expect(root?.classList.contains('tti-auto')).toBe(false);
+		expect(root?.classList.contains('tti-dark')).toBe(false);
+	});
+
+	it('honours an explicit initialMode', () => {
+		const { container } = render(ThemeTokenInspector, { initialMode: 'dark' });
+		const root = container.querySelector('section.tti');
+		expect(root?.classList.contains('tti-dark')).toBe(true);
+		expect(root?.classList.contains('tti-auto')).toBe(false);
+	});
+
 	it('renders default taxonomy controls and token rows', () => {
 		render(ThemeTokenInspector);
 
