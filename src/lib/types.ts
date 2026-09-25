@@ -2811,6 +2811,81 @@ export interface TypewriterProps {
 	class?: string;
 }
 
+// =============================================================================
+// PATH TEXT COMPONENT TYPES (AnimatedText, WaveText)
+// =============================================================================
+
+/**
+ * How a path-text component responds to people.
+ * - 'hover' — mouse hover and keyboard focus trigger the effect; tap / Enter / Space toggles it
+ * - 'click' — click, tap, Enter or Space toggles the effect
+ * - 'none'  — purely decorative; drive it yourself through the bindable prop
+ */
+export type PathTextTrigger = 'hover' | 'click' | 'none';
+
+/** Which way AnimatedText's ribbon drifts along its path. */
+export type AnimatedTextDirection = 'left' | 'right';
+
+/**
+ * Props for AnimatedText — a ribbon of text drifting along an SVG path that
+ * cross-fades into a second phrase when triggered.
+ *
+ * @property originalText - Resting phrase (required)
+ * @property morphedText - Phrase revealed when triggered (default: '' — no morph)
+ * @property morphed - Bindable morph state (default: false)
+ * @property trigger - Interaction model (default: 'hover')
+ * @property speed - Drift speed in SVG user units per second (default: 30)
+ * @property direction - Drift direction (default: 'left')
+ * @property paused - Freeze the drift without unmounting (default: false)
+ * @property repeat - Copies of the phrase laid end-to-end along the path (default: 4)
+ * @property path - Custom SVG path `d` in a 1200×300 viewBox (default: gentle S-curve)
+ * @property height - Container height in px (default: 200)
+ * @property label - Accessible name (default: originalText)
+ * @property class - Extra classes on the root element
+ */
+export interface AnimatedTextProps {
+	originalText: string;
+	morphedText?: string;
+	morphed?: boolean;
+	trigger?: PathTextTrigger;
+	speed?: number;
+	direction?: AnimatedTextDirection;
+	paused?: boolean;
+	repeat?: number;
+	path?: string;
+	height?: number;
+	label?: string;
+	class?: string;
+}
+
+/**
+ * Props for WaveText — text set on a generated sine wave that can flow like
+ * a ripple when triggered.
+ *
+ * @property text - The phrase to render (default: 'WAVING TEXT')
+ * @property amplitude - Wave height in SVG user units (default: 20)
+ * @property wavelength - Distance between peaks in SVG user units (default: 200)
+ * @property playing - Bindable flowing state (default: false)
+ * @property trigger - Interaction model (default: 'hover')
+ * @property speed - Wave cycles per second while flowing (default: 0.5)
+ * @property align - Where the phrase sits along the wave (default: 'middle')
+ * @property height - Container height in px (default: 220)
+ * @property label - Accessible name (default: text)
+ * @property class - Extra classes on the root element
+ */
+export interface WaveTextProps {
+	text?: string;
+	amplitude?: number;
+	wavelength?: number;
+	playing?: boolean;
+	trigger?: PathTextTrigger;
+	speed?: number;
+	align?: 'start' | 'middle' | 'end';
+	height?: number;
+	label?: string;
+	class?: string;
+}
+
 /**
  * Props for MorphingDialog component
  * A modal that morphs from a trigger element into a full dialog overlay
