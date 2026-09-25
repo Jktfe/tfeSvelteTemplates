@@ -49,14 +49,14 @@ WHEN component unmounts:
 The cards are not Three.js objects — they are real `<button>` elements positioned with CSS 3D transforms. A fixed seven-slot table decides where each card lives:
 
 ```
-slot  x%  y%  w%  h%  depth
- 0    20  72  27  23   18
- 1    36  48  24  19   54
- 2    26  34  21  20   34
- 3    50  60  33  27   84    ← default active "apex"
- 4    66  35  32  20  112    ← tallest
- 5    74  64  23  22   42
- 6    87  72  23  24   66
+slot  x%  y%  w%  h%  depth  rot°
+ 0    20  72  27  23   18    -1
+ 1    36  48  24  19   54     1
+ 2    26  34  21  20   34    -2
+ 3    50  60  33  27   84     0    ← default active "apex"
+ 4    66  35  32  20  112     1    ← tallest
+ 5    74  64  23  22   42    -1
+ 6    87  72  23  24   66     2
 ```
 
 `topologyCardLayout(index, extruded)` wraps the index modulo 7, so an eighth swatch reuses slot 0. When `extruded` is `false`, every depth becomes `0` — flatten means genuinely flat. The values are written to `--x`, `--y`, `--w`, `--h`, `--z` and `--r`, and the stylesheet turns them into `translate3d` and `rotate`, so toggling extrusion is a pure CSS transition.
@@ -73,6 +73,22 @@ Keeping cards in the DOM (rather than in WebGL) is what makes them focusable, sc
 | `hexToRgbTriplet(hex)` | Returns `[r, g, b]` as integers. |
 | `formatRgbTriplet(hex)` | Returns a zero-padded string such as `194 . 065 . 012`. |
 | `readableTextColor(hex)` | Relative luminance above 0.58 → `#111827`, otherwise `#ffffff`. |
+| `topologyCardLayout(index, extruded)` | Looks up the slot for a card (index wrapped modulo 7); depth is `0` when `extruded` is `false`. |
+
+---
+
+## Multiple Instances
+
+The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built from `$props.id()`, so several grids can share a page (the demo route mounts four) without duplicate ids — each section always points at its own title.
+
+```
+uid       = $props.id()                          # unique, SSR-stable per instance
+headingId = `topology-color-grid-title-${uid}`
+<section aria-labelledby={headingId}>
+  <h1 id={headingId}>{title}</h1>
+```
+
+Each instance also owns its own WebGL canvas, `ResizeObserver`, animation frame and GSAP context, and tears all of them down on unmount, so one grid's theme or extrusion toggle never touches another.
 
 ---
 
@@ -131,7 +147,7 @@ Keeping cards in the DOM (rather than in WebGL) is what makes them focusable, sc
 | Clicking the already-active card | No-op, so no transition is retriggered. |
 | `prefers-reduced-motion: reduce` | The wireframe renders one still frame, and the entry reveal is skipped. |
 | Props change after mount | `extruded` and `theme` seed internal state once; use the built-in toggles to change them at runtime. |
-| Two grids on one page | Both use `id="topology-color-grid-title"`; mount one per page to keep ids unique. |
+| Two grids on one page | Safe. Each heading id is derived from `$props.id()`, so every `aria-labelledby` resolves to its own title. |
 
 ---
 
@@ -153,9 +169,3 @@ src/lib/components/TopologyColorGrid.test.ts    # vitest unit tests
 src/lib/gsapMotion.ts                           # shared GSAP loader + reduced-motion check
 src/routes/topologycolorgrid/+page.svelte       # demo page
 ```
-
-## Multiple instances
-
-The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built
-from `$props.id()`, so several grids can share a page (the demo route mounts four) without
-duplicate ids — each section always points at its own title.

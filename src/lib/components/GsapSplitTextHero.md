@@ -46,7 +46,7 @@ WHEN component unmounts:
 | Mode | `type` | Animated target | `autoSplit` | `mask` | Motion |
 |------|--------|-----------------|-------------|--------|--------|
 | `chars` | `'chars,words'` | characters | `false` | — | Slide in from `x: 120` with random `y` jitter, 27ms stagger, `power4.out` |
-| `words` | `'words'` | words | `false` | — | Drop from `y: -92` with random ±18° rotation, `back.out(1.6)` |
+| `words` | `'words'` | words | `false` | — | Drop from `y: -92` with random ±18° rotation, 110ms stagger, `back.out(1.6)` |
 | `lines` | `'lines,words'` | lines | `true` | `lines` | Flip up from `rotationX: -92` behind a line mask, 180ms stagger |
 
 Splitting `chars` also splits `words` so characters never break mid-word when the headline wraps. Lines mode uses `autoSplit: true`: SplitText re-splits when the container resizes, and because the tween is *returned* from `onSplit`, SplitText can sync the new animation to the old one's progress.
@@ -64,6 +64,21 @@ resetSplit():
 ```
 
 `aria: 'auto'` keeps the headline readable by screen readers — the accessible name is the original sentence, not a list of individual letters.
+
+---
+
+## Multiple Instances
+
+The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built from `$props.id()`, so several heroes can share a page without duplicate ids — each section always points at its own headline.
+
+```
+uid       = $props.id()                     # unique, SSR-stable per instance
+headingId = `gsap-suite-title-${uid}`
+<section aria-labelledby={headingId}>
+  <h1 id={headingId}>{headline}</h1>
+```
+
+Each instance also keeps its own `split`, `animation` and `selectedMode`, so changing the mode on one hero never reverts or replays another.
 
 ---
 
@@ -124,7 +139,7 @@ resetSplit():
 | Container resized in lines mode | `autoSplit` re-splits the headline and re-runs the tween. |
 | `prefers-reduced-motion: reduce` | No split is created; the headline is shown in its final state. |
 | Unmounted before plugins load | The `cancelled` flag prevents a split on a detached node. |
-| Two heroes on one page | Both headlines use `id="gsap-suite-title"`; mount one per page to keep ids unique. |
+| Two heroes on one page | Safe. Each heading id is derived from `$props.id()`, so every `aria-labelledby` resolves to its own headline. |
 | JavaScript disabled | The server-rendered headline is readable; only the animation is lost. |
 
 ---
@@ -146,9 +161,3 @@ src/lib/components/GsapSplitTextHero.test.ts    # vitest unit tests
 src/lib/gsapMotion.ts                           # shared GSAP loader + reduced-motion check
 src/routes/gsap-suite/+page.svelte              # demo page (GSAP suite)
 ```
-
-## Multiple instances
-
-The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built
-from `$props.id()`, so several heroes can share a page without duplicate ids — each section
-always points at its own headline.

@@ -33,7 +33,7 @@ emit(x, y, count, force):
   3. KEEP only the newest 260 particles
 
 draw(time) every tick:
-  1. delta = clamp(frame delta, max 0.04)
+  1. delta = tickerFrameDelta(time, lastTime)   # seconds; 1/60 on first frame, max 0.04
   2. particles = particles.map(stepKineticParticle).filter(life > 0)
   3. CLEAR canvas; blend mode 'lighter'
   4. FOR each particle: circle, alpha = life², radius shrinks with alpha
@@ -66,6 +66,26 @@ Raising `0.9` to the power of `delta × 60` means the particle loses the same fr
 | `aurora` | 180° → 285° | Cyan through violet |
 | `ember` | 12° → 58° | Red-orange through amber |
 | `mono` | 210° → 220° | A narrow band of blue |
+
+---
+
+## Frame Timing
+
+`gsap.ticker` calls listeners with its elapsed time in **seconds** (not milliseconds like
+`requestAnimationFrame`). The exported `tickerFrameDelta(time, lastTime)` helper turns that
+into a per-frame step without any `/ 1000` conversion, uses a nominal `1 / 60` step on the
+first frame (or if time fails to advance), and clamps long gaps — a backgrounded tab, say —
+to `MAX_FRAME_DELTA` (0.04s) so particles never jump across the canvas. Particle velocities
+are therefore in pixels per second, and gravity adds 28px/s² to `vy`.
+
+```
+tickerFrameDelta(time, lastTime):
+  IF lastTime is null, time is not finite, or time <= lastTime:
+    RETURN 1 / 60                      # nominal first-frame step
+  RETURN min(MAX_FRAME_DELTA, time − lastTime)   # seconds, capped at 0.04
+```
+
+`lastTime` is reset to `null` on unmount, so a remount starts with the nominal step rather than one giant gap.
 
 ---
 
@@ -124,6 +144,9 @@ Raising `0.9` to the power of `delta × 60` means the particle loses the same fr
 | `clampParticleCount(count)` | Rounds and clamps a burst size to 8–260. |
 | `createKineticParticle(x, y, angle, speed, hue)` | Builds one particle with velocity from angle and speed. |
 | `stepKineticParticle(particle, delta)` | Advances one particle by `delta` seconds (friction, gravity, life). |
+| `tickerFrameDelta(time, lastTime)` | Converts `gsap.ticker` time (seconds) into a clamped per-frame step. |
+| `MAX_FRAME_DELTA` | The 0.04s cap on a single simulated step. |
+| `KineticParticle` | TypeScript shape of one particle (`x`, `y`, `vx`, `vy`, `life`, `maxLife`, `size`, `hue`). |
 
 ---
 
@@ -135,7 +158,9 @@ Raising `0.9` to the power of `delta × 60` means the particle loses the same fr
 | `trail={false}` | Pointer movement emits nothing; clicks still burst. |
 | Very large `density` | Each burst is capped at 260, and the live array is trimmed to the newest 260. |
 | Container resizes | `ResizeObserver` resizes the backing canvas to match, respecting device pixel ratio. |
-| Tab backgrounded then resumed | Frame delta is clamped so particles do not jump. |
+| Tab backgrounded then resumed | Frame delta is clamped to `MAX_FRAME_DELTA` (0.04s) so particles do not jump. |
+| First frame, or ticker time fails to advance | `tickerFrameDelta` falls back to a nominal `1 / 60` step. |
+| Several fields on one page | Each instance owns its own canvas, particle array and ticker callback; there are no ids or globals to collide. |
 | Unmounted before GSAP loads | The `cancelled` flag stops listeners and the ticker from being attached. |
 | Canvas 2D context unavailable | `draw` returns early; content is unaffected. |
 
@@ -158,12 +183,3 @@ src/lib/components/KineticCanvasField.test.ts    # vitest unit tests for the hel
 src/lib/gsapMotion.ts                            # shared GSAP loader, reduced-motion check, clamp
 src/routes/gsap-suite/+page.svelte               # demo page (GSAP suite)
 ```
-
-## Frame timing
-
-`gsap.ticker` calls listeners with its elapsed time in **seconds** (not milliseconds like
-`requestAnimationFrame`). The exported `tickerFrameDelta(time, lastTime)` helper turns that
-into a per-frame step without any `/ 1000` conversion, uses a nominal `1 / 60` step on the
-first frame (or if time fails to advance), and clamps long gaps — a backgrounded tab, say —
-to `MAX_FRAME_DELTA` (0.04s) so particles never jump across the canvas. Particle velocities
-are therefore in pixels per second, and gravity adds 28px/s² to `vy`.
