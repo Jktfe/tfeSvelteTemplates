@@ -22,6 +22,8 @@ WHEN component mounts:
   6. START the requestAnimationFrame tick
 
 EACH animation frame (tick):
+  IF reduced motion is on and the entrance hasn't finished:
+     skip it — mark it done and show the headline and summary at once
   IF the entrance is still playing (first 1.7s):
      t = elapsed / 1700
      rise:   lerp stack position → fan centre        (t 0 → 0.55)
@@ -36,9 +38,11 @@ EACH animation frame (tick):
         ELSE IF another card is open   → target opacity 0
         ELSE target = lerp(fanPose, conveyorPose, transition) (+28px hover lift)
      derive room-preview visibility / image index and the awards slide
-  SPRING every card's current values 25% of the way to its target (15% in detail)
+  SPRING every card's current values 25% of the way to its target (15% in detail;
+         100% — an instant snap — under reduced motion)
   WRITE transform / opacity / z-index straight onto the card element
-  SCHEDULE the next frame (unless reduced motion is on)
+  SCHEDULE the next frame (the loop keeps running so scroll, hover and the
+         detail view still respond under reduced motion)
 
 WHEN a card is clicked:
   detailIdx = index; preselect its first size + material; quantity = 1
@@ -160,7 +164,7 @@ Types live in `src/lib/types.ts` (`InteractiveCardsProps`, `InteractiveCardsProj
 | Dark mode toggled while mounted | A `MutationObserver` on `data-theme` swaps the wall texture live. |
 | Ancestor has `overflow: hidden` | `position: sticky` stops pinning; give the component an unclipped scroll ancestor. |
 | Remote CDN images blocked or offline | Cards and wall render empty; pass your own `image` URLs and `wall*` / `frame` / `room` props for production. |
-| `prefers-reduced-motion: reduce` | The tick runs a single frame and stops. Known limitation: that frame is the start of the entrance, so the cards stay at opacity 0 — reduced-motion visitors currently see the headline and CTAs but not the fan. A settled, motion-free final pose is the intended behaviour and still needs implementing. |
+| `prefers-reduced-motion: reduce` | The rise/fan entrance is skipped and the cards snap straight to their settled fan pose (spring = 1). The tick loop keeps running, so scrolling still moves them to the diagonal and conveyor poses and the detail view still opens — every change is an instant jump rather than an eased drift. |
 | Clicking inside the detail panel | Ignored by the background-click handler (`[data-panel]`), so pills and the stepper don't close the view. |
 
 ---
