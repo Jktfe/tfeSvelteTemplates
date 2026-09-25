@@ -135,6 +135,18 @@
 	}
 
 	/**
+	 * Keyboard focus shows the same tooltip as hover, anchored to the element
+	 * itself since there is no pointer position to follow.
+	 */
+	function handleFocus(e: FocusEvent, point: GeoDataPoint): void {
+		if (!showTooltip) return;
+		const rect = (e.currentTarget as Element).getBoundingClientRect();
+		hoveredPoint = point;
+		tooltipX = rect.left + rect.width / 2;
+		tooltipY = rect.top;
+	}
+
+	/**
 	 * Handle mouse leave
 	 */
 	function handleMouseLeave(): void {
@@ -227,6 +239,8 @@
 						aria-label={`${point.name}: ${point.value}`}
 						onpointermove={(e: PointerEvent) => handleMouseMove(e, point)}
 						onpointerleave={handleMouseLeave}
+						onfocus={(e: FocusEvent) => handleFocus(e, point)}
+						onblur={handleMouseLeave}
 						onclick={() => handleClick(point)}
 						onkeydown={(e: KeyboardEvent) => {
 							if (e.key === 'Enter' || e.key === ' ') {
@@ -396,19 +410,22 @@
 		color: #6b7280;
 	}
 
-	/*
-	 * [RFO] prefers-reduced-motion support - OPTIONAL/USEFUL
-	 * WHY NOT DONE BEFORE: Very subtle hover transition (0.15s opacity change).
-	 * Only triggered on user hover interaction, not continuous animation.
-	 * WCAG 2.3.3 is AAA level (not required for A/AA compliance).
-	 *
-	 * Simple CSS fix (low priority but good practice):
-	 * @media (prefers-reduced-motion: reduce) {
-	 *   .geo-spike-map :global(.spike) { transition: none; }
-	 * }
-	 */
+	/* Keyboard users get a visible ring on the focused marker group */
+	.geo-spike-map :global(.spike-group:focus) {
+		outline: none;
+	}
+
+	.geo-spike-map :global(.spike-group:focus-visible) {
+		outline: 2px solid #146ef5;
+		outline-offset: 2px;
+	}
+
+	/* Hover feedback is instant for users who have asked for reduced motion */
+	@media (prefers-reduced-motion: reduce) {
+		.geo-spike-map :global(.spike) {
+			transition: none;
+		}
+	}
 </style>
 
 <!-- [CR] Component uses LayerChart + d3-geo (justified dependencies for spike viz). -->
-<!-- [CR] RFO Review 27.12.25: Subtle hover effects only. OPTIONAL/USEFUL for completeness. -->
-<!-- RFO Review: 27.12.25 -->

@@ -183,6 +183,35 @@
 	}
 
 	/**
+	 * Keyboard focus shows the same tooltip as hover, anchored to the region's
+	 * bounding box since there is no pointer position to follow.
+	 */
+	function handleFocus(e: FocusEvent, feature: GeoJSON.Feature): void {
+		if (!showTooltip) return;
+		const rect = (e.currentTarget as Element).getBoundingClientRect();
+		hoveredRegion = getRegionProps(feature);
+		tooltipX = rect.left + rect.width / 2;
+		tooltipY = rect.top;
+		onRegionHover?.(hoveredRegion);
+	}
+
+	/** Enter / Space activate a focused region, matching native buttons */
+	function handleKeydown(e: KeyboardEvent, feature: GeoJSON.Feature): void {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			handleClick(feature);
+		}
+	}
+
+	/** Screen-reader label: region name plus its value (or an explicit "no data") */
+	function getRegionLabel(feature: GeoJSON.Feature): string {
+		const region = getRegionProps(feature);
+		const regionData = dataLookup().get(region.id);
+		if (!regionData) return `${region.name}: no data`;
+		return `${region.name}: ${regionData.label ?? regionData.value.toLocaleString('en-GB')}`;
+	}
+
+	/**
 	 * Handle mouse leave
 	 */
 	function handleMouseLeave(): void {
@@ -228,8 +257,14 @@
 						stroke={strokeColor}
 						strokeWidth={strokeWidth}
 						class="region"
+						tabindex={0}
+						role="button"
+						aria-label={getRegionLabel(feature)}
 						onpointermove={(e: PointerEvent) => handleMouseMove(e, feature)}
 						onpointerleave={handleMouseLeave}
+						onfocus={(e: FocusEvent) => handleFocus(e, feature)}
+						onblur={handleMouseLeave}
+						onkeydown={(e: KeyboardEvent) => handleKeydown(e, feature)}
 						onclick={() => handleClick(feature)}
 					/>
 				{/each}
@@ -245,7 +280,10 @@
 			<div class="tooltip-title">{hoveredRegion.name}</div>
 			{#if hoveredRegion.value !== undefined}
 				<div class="tooltip-value">
-					{hoveredRegion.label || hoveredRegion.value.toLocaleString('en-GB')}
+					<!-- label falls back to the region name, which the title already shows -->
+					{hoveredRegion.label && hoveredRegion.label !== hoveredRegion.name
+						? hoveredRegion.label
+						: hoveredRegion.value.toLocaleString('en-GB')}
 				</div>
 			{/if}
 		</div>
@@ -285,6 +323,16 @@
 
 	.geo-choropleth :global(.region:hover) {
 		opacity: 0.8;
+	}
+
+	/* Keyboard users get a visible ring on the focused region */
+	.geo-choropleth :global(.region:focus) {
+		outline: none;
+	}
+
+	.geo-choropleth :global(.region:focus-visible) {
+		outline: 2px solid #146ef5;
+		outline-offset: -2px;
 	}
 
 	.tooltip {
@@ -339,19 +387,12 @@
 		color: #6b7280;
 	}
 
-	/*
-	 * [RFO] prefers-reduced-motion support - OPTIONAL/USEFUL
-	 * WHY NOT DONE BEFORE: Very subtle hover transition (0.15s opacity change).
-	 * Only triggered on user hover interaction, not continuous animation.
-	 * WCAG 2.3.3 is AAA level (not required for A/AA compliance).
-	 *
-	 * Simple CSS fix (low priority but good practice):
-	 * @media (prefers-reduced-motion: reduce) {
-	 *   .geo-choropleth :global(.region) { transition: none; }
-	 * }
-	 */
+	/* Hover feedback is instant for users who have asked for reduced motion */
+	@media (prefers-reduced-motion: reduce) {
+		.geo-choropleth :global(.region) {
+			transition: none;
+		}
+	}
 </style>
 
 <!-- [CR] Component uses LayerChart + d3 (justified dependencies for choropleth viz). -->
-<!-- [CR] RFO Review 27.12.25: Subtle hover effects only. OPTIONAL/USEFUL for completeness. -->
-<!-- RFO Review: 27.12.25 -->
