@@ -30,7 +30,7 @@ const components: ComponentCatalogItem[] = Array.from({ length: 12 }, (_, index)
 	href: `/component-${index + 1}`,
 	icon: index % 2 === 0 ? '🎬' : '📊',
 	description: `Component ${index + 1} description`,
-	screenshot: `/ComponentScreenshots/Component${index + 1}Shot.png`,
+	screenshot: `/ComponentScreenshots/Component${index + 1}Shot.webp`,
 	themeSupport: index % 2 === 0 ? 'dual' : 'light',
 	source: `src/lib/components/Component${index + 1}.svelte`,
 	docs: `src/lib/components/Component${index + 1}.md`,

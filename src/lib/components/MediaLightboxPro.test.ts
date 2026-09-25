@@ -11,13 +11,13 @@ const items: MediaLightboxItem[] = [
 	{
 		id: 'health',
 		title: 'Health matrix',
-		src: '/ComponentScreenshots/ComponentHealthMatrixShot.png',
+		src: '/ComponentScreenshots/ComponentHealthMatrixShot.webp',
 		alt: 'Health matrix screenshot'
 	},
 	{
 		id: 'tokens',
 		title: 'Theme tokens',
-		src: '/ComponentScreenshots/ThemeTokenInspectorShot.png',
+		src: '/ComponentScreenshots/ThemeTokenInspectorShot.webp',
 		alt: 'Theme token screenshot'
 	}
 ];

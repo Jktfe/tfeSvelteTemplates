@@ -18,7 +18,7 @@ const entry: ComponentHealthEntry = {
 	source: 'src/lib/components/BadgePill.svelte',
 	docs: 'src/lib/components/BadgePill.md',
 	demo: 'src/routes/badgepill/+page.svelte',
-	screenshot: '/ComponentScreenshots/BadgePillShot.png',
+	screenshot: '/ComponentScreenshots/BadgePillShot.webp',
 	themeSupport: 'dual',
 	dependencies: [],
 	relatedFiles: []
@@ -28,7 +28,7 @@ const fullFiles: ComponentHealthFiles = {
 	source: new Set(['src/lib/components/BadgePill.svelte']),
 	docs: new Set(['src/lib/components/BadgePill.md']),
 	demo: new Set(['src/routes/badgepill/+page.svelte']),
-	screenshot: new Set(['static/ComponentScreenshots/BadgePillShot.png']),
+	screenshot: new Set(['static/ComponentScreenshots/BadgePillShot.webp']),
 	test: new Set(['src/lib/components/BadgePill.test.ts'])
 };
 
@@ -72,7 +72,7 @@ describe('ComponentHealthMatrix helpers', () => {
 					...entry,
 					name: 'NoShot',
 					href: '/noshot',
-					screenshot: '/ComponentScreenshots/NoShot.png'
+					screenshot: '/ComponentScreenshots/NoShot.webp'
 				}
 			],
 			fullFiles

@@ -9,6 +9,7 @@
 
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { fileManifest } from './scripts/viteFileManifest';
 
 // Load environment variables from .env file
 import { config } from 'dotenv';
@@ -16,7 +17,9 @@ config();
 
 export default defineConfig({
 	// SvelteKit plugin - handles all SvelteKit-specific Vite configuration
-	plugins: [sveltekit()],
+	// fileManifest() exposes `virtual:file-manifest` so pages can check which
+	// files exist without importing (and therefore bundling) them.
+	plugins: [sveltekit(), fileManifest()],
 
 	// SSR configuration for packages that don't work well with Vite's SSR
 	ssr: {

@@ -22,7 +22,7 @@ render searchable, filterable table
 ```text
 componentCatalogEntries
   -> route maps entries into ComponentHealthEntry[]
-  -> route builds available file sets with import.meta.glob
+  -> route builds available file sets from the virtual:file-manifest path lists
   -> createHealthRows()
   -> ComponentHealthMatrix rows prop
   -> query/status/theme filters
@@ -45,7 +45,7 @@ componentCatalogEntries
 
 ## Dependencies
 
-No external dependencies. The route usually pairs this component with `componentCatalogEntries` and Vite `import.meta.glob` file sets.
+No external dependencies. The route usually pairs this component with `componentCatalogEntries` and the path lists from `virtual:file-manifest` (a small Vite plugin in `scripts/viteFileManifest.ts`). Avoid `import.meta.glob` with `?url` here — it copies every matched file into the build just to prove it exists.
 
 ## File Structure
 
