@@ -480,6 +480,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </Tabs>`
 			}),
 			component('CommandPalette', '/commandpalette', '🔎', 'Spotlight-style fuzzy command launcher.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import CommandPalette from '$lib/components/CommandPalette.svelte';
   const items = [
@@ -1286,6 +1287,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </CRTScreen>`
 			}),
 			component('HoloCard', '/holocard', '🪩', 'Holographic foil shimmer wrapper.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import HoloCard from '$lib/components/HoloCard.svelte';
 </script>
@@ -1653,6 +1655,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		summary: 'Geographic interfaces, routing demos, and location-aware visualisations.',
 		components: [
 			component('Maps', '/maps', '🗺️', 'Interactive Leaflet maps with markers and search.', {
+				themeSupport: 'dual',
 				source: 'src/lib/components/MapBasic.svelte',
 				docs: 'src/lib/components/Maps.md',
 				dependencies: ['leaflet', '@types/leaflet'],
@@ -1673,6 +1676,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				agentHint: 'Include Leaflet CSS in app.html before using these components.'
 			}),
 			component('Location', '/location', '📍', 'Locate-me, delivery, and routing demos.', {
+				themeSupport: 'dual',
 				source: 'src/lib/components/MapLocateMe.svelte',
 				docs: 'src/lib/components/Location.md',
 				dependencies: ['leaflet', '@types/leaflet'],
@@ -1697,6 +1701,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <GlobePresence {dots} autoRotate />`
 			}),
 			component('GeoViz', '/geo', '🌍', 'Choropleth and spike-map visualisations.', {
+				themeSupport: 'dual',
 				screenshotFile: 'GeoVizShot.png',
 				source: 'src/lib/components/GeoChoropleth.svelte',
 				docs: 'src/lib/components/GeoViz.md',
