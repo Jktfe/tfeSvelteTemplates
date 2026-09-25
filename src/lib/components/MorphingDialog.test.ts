@@ -25,26 +25,26 @@
 import { render, screen } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect } from 'vitest';
-import MorphingDialogTest from './MorphingDialogTest.svelte';
+import MorphingDialogTestHarness from './MorphingDialogTestHarness.test.svelte';
 
 describe('MorphingDialog', () => {
 	// First things first — does it render the trigger?
 	it('renders the trigger element', () => {
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 		const trigger = screen.getByText('Open Dialog');
 		expect(trigger).toBeInTheDocument();
 	});
 
 	// The dialog should not be visible initially
 	it('does not show dialog by default', () => {
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 		const dialog = screen.queryByRole('dialog');
 		expect(dialog).not.toBeInTheDocument();
 	});
 
 	// Trigger should have correct ARIA attributes
 	it('trigger has aria-expanded=false initially', () => {
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 		const trigger = screen.getByText('Open Dialog');
 		expect(trigger).toHaveAttribute('aria-expanded', 'false');
 		expect(trigger).toHaveAttribute('aria-haspopup', 'dialog');
@@ -53,7 +53,7 @@ describe('MorphingDialog', () => {
 	// Clicking the trigger should open the dialog
 	it('opens dialog when trigger is clicked', async () => {
 		const user = userEvent.setup();
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 
 		const trigger = screen.getByText('Open Dialog');
 		await user.click(trigger);
@@ -67,7 +67,7 @@ describe('MorphingDialog', () => {
 	// Close button should be present when dialog is open
 	it('shows close button when dialog is open', async () => {
 		const user = userEvent.setup();
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 
 		await user.click(screen.getByText('Open Dialog'));
 
@@ -78,7 +78,7 @@ describe('MorphingDialog', () => {
 	// Dialog content should be rendered
 	it('renders dialog content when open', async () => {
 		const user = userEvent.setup();
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 
 		await user.click(screen.getByText('Open Dialog'));
 
@@ -89,7 +89,7 @@ describe('MorphingDialog', () => {
 	// Trigger should update aria-expanded when dialog opens
 	it('trigger aria-expanded updates when dialog opens', async () => {
 		const user = userEvent.setup();
-		render(MorphingDialogTest);
+		render(MorphingDialogTestHarness);
 
 		const trigger = screen.getByText('Open Dialog');
 		expect(trigger).toHaveAttribute('aria-expanded', 'false');
