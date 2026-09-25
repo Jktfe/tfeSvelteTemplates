@@ -127,6 +127,9 @@ const GOLD_STANDARD_DOCS = [
 
 	// Data & Visualisation
 	'src/lib/components/DataGrid.md',
+	'src/lib/components/DataGridBasic.md',
+	'src/lib/components/DataGridAdvanced.md',
+	'src/lib/components/DataGridFilters.md',
 	'src/lib/components/CalendarHeatmap.md',
 	'src/lib/components/Gantt.md',
 	'src/lib/components/CinemaReel/CinemaReel.md',

@@ -4,7 +4,7 @@
 
 A spreadsheet for the web. Pass it an array of objects and a column definition, and it renders a sortable, filterable, paginated table with sensible defaults. Click a column header to sort. Type in the search box to filter across every column at once. Flip between pages with the arrow controls.
 
-The library actually ships **two** implementations behind the same conceptual surface — `DataGridBasic` is a zero-dependency, copy-paste-ready primitive sized for human-scale data (under ~500 rows), and `DataGridAdvanced` is a typed wrapper around SVAR Grid for serious workloads (virtual scrolling, inline editing, 10 000+ rows). They share the `DataGridColumn` shape and an `Employee[]`-style data array, so you can prototype with Basic and graduate to Advanced without rewriting your column config.
+The library actually ships **two** implementations behind the same conceptual surface — `DataGridBasic` is a zero-dependency, copy-paste-ready primitive sized for human-scale data (under ~500 rows), and `DataGridAdvanced` is a typed wrapper around SVAR Grid for serious workloads (virtual scrolling, inline editing, 10 000+ rows). They share the `DataGridColumn` shape and accept any array of row objects, so you can prototype with Basic and graduate to Advanced without rewriting your column config.
 
 This document covers `DataGridBasic` as the canonical implementation; the **Distinct From DataGridAdvanced** deep-dive below explains when and why to switch.
 
@@ -111,7 +111,7 @@ There is no virtual scrolling in Basic. Adding it would more than double the com
 | Accessibility | Hand-rolled, predictable | WAI-ARIA from library |
 | Portability | Copy the file, done | Requires `@svar-ui/svelte-grid` install |
 
-The wrapper pattern in `DataGridAdvanced` translates the `DataGridColumn[]` shape into SVAR's expected column format on the way in, and surfaces selection/edit events back out. That means a column config written for Basic works in Advanced: you can prototype on a 50-row fixture in Basic, drop in Advanced once production data shows up, and not rewrite anything.
+The wrapper pattern in `DataGridAdvanced` translates the `DataGridColumn[]` shape into SVAR's expected column format on the way in, and surfaces edits, deletes and selection back out through typed callbacks (`onCellEdit`, `onDelete`, `onSelectionChange`). It never calls `fetch` itself — throwing from a callback rolls the change back — so it's as portable as the SVAR dependency allows. See `DataGridAdvanced.md` for the persistence contract. That means a column config written for Basic works in Advanced: you can prototype on a 50-row fixture in Basic, drop in Advanced once production data shows up, and not rewrite anything.
 
 If you find yourself wanting to add inline editing or virtual scrolling to Basic, **stop and switch to Advanced.** That's exactly the seam those features were given a separate component for.
 
@@ -158,7 +158,7 @@ There is no "loading" state in Basic — it's synchronous over an in-memory arra
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `data` | `any[]` | `[]` | Array of records. Each row is an object whose keys match `column.id` values. |
+| `data` | `T[]` (`T extends object`) | `[]` | Array of records. Each row is an object whose keys match `column.id` values. |
 | `columns` | `DataGridColumn[]` | required | Column definitions. See `DataGridColumn` below. |
 | `sortable` | `boolean` | `true` | Master switch for header-click sorting. Per-column `sortable: false` overrides. |
 | `filterable` | `boolean` | `true` | Show the global search input. |
@@ -194,7 +194,7 @@ interface DataGridColumn {
 | Mixed types in a sort column | Numbers compared numerically when both are numbers; otherwise falls through to string compare on the lowercased values. |
 | `null` or `undefined` in a sort column | Sorted to the end regardless of direction. |
 | Duplicate `column.id` entries | Both render; second column's sort/filter still works. The Svelte `{#each}` key includes the column index so there are no key collisions. |
-| `cellRenderer` returns HTML with a `<script>` tag | Sanitised through `sanitizeHTML` before `{@html}` — XSS-safe. |
+| `cellRenderer` returns HTML | Passed through `sanitizeHTML` before `{@html}`. That helper is currently a pass-through seam, so only render developer-authored HTML until a real sanitiser is plugged in there. |
 | `cellClass` returns malicious-looking class names | Run through `sanitizeClassName` to strip anything other than valid CSS class characters. |
 | Rapid typing in the filter | `$effect` resets `currentPage` to 1 on each change. Filter result count and rendered rows update on every keystroke (no debounce — add one if your dataset is >2 000 rows). |
 | Sort applied, then filter narrows results | Sort persists; sort then runs over the new filtered set. Page resets to 1. |
@@ -203,7 +203,7 @@ interface DataGridColumn {
 ## Dependencies
 
 - **Svelte 5.x** — `$state`, `$derived`, `$effect` for the filter/sort/paginate pipeline. The chained `$derived` is what makes the pipeline efficient.
-- **`$lib/utils.sanitizeHTML`** — DOMPurify wrapper for `cellRenderer` HTML output. XSS protection is non-negotiable when rendering untrusted column output.
+- **`$lib/utils.sanitizeHTML`** — the single seam `cellRenderer` HTML flows through. It is a pass-through today (inputs are developer-authored renderers); swap in `sanitize-html` there before rendering anything user-supplied.
 - **`$lib/dataGridFormatters.sanitizeClassName`** — strips non-class-name characters from `cellClass` output.
 - Zero external rendering dependencies. The whole component is one `.svelte` file plus its types — copy-paste portable.
 
@@ -219,7 +219,12 @@ src/lib/components/DataGridBasic.test.ts        # unit tests
 src/lib/components/DataGridAdvanced.svelte      # SVAR Grid wrapper
 src/lib/components/DataGridAdvanced.test.ts     # unit tests
 src/lib/components/DataGridFilters.svelte       # advanced filter UI
-src/lib/components/DataGrid.md                  # this file
+src/lib/components/DataGridFilters.test.ts      # unit tests
+src/lib/components/DataGrid.md                  # this file (family overview)
+src/lib/components/DataGridBasic.md             # Basic deep-dive + theming tokens
+src/lib/components/DataGridAdvanced.md          # Advanced persistence contract + theming
+src/lib/components/DataGridFilters.md           # Filters deep-dive + theming tokens
+src/routes/datagrid/api/+server.ts              # demo REST endpoint (403 for the read-only demo user)
 src/lib/dataGridFormatters.ts                   # sanitizeClassName, formatCurrency, etc.
 src/lib/server/dataGrid.ts                      # loadEmployeesFromDatabase + fallback
 src/routes/datagrid/+page.svelte                # demo page

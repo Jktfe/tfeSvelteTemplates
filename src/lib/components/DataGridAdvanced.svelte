@@ -1,931 +1,864 @@
 <!--
 	============================================================
-	DataGridAdvanced - Production Data Grid (SVAR Grid Wrapper)
+	DataGridAdvanced
 	============================================================
+	WHAT — A production data grid (SVAR Grid wrapper) with virtual scrolling,
+	       global search, inline editing, multi-row selection, bulk delete and
+	       CSV export — for any row shape, not just employees.
+	WHY  — Reach for it when DataGridBasic runs out of road: thousands of rows,
+	       or users need to edit data in place. Persistence is callback-driven,
+	       so the component never assumes a URL, an API shape or a domain.
 
-	[CR] WHAT IT DOES
-	A comprehensive wrapper around @svar-ui/svelte-grid providing
-	virtual scrolling, inline editing, row selection, and bulk operations.
-	Designed for production apps with large datasets.
+	FEATURES
+	- Virtual scrolling (smooth at 10,000+ rows — only visible rows are in the DOM)
+	- Global search across every visible column
+	- Inline editing with type coercion (number / date / select) and option validation
+	- Optimistic updates: the edit shows immediately, and rolls back if
+	  `onCellEdit` throws or rejects
+	- Multi-row selection (click, Ctrl+click to toggle, Shift+click for a range)
+	- Bulk delete via `onDelete` (button only renders when you supply it)
+	- CSV export of the rows currently matching the search
+	- Columns inferred from the first row when `columns` is omitted
+	- Light, dark or 'auto' (follows the OS) — search/toolbar chrome follows the grid skin
+	- SSR-safe: renders a same-height placeholder on the server, mounts SVAR on hydration
 
-	[NTL] THE SIMPLE VERSION
-	This is a super-powered spreadsheet that can handle THOUSANDS of rows
-	without slowing down! You can click cells to edit them, select multiple
-	rows for bulk actions, search through everything, and export to CSV.
+	ACCESSIBILITY
+	- SVAR Grid renders role="grid" / gridcell with keyboard cell navigation
+	- Wrapper is a labelled region with aria-busy while a save/delete is in flight
+	- Status messages (saved, failed, deleted) announce through an aria-live region
+	- Visible focus rings on every control; spinner honours prefers-reduced-motion
 
-	============================================================
+	DEPENDENCIES
+	- @svar-ui/svelte-grid — virtual scrolling + inline editors would be a 100h+
+	  hand-rolled project; SVAR is MIT-licensed and well maintained.
+	- $lib/types — type-only import (DataGridColumn, DataGridAdvancedProps, …)
 
-	FEATURES:
-	- Virtual scrolling (handles 10,000+ rows smoothly)
-	- Global search across all columns
-	- Inline editing (click any cell to edit)
-	- Row selection for bulk operations
-	- CSV export with one click
-	- Light/dark theme support
-	- Optimistic updates with rollback on error
-	- Auto-generates columns from data structure
+	PERFORMANCE
+	- Search is a single linear pass over the rows; rendering cost is flat thanks
+	  to virtual scrolling. Editing re-feeds only the changed row to SVAR.
 
-	PERFECT FOR:
-	- Large datasets (1000s of rows)
-	- Production admin dashboards
-	- Data entry applications
-	- Employee/inventory management systems
+	USAGE
+	<DataGridAdvanced
+		data={rows}
+		{columns}
+		editable
+		selectable
+		exportable
+		onCellEdit={async ({ id, column, value }) => {
+			const res = await fetch('/api/rows', { method: 'PUT', body: JSON.stringify({ id, [column]: value }) });
+			if (!res.ok) throw new Error('Save failed');   // throwing rolls the cell back
+		}}
+		onDelete={async (ids) => { await fetch(`/api/rows?ids=${ids.join(',')}`, { method: 'DELETE' }); }}
+	/>
 
-	NOT IDEAL FOR:
-	- Small prototypes (use DataGridBasic instead)
-	- Bundle-size sensitive projects (~155KB dependency)
-	- Projects needing zero dependencies
-
-	DEPENDENCIES:
-	- @svar-ui/svelte-grid (SVAR Grid library)
-	- Uses $lib/types for TypeScript interfaces
-	- Uses $lib/constants for select field options
-
-	ACCESSIBILITY:
-	- WAI-ARIA compliant (SVAR Grid built-in)
-	- Keyboard navigation within grid
-	- Screen reader friendly
-	- aria-busy during API updates
-
-	WARNINGS: None expected
-
+	PROPS
+	| Prop              | Type                                   | Default         | Description                                   |
+	|-------------------|----------------------------------------|-----------------|-----------------------------------------------|
+	| data              | T[]                                    | []              | Rows (any object with an optional `id`).      |
+	| columns           | DataGridColumn[]                       | inferred        | Column definitions.                           |
+	| editable          | boolean                                | false           | Double-click a cell to edit it.               |
+	| selectable        | boolean                                | false           | Multi-row selection.                          |
+	| exportable        | boolean                                | false           | Show the Export CSV button.                   |
+	| searchable        | boolean                                | true            | Show the global search box.                   |
+	| theme             | 'willow' | 'willowDark' | 'auto'       | 'auto'          | Grid skin; 'auto' follows the OS.             |
+	| height            | string                                 | '600px'         | Height of the whole component.                |
+	| rowHeight         | number                                 | 40              | Row height in pixels.                         |
+	| ariaLabel         | string                                 | 'Data grid'     | Accessible name for the region.               |
+	| searchLabel       | string                                 | 'Search rows'   | Accessible name for the search box.           |
+	| searchPlaceholder | string                                 | 'Search across all columns...' | Search placeholder.            |
+	| exportFilename    | string                                 | 'data'          | CSV base filename (date appended).            |
+	| onCellEdit        | (edit) => void | Partial<T> | Promise  | —               | Persist an edit; throw to roll back.          |
+	| onDelete          | (ids) => void | Promise<void>          | —               | Persist a bulk delete.                        |
+	| confirmDelete     | (count) => boolean | Promise<boolean>  | window.confirm  | Confirmation before deleting.                 |
+	| onSelectionChange | (ids) => void                          | —               | Selection changed.                            |
+	| onError           | (message, error) => void               | —               | An edit or delete failed.                     |
 	============================================================
 -->
 
-<script lang="ts">
-	// [CR] SVAR Grid imports - the heavy-lifting library
+<script lang="ts" generics="T extends DataGridRow">
+	import { onMount } from 'svelte';
 	import { Grid, Willow, WillowDark } from '@svar-ui/svelte-grid';
-	import type { DataGridAdvancedProps, DataGridColumn } from '$lib/types';
-	import { sanitizeClassName } from '$lib/dataGridFormatters';
-	import {
-		DEPARTMENT_OPTIONS_GRID,
-		STATUS_OPTIONS_GRID,
-		POSITION_OPTIONS_GRID,
-		LOCATION_OPTIONS_GRID,
-		transformToGridOptions,
-		VALIDATION_FIELDS
-	} from '$lib/constants';
+	import type { IApi, IColumnConfig } from '@svar-ui/svelte-grid';
+	import type {
+		DataGridAdvancedProps,
+		DataGridColumn,
+		DataGridRow,
+		DataGridRowId
+	} from '$lib/types';
 
-	// [CR] ============================================================
-	// [CR] SECURITY HELPERS
-	// [CR] ============================================================
-
-	// [CR] Escape HTML special characters to prevent XSS attacks
-	// [NTL] Makes sure nobody can sneak nasty code into our grid!
-	function escapeHtml(str: string): string {
-		return str
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;')
-			.replace(/'/g, '&#039;');
-	}
-
-	// [CR] ============================================================
-	// [CR] PROPS - Configuration options for the grid
-	// [NTL] These are the settings you pass in when using the component
-	// [CR] ============================================================
 	let {
-		data = [],             // [NTL] Your array of data objects
-		columns = undefined,   // [NTL] Custom column config (or auto-generate)
-		editable = false,      // [NTL] Can users click cells to edit?
-		selectable = false,    // [NTL] Can users select rows for bulk actions?
-		pageSize = 20,         // [NTL] Rows per page (0 = no pagination)
-		exportable = false,    // [NTL] Show the "Export CSV" button?
-		theme = 'willow'       // [NTL] 'willow' (light) or 'willowDark'
-	}: DataGridAdvancedProps = $props();
+		data = [],
+		columns = undefined,
+		editable = false,
+		selectable = false,
+		exportable = false,
+		searchable = true,
+		theme = 'auto',
+		height = '600px',
+		rowHeight = 40,
+		ariaLabel = 'Data grid',
+		searchLabel = 'Search rows',
+		searchPlaceholder = 'Search across all columns...',
+		exportFilename = 'data',
+		onCellEdit,
+		onDelete,
+		confirmDelete = defaultConfirm,
+		onSelectionChange,
+		onError
+	}: DataGridAdvancedProps<T> = $props();
 
-	// [CR] ============================================================
-	// [CR] STATE MANAGEMENT
-	// [CR] ============================================================
+	// ============================================================
+	// Small, dependency-free helpers
+	// ============================================================
 
-	// [CR] Search state for global filtering
-	// [NTL] What the user types in the search box
-	let searchQuery = $state('');
-
-	/**
-	 * Format a Date object as dd/mm/yy for display
-	 * Handles Date objects, date strings, and null/undefined values
-	 */
-	function formatDateDisplay(date: any): string {
-		// Handle null/undefined
-		if (!date) return '';
-
-		// Convert to Date object if needed
-		let dateObj: Date;
-		if (date instanceof Date) {
-			dateObj = date;
-		} else if (typeof date === 'string') {
-			dateObj = new Date(date);
-		} else {
-			return String(date);
-		}
-
-		// Validate Date object
-		if (isNaN(dateObj.getTime())) return '';
-
-		// Format as dd/mm/yy using UK locale
-		return dateObj.toLocaleDateString('en-GB', {
-			day: '2-digit',
-			month: '2-digit',
-			year: '2-digit'
-		});
+	/** Rows are arbitrary objects, so we read them through a string index. */
+	function readCell(row: T, key: string): unknown {
+		return (row as Record<string, unknown>)[key];
 	}
 
 	/**
-	 * Generate SVAR Grid column configuration
-	 * Converts our DataGridColumn format to SVAR Grid's expected format
-	 *
-	 * SVAR Grid column properties:
-	 * - id: string - Column identifier (must match data key)
-	 * - header: string - Column header text
-	 * - width: number - Column width in pixels (optional)
-	 * - sort: boolean - Enable sorting (default: true)
-	 * - filter: boolean - Enable filtering (default: true)
-	 * - editor: string - Editor type for inline editing ('text', 'number', 'date', etc.)
-	 *
-	 * Note: For date fields, template + editor work together (template for display, editor for editing)
+	 * Class names come from consumer callbacks, so strip anything that isn't a
+	 * legal class character before handing it to the grid. Inlined (rather than
+	 * imported) to keep this file copy-paste portable.
 	 */
-	const gridColumns = $derived(() => {
-		// If custom columns provided, use them
-		if (columns) {
-			return columns.map((col) => {
-				const gridCol: any = {
-					id: col.id,
-					header: col.header,
-					width: typeof col.width === 'number' ? col.width : undefined,
-					sort: col.sortable !== false, // Default to true
-					filter: col.filterable !== false // Default to true
-				};
+	function sanitiseClassName(className: string): string {
+		return className.replace(/[^a-zA-Z0-9\s_-]/g, '');
+	}
 
-				// Add editor configuration if editable
-				if (editable && col.editable !== false) {
-					gridCol.editor = getEditorType(col.type);
+	const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
 
-					// Transform options to SVAR Grid format { id, label }
-					if (col.options) {
-						gridCol.options = transformToGridOptions(col.options);
-					}
-
-					// SPECIAL CASE: Date fields can have template + editor together
-					// Template formats display, editor handles editing
-					// Note: Template receives the cell VALUE directly, not the row object
-					if (col.type === 'date') {
-						gridCol.template = (value: any) => formatDateDisplay(value);
-					}
-				}
-
-				// Add template for NON-editable columns (or non-date editable columns)
-				if (!editable || col.editable === false) {
-					gridCol.template = (obj: any) => {
-						const value = obj[col.id];
-
-						// If cellRenderer is provided, use it (returns HTML - already escaped by renderer)
-						if (col.cellRenderer) {
-							const html = col.cellRenderer(value, obj);
-							const style = col.cellStyle ? col.cellStyle(value, obj) : '';
-							const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
-
-							// Wrap in span with styles and classes
-							if (style || className) {
-								return `<span class="${className}" style="${style}">${html}</span>`;
-							}
-							return html;
-						}
-
-						// If formatter is provided, use it and escape output
-						if (col.formatter) {
-							const formatted = col.formatter(value, obj);
-							const escapedFormatted = escapeHtml(formatted);
-							const style = col.cellStyle ? col.cellStyle(value, obj) : '';
-							const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
-
-							if (style || className) {
-								return `<span class="${className}" style="${style}">${escapedFormatted}</span>`;
-							}
-							return escapedFormatted;
-						}
-
-						// If only styling options are provided
-						if (col.cellStyle || col.cellClass) {
-							const style = col.cellStyle ? col.cellStyle(value, obj) : '';
-							const className = col.cellClass ? sanitizeClassName(col.cellClass(value, obj)) : '';
-							const rawValue = value !== null && value !== undefined ? String(value) : '';
-							const displayValue = escapeHtml(rawValue);
-
-							if (style || className) {
-								return `<span class="${className}" style="${style}">${displayValue}</span>`;
-							}
-							return displayValue;
-						}
-
-						// Default: escape value before returning
-						const rawValue = value !== null && value !== undefined ? String(value) : '';
-						return escapeHtml(rawValue);
-					};
-				}
-
-				return gridCol;
-			});
+	function toDate(value: unknown): Date | null {
+		if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
+		if (typeof value === 'string' && ISO_DATE.test(value)) {
+			const parsed = new Date(value);
+			return isNaN(parsed.getTime()) ? null : parsed;
 		}
+		return null;
+	}
 
-		// Auto-generate columns from first data row
-		if (data.length === 0) return [];
+	/** dd/mm/yy — matches the UK formatting used across the site. */
+	function formatDate(value: unknown): string {
+		const date = toDate(value);
+		if (!date) return value === null || value === undefined ? '' : String(value);
+		return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' });
+	}
 
-		const firstRow = data[0];
-		const autoColumns = [];
+	/** 'hireDate' → 'Hire Date', 'first_name' → 'First Name'. */
+	function humanise(key: string): string {
+		const spaced = key.replace(/[_-]+/g, ' ').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+		return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+	}
 
-		// Define column order and configuration
-		// Options are pre-transformed to SVAR Grid format { id, label }
-		const columnConfig: Record<string, {
-			header: string;
-			width?: number;
-			type?: DataGridColumn['type'];
-			options?: Array<{ id: string; label: string }>;
-		}> = {
-			id: { header: 'ID', width: 60 },
-			firstName: { header: 'First Name', width: 120 },
-			lastName: { header: 'Last Name', width: 120 },
-			email: { header: 'Email', width: 200, type: 'email' },
-			department: { header: 'Department', width: 120, type: 'select', options: DEPARTMENT_OPTIONS_GRID },
-			position: { header: 'Position', width: 150, type: 'select', options: POSITION_OPTIONS_GRID },
-			salary: { header: 'Salary', width: 120, type: 'number' },
-			hireDate: { header: 'Hire Date', width: 120, type: 'date' },
-			status: { header: 'Status', width: 100, type: 'select', options: STATUS_OPTIONS_GRID },
-			location: { header: 'Location', width: 120, type: 'select', options: LOCATION_OPTIONS_GRID },
-			phone: { header: 'Phone', width: 140, type: 'tel' },
-			notes: { header: 'Notes', width: 200 }
-		};
+	function defaultConfirm(count: number): boolean {
+		if (typeof window === 'undefined' || typeof window.confirm !== 'function') return true;
+		return window.confirm(`Delete ${count} row${count === 1 ? '' : 's'}? This cannot be undone.`);
+	}
 
-		// Generate columns in defined order
-		for (const [key, config] of Object.entries(columnConfig)) {
-			if (key in firstRow) {
-				const autoCol: any = {
+	/**
+	 * When no columns are given we look at the first row and guess sensible
+	 * types. It's a starting point — pass `columns` for real apps so headers,
+	 * widths and select options are deliberate.
+	 */
+	function inferColumns(rows: T[]): DataGridColumn[] {
+		const first = rows[0];
+		if (!first) return [];
+		return Object.keys(first)
+			.filter((key) => !key.startsWith('$'))
+			.map((key) => {
+				const sample = readCell(first, key);
+				const type: DataGridColumn['type'] =
+					typeof sample === 'number' ? 'number' : toDate(sample) ? 'date' : 'text';
+				return {
 					id: key,
-					header: config.header,
-					width: config.width,
-					sort: true,
-					filter: true
+					header: key === 'id' ? 'ID' : humanise(key),
+					width: key === 'id' ? 70 : undefined,
+					type,
+					// Ids are identity, not content — editing them would orphan the row.
+					editable: key !== 'id'
 				};
-
-				// Add editor and options if editable
-				// No template property - allows inline editing to work
-				if (editable) {
-					autoCol.editor = getEditorType(config.type);
-					if (config.options) {
-						autoCol.options = config.options; // Already in SVAR Grid format
-					}
-				}
-
-				// Add template for date formatting (display only, doesn't block editing)
-				// SVAR Grid allows template + editor together for date fields
-				// Note: Template receives the cell VALUE directly, not the row object
-				if (key === 'hireDate') {
-					autoCol.template = (value: any) => formatDateDisplay(value);
-				}
-
-				autoColumns.push(autoCol);
-			}
-		}
-
-		return autoColumns;
-	});
-
-	/**
-	 * Get SVAR Grid editor type from our column type
-	 * Maps our simplified type system to SVAR Grid's editor types
-	 *
-	 * @param type - The column type
-	 * @returns Editor type string
-	 *
-	 * Note: SVAR Grid only supports 'text', 'datepicker', 'richselect', and 'combo' editors
-	 * For number fields, we use 'text' editor and rely on validation in handleEdit
-	 */
-	function getEditorType(type?: DataGridColumn['type']): string | undefined {
-		switch (type) {
-			case 'number':
-				// SVAR Grid doesn't have a 'number' editor type
-				// Use 'text' and validate numeric input in handleEdit
-				return 'text';
-			case 'date':
-				return 'datepicker';
-			case 'select':
-				// richselect = dropdown with predefined options (not editable)
-				// combo = editable dropdown with suggestions
-				return 'richselect';
-			case 'email':
-			case 'tel':
-			case 'text':
-			default:
-				return 'text';
-		}
+			});
 	}
 
-	/**
-	 * Transform and filter data for SVAR Grid
-	 * - Converts hireDate strings to Date objects for datepicker editor
-	 * - Applies global search filter across all columns
-	 */
-	const gridData = $derived(() => {
-		let filteredData = data;
+	// ============================================================
+	// Local working copy
+	// ============================================================
 
-		// Apply global search filter
-		if (searchQuery.trim()) {
-			const query = searchQuery.toLowerCase();
-			filteredData = data.filter((employee) => {
-				// Search across all string and number fields
-				const hireDateStr = typeof employee.hireDate === 'string'
-					? employee.hireDate
-					: employee.hireDate?.toISOString().split('T')[0];
+	// A writable $derived: it re-syncs whenever the parent passes new `data`,
+	// but we can also assign to it for optimistic edits and local deletes.
+	let rows = $derived<T[]>([...data]);
 
-				return (
-					employee.firstName?.toLowerCase().includes(query) ||
-					employee.lastName?.toLowerCase().includes(query) ||
-					employee.email?.toLowerCase().includes(query) ||
-					employee.department?.toLowerCase().includes(query) ||
-					employee.position?.toLowerCase().includes(query) ||
-					employee.status?.toLowerCase().includes(query) ||
-					employee.location?.toLowerCase().includes(query) ||
-					employee.phone?.toLowerCase().includes(query) ||
-					employee.notes?.toLowerCase().includes(query) ||
-					employee.salary?.toString().includes(query) ||
-					hireDateStr?.includes(query)
-				);
-			});
-		}
-
-		// Convert hireDate strings to Date objects for datepicker editor
-		return filteredData.map((employee) => {
-			const transformed = { ...employee };
-			if (transformed.hireDate && typeof transformed.hireDate === 'string') {
-				transformed.hireDate = new Date(transformed.hireDate);
-			}
-			return transformed;
-		});
-	});
-
-	/**
-	 * Selected row IDs state
-	 */
-	let selectedIds = $state<number[]>([]);
-
-	/**
-	 * Loading state for API calls
-	 */
+	let searchQuery = $state('');
+	let selectedIds = $state<DataGridRowId[]>([]);
 	let isUpdating = $state(false);
+	let status = $state<{ tone: 'success' | 'error'; text: string } | null>(null);
+	let gridApi: IApi | null = null;
+
+	const resolvedColumns = $derived<DataGridColumn[]>(columns ?? inferColumns(rows));
+
+	const dateColumns = $derived(
+		new Set(resolvedColumns.filter((col) => col.type === 'date').map((col) => col.id))
+	);
+
+	/** The text a user sees in a cell — also what search and CSV export use. */
+	function displayValue(value: unknown, column: DataGridColumn, row: T): string {
+		if (column.formatter) return column.formatter(value, row);
+		if (value === null || value === undefined) return '';
+		if (column.type === 'date') return formatDate(value);
+		if (column.type === 'number' && typeof value === 'number') return value.toLocaleString('en-GB');
+		return String(value);
+	}
+
+	/** Rows that match the search, in their original order. */
+	const visibleRows = $derived.by<T[]>(() => {
+		const query = searchQuery.trim().toLowerCase();
+		if (!searchable || !query) return rows;
+		return rows.filter((row) =>
+			resolvedColumns.some((col) => {
+				const raw = readCell(row, col.id);
+				if (raw === null || raw === undefined) return false;
+				// Match both the raw value (e.g. '2024-01-15', '75000') and the
+				// formatted value (e.g. '15/01/24', '£75,000') so users can type either.
+				const rawText = raw instanceof Date ? raw.toISOString() : String(raw);
+				return (
+					rawText.toLowerCase().includes(query) ||
+					displayValue(raw, col, row).toLowerCase().includes(query)
+				);
+			})
+		);
+	});
 
 	/**
-	 * Handle cell edit event with optimistic updates and API integration
-	 * Called when user edits a cell in the grid
-	 *
-	 * @param event - SVAR Grid edit event containing row, column, and new value
+	 * What SVAR actually receives. Date columns need real Date objects for the
+	 * datepicker editor, so ISO strings are converted on the way in.
 	 */
-	async function handleEdit(event: CustomEvent) {
-		const { id, col, value } = event.detail;
-		console.log('[DataGridAdvanced] Cell edited:', { id, col, value });
+	const gridRows = $derived.by(() =>
+		visibleRows.map((row) => {
+			if (dateColumns.size === 0) return row;
+			const copy: Record<string, unknown> = { ...(row as Record<string, unknown>) };
+			for (const key of dateColumns) {
+				const date = toDate(copy[key]);
+				if (date) copy[key] = date;
+			}
+			return copy;
+		})
+	);
 
-		// Find the row being edited
-		const rowIndex = data.findIndex((row) => row.id === id);
-		if (rowIndex === -1) {
-			console.error('[DataGridAdvanced] Row not found:', id);
+	function editorFor(column: DataGridColumn): IColumnConfig['editor'] {
+		if (column.type === 'date') return 'datepicker';
+		if (column.type === 'select' || column.options) return 'richselect';
+		// SVAR has no numeric editor — we coerce and validate in handleUpdateCell.
+		return 'text';
+	}
+
+	const gridColumns = $derived<IColumnConfig[]>(
+		resolvedColumns.map((col) => {
+			const config: IColumnConfig = {
+				id: col.id,
+				header: col.header,
+				width: typeof col.width === 'number' ? col.width : undefined,
+				flexgrow: col.width === 'auto' ? 1 : undefined,
+				sort: col.sortable !== false
+			};
+
+			if (col.options) {
+				// Select options double as labels, so no template is needed —
+				// SVAR looks the label up by value itself.
+				config.options = col.options.map((option) => ({ id: option, label: option }));
+			} else {
+				// SVAR renders templates as plain text (Svelte escapes it), so a
+				// formatter can never inject markup here.
+				config.template = (value: unknown, row: unknown) => displayValue(value, col, row as T);
+			}
+
+			if (editable && col.editable !== false) {
+				config.editor = editorFor(col);
+			}
+
+			return config;
+		})
+	);
+
+	/** SVAR's `cellStyle` hook returns class names, which is where `cellClass` lands. */
+	function gridCellClass(row: unknown, column: { id?: DataGridRowId }): string {
+		const col = resolvedColumns.find((c) => c.id === column.id);
+		if (!col?.cellClass) return '';
+		const typedRow = row as T;
+		return sanitiseClassName(col.cellClass(readCell(typedRow, col.id), typedRow));
+	}
+
+	// ============================================================
+	// Theme — 'auto' follows the OS colour scheme
+	// ============================================================
+
+	let prefersDark = $state(false);
+
+	// SVAR initialises its store in a client-side effect, so rendering it
+	// during SSR throws. We mount it only once we're in the browser and show
+	// a same-height placeholder until then, which also avoids layout shift.
+	let isClient = $state(false);
+	onMount(() => {
+		isClient = true;
+	});
+
+	$effect(() => {
+		if (theme !== 'auto' || typeof window === 'undefined' || !window.matchMedia) return;
+		const media = window.matchMedia('(prefers-color-scheme: dark)');
+		prefersDark = media.matches;
+		const onChange = (event: MediaQueryListEvent) => (prefersDark = event.matches);
+		media.addEventListener('change', onChange);
+		return () => media.removeEventListener('change', onChange);
+	});
+
+	const isDark = $derived(theme === 'willowDark' || (theme === 'auto' && prefersDark));
+
+	// ============================================================
+	// Editing
+	// ============================================================
+
+	function describeError(error: unknown): string {
+		return error instanceof Error ? error.message : String(error ?? 'Unknown error');
+	}
+
+	function reportError(message: string, error: unknown) {
+		status = { tone: 'error', text: message };
+		onError?.(message, error);
+	}
+
+	/**
+	 * Coerce the raw editor value into the column's type. Returns an error
+	 * string instead of throwing so validation failures read as friendly
+	 * status messages rather than exceptions.
+	 */
+	function coerce(column: DataGridColumn | undefined, value: unknown): { value: unknown } | { error: string } {
+		if (!column) return { value };
+		if (column.options && !column.options.includes(String(value))) {
+			return { error: `"${String(value)}" isn't a valid ${column.header}. Choose one of: ${column.options.join(', ')}.` };
+		}
+		if (column.type === 'number') {
+			const text = String(value ?? '').replace(/[£$€,\s]/g, '');
+			const parsed = Number(text);
+			if (text === '' || !Number.isFinite(parsed)) {
+				return { error: `${column.header} must be a number.` };
+			}
+			return { value: parsed };
+		}
+		if (column.type === 'date') {
+			const date = toDate(value);
+			if (!date) return { error: `${column.header} must be a valid date.` };
+			return { value: date };
+		}
+		return { value };
+	}
+
+	function patchRow(id: DataGridRowId, patch: Record<string, unknown>) {
+		rows = rows.map((row) => (row.id === id ? ({ ...row, ...patch } as T) : row));
+	}
+
+	async function handleUpdateCell(event: { id: DataGridRowId; column: DataGridRowId; value: unknown }) {
+		const { id } = event;
+		const columnId = String(event.column);
+		const original = rows.find((row) => row.id === id);
+		if (!original) return;
+
+		const column = resolvedColumns.find((col) => col.id === columnId);
+		const previousValue = readCell(original, columnId);
+		const coerced = coerce(column, event.value);
+
+		if ('error' in coerced) {
+			// Re-feeding the untouched row makes SVAR repaint the old value.
+			rows = [...rows];
+			reportError(coerced.error, new Error(coerced.error));
 			return;
 		}
 
-		// Map grid column name to Employee property (handle camelCase conversion)
-		const propertyMap: Record<string, keyof typeof data[0]> = {
-			id: 'id',
-			firstName: 'firstName',
-			lastName: 'lastName',
-			email: 'email',
-			department: 'department',
-			position: 'position',
-			salary: 'salary',
-			hireDate: 'hireDate',
-			status: 'status',
-			location: 'location',
-			phone: 'phone',
-			notes: 'notes'
-		};
+		// Optimistic: show the new value straight away, remember the old one.
+		patchRow(id, { [columnId]: coerced.value });
+		status = null;
 
-		const property = propertyMap[col];
-		if (!property) {
-			console.error('[DataGridAdvanced] Unknown column:', col);
-			return;
-		}
-
-		// Validate select field values against allowed options
-		if (property in VALIDATION_FIELDS) {
-			const allowedValues = VALIDATION_FIELDS[property as keyof typeof VALIDATION_FIELDS];
-			if (!allowedValues.includes(String(value))) {
-				alert(`Invalid value for ${String(property)}: ${String(value)}. Must be one of: ${allowedValues.join(', ')}`);
-				console.error(`[DataGridAdvanced] Invalid value for ${String(property)}:`, value);
-				return;
-			}
-		}
-
-		// Store original value for rollback
-		const originalValue = data[rowIndex][property];
-
-		// Process value based on type
-		let processedValue = value;
-
-		// Convert Date objects to YYYY-MM-DD format for API
-		if (property === 'hireDate') {
-			if (value instanceof Date) {
-				processedValue = value.toISOString().split('T')[0];
-			} else if (typeof value === 'string' && value.includes('T')) {
-				processedValue = value.split('T')[0];
-			} else if (typeof value === 'string') {
-				// Already in YYYY-MM-DD format
-				processedValue = value;
-			}
-		}
-
-		// Optimistic update: Update local data immediately
-		(data[rowIndex] as any)[property] = processedValue;
+		if (!onCellEdit) return;
 
 		try {
 			isUpdating = true;
-
-			// Send update to API
-			const response = await fetch('/datagrid/api', {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					id,
-					[property]: processedValue
-				})
+			const updatedRow = rows.find((row) => row.id === id) ?? original;
+			const serverPatch = await onCellEdit({
+				id,
+				column: columnId,
+				value: coerced.value,
+				previousValue,
+				row: updatedRow
 			});
-
-			if (!response.ok) {
-				throw new Error('Failed to update employee');
+			// Let the server have the last word (e.g. a recalculated updatedAt).
+			if (serverPatch && typeof serverPatch === 'object') {
+				patchRow(id, serverPatch as Record<string, unknown>);
 			}
-
-			const result = await response.json();
-
-			if (!result.success) {
-				throw new Error(result.error || 'Update failed');
-			}
-
-			console.log('[DataGridAdvanced] Successfully updated employee:', result.data);
-
-			// Update with server response (in case server modified the data)
-			if (result.data) {
-				Object.assign(data[rowIndex], result.data);
-			}
+			status = { tone: 'success', text: `Saved ${column?.header ?? columnId}.` };
 		} catch (error) {
-			console.error('[DataGridAdvanced] Error updating employee:', error);
-
-			// Rollback optimistic update
-			(data[rowIndex] as any)[property] = originalValue;
-
-			// Show error to user
-			alert(`Failed to update employee: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			patchRow(id, { [columnId]: previousValue });
+			reportError(`Couldn't save ${column?.header ?? columnId}: ${describeError(error)}`, error);
 		} finally {
 			isUpdating = false;
 		}
 	}
 
-	/**
-	 * Handle row selection event
-	 * Called when user selects/deselects rows
-	 *
-	 * @param event - SVAR Grid selection event containing selected row IDs
-	 */
-	function handleSelection(event: CustomEvent) {
-		selectedIds = event.detail;
-		console.log('[DataGridAdvanced] Rows selected:', selectedIds);
+	// ============================================================
+	// Selection + bulk delete
+	// ============================================================
+
+	function handleSelectRow() {
+		// SVAR fires select-row per click; the store holds the full selection.
+		const current = gridApi?.getState().selectedRows ?? [];
+		selectedIds = [...current];
+		onSelectionChange?.(selectedIds);
 	}
 
-	/**
-	 * Delete selected rows with bulk API call
-	 */
 	async function deleteSelected() {
-		if (selectedIds.length === 0) {
-			alert('No rows selected');
-			return;
-		}
-
-		if (!confirm(`Delete ${selectedIds.length} employee(s)? This action cannot be undone.`)) {
-			return;
-		}
+		if (!onDelete || selectedIds.length === 0) return;
+		const ids = [...selectedIds];
+		if (!(await confirmDelete(ids.length))) return;
 
 		try {
 			isUpdating = true;
-
-			const response = await fetch(`/datagrid/api?ids=${selectedIds.join(',')}`, {
-				method: 'DELETE'
-			});
-
-			if (!response.ok) {
-				throw new Error('Failed to delete employees');
-			}
-
-			const result = await response.json();
-
-			if (!result.success) {
-				throw new Error(result.error || 'Delete failed');
-			}
-
-			console.log('[DataGridAdvanced] Deleted employees:', result);
-
-			// Remove deleted rows from local data
-			data = data.filter((row) => !selectedIds.includes(row.id!));
+			await onDelete(ids);
+			// Tell SVAR first so its own selection state stays consistent, then
+			// mirror the change locally (which SVAR sees as a no-op).
+			for (const id of ids) gridApi?.exec('delete-row', { id });
+			const doomed = new Set(ids);
+			rows = rows.filter((row) => row.id === undefined || !doomed.has(row.id));
 			selectedIds = [];
-
-			alert(`Successfully deleted ${result.deletedCount} employee(s)`);
+			onSelectionChange?.(selectedIds);
+			status = { tone: 'success', text: `Deleted ${ids.length} row${ids.length === 1 ? '' : 's'}.` };
 		} catch (error) {
-			console.error('[DataGridAdvanced] Error deleting employees:', error);
-			alert(`Failed to delete employees: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			reportError(`Couldn't delete: ${describeError(error)}`, error);
 		} finally {
 			isUpdating = false;
 		}
 	}
 
-	/**
-	 * Export data to CSV
-	 * Generates and downloads a CSV file of the current grid data
-	 */
+	// ============================================================
+	// CSV export — exports what the user can currently see
+	// ============================================================
+
+	function csvCell(text: string): string {
+		return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+	}
+
 	function exportToCSV() {
-		if (data.length === 0) {
-			alert('No data to export');
-			return;
-		}
+		if (visibleRows.length === 0) return;
+		const header = resolvedColumns.map((col) => csvCell(col.header)).join(',');
+		const body = visibleRows
+			.map((row) =>
+				resolvedColumns
+					.map((col) => {
+						const value = readCell(row, col.id);
+						// Dates export as ISO (yyyy-mm-dd) so spreadsheets parse them reliably.
+						const date = col.type === 'date' ? toDate(value) : null;
+						const text = date
+							? date.toISOString().split('T')[0]
+							: value === null || value === undefined
+								? ''
+								: String(value);
+						return csvCell(text);
+					})
+					.join(',')
+			)
+			.join('\n');
 
-		// Get column headers
-		const cols = gridColumns();
-		const headers = cols.map((col) => col.header).join(',');
-
-		// Convert data rows to CSV format
-		const rows = data.map((row) => {
-			return cols.map((col) => {
-				const value = (row as any)[col.id];
-				// Escape commas and quotes in values
-				if (value === null || value === undefined) return '';
-				const stringValue = String(value);
-				if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-					return `"${stringValue.replace(/"/g, '""')}"`;
-				}
-				return stringValue;
-			}).join(',');
-		}).join('\n');
-
-		const csv = `${headers}\n${rows}`;
-
-		// Create download link
-		const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+		const blob = new Blob([`${header}\n${body}`], { type: 'text/csv;charset=utf-8;' });
 		const url = URL.createObjectURL(blob);
 		const link = document.createElement('a');
-		link.setAttribute('href', url);
-		link.setAttribute('download', `employees_${new Date().toISOString().split('T')[0]}.csv`);
-		link.style.visibility = 'hidden';
+		link.href = url;
+		link.download = `${exportFilename}_${new Date().toISOString().split('T')[0]}.csv`;
+		link.style.display = 'none';
 		document.body.appendChild(link);
 		link.click();
 		document.body.removeChild(link);
 		URL.revokeObjectURL(url);
 	}
 
+	const showDelete = $derived(selectable && !!onDelete && selectedIds.length > 0);
 </script>
 
-<!--
-  Main Component Template
-
-  Structure:
-  1. Optional export button
-  2. Theme wrapper (Willow or WillowDark)
-  3. SVAR Grid component with configuration
-  4. Custom styling for grid appearance
--->
-
-<div class="datagrid-advanced-wrapper" aria-busy={isUpdating} role="region" aria-label="Employee data grid">
-	<!-- Global Search -->
-	<div class="search-container">
-		<input
-			type="text"
-			bind:value={searchQuery}
-			placeholder="Search across all columns..."
-			class="search-input"
-			aria-label="Search employees"
-		/>
-		{#if searchQuery}
-			<button
-				onclick={() => searchQuery = ''}
-				class="clear-search-button"
-				aria-label="Clear search"
-			>
-				✕
-			</button>
-		{/if}
-		{#if searchQuery && gridData().length !== data.length}
-			<span class="search-results" aria-live="polite">
-				{gridData().length} of {data.length} rows
-			</span>
-		{/if}
-	</div>
-
-	<!-- Action buttons -->
-	{#if exportable || (selectable && selectedIds.length > 0)}
-		<div class="datagrid-actions">
-			<!-- Delete selected button (only shown when rows are selected) -->
-			{#if selectable && selectedIds.length > 0}
+<div
+	class="datagrid-advanced-wrapper"
+	data-scheme={isDark ? 'dark' : 'light'}
+	style:height
+	aria-busy={isUpdating}
+	role="region"
+	aria-label={ariaLabel}
+>
+	{#if searchable}
+		<div class="search-container">
+			<input
+				type="text"
+				bind:value={searchQuery}
+				placeholder={searchPlaceholder}
+				class="search-input"
+				aria-label={searchLabel}
+			/>
+			{#if searchQuery}
 				<button
-					onclick={deleteSelected}
-					class="delete-button"
-					disabled={isUpdating}
-					aria-label="Delete selected employees"
+					type="button"
+					onclick={() => (searchQuery = '')}
+					class="clear-search-button"
+					aria-label="Clear search"
 				>
-					<span class="delete-icon" aria-hidden="true">🗑️</span>
-					Delete Selected ({selectedIds.length})
+					<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+						<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+					</svg>
 				</button>
 			{/if}
-
-			<!-- Export CSV button -->
-			{#if exportable}
-				<button
-					onclick={exportToCSV}
-					class="export-button"
-					disabled={isUpdating}
-					aria-label="Export data to CSV"
-				>
-					<span class="export-icon" aria-hidden="true">⬇</span>
-					Export CSV
-				</button>
-			{/if}
-
-			<!-- Loading indicator -->
-			{#if isUpdating}
-				<span class="loading-indicator" aria-live="polite">
-					Updating...
+			{#if searchQuery && visibleRows.length !== rows.length}
+				<span class="search-results" aria-live="polite">
+					{visibleRows.length} of {rows.length} rows
 				</span>
 			{/if}
 		</div>
 	{/if}
 
-	<!-- SVAR Grid with type compatibility layer -->
-	{#if theme === 'willowDark'}
-		{@const gridCols = gridColumns() as any}
-		{@const gridProps = editable ? { edit: true } : {}}
-		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
-		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
-		<WillowDark>
-			<Grid
-				data={gridData()}
-				columns={gridCols}
-				selection={selectable ? 'row' : false}
-				rowHeight={40}
-				{...pagerProps}
-				{...gridProps}
-				{...eventProps}
-			/>
-		</WillowDark>
-	{:else}
-		{@const gridCols = gridColumns() as any}
-		{@const gridProps = editable ? { edit: true } : {}}
-		{@const pagerProps = pageSize > 0 ? { pager: { size: pageSize } } : {}}
-		{@const eventProps = { 'on:edit': handleEdit, 'on:selection': handleSelection } as any}
-		<Willow>
-			<Grid
-				data={gridData()}
-				columns={gridCols}
-				selection={selectable ? 'row' : false}
-				rowHeight={40}
-				{...pagerProps}
-				{...gridProps}
-				{...eventProps}
-			/>
-		</Willow>
+	{#if exportable || showDelete || isUpdating}
+		<div class="datagrid-actions">
+			{#if isUpdating}
+				<span class="loading-indicator">
+					<span class="spinner" aria-hidden="true"></span>
+					Saving…
+				</span>
+			{/if}
+
+			{#if showDelete}
+				<button
+					type="button"
+					onclick={deleteSelected}
+					class="delete-button"
+					disabled={isUpdating}
+					aria-label="Delete selected rows"
+				>
+					<svg class="delete-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+						<path
+							d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.6 8.5h4.8l.6-8.5"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+					Delete selected ({selectedIds.length})
+				</button>
+			{/if}
+
+			{#if exportable}
+				<button
+					type="button"
+					onclick={exportToCSV}
+					class="export-button"
+					disabled={isUpdating || visibleRows.length === 0}
+					aria-label="Export data to CSV"
+				>
+					<svg class="export-icon" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+						<path
+							d="M8 2.5v8M4.5 7L8 10.5 11.5 7M3 13.5h10"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="1.5"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						/>
+					</svg>
+					Export CSV
+				</button>
+			{/if}
+		</div>
 	{/if}
+
+	<div class="status-region" aria-live="polite">
+		{#if status}
+			<p class="status-message" data-tone={status.tone}>{status.text}</p>
+		{/if}
+	</div>
+
+	<div class="grid-host">
+		{#snippet grid()}
+			<Grid
+				data={gridRows}
+				columns={gridColumns}
+				select={selectable}
+				multiselect={selectable}
+				sizes={{ rowHeight }}
+				cellStyle={gridCellClass}
+				init={(api: IApi) => (gridApi = api)}
+				onupdatecell={handleUpdateCell}
+				onselectrow={handleSelectRow}
+			/>
+		{/snippet}
+
+		{#if !isClient}
+			<div class="grid-placeholder" aria-hidden="true"></div>
+		{:else if isDark}
+			<WillowDark>{@render grid()}</WillowDark>
+		{:else}
+			<Willow>{@render grid()}</Willow>
+		{/if}
+	</div>
 </div>
 
 <style>
-	/**
-	 * Component Styles
-	 * Scoped to this component only
+	/*
+	 * THEMING (see docs/THEMING.md)
+	 * Chrome tokens flip with the grid skin. We key the flip off
+	 * [data-scheme] rather than a media query because the SVAR skin is chosen
+	 * by the `theme` prop — an explicit theme="willow" on a dark OS should
+	 * keep the search bar light too, so the two never disagree.
+	 * Brand: --dga-accent (primary buttons, focus ring) stays constant.
+	 * Semantic: --dga-danger (delete), --dga-success / --dga-error (status) stay constant.
 	 */
-
 	.datagrid-advanced-wrapper {
+		--dga-surface: #f9fafb;
+		--dga-input-bg: #ffffff;
+		--dga-border: #e5e7eb;
+		--dga-input-border: #d1d5db;
+		--dga-fg: #374151;
+		--dga-muted: #6b7280;
+		--dga-placeholder: #9ca3af;
+		--dga-chip-bg: #e5e7eb;
+		--dga-chip-bg-hover: #d1d5db;
+		--dga-accent: #146ef5;
+		--dga-accent-hover: #0f5fd4;
+		--dga-on-accent: #ffffff;
+		--dga-danger: #dc2626;
+		--dga-danger-hover: #b91c1c;
+		--dga-success: #15803d;
+		--dga-success-bg: #dcfce7;
+		--dga-error: #b91c1c;
+		--dga-error-bg: #fee2e2;
+
 		width: 100%;
-		/* Set a default height - adjust as needed */
-		height: 600px;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
+		gap: 0.75rem;
+		color: var(--dga-fg);
 	}
 
-	/* Search Container */
+	.datagrid-advanced-wrapper[data-scheme='dark'] {
+		--dga-surface: #1f2937;
+		--dga-input-bg: #111827;
+		--dga-border: #374151;
+		--dga-input-border: #4b5563;
+		--dga-fg: #e5e7eb;
+		--dga-muted: #9ca3af;
+		--dga-placeholder: #6b7280;
+		--dga-chip-bg: #374151;
+		--dga-chip-bg-hover: #4b5563;
+		--dga-success-bg: rgba(21, 128, 61, 0.2);
+		--dga-error-bg: rgba(185, 28, 28, 0.2);
+		--dga-success: #4ade80;
+		--dga-error: #f87171;
+	}
+
+	/* Search */
 	.search-container {
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.75rem 1rem;
-		background: #f9fafb;
-		border: 1px solid #e5e7eb;
+		background: var(--dga-surface);
+		border: 1px solid var(--dga-border);
 		border-radius: 8px;
 	}
 
 	.search-input {
 		flex: 1;
+		min-width: 0;
 		padding: 0.625rem 1rem;
-		border: 1px solid #d1d5db;
+		background: var(--dga-input-bg);
+		border: 1px solid var(--dga-input-border);
 		border-radius: 6px;
 		font-size: 0.875rem;
-		color: #374151;
-		transition: all 0.2s;
+		color: var(--dga-fg);
+		transition:
+			border-color 0.2s,
+			box-shadow 0.2s;
 	}
 
-	.search-input:focus {
+	.search-input:focus-visible {
 		outline: none;
-		border-color: #146ef5;
-		box-shadow: 0 0 0 3px rgba(20, 110, 245, 0.1);
+		border-color: var(--dga-accent);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--dga-accent) 25%, transparent);
 	}
 
 	.search-input::placeholder {
-		color: #9ca3af;
+		color: var(--dga-placeholder);
 	}
 
 	.clear-search-button {
-		padding: 0.5rem;
-		background: #e5e7eb;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.4rem;
+		background: var(--dga-chip-bg);
 		border: none;
 		border-radius: 4px;
-		font-size: 1rem;
-		color: #6b7280;
+		color: var(--dga-muted);
 		cursor: pointer;
-		transition: all 0.2s;
-		line-height: 1;
+		transition: background-color 0.2s;
 	}
 
 	.clear-search-button:hover {
-		background: #d1d5db;
-		color: #374151;
+		background: var(--dga-chip-bg-hover);
+		color: var(--dga-fg);
+	}
+
+	.clear-search-button:focus-visible {
+		outline: 2px solid var(--dga-accent);
+		outline-offset: 2px;
 	}
 
 	.search-results {
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--dga-muted);
 		font-weight: 500;
 		white-space: nowrap;
 	}
 
-	/* Export button container */
+	/* Actions */
 	.datagrid-actions {
 		display: flex;
 		justify-content: flex-end;
-		padding: 0.5rem 0;
-	}
-
-	/* Export button styling */
-	.export-button {
-		display: inline-flex;
 		align-items: center;
+		flex-wrap: wrap;
 		gap: 0.5rem;
-		padding: 0.5rem 1rem;
-		background: #146ef5;
-		color: white;
-		border: none;
-		border-radius: 6px;
-		font-size: 0.875rem;
-		font-weight: 500;
-		cursor: pointer;
-		transition: all 0.2s ease;
 	}
 
-	.export-button:hover {
-		background: #0f5fd4;
-		transform: translateY(-1px);
-		box-shadow: 0 4px 8px rgba(20, 110, 245, 0.3);
-	}
-
-	.export-button:active {
-		transform: translateY(0);
-		box-shadow: 0 2px 4px rgba(20, 110, 245, 0.2);
-	}
-
-	.export-button:focus-visible {
-		outline: 2px solid #146ef5;
-		outline-offset: 2px;
-	}
-
-	.export-icon,
-	.delete-icon {
-		font-size: 1rem;
-	}
-
-	/* Delete button styling */
+	.export-button,
 	.delete-button {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
 		padding: 0.5rem 1rem;
-		background: #dc2626;
-		color: white;
+		color: var(--dga-on-accent);
 		border: none;
 		border-radius: 6px;
 		font-size: 0.875rem;
 		font-weight: 500;
 		cursor: pointer;
-		transition: all 0.2s ease;
+		transition:
+			background-color 0.2s ease,
+			transform 0.2s ease;
+	}
+
+	.export-button {
+		background: var(--dga-accent);
+	}
+
+	.export-button:hover:not(:disabled) {
+		background: var(--dga-accent-hover);
+		transform: translateY(-1px);
+	}
+
+	.delete-button {
+		background: var(--dga-danger);
 	}
 
 	.delete-button:hover:not(:disabled) {
-		background: #b91c1c;
+		background: var(--dga-danger-hover);
 		transform: translateY(-1px);
-		box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
 	}
 
-	.delete-button:active:not(:disabled) {
-		transform: translateY(0);
-		box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
-	}
-
+	.export-button:focus-visible,
 	.delete-button:focus-visible {
-		outline: 2px solid #dc2626;
+		outline: 2px solid var(--dga-accent);
 		outline-offset: 2px;
 	}
 
+	.export-button:disabled,
 	.delete-button:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
-	/* Loading indicator */
 	.loading-indicator {
 		display: inline-flex;
 		align-items: center;
-		padding: 0.5rem 1rem;
+		gap: 0.5rem;
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--dga-muted);
 		font-weight: 500;
+		margin-right: auto;
 	}
 
-	.loading-indicator::before {
-		content: '⏳';
-		margin-right: 0.5rem;
-		animation: spin 1s linear infinite;
+	.spinner {
+		width: 0.875rem;
+		height: 0.875rem;
+		border: 2px solid var(--dga-border);
+		border-top-color: var(--dga-accent);
+		border-radius: 50%;
+		animation: dga-spin 0.8s linear infinite;
 	}
 
-	@keyframes spin {
-		from { transform: rotate(0deg); }
-		to { transform: rotate(360deg); }
+	@keyframes dga-spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
-	.export-button:disabled {
-		opacity: 0.5;
-		cursor: not-allowed;
+	/* Status */
+	.status-region:empty {
+		display: none;
 	}
 
-	/**
-	 * Grid container styling
-	 * Override SVAR Grid defaults for better integration
-	 */
-	:global(.datagrid-advanced-wrapper .wx-grid) {
+	.status-message {
+		margin: 0;
+		padding: 0.5rem 0.75rem;
+		border-radius: 6px;
+		font-size: 0.8125rem;
+	}
+
+	.status-message[data-tone='success'] {
+		color: var(--dga-success);
+		background: var(--dga-success-bg);
+	}
+
+	.status-message[data-tone='error'] {
+		color: var(--dga-error);
+		background: var(--dga-error-bg);
+	}
+
+	/* Grid host: gives SVAR (height: 100%) a definite box to fill. */
+	.grid-host {
 		flex: 1;
-		border: 1px solid #e5e7eb;
+		min-height: 0;
 		border-radius: 8px;
 		overflow: hidden;
 	}
 
-	/**
-	 * Responsive adjustments
-	 */
-	@media (max-width: 768px) {
-		.datagrid-advanced-wrapper {
-			height: 500px;
-		}
+	.grid-placeholder {
+		height: 100%;
+		border: 1px solid var(--dga-border);
+		border-radius: 8px;
+		background: var(--dga-surface);
+	}
 
-		.export-button {
+	@media (max-width: 768px) {
+		.export-button,
+		.delete-button {
 			font-size: 0.8125rem;
 			padding: 0.4rem 0.875rem;
 		}
 	}
 
-	/**
-	 * Dark mode support
-	 * Adjust border colours for dark theme
-	 */
-	@media (prefers-color-scheme: dark) {
-		:global(.datagrid-advanced-wrapper .wx-grid) {
-			border-color: #374151;
+	@media (prefers-reduced-motion: reduce) {
+		.spinner {
+			animation: none;
+		}
+
+		.export-button,
+		.delete-button,
+		.search-input {
+			transition: none;
+		}
+
+		.export-button:hover:not(:disabled),
+		.delete-button:hover:not(:disabled) {
+			transform: none;
 		}
 	}
-
-	/**
-	 * CSS-based currency formatting for salary column
-	 * Target salary cells and prepend £ symbol using ::before pseudo-element
-	 */
-	:global(.wx-grid [data-col="salary"] .wx-cell-value::before) {
-		content: '£';
-		margin-right: 0.125rem;
-	}
-
-	/* Format salary values with thousands separators using locale-aware formatting */
-	:global(.wx-grid [data-col="salary"] .wx-cell-value) {
-		font-variant-numeric: tabular-nums;
-		font-feature-settings: 'tnum' 1;
-	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

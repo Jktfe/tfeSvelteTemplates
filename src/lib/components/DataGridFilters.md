@@ -1,358 +1,223 @@
-# DataGridFilters
+# DataGridFilters — Technical Logic Explainer
 
-## What It Does
+## What Does It Do? (Plain English)
 
-DataGridFilters provides a comprehensive, collapsible filtering interface for data grids with multi-select checkboxes, range sliders, and date pickers. It demonstrates advanced state management with Svelte 5 and reactive filter counting.
+DataGridFilters is a fold-away panel of structured filters for tabular data: tick departments and statuses, drag a salary range, pick a hire-date window. Every change is handed to your code as a plain object — the panel never filters anything itself, so it works just as well in front of DataGridBasic, DataGridAdvanced or a server query.
 
-**Think of it like:** The filter panel you see on shopping websites - tick boxes for categories, price sliders, date ranges - all working together to narrow down results.
+**Think of it like:** the filter sidebar on a shopping site. It remembers what you've ticked and tells the shop; the shop decides which products to show.
 
 ---
 
-## Quick Start
+## How It Works (Pseudo-Code)
+
+```
+on mount:
+  filters = { departments: [], statuses: [],
+              salaryMin: salaryRange.min, salaryMax: salaryRange.max,
+              hireDateFrom: '', hireDateTo: '' }
+  isExpanded = initiallyExpanded
+  uid = $props.id()                       # unique ids per instance
+
+derived:
+  activeFilterCount = number of filter TYPES that differ from the empty state (0–4)
+
+effect (runs on mount and after every change):
+  onFiltersChange($state.snapshot(filters))   # plain object, not the live proxy
+
+events:
+  toggle button     → isExpanded = !isExpanded
+  tick checkbox     → add/remove the value from departments / statuses
+  drag min slider   → salaryMin = v; if v > salaryMax: salaryMax = v
+  drag max slider   → salaryMax = v; if v < salaryMin: salaryMin = v
+  pick "Hired from" → hireDateFrom = date   ("Hired to" picker gets min = that date)
+  pick "Hired to"   → hireDateTo = date     ("Hired from" picker gets max = that date)
+  Clear all         → filters = empty state
+```
+
+---
+
+## The Core Concept: The Panel Owns UI State, the Parent Owns Meaning
+
+The panel's only job is to produce a `DataGridFilterValues` object:
+
+```ts
+interface DataGridFilterValues {
+  departments: string[];   // [] = no department filter
+  statuses: string[];      // [] = no status filter
+  salaryMin: number;       // === salaryRange.min means "no lower bound"
+  salaryMax: number;       // === salaryRange.max means "no upper bound"
+  hireDateFrom: string;    // '' or 'yyyy-mm-dd'
+  hireDateTo: string;      // '' or 'yyyy-mm-dd'
+}
+```
+
+Applying it is a one-liner-per-rule in the parent:
 
 ```svelte
-<script>
+<script lang="ts">
   import DataGridFilters from '$lib/components/DataGridFilters.svelte';
+  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
+  import type { DataGridColumn, DataGridFilterValues, Employee } from '$lib/types';
 
-  function handleFiltersChange(filters) {
-    console.log('Active filters:', filters);
-    // Apply filters to your data grid
-  }
+  let { data } = $props();
+  let filters = $state<DataGridFilterValues | null>(null);
+
+  const visible = $derived(
+    data.employees.filter((e: Employee) => {
+      if (!filters) return true;
+      if (filters.departments.length && !filters.departments.includes(e.department)) return false;
+      if (filters.statuses.length && !filters.statuses.includes(e.status)) return false;
+      if (e.salary < filters.salaryMin || e.salary > filters.salaryMax) return false;
+      const hired = new Date(e.hireDate).toISOString().slice(0, 10);
+      if (filters.hireDateFrom && hired < filters.hireDateFrom) return false;
+      if (filters.hireDateTo && hired > filters.hireDateTo) return false;
+      return true;
+    })
+  );
+
+  const columns: DataGridColumn[] = [
+    { id: 'firstName', header: 'First name' },
+    { id: 'department', header: 'Department' },
+    { id: 'salary', header: 'Salary', type: 'number' }
+  ];
 </script>
 
 <DataGridFilters
   departments={['Engineering', 'Sales', 'Marketing']}
   statuses={['active', 'on-leave', 'inactive']}
-  salaryRange={{ min: 30000, max: 150000 }}
-  onFiltersChange={handleFiltersChange}
+  onFiltersChange={(next) => (filters = next)}
 />
+<DataGridBasic data={visible} {columns} />
 ```
 
----
+Two design choices make this safe:
 
-## Props
-
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `departments` | `string[]` | `[]` | Available department options for filtering |
-| `statuses` | `string[]` | `[]` | Available status options for filtering |
-| `salaryRange` | `{min, max}` | `{min:30000, max:150000}` | Salary range boundaries |
-| `initiallyExpanded` | `boolean` | `false` | Whether filter panel starts expanded |
-| `onFiltersChange` | `(filters) => void` | - | Callback when filters change |
+- **Snapshots, not proxies.** `$state.snapshot(filters)` both subscribes the effect to every nested field *and* hands the parent a plain object. The parent can store, mutate or serialise it without reaching back into the panel's state.
+- **The empty state is the bounds.** "No salary filter" is simply `salaryMin === salaryRange.min && salaryMax === salaryRange.max`, so the parent's `salary < min || salary > max` test needs no special case.
 
 ---
 
-## Filter Values Structure
+## Recipes
 
-The component returns a `DataGridFilterValues` object:
+**Debounce an expensive filter pass**
 
-```typescript
-interface DataGridFilterValues {
-  departments: string[];     // Selected departments
-  statuses: string[];        // Selected statuses
-  salaryMin: number;         // Minimum salary threshold
-  salaryMax: number;         // Maximum salary threshold
-  hireDateFrom: string;      // Start date (YYYY-MM-DD)
-  hireDateTo: string;        // End date (YYYY-MM-DD)
+```svelte
+<script lang="ts">
+  import type { DataGridFilterValues } from '$lib/types';
+
+  let pending: ReturnType<typeof setTimeout> | undefined;
+  let filters = $state<DataGridFilterValues | null>(null);
+
+  function queue(next: DataGridFilterValues) {
+    clearTimeout(pending);
+    pending = setTimeout(() => (filters = next), 250);
+  }
+</script>
+
+<DataGridFilters departments={['Engineering', 'Sales']} onFiltersChange={queue} />
+```
+
+**Mirror filters into the URL**
+
+```ts
+import { goto } from '$app/navigation';
+
+function syncUrl(f: DataGridFilterValues) {
+  const params = new URLSearchParams();
+  if (f.departments.length) params.set('dept', f.departments.join(','));
+  if (f.hireDateFrom) params.set('from', f.hireDateFrom);
+  goto(`?${params}`, { replaceState: true, keepFocus: true, noScroll: true });
 }
 ```
 
 ---
 
-## Usage Examples
+## Theming
 
-### With DataGridBasic
+Tokens follow `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`; the accent is brand and stays put.
 
-```svelte
-<script>
-  import DataGridBasic from '$lib/components/DataGridBasic.svelte';
-  import DataGridFilters from '$lib/components/DataGridFilters.svelte';
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--dgf-surface` | `#ffffff` | `#1f2937` | Panel background |
+| `--dgf-border` | `#e5e7eb` | `#374151` | Frame, header divider |
+| `--dgf-fg` / `--dgf-label-fg` / `--dgf-body-fg` / `--dgf-muted-fg` | slate scale | light scale | Titles, legends, options, sub-labels |
+| `--dgf-input-bg` / `--dgf-input-border` | `#ffffff` / `#d1d5db` | `#111827` / `#4b5563` | Date inputs, Clear button |
+| `--dgf-track` | `#e5e7eb` | `#374151` | Slider track |
+| `--dgf-button-bg` / `-hover-bg` / `-hover-border` | light greys | dark greys | Clear all |
+| `--dgf-accent` *(brand)* | `#146ef5` | *unchanged* | Badge, slider thumb, checkbox tint, focus |
+| `--dgf-accent-hover` / `--dgf-on-accent` / `--dgf-focus-ring` *(brand)* | — | *unchanged* | Hover thumb, badge text, date focus halo |
 
-  let employees = $state([/* employee data */]);
-  let filters = $state({});
-
-  // Apply filters to data
-  let filteredEmployees = $derived(() => {
-    return employees.filter(emp => {
-      // Department filter
-      if (filters.departments?.length > 0 &&
-          !filters.departments.includes(emp.department)) {
-        return false;
-      }
-
-      // Status filter
-      if (filters.statuses?.length > 0 &&
-          !filters.statuses.includes(emp.status)) {
-        return false;
-      }
-
-      // Salary range
-      if (emp.salary < filters.salaryMin || emp.salary > filters.salaryMax) {
-        return false;
-      }
-
-      // Hire date range
-      if (filters.hireDateFrom && emp.hireDate < filters.hireDateFrom) {
-        return false;
-      }
-      if (filters.hireDateTo && emp.hireDate > filters.hireDateTo) {
-        return false;
-      }
-
-      return true;
-    });
-  });
-</script>
-
-<DataGridFilters
-  departments={['Engineering', 'Sales', 'Marketing', 'HR']}
-  statuses={['active', 'on-leave', 'inactive']}
-  salaryRange={{ min: 30000, max: 150000 }}
-  initiallyExpanded={true}
-  onFiltersChange={(f) => filters = f}
-/>
-
-<DataGridBasic data={filteredEmployees()} columns={columns} />
-```
-
-### Initially Collapsed with Active Count
-
-```svelte
-<DataGridFilters
-  departments={uniqueDepartments}
-  statuses={uniqueStatuses}
-  initiallyExpanded={false}
-  onFiltersChange={applyFilters}
-/>
-<!-- Shows: "Filters (3)" badge when 3 filters are active -->
-```
-
-### Dynamic Options from Data
-
-```svelte
-<script>
-  let employees = $state([/* data */]);
-
-  // Extract unique values for filter options
-  let departments = $derived(() => {
-    return [...new Set(employees.map(e => e.department))];
-  });
-
-  let statuses = $derived(() => {
-    return [...new Set(employees.map(e => e.status))];
-  });
-
-  let salaryRange = $derived(() => {
-    const salaries = employees.map(e => e.salary);
-    return {
-      min: Math.min(...salaries),
-      max: Math.max(...salaries)
-    };
-  });
-</script>
-
-<DataGridFilters
-  departments={departments()}
-  statuses={statuses()}
-  salaryRange={salaryRange()}
-  onFiltersChange={handleFilters}
-/>
-```
-
----
-
-## Features
-
-### Active Filter Count
-- Displays badge with number of active filters
-- A filter is "active" when it differs from default state
-- Badge appears next to "Filters" heading
-
-### Clear All Filters
-- Button appears when any filters are active
-- Resets all filters to default state
-- Triggers `onFiltersChange` callback
-
-### Collapsible Panel
-- Click "Filters" heading to expand/collapse
-- Remembers state within session
-- Smooth slide-down animation
-- `aria-expanded` for screen readers
-
-### Multi-Select Checkboxes
-- Select multiple departments
-- Select multiple statuses
-- Independent selection (not mutually exclusive)
-
-### Range Sliders
-- Minimum and maximum salary sliders
-- Live value display with currency formatting (£)
-- £5,000 step increments (configurable)
-- Visual feedback with blue thumbs
-
-### Date Range Picker
-- Native HTML5 date inputs
-- "From" and "To" date selection
-- No external date picker library required
-
----
-
-## Accessibility
-
-| Feature | Implementation |
-|---------|----------------|
-| **Expandable region** | `aria-expanded` and `aria-controls` attributes |
-| **Filter groups** | `role="group"` with `aria-label` |
-| **Active count** | `aria-label` on badge (e.g., "3 active filters") |
-| **Clear button** | `aria-label="Clear all filters"` |
-| **Form controls** | Proper `<label>` associations |
-| **Focus indicators** | Blue rings on all interactive elements |
-
----
-
-## Styling
-
-### Filter Header
 ```css
-background: white;
-border: 1px solid #e5e7eb;
-padding: 1rem 1.25rem;
-```
-
-### Active Filters Badge
-```css
-background: #146ef5;      /* Blue */
-color: white;
-border-radius: 12px;
-min-width: 1.5rem;
-```
-
-### Clear Button
-```css
-background: #f3f4f6;      /* Light grey */
-border: 1px solid #d1d5db;
-/* Hover: Darker grey */
-```
-
-### Range Slider Thumbs
-```css
-background: #146ef5;      /* Blue */
-width: 18px;
-height: 18px;
-border-radius: 50%;
+.hr-dashboard :global(.filters-container.filters-container) {
+  --dgf-accent: #7c3aed;
+}
 ```
 
 ---
 
-## Responsive Behaviour
+## State Flow Diagram
 
-**Desktop**:
-- Filter groups in CSS Grid (auto-fit, min 250px)
-- Date inputs side-by-side
-
-**Mobile (≤768px)**:
-- Single column layout
-- Date inputs stacked vertically
-- Full-width checkboxes
-
----
-
-## State Management Pattern
-
-The component uses Svelte 5's reactive runes for efficient state tracking:
-
-```typescript
-// Filter state
-let filters = $state<DataGridFilterValues>({
-  departments: [],
-  statuses: [],
-  salaryMin: salaryRange.min,
-  salaryMax: salaryRange.max,
-  hireDateFrom: '',
-  hireDateTo: ''
-});
-
-// Count active filters reactively
-let activeFilterCount = $derived(() => {
-  let count = 0;
-  if (filters.departments.length > 0) count++;
-  if (filters.statuses.length > 0) count++;
-  if (filters.salaryMin !== salaryRange.min ||
-      filters.salaryMax !== salaryRange.max) count++;
-  if (filters.hireDateFrom || filters.hireDateTo) count++;
-  return count;
-});
-
-// Notify parent on changes
-$effect(() => {
-  const _ = JSON.stringify(filters);
-  onFiltersChange?.(filters);
-});
+```
+   ┌───────────┐  toggle   ┌──────────┐
+   │ collapsed │ ────────▶ │ expanded │
+   │ (default) │ ◀──────── │          │
+   └─────┬─────┘  toggle   └────┬─────┘
+         │                      │ tick / drag / pick date
+         │                      ▼
+         │              ┌───────────────┐
+         │              │ filters change│── snapshot ──▶ onFiltersChange
+         │              └──────┬────────┘
+         │                     │ activeFilterCount > 0
+         │                     ▼
+         │           badge + "Clear all" visible
+         │                     │ Clear all
+         └──────────────◀──────┘ filters = empty state (panel stays open)
 ```
 
 ---
 
-## Common Patterns
+## Props Reference
 
-### Debounced Filter Application
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `departments` | `string[]` | `[]` | Department checkbox options; the group is hidden when empty. |
+| `statuses` | `string[]` | `[]` | Status checkbox options; the group is hidden when empty. |
+| `salaryRange` | `{ min: number; max: number }` | `{ min: 30000, max: 150000 }` | Slider bounds, which also define the "no salary filter" state. |
+| `salaryStep` | `number` | `5000` | Step size for both salary sliders. |
+| `initiallyExpanded` | `boolean` | `false` | Start with the panel open. |
+| `onFiltersChange` | `(filters: DataGridFilterValues) => void` | — | Receives a plain snapshot on mount and after every change. |
 
-```svelte
-<script>
-  import { debounce } from '$lib/utils';
+---
 
-  let filters = $state({});
+## Edge Cases
 
-  const applyFilters = debounce((f) => {
-    // Expensive filtering operation
-    filteredData = performComplexFilter(data, f);
-  }, 300);
-</script>
-
-<DataGridFilters onFiltersChange={applyFilters} />
-```
-
-### Persisting Filters in URL
-
-```svelte
-<script>
-  import { goto } from '$app/navigation';
-  import { page } from '$app/stores';
-
-  function handleFiltersChange(filters) {
-    const params = new URLSearchParams();
-
-    if (filters.departments.length > 0) {
-      params.set('dept', filters.departments.join(','));
-    }
-    if (filters.salaryMin) {
-      params.set('salMin', filters.salaryMin.toString());
-    }
-
-    goto(`?${params.toString()}`, { replaceState: true });
-  }
-</script>
-```
+| Situation | Behaviour |
+|-----------|-----------|
+| Min slider dragged past max | Max moves with it (and vice versa) — the range can never invert. |
+| "Hired from" later than "Hired to" | The pickers constrain each other via `min` / `max`; typed values still pass through, so validate on the server if it matters. |
+| Two panels on one page | `$props.id()` gives every control a unique `id`; labels and `aria-controls` stay correct. |
+| `departments` / `statuses` empty | Those groups aren't rendered; salary and date groups always are. |
+| Parent mutates the emitted object | No effect on the panel — it received a snapshot. |
+| `salaryRange` prop changes after mount | The current selection is kept; "Clear all" resets to the new bounds. |
+| `onFiltersChange` omitted | The panel still works as a standalone UI (useful in storybooks). |
+| `prefers-reduced-motion: reduce` | Reveal animation and chevron/hover transitions are disabled. |
 
 ---
 
 ## Dependencies
 
-**Zero external dependencies.**
-
-Uses only:
-- Svelte 5 runes (`$state`, `$derived`, `$effect`, `$bindable`)
-- Standard HTML form elements
-- Scoped CSS
-- Native date picker
+- **Svelte 5.20+** — `$state`, `$derived.by`, `$effect`, `$state.snapshot` and `$props.id()`.
+- **`$lib/types`** — type-only import of `DataGridFilterValues`.
+- Zero external packages; native `<input type="range">`, `<input type="date">` and `<fieldset>`.
 
 ---
 
-## Related Components
+## File Structure
 
-- **DataGridBasic**: Self-contained data grid (works great together)
-- **DataGridAdvanced**: Production grid with SVAR Grid
-- **Form components**: Uses similar patterns for inputs
-
----
-
-*Documentation created: 3 January 2026*
+```
+src/lib/components/DataGridFilters.svelte     # implementation
+src/lib/components/DataGridFilters.md         # this file
+src/lib/components/DataGridFilters.test.ts    # panel, filter values, snapshot, clamp, clear-all tests
+src/lib/types.ts                              # DataGridFilterValues
+src/routes/datagrid/+page.svelte              # demo: filters wired into DataGridAdvanced
+```
