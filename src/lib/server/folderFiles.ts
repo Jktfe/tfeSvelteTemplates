@@ -17,112 +17,129 @@ import type {
 	FileMetadata
 } from '$lib/types';
 import { FALLBACK_FOLDERS, FALLBACK_FILES } from '$lib/constants';
+import { loadWithFallback, requireDatabaseUrl, type DataSourceResult } from './dataSource';
+
+/** snake_case folder row → camelCase Folder. */
+function rowToFolder(row: FolderRow): Folder {
+	return {
+		id: row.id,
+		label: row.label,
+		color: row.color,
+		textColor: row.text_color,
+		icon: row.icon ?? undefined,
+		description: row.description ?? undefined,
+		category: row.category
+	};
+}
+
+/** snake_case file row → camelCase FileItem, parsing the JSON-in-TEXT columns. */
+function rowToFileItem(row: FileItemRow): FileItem {
+	return {
+		id: row.id,
+		folderId: row.folder_id,
+		title: row.title,
+		subtitle: row.subtitle ?? undefined,
+		previewText: row.preview_text,
+		content: row.content ?? undefined,
+		pages: row.pages ? JSON.parse(row.pages) : undefined,
+		thumbnailUrl: row.thumbnail_url ?? undefined,
+		metadata: row.metadata ? (JSON.parse(row.metadata) as FileMetadata) : undefined,
+		fileType: row.file_type as 'document' | 'image' | 'pdf' | 'text'
+	};
+}
 
 // ==================================================
 // READ OPERATIONS
 // ==================================================
 
 /**
- * Load all folders from database
+ * Load folders plus where they came from (database / fallback / error).
+ * The fallback is filtered by the same category on every non-database path.
  *
  * @param category - Optional category filter
- * @returns Promise resolving to array of folders
  */
-export async function loadFoldersFromDatabase(category?: string): Promise<Folder[]> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
+export async function loadFoldersWithSource(category?: string): Promise<DataSourceResult<Folder[]>> {
+	const fallback = category
+		? FALLBACK_FOLDERS.filter((f) => f.category === category)
+		: FALLBACK_FOLDERS;
 
-		if (!databaseUrl) {
-			console.warn('[FolderFiles] DATABASE_URL not configured, using fallback folders');
-			return category
-				? FALLBACK_FOLDERS.filter((f) => f.category === category)
-				: FALLBACK_FOLDERS;
-		}
+	return loadWithFallback(
+		fallback,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
 
-		const sql = neon(databaseUrl);
+			const rows = (
+				category
+					? await sql`
+						SELECT * FROM folders
+						WHERE is_active = TRUE AND category = ${category}
+						ORDER BY display_order ASC
+					`
+					: await sql`
+						SELECT * FROM folders
+						WHERE is_active = TRUE
+						ORDER BY display_order ASC
+					`
+			) as FolderRow[];
 
-		let rows: FolderRow[];
-		if (category) {
-			rows = (await sql`
-        SELECT * FROM folders
-        WHERE is_active = TRUE AND category = ${category}
-        ORDER BY display_order ASC
-      `) as FolderRow[];
-		} else {
-			rows = (await sql`
-        SELECT * FROM folders
-        WHERE is_active = TRUE
-        ORDER BY display_order ASC
-      `) as FolderRow[];
-		}
-
-		// Transform snake_case to camelCase
-		return rows.map((row) => ({
-			id: row.id,
-			label: row.label,
-			color: row.color,
-			textColor: row.text_color,
-			icon: row.icon ?? undefined,
-			description: row.description ?? undefined,
-			category: row.category
-		}));
-	} catch (err) {
-		console.error('[FolderFiles] Error loading folders:', err);
-		return FALLBACK_FOLDERS;
-	}
+			return rows.map(rowToFolder);
+		},
+		{ label: 'FolderFiles', schemaFile: 'schema_folderfiles.sql' }
+	);
 }
 
 /**
- * Load all files from database, optionally filtered by folder
+ * Load all folders from database (rows only).
+ *
+ * @param category - Optional category filter
+ */
+export async function loadFoldersFromDatabase(category?: string): Promise<Folder[]> {
+	return (await loadFoldersWithSource(category)).data;
+}
+
+/**
+ * Load files plus where they came from (database / fallback / error).
+ * The fallback is filtered by the same folder on every non-database path.
  *
  * @param folderId - Optional folder ID to filter files
- * @returns Promise resolving to array of files
+ */
+export async function loadFilesWithSource(folderId?: number): Promise<DataSourceResult<FileItem[]>> {
+	const fallback = folderId
+		? FALLBACK_FILES.filter((f) => f.folderId === folderId)
+		: FALLBACK_FILES;
+
+	return loadWithFallback(
+		fallback,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
+
+			const rows = (
+				folderId
+					? await sql`
+						SELECT * FROM files
+						WHERE is_active = TRUE AND folder_id = ${folderId}
+						ORDER BY display_order ASC
+					`
+					: await sql`
+						SELECT * FROM files
+						WHERE is_active = TRUE
+						ORDER BY folder_id ASC, display_order ASC
+					`
+			) as FileItemRow[];
+
+			return rows.map(rowToFileItem);
+		},
+		{ label: 'FolderFiles', schemaFile: 'schema_folderfiles.sql' }
+	);
+}
+
+/**
+ * Load all files from database, optionally filtered by folder (rows only).
+ *
+ * @param folderId - Optional folder ID to filter files
  */
 export async function loadFilesFromDatabase(folderId?: number): Promise<FileItem[]> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[FolderFiles] DATABASE_URL not configured, using fallback files');
-			return folderId
-				? FALLBACK_FILES.filter((f) => f.folderId === folderId)
-				: FALLBACK_FILES;
-		}
-
-		const sql = neon(databaseUrl);
-
-		let rows: FileItemRow[];
-		if (folderId) {
-			rows = (await sql`
-        SELECT * FROM files
-        WHERE is_active = TRUE AND folder_id = ${folderId}
-        ORDER BY display_order ASC
-      `) as FileItemRow[];
-		} else {
-			rows = (await sql`
-        SELECT * FROM files
-        WHERE is_active = TRUE
-        ORDER BY folder_id ASC, display_order ASC
-      `) as FileItemRow[];
-		}
-
-		// Transform and parse JSON fields
-		return rows.map((row) => ({
-			id: row.id,
-			folderId: row.folder_id,
-			title: row.title,
-			subtitle: row.subtitle ?? undefined,
-			previewText: row.preview_text,
-			content: row.content ?? undefined,
-			pages: row.pages ? JSON.parse(row.pages) : undefined,
-			thumbnailUrl: row.thumbnail_url ?? undefined,
-			metadata: row.metadata ? (JSON.parse(row.metadata) as FileMetadata) : undefined,
-			fileType: row.file_type as 'document' | 'image' | 'pdf' | 'text'
-		}));
-	} catch (err) {
-		console.error('[FolderFiles] Error loading files:', err);
-		return FALLBACK_FILES;
-	}
+	return (await loadFilesWithSource(folderId)).data;
 }
 
 /**
@@ -152,11 +169,7 @@ export async function loadFolderStructure(category?: string): Promise<FolderWith
  * @returns Promise resolving to created folder or null on error
  */
 export async function createFolder(folder: Omit<Folder, 'id'>): Promise<Folder | null> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error('Cannot create: DATABASE_URL not configured');
-	}
+	const databaseUrl = requireDatabaseUrl('create');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -185,15 +198,7 @@ export async function createFolder(folder: Omit<Folder, 'id'>): Promise<Folder |
     `) as FolderRow[];
 		const newRow = newRows[0];
 
-		return {
-			id: newRow.id,
-			label: newRow.label,
-			color: newRow.color,
-			textColor: newRow.text_color,
-			icon: newRow.icon ?? undefined,
-			description: newRow.description ?? undefined,
-			category: newRow.category
-		};
+		return rowToFolder(newRow);
 	} catch (err) {
 		console.error('[FolderFiles] Error creating folder:', err);
 		return null;
@@ -207,11 +212,7 @@ export async function createFolder(folder: Omit<Folder, 'id'>): Promise<Folder |
  * @returns Promise resolving to created file or null on error
  */
 export async function createFile(file: Omit<FileItem, 'id'>): Promise<FileItem | null> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error('Cannot create: DATABASE_URL not configured');
-	}
+	const databaseUrl = requireDatabaseUrl('create');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -244,18 +245,7 @@ export async function createFile(file: Omit<FileItem, 'id'>): Promise<FileItem |
     `) as FileItemRow[];
 		const newRow = newRows[0];
 
-		return {
-			id: newRow.id,
-			folderId: newRow.folder_id,
-			title: newRow.title,
-			subtitle: newRow.subtitle ?? undefined,
-			previewText: newRow.preview_text,
-			content: newRow.content ?? undefined,
-			pages: newRow.pages ? JSON.parse(newRow.pages) : undefined,
-			thumbnailUrl: newRow.thumbnail_url ?? undefined,
-			metadata: newRow.metadata ? (JSON.parse(newRow.metadata) as FileMetadata) : undefined,
-			fileType: newRow.file_type as 'document' | 'image' | 'pdf' | 'text'
-		};
+		return rowToFileItem(newRow);
 	} catch (err) {
 		console.error('[FolderFiles] Error creating file:', err);
 		return null;
@@ -274,11 +264,7 @@ export async function createFile(file: Omit<FileItem, 'id'>): Promise<FileItem |
  * @returns Promise resolving to updated folder or null
  */
 export async function updateFolder(id: number, folder: Partial<Folder>): Promise<Folder | null> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error('Cannot update: DATABASE_URL not configured');
-	}
+	const databaseUrl = requireDatabaseUrl('update');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -298,15 +284,7 @@ export async function updateFolder(id: number, folder: Partial<Folder>): Promise
 
 		if (!updatedRow) return null;
 
-		return {
-			id: updatedRow.id,
-			label: updatedRow.label,
-			color: updatedRow.color,
-			textColor: updatedRow.text_color,
-			icon: updatedRow.icon ?? undefined,
-			description: updatedRow.description ?? undefined,
-			category: updatedRow.category
-		};
+		return rowToFolder(updatedRow);
 	} catch (err) {
 		console.error('[FolderFiles] Error updating folder:', err);
 		return null;
@@ -321,11 +299,7 @@ export async function updateFolder(id: number, folder: Partial<Folder>): Promise
  * @returns Promise resolving to updated file or null
  */
 export async function updateFile(id: number, file: Partial<FileItem>): Promise<FileItem | null> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error('Cannot update: DATABASE_URL not configured');
-	}
+	const databaseUrl = requireDatabaseUrl('update');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -348,18 +322,7 @@ export async function updateFile(id: number, file: Partial<FileItem>): Promise<F
 
 		if (!updatedRow) return null;
 
-		return {
-			id: updatedRow.id,
-			folderId: updatedRow.folder_id,
-			title: updatedRow.title,
-			subtitle: updatedRow.subtitle ?? undefined,
-			previewText: updatedRow.preview_text,
-			content: updatedRow.content ?? undefined,
-			pages: updatedRow.pages ? JSON.parse(updatedRow.pages) : undefined,
-			thumbnailUrl: updatedRow.thumbnail_url ?? undefined,
-			metadata: updatedRow.metadata ? (JSON.parse(updatedRow.metadata) as FileMetadata) : undefined,
-			fileType: updatedRow.file_type as 'document' | 'image' | 'pdf' | 'text'
-		};
+		return rowToFileItem(updatedRow);
 	} catch (err) {
 		console.error('[FolderFiles] Error updating file:', err);
 		return null;
@@ -377,11 +340,7 @@ export async function updateFile(id: number, file: Partial<FileItem>): Promise<F
  * @returns Promise resolving to true if deleted, false otherwise
  */
 export async function deleteFolder(id: number): Promise<boolean> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error('Cannot delete: DATABASE_URL not configured');
-	}
+	const databaseUrl = requireDatabaseUrl('delete');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -393,11 +352,14 @@ export async function deleteFolder(id: number): Promise<boolean> {
       WHERE folder_id = ${id}
     `;
 
+		// RETURNING id: the Neon HTTP driver hands back rows, not a row count,
+		// so without it every delete would look like "nothing matched".
 		const result = (await sql`
       UPDATE folders
       SET is_active = FALSE
       WHERE id = ${id} AND is_active = TRUE
-    `) as Array<Record<string, unknown>>;
+      RETURNING id
+    `) as Array<{ id: number }>;
 
 		return result.length > 0;
 	} catch (err) {
@@ -413,20 +375,18 @@ export async function deleteFolder(id: number): Promise<boolean> {
  * @returns Promise resolving to true if deleted, false otherwise
  */
 export async function deleteFile(id: number): Promise<boolean> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	if (!databaseUrl) {
-		throw new Error('Cannot delete: DATABASE_URL not configured');
-	}
+	const databaseUrl = requireDatabaseUrl('delete');
 
 	try {
 		const sql = neon(databaseUrl);
 
+		// RETURNING id: see deleteFolder — rows, not a count, come back.
 		const result = (await sql`
       UPDATE files
       SET is_active = FALSE
       WHERE id = ${id} AND is_active = TRUE
-    `) as Array<Record<string, unknown>>;
+      RETURNING id
+    `) as Array<{ id: number }>;
 
 		return result.length > 0;
 	} catch (err) {

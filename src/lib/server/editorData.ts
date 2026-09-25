@@ -6,7 +6,8 @@
  * with graceful fallback to in-memory data when database is unavailable.
  *
  * Follows the same patterns as other server utilities in this project:
- * - Checks for DATABASE_URL environment variable
+ * - Uses the dataSource.ts helpers, so a missing or placeholder DATABASE_URL
+ *   is treated as "not configured"
  * - Falls back to constants if database unavailable
  * - Transforms snake_case DB columns to camelCase component props
  * - Uses soft deletes (is_active flag) instead of hard deletes
@@ -18,12 +19,66 @@
 import { neon } from '@neondatabase/serverless';
 import type { EditorData, EditorDataRow } from '$lib/types';
 import { FALLBACK_EDITOR_DATA } from '$lib/constants';
+import { loadWithFallback, requireDatabaseUrl, type DataSourceResult } from './dataSource';
+
+/** snake_case row → camelCase EditorData, shared by every read and write path. */
+function rowToEditorData(row: EditorDataRow): EditorData {
+	return {
+		id: row.id,
+		heading: row.heading,
+		compactText: row.compact_text,
+		expandedText: row.expanded_text,
+		imageSrc: row.image_url,
+		imageAlt: row.image_alt,
+		bgColor: row.bg_color,
+		category: row.category
+	};
+}
 
 /**
- * READ: Load editor data from database with optional category filtering
+ * READ: Load editor data plus where it came from (database / fallback / error).
+ *
+ * The fallback is filtered by the same category as the query, on both the
+ * "not configured" and the "query failed" paths, so the demo shows the same
+ * subset either way.
  *
  * @param category - Optional category filter (e.g., 'editor-demo')
- * @returns Promise resolving to array of editor data items
+ */
+export async function loadEditorDataWithSource(
+	category?: string
+): Promise<DataSourceResult<EditorData[]>> {
+	const fallback = category
+		? FALLBACK_EDITOR_DATA.filter((d) => d.category === category)
+		: FALLBACK_EDITOR_DATA;
+
+	return loadWithFallback(
+		fallback,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
+
+			const rows = (
+				category
+					? await sql`
+						SELECT * FROM editor_data
+						WHERE is_active = TRUE AND category = ${category}
+						ORDER BY display_order ASC
+					`
+					: await sql`
+						SELECT * FROM editor_data
+						WHERE is_active = TRUE
+						ORDER BY display_order ASC
+					`
+			) as EditorDataRow[];
+
+			return rows.map(rowToEditorData);
+		},
+		{ label: 'EditorData', schemaFile: 'schema_editor.sql' }
+	);
+}
+
+/**
+ * READ: Load editor data from database with optional category filtering.
+ * Convenience wrapper for callers that only need the rows.
  *
  * @example
  * ```typescript
@@ -31,55 +86,8 @@ import { FALLBACK_EDITOR_DATA } from '$lib/constants';
  * const demoData = await loadEditorDataFromDatabase('editor-demo');
  * ```
  */
-export async function loadEditorDataFromDatabase(
-	category?: string
-): Promise<EditorData[]> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		// Fallback to constants if DATABASE_URL not configured
-		if (!databaseUrl) {
-			console.warn('DATABASE_URL not configured, using fallback editor data');
-			return category
-				? FALLBACK_EDITOR_DATA.filter((d) => d.category === category)
-				: FALLBACK_EDITOR_DATA;
-		}
-
-		// Create Neon client
-		const sql = neon(databaseUrl);
-
-		// Query database with optional category filter
-		let rows: EditorDataRow[];
-		if (category) {
-			rows = (await sql`
-				SELECT * FROM editor_data
-				WHERE is_active = TRUE AND category = ${category}
-				ORDER BY display_order ASC
-			`) as EditorDataRow[];
-		} else {
-			rows = (await sql`
-				SELECT * FROM editor_data
-				WHERE is_active = TRUE
-				ORDER BY display_order ASC
-			`) as EditorDataRow[];
-		}
-
-		// Transform database rows (snake_case) to component format (camelCase)
-		return rows.map((row) => ({
-			id: row.id,
-			heading: row.heading,
-			compactText: row.compact_text,
-			expandedText: row.expanded_text,
-			imageSrc: row.image_url,
-			imageAlt: row.image_alt,
-			bgColor: row.bg_color,
-			category: row.category
-		}));
-	} catch (err) {
-		console.error('Error loading editor data from database:', err);
-		// Always return fallback data on error to keep app functional
-		return FALLBACK_EDITOR_DATA;
-	}
+export async function loadEditorDataFromDatabase(category?: string): Promise<EditorData[]> {
+	return (await loadEditorDataWithSource(category)).data;
 }
 
 /**
@@ -105,12 +113,8 @@ export async function loadEditorDataFromDatabase(
 export async function createEditorData(
 	data: Omit<EditorData, 'id'>
 ): Promise<EditorData | null> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	// Cannot create without database - throw error for caller to handle
-	if (!databaseUrl) {
-		throw new Error('Cannot create: DATABASE_URL not configured');
-	}
+	// Cannot create without a database - throws for the caller to handle
+	const databaseUrl = requireDatabaseUrl('create');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -143,16 +147,7 @@ export async function createEditorData(
 		const newRow = newRows[0];
 
 		// Transform to component format
-		return {
-			id: newRow.id,
-			heading: newRow.heading,
-			compactText: newRow.compact_text,
-			expandedText: newRow.expanded_text,
-			imageSrc: newRow.image_url,
-			imageAlt: newRow.image_alt,
-			bgColor: newRow.bg_color,
-			category: newRow.category
-		};
+		return rowToEditorData(newRow);
 	} catch (err) {
 		console.error('Error creating editor data:', err);
 		return null;
@@ -187,12 +182,8 @@ export async function updateEditorData(
 	id: number,
 	data: Partial<EditorData>
 ): Promise<EditorData | null> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	// Cannot update without database
-	if (!databaseUrl) {
-		throw new Error('Cannot update: DATABASE_URL not configured');
-	}
+	// Cannot update without a database - throws for the caller to handle
+	const databaseUrl = requireDatabaseUrl('update');
 
 	try {
 		const sql = neon(databaseUrl);
@@ -217,16 +208,7 @@ export async function updateEditorData(
 		if (!updatedRow) return null;
 
 		// Transform to component format
-		return {
-			id: updatedRow.id,
-			heading: updatedRow.heading,
-			compactText: updatedRow.compact_text,
-			expandedText: updatedRow.expanded_text,
-			imageSrc: updatedRow.image_url,
-			imageAlt: updatedRow.image_alt,
-			bgColor: updatedRow.bg_color,
-			category: updatedRow.category
-		};
+		return rowToEditorData(updatedRow);
 	} catch (err) {
 		console.error('Error updating editor data:', err);
 		return null;
@@ -254,28 +236,25 @@ export async function updateEditorData(
  * ```
  */
 export async function deleteEditorData(id: number): Promise<boolean> {
-	const databaseUrl = process.env.DATABASE_URL;
-
-	// Cannot delete without database
-	if (!databaseUrl) {
-		throw new Error('Cannot delete: DATABASE_URL not configured');
-	}
+	// Cannot delete without a database - throws for the caller to handle
+	const databaseUrl = requireDatabaseUrl('delete');
 
 	try {
 		const sql = neon(databaseUrl);
 
-		// Soft delete: set is_active to FALSE
+		// Soft delete: set is_active to FALSE. The Neon HTTP driver returns rows,
+		// not an affected-row count, so RETURNING id is what lets us tell a real
+		// delete apart from "nothing matched".
 		const result = (await sql`
 			UPDATE editor_data
 			SET is_active = FALSE
 			WHERE id = ${id} AND is_active = TRUE
-		`) as Array<Record<string, any>>;
+			RETURNING id
+		`) as Array<{ id: number }>;
 
-		// Check if any rows were affected (length > 0 means success)
 		return result.length > 0;
 	} catch (err) {
 		console.error('Error deleting editor data:', err);
 		return false;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.

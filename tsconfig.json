@@ -15,6 +15,7 @@
 	"include": [
 		"vitest.d.ts",
 		"vitest.setup.ts",
+		"vitest.env-stub.ts",
 		"src/**/*",
 		"scripts/**/*",
 		"tests/**/*",

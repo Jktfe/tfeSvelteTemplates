@@ -5,7 +5,8 @@
  * Separates links by category for different grid sections.
  */
 
-import { loadLinkPreviewsFromDatabase } from '$lib/server/linkPreviews';
+import { loadLinkPreviewsWithSource } from '$lib/server/linkPreviews';
+import { combineDataSources, type DataSourceStatus } from '$lib/server/dataSource';
 import type { LinkPreview } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -16,23 +17,27 @@ import type { PageServerLoad } from './$types';
  * - cityLinks: Links to major cities (Mumbai, New York, Tokyo, London)
  * - natureLinks: Links to natural landmarks (Mount Everest, Amazon, Great Barrier Reef)
  *
- * Falls back to static data if DATABASE_URL is not configured.
+ * Falls back to static data if DATABASE_URL is not configured. The two
+ * results are combined so one failing query is enough to flag the page.
  */
 export const load: PageServerLoad = async (): Promise<{
 	cityLinks: LinkPreview[];
 	natureLinks: LinkPreview[];
 	usingDatabase: boolean;
+	dataSource: DataSourceStatus;
+	dataSourceMessage?: string;
 }> => {
-	// Load link previews from database (or fallback data)
-	const cityLinks = await loadLinkPreviewsFromDatabase('cities');
-	const natureLinks = await loadLinkPreviewsFromDatabase('nature');
-
-	// Determine if we're using the database or fallback data
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const [cities, nature] = await Promise.all([
+		loadLinkPreviewsWithSource('cities'),
+		loadLinkPreviewsWithSource('nature')
+	]);
+	const status = combineDataSources(cities, nature);
 
 	return {
-		cityLinks,
-		natureLinks,
-		usingDatabase
+		cityLinks: cities.data,
+		natureLinks: nature.data,
+		usingDatabase: status.usingDatabase,
+		dataSource: status.source,
+		dataSourceMessage: status.message
 	};
 };

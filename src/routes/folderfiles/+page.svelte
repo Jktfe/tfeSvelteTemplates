@@ -52,7 +52,11 @@
 	{#snippet demo()}
 		<div class="ff-demo">
 			<div class="ff-status">
-				<DatabaseStatus usingDatabase={data.usingDatabase} />
+				<DatabaseStatus
+					usingDatabase={data.usingDatabase}
+					source={data.dataSource}
+					message={data.dataSourceMessage}
+				/>
 			</div>
 
 			<p class="ff-instructions">

@@ -9,10 +9,13 @@
  * - PUT    /datagrid/api           - Update employee (requires id in body)
  * - DELETE /datagrid/api?id=123    - Delete single employee
  * - DELETE /datagrid/api?ids=1,2,3 - Bulk delete employees
+ *
+ * Writes (POST/PUT/DELETE) are guarded by requireAuthAPI — 401 when signed
+ * out, 403 for the read-only public demo account — and answer 503 when no
+ * database is configured, so "nothing to write to" isn't reported as a 404.
  */
 
 import { json } from '@sveltejs/kit';
-import type { RequestEvent } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { Employee } from '$lib/types';
 import {
@@ -25,20 +28,29 @@ import {
 	deleteEmployees
 } from '$lib/server/dataGrid';
 import { VALIDATION_FIELDS } from '$lib/constants';
-import { isDemoUser } from '$lib/server/auth';
+import { requireAuthAPI } from '$lib/server/auth';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
 
 /**
- * The public demo account is read-only everywhere (see requireAuthAPI).
- * This endpoint stays open to anonymous visitors so the showcase works
- * without auth, but a signed-in demo user must never be able to write.
- * The demo page turns this 403 into a friendly "read-only" message.
+ * Shared gate for every write handler. Auth runs first (and outside any
+ * try/catch) so the demo user's 403 is never masked by a generic 500.
+ *
+ * @returns A 503 response when there is no database, otherwise null
  */
-function demoUserWriteBlocked(event: RequestEvent) {
-	if (!isDemoUser(event)) return null;
-	return json(
-		{ success: false, error: 'The public demo account is read-only' },
-		{ status: 403 }
-	);
+function guardWrite(event: Parameters<RequestHandler>[0]): Response | null {
+	requireAuthAPI(event);
+
+	if (!isDatabaseConfigured()) {
+		return json(
+			{
+				success: false,
+				error: 'Database not configured. Changes cannot be saved without a database connection.'
+			},
+			{ status: 503 }
+		);
+	}
+
+	return null;
 }
 
 /**
@@ -108,7 +120,7 @@ export const GET: RequestHandler = async ({ url }) => {
  * Body: Employee data (without id)
  */
 export const POST: RequestHandler = async (event) => {
-	const blocked = demoUserWriteBlocked(event);
+	const blocked = guardWrite(event);
 	if (blocked) return blocked;
 	const { request } = event;
 
@@ -147,7 +159,7 @@ export const POST: RequestHandler = async (event) => {
 			return json(
 				{
 					success: false,
-					error: 'Failed to create employee. Database may not be configured.'
+					error: 'Failed to create employee'
 				},
 				{ status: 500 }
 			);
@@ -176,7 +188,7 @@ export const POST: RequestHandler = async (event) => {
  * Body: Partial employee data with id
  */
 export const PUT: RequestHandler = async (event) => {
-	const blocked = demoUserWriteBlocked(event);
+	const blocked = guardWrite(event);
 	if (blocked) return blocked;
 	const { request } = event;
 
@@ -243,7 +255,7 @@ export const PUT: RequestHandler = async (event) => {
  * - ids: Comma-separated employee IDs for bulk delete
  */
 export const DELETE: RequestHandler = async (event) => {
-	const blocked = demoUserWriteBlocked(event);
+	const blocked = guardWrite(event);
 	if (blocked) return blocked;
 	const { url } = event;
 

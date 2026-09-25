@@ -1,7 +1,8 @@
 /**
  * Server utilities for Map component data loading
  *
- * Provides database operations with graceful fallback to constants when DATABASE_URL is not configured.
+ * Provides database operations with graceful fallback to constants when DATABASE_URL is not configured
+ * (a missing URL and the .env.example placeholder are treated the same).
  * This module handles:
  * - Loading map markers from Neon database or fallback constants
  * - Transforming database rows (snake_case) to component props (camelCase)
@@ -13,60 +14,61 @@ import { neon } from '@neondatabase/serverless';
 import type { MapMarker, MapMarkerRow, MapMarkerMetadata } from '$lib/types';
 import { FALLBACK_MAP_MARKERS } from '$lib/constants';
 import { calculateMapBounds } from '$lib/mapUtils';
+import { getConfiguredDatabaseUrl, loadWithFallback, type DataSourceResult } from './dataSource';
 
 /**
- * Load map markers from database with fallback to constants
+ * Load map markers plus where they came from (database / fallback / error).
+ *
+ * - Not configured (missing or placeholder URL) → FALLBACK_MAP_MARKERS, source `fallback`
+ * - Query succeeds → active markers, transformed to camelCase
+ * - `map_markers` table missing → fallback with a hint to run schema_maps.sql
+ * - Any other failure → FALLBACK_MAP_MARKERS, source `error`
+ *
+ * The fallback is filtered by the same category on every non-database path.
  *
  * @param category - Optional category to filter markers
- * @returns Promise<MapMarker[]> - Array of map marker records
+ */
+export async function loadMapMarkersWithSource(
+	category?: string
+): Promise<DataSourceResult<MapMarker[]>> {
+	const fallback = category
+		? FALLBACK_MAP_MARKERS.filter((m) => m.category === category)
+		: FALLBACK_MAP_MARKERS;
+
+	return loadWithFallback(
+		fallback,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
+
+			const rows = (
+				category
+					? await sql`
+						SELECT *
+						FROM map_markers
+						WHERE is_active = TRUE AND category = ${category}
+						ORDER BY display_order ASC, created_at DESC
+					`
+					: await sql`
+						SELECT *
+						FROM map_markers
+						WHERE is_active = TRUE
+						ORDER BY display_order ASC, created_at DESC
+					`
+			) as unknown as MapMarkerRow[];
+
+			return rows.map((row) => transformRowToMarker(row));
+		},
+		{ label: 'Maps', schemaFile: 'schema_maps.sql' }
+	);
+}
+
+/**
+ * Load map markers from database with fallback to constants (rows only).
  *
- * Behavior:
- * - If DATABASE_URL is not set, returns FALLBACK_MAP_MARKERS
- * - If database query succeeds, returns transformed database rows
- * - If database query fails, logs error and returns FALLBACK_MAP_MARKERS
- * - Only returns active markers (is_active = TRUE)
+ * @param category - Optional category to filter markers
  */
 export async function loadMapMarkersFromDatabase(category?: string): Promise<MapMarker[]> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[Maps] DATABASE_URL not configured, using fallback marker data');
-			if (category) {
-				return FALLBACK_MAP_MARKERS.filter((m) => m.category === category);
-			}
-			return FALLBACK_MAP_MARKERS;
-		}
-
-		const sql = neon(databaseUrl);
-
-		// Query active markers, optionally filtered by category
-		let rows: MapMarkerRow[];
-		if (category) {
-			rows = (await sql`
-				SELECT *
-				FROM map_markers
-				WHERE is_active = TRUE AND category = ${category}
-				ORDER BY display_order ASC, created_at DESC
-			`) as unknown as MapMarkerRow[];
-		} else {
-			rows = (await sql`
-				SELECT *
-				FROM map_markers
-				WHERE is_active = TRUE
-				ORDER BY display_order ASC, created_at DESC
-			`) as unknown as MapMarkerRow[];
-		}
-
-		console.log(`[Maps] Loaded ${rows.length} markers from database`);
-
-		// Transform database rows (snake_case) to component props (camelCase)
-		return rows.map((row) => transformRowToMarker(row));
-	} catch (error) {
-		console.error('[Maps] Error loading markers from database:', error);
-		console.warn('[Maps] Falling back to constant marker data');
-		return FALLBACK_MAP_MARKERS;
-	}
+	return (await loadMapMarkersWithSource(category)).data;
 }
 
 /**
@@ -106,15 +108,13 @@ function transformRowToMarker(row: MapMarkerRow): MapMarker {
  * @returns Promise<string[]> - Sorted array of unique categories
  */
 export async function getMarkerCategories(): Promise<string[]> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		return fallbackMarkerCategories();
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			// Extract unique categories from fallback data
-			const categories = new Set(FALLBACK_MAP_MARKERS.map((m) => m.category).filter(Boolean));
-			return Array.from(categories).sort() as string[];
-		}
-
 		const sql = neon(databaseUrl);
 
 		// Use SELECT DISTINCT for efficiency
@@ -128,10 +128,14 @@ export async function getMarkerCategories(): Promise<string[]> {
 		return rows.map((r) => r.category);
 	} catch (error) {
 		console.error('[Maps] Error loading categories:', error);
-		// Fallback to extracting from constants
-		const categories = new Set(FALLBACK_MAP_MARKERS.map((m) => m.category).filter(Boolean));
-		return Array.from(categories).sort() as string[];
+		return fallbackMarkerCategories();
 	}
+}
+
+/** Unique, sorted categories from the fixture markers. */
+function fallbackMarkerCategories(): string[] {
+	const categories = new Set(FALLBACK_MAP_MARKERS.map((m) => m.category).filter(Boolean));
+	return Array.from(categories).sort() as string[];
 }
 
 /**
@@ -143,14 +147,14 @@ export async function getMarkerCategories(): Promise<string[]> {
 export async function createMapMarker(
 	marker: Omit<MapMarker, 'id'>
 ): Promise<MapMarker | null> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn('[Maps] DATABASE_URL not configured, cannot create marker');
+		return null;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[Maps] DATABASE_URL not configured, cannot create marker');
-			return null;
-		}
-
 		const sql = neon(databaseUrl);
 
 		// Get next display_order
@@ -185,27 +189,29 @@ export async function createMapMarker(
  * Delete a map marker (soft delete)
  *
  * @param id - Marker ID to delete
- * @returns Promise<boolean> - True if deleted successfully
+ * @returns Promise<boolean> - True if a marker was deleted, false if not configured / not found / failed
  */
 export async function deleteMapMarker(id: number): Promise<boolean> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn('[Maps] DATABASE_URL not configured, cannot delete marker');
+		return false;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[Maps] DATABASE_URL not configured, cannot delete marker');
-			return false;
-		}
-
 		const sql = neon(databaseUrl);
 
-		await sql`
+		// RETURNING id lets us report "nothing matched" honestly — the Neon HTTP
+		// driver returns rows rather than an affected-row count.
+		const result = (await sql`
 			UPDATE map_markers
 			SET is_active = FALSE
 			WHERE id = ${id} AND is_active = TRUE
-		`;
+			RETURNING id
+		`) as unknown as Array<{ id: number }>;
 
-		console.log(`[Maps] Deleted marker ${id}`);
-		return true;
+		return result.length > 0;
 	} catch (error) {
 		console.error('[Maps] Error deleting marker:', error);
 		return false;

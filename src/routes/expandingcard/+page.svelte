@@ -48,7 +48,11 @@
 >
 	{#snippet demo()}
 		<div class="ec-status">
-			<DatabaseStatus usingDatabase={data.usingDatabase} />
+			<DatabaseStatus
+				usingDatabase={data.usingDatabase}
+				source={data.dataSource}
+				message={data.dataSourceMessage}
+			/>
 		</div>
 
 		<section class="ec-section">

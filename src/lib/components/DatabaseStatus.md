@@ -59,12 +59,15 @@ import type { PageServerLoad } from './$types';
 import { loadCardsWithSource } from '$lib/server/cards';
 
 export const load: PageServerLoad = async () => {
+	// Take the status from the loader's DataSourceResult. Checking
+	// `!!process.env.DATABASE_URL` instead would claim "connected" for the
+	// .env.example placeholder and for queries that failed and fell back.
 	const result = await loadCardsWithSource();
 	return {
 		cards: result.data,
-		source: result.source,
 		usingDatabase: result.usingDatabase,
-		message: result.message
+		dataSource: result.source,
+		dataSourceMessage: result.message
 	};
 };
 ```
@@ -76,7 +79,11 @@ export const load: PageServerLoad = async () => {
 	let { data } = $props();
 </script>
 
-<DatabaseStatus usingDatabase={data.usingDatabase} source={data.source} message={data.message} />
+<DatabaseStatus
+	usingDatabase={data.usingDatabase}
+	source={data.dataSource}
+	message={data.dataSourceMessage}
+/>
 ```
 
 ---
@@ -120,9 +127,9 @@ Under `prefers-color-scheme: dark` the same four hues switch to translucent rgba
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `usingDatabase` | `boolean` | — (required) | Whether live database data is in use; used when `source` is omitted. |
-| `source` | `'database' \| 'fallback' \| 'error' \| 'static'` | — | Explicit data-source status; takes precedence over `usingDatabase`. |
-| `message` | `string` | `''` | Extra detail (for example the error message) shown as the badge's `title` tooltip. |
+| `usingDatabase` | `boolean` | — (required) | Whether this page's data actually came from the database (`DataSourceResult.usingDatabase`); used when `source` is omitted. |
+| `source` | `'database' \| 'fallback' \| 'error' \| 'static'` | — | Explicit status from `DataSourceResult.source`; takes precedence over `usingDatabase` and distinguishes a failed query (`error`) from an unconfigured database (`fallback`). |
+| `message` | `string` | `''` | Extra detail (`DataSourceResult.message`, e.g. the error) shown as the badge's `title` tooltip. |
 | `class` | `string` | `''` | Extra classes on the badge. |
 
 ---

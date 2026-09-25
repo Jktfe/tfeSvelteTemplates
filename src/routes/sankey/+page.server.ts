@@ -3,15 +3,16 @@
  * Loads Sankey nodes and links from Neon database with fallback to constants
  */
 
-import { loadSankeyDataFromDatabase } from '$lib/server/sankeyData';
+import { loadSankeyDataWithSource } from '$lib/server/sankeyData';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async () => {
-	const sankeyData = await loadSankeyDataFromDatabase('energy');
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const result = await loadSankeyDataWithSource('energy');
 
 	return {
-		sankeyData,
-		usingDatabase
+		sankeyData: result.data,
+		usingDatabase: result.usingDatabase,
+		dataSource: result.source,
+		dataSourceMessage: result.message
 	};
 };

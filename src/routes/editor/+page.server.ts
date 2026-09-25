@@ -9,25 +9,29 @@
  */
 
 import type { PageServerLoad } from './$types';
-import { loadEditorDataFromDatabase } from '$lib/server/editorData';
+import { loadEditorDataWithSource } from '$lib/server/editorData';
+import { checkAuth, isDemoUser } from '$lib/server/auth';
 
 /**
  * Load editor data before page render
  *
- * This function runs on the server for every page request.
- * It fetches editor data and checks database connection status.
- *
- * @returns Object with editorData array and usingDatabase boolean
+ * @returns
+ * - editorData: the rows to show
+ * - usingDatabase / dataSource / dataSourceMessage: where they came from
+ * - canPersist: whether saves should go through /editor/api. The API's write
+ *   handlers are guarded by requireAuthAPI (401 anonymous, 403 demo user), so
+ *   the page only takes the persistence path when the request would succeed;
+ *   everyone else gets the in-memory demo instead of a failed save.
  */
-export const load: PageServerLoad = async () => {
-	// Load all editor demo data
-	const editorData = await loadEditorDataFromDatabase('editor-demo');
-
-	// Check if database is configured
-	const usingDatabase = !!process.env.DATABASE_URL;
+export const load: PageServerLoad = async (event) => {
+	const result = await loadEditorDataWithSource('editor-demo');
+	const { authenticated } = checkAuth(event);
 
 	return {
-		editorData,
-		usingDatabase
+		editorData: result.data,
+		usingDatabase: result.usingDatabase,
+		dataSource: result.source,
+		dataSourceMessage: result.message,
+		canPersist: result.usingDatabase && authenticated && !isDemoUser(event)
 	};
 };

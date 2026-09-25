@@ -143,6 +143,12 @@
 	// ------------------------------------------------------------
 
 	const READ_ONLY_MESSAGE = 'The public demo account is read-only — changes were not saved.';
+	const SIGN_IN_MESSAGE = 'Sign in to save changes — they were not saved.';
+
+	// The write API needs a session (401 when signed out), so anonymous
+	// visitors get the in-memory behaviour rather than a wall of rollbacks.
+	// The demo account still goes to the API so its 403 can be seen.
+	const canPersist = $derived(data.usingDatabase && (data.isSignedIn || data.isDemoUser));
 
 	let lastAction = $state<string | null>(null);
 	let selectedCount = $state(0);
@@ -166,6 +172,7 @@
 	/** Turn an API failure into an Error the grid can show and roll back on. */
 	function apiError(response: Response, body: ApiResult): Error {
 		if (response.status === 403) return new Error(READ_ONLY_MESSAGE);
+		if (response.status === 401) return new Error(SIGN_IN_MESSAGE);
 		return new Error(body.error ?? body.message ?? `Request failed (${response.status})`);
 	}
 
@@ -175,10 +182,11 @@
 	}
 
 	async function persistEdit({ id, column, value }: DataGridCellEdit<Employee>): Promise<Partial<Employee> | void> {
-		if (!data.usingDatabase) {
-			// Without a database the API can't save anything, so keep the edit
-			// in memory and say so — the grid still behaves exactly as it would.
-			lastAction = `Edited ${column} on #${id} (in memory — no database configured)`;
+		if (!canPersist) {
+			// Without a database (or a session) the API can't save anything, so
+			// keep the edit in memory and say so — the grid still behaves exactly
+			// as it would.
+			lastAction = `Edited ${column} on #${id} (in memory — ${data.usingDatabase ? 'sign in to save' : 'no database configured'})`;
 			return;
 		}
 
@@ -198,8 +206,8 @@
 	}
 
 	async function persistDelete(ids: DataGridRowId[]): Promise<void> {
-		if (!data.usingDatabase) {
-			lastAction = `Deleted ${ids.length} row(s) (in memory — no database configured)`;
+		if (!canPersist) {
+			lastAction = `Deleted ${ids.length} row(s) (in memory — ${data.usingDatabase ? 'sign in to save' : 'no database configured'})`;
 			return;
 		}
 
@@ -432,6 +440,10 @@
 				{:else if !data.usingDatabase}
 					<p class="dg-notice" role="note">
 						No database is configured, so edits and deletes are kept in memory for this visit.
+					</p>
+				{:else if !data.isSignedIn}
+					<p class="dg-notice" role="note">
+						Saving needs a signed-in account, so edits and deletes are kept in memory for this visit.
 					</p>
 				{/if}
 				<div class="dg-stage">

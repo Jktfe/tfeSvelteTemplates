@@ -4,7 +4,8 @@
  * Loads expanding card data from the Neon database with graceful fallback to static data.
  */
 
-import { loadExpandingCardsFromDatabase } from '$lib/server/expandingCards';
+import { loadExpandingCardsWithSource } from '$lib/server/expandingCards';
+import type { DataSourceStatus } from '$lib/server/dataSource';
 import type { ExpandingCardData } from '$lib/types';
 import type { PageServerLoad } from './$types';
 
@@ -16,15 +17,15 @@ import type { PageServerLoad } from './$types';
 export const load: PageServerLoad = async (): Promise<{
 	expandingCards: ExpandingCardData[];
 	usingDatabase: boolean;
+	dataSource: DataSourceStatus;
+	dataSourceMessage?: string;
 }> => {
-	// Load expanding cards from database (or fallback data)
-	const expandingCards = await loadExpandingCardsFromDatabase();
-
-	// Determine if we're using the database or fallback data
-	const usingDatabase = !!process.env.DATABASE_URL;
+	const result = await loadExpandingCardsWithSource();
 
 	return {
-		expandingCards,
-		usingDatabase
+		expandingCards: result.data,
+		usingDatabase: result.usingDatabase,
+		dataSource: result.source,
+		dataSourceMessage: result.message
 	};
 };

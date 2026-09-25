@@ -9,81 +9,41 @@
  * RESPONSE FORMAT:
  * {
  *   "cards": [
- *     {
- *       "id": 1,
- *       "title": "Card Title",
- *       "description": "Card description",
- *       "image_url": "https://...",
- *       "display_order": 1
- *     },
+ *     { "title": "Card Title", "content": "Card description", "image": "https://..." },
  *     ...
  *   ]
  * }
  *
  * ERROR HANDLING:
- * - Returns 500 if database connection fails
- * - Returns 500 if query fails
- * - Logs errors to console for debugging
+ * This endpoint is a thin JSON view over the database, so unlike the demo
+ * pages it does not quietly serve fixture cards:
+ * - 503 when DATABASE_URL is missing or still the .env.example placeholder
+ * - 500 when the database is configured but the query fails
  */
 
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { neon } from '@neondatabase/serverless';
-import type { Card, CardRow } from '$lib/types';
+import { loadCardsWithSource } from '$lib/server/cards';
 
 /**
  * GET handler - Fetch all cards from database
  */
 export const GET: RequestHandler = async () => {
-	try {
-		// Get database connection string from environment variable
-		const databaseUrl = process.env.DATABASE_URL;
+	// Reuse the shared loader so the query and snake_case → camelCase mapping
+	// live in one place; the status on the result tells us which answer to give.
+	const result = await loadCardsWithSource();
 
-		// Ensure DATABASE_URL is configured
-		if (!databaseUrl) {
-			console.error('DATABASE_URL environment variable is not set');
-			throw error(500, {
-				message: 'Database configuration error. Please set DATABASE_URL environment variable.'
-			});
-		}
+	if (result.source === 'database') {
+		return json({ cards: result.data });
+	}
 
-		// Create Neon SQL client
-		const sql = neon(databaseUrl);
-
-		// Query cards ordered by display_order
-		// This ensures cards appear in the correct sequence
-		const rows = (await sql`
-			SELECT
-				id,
-				title,
-				description,
-				image_url,
-				display_order,
-				created_at
-			FROM cards
-			ORDER BY display_order ASC
-		`) as unknown as CardRow[];
-
-		// Transform database records to match component expectations
-		// Maps database column names to Card interface properties
-		const formattedCards: Card[] = rows.map(row => ({
-			title: row.title,
-			content: row.description,
-			image: row.image_url
-		}));
-
-		// Return cards as JSON
-		return json({
-			cards: formattedCards
-		});
-
-	} catch (err) {
-		// Log error for debugging
-		console.error('Error fetching cards from database:', err);
-
-		// Return error response
-		throw error(500, {
-			message: 'Failed to fetch cards from database. Check server logs for details.'
+	if (!result.databaseConfigured) {
+		throw error(503, {
+			message: 'Database not configured. Please set the DATABASE_URL environment variable.'
 		});
 	}
+
+	throw error(500, {
+		message: 'Failed to fetch cards from database. Check server logs for details.'
+	});
 };

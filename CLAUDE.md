@@ -102,6 +102,11 @@ Helpers:
 | `getConfiguredDatabaseUrl()` | Returns the real `DATABASE_URL`, or `undefined` if missing/placeholder |
 | `isDatabaseConfigured()` | Boolean shortcut |
 | `fromDatabase(data)` / `fromFallback(data, msg?)` / `fromDatabaseError(data, err)` | Build a `DataSourceResult<T>` with the right status |
+| `loadWithFallback(fallback, query, { label, schemaFile? })` | The whole read path in one call: fallback when unconfigured, `fromMissingTable` hint when the schema isn't provisioned, `error` on failure |
+| `requireDatabaseUrl(action)` | For write paths: returns the URL or throws `Cannot <action>: DATABASE_URL not configured` (API routes map it to 503) |
+| `combineDataSources(...results)` | Merge several results into one page-level status |
+
+Page loads pass `usingDatabase` / `dataSource` / `dataSourceMessage` straight from the result — never recompute them from `process.env.DATABASE_URL`.
 
 Server utilities under `src/lib/server/` follow this shape:
 
