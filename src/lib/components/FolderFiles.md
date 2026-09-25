@@ -65,9 +65,9 @@ CLIENT (FolderFiles.svelte) ─────────────────�
 
 PARENT / PAGE (+page.server.ts) ─────────────────────────────────
   load:
-    folders = loadFoldersFromDatabase('folderfiles-demo')
-    files   = loadFilesFromDatabase()
-    return { folders, files, usingDatabase: !!DATABASE_URL }
+    foldersResult = loadFoldersWithSource('folderfiles-demo')
+    filesResult   = loadFilesWithSource()
+    return { folders, files, ...combineDataSources(foldersResult, filesResult) }
 
 SERVER UTILITY (folderFiles.ts) ─────────────────────────────────
   loadFoldersFromDatabase(category?):
@@ -122,7 +122,7 @@ JSON columns (`pages` and `metadata`) are stored as `TEXT` and `JSON.parse`d on 
 
 The flow from URL to DOM:
 
-1. **Page load** → `src/routes/folderfiles/+page.server.ts` runs server-side. Calls `loadFoldersFromDatabase('folderfiles-demo')` and `loadFilesFromDatabase()` in series. Returns `{ folders, files, usingDatabase }` to the page component.
+1. **Page load** → `src/routes/folderfiles/+page.server.ts` runs server-side. Calls `loadFoldersWithSource('folderfiles-demo')` and `loadFilesWithSource()` in parallel, then merges their statuses with `combineDataSources`. Returns `{ folders, files, usingDatabase, dataSource, dataSourceMessage }` to the page component.
 2. **Component receives** `data` via `let { data } = $props()`. Folders and files are passed as props to `<FolderFiles>`.
 3. **User opens a folder** — entirely client-side. The component already has every file in memory; it filters by `folderId`. No round-trip.
 4. **User drags between panels** — also client-side. Mutating `leftPanelItems` and `rightPanelItems` arrays. Nothing persists. (This is intentional: the demo treats the modal as a scratchpad.)
@@ -140,7 +140,7 @@ Write failures distinguish two cases:
 - **No `DATABASE_URL`**: throw a specific error so callers can route the user to a 503 or a "configure your database" message. Writes deliberately do *not* fall back to a "pretend it worked" mode — silent data loss is worse than a clear failure.
 - **DB error during write**: log, return `null` (or `false` for delete). Caller treats this as a transient failure, can retry or surface to the user.
 
-The `dataSource.ts` helpers (`fromDatabase`, `fromFallback`, `fromDatabaseError`, `combineDataSources`) wrap these states into a typed `DataSourceResult<T>` for pages that want to render a `DatabaseStatus` indicator with the precise reason. FolderFiles' page currently uses the simpler `!!process.env.DATABASE_URL` flag, but `combineDataSources` is the right tool when both folders *and* files might independently fall back.
+The `dataSource.ts` helpers (`fromDatabase`, `fromFallback`, `fromDatabaseError`, `combineDataSources`) wrap these states into a typed `DataSourceResult<T>` for pages that want to render a `DatabaseStatus` indicator with the precise reason. FolderFiles' page uses `combineDataSources` because folders *and* files can independently fall back — if either query fails, the badge says so.
 
 ## Mobile Detection and the Two-Tap Pattern
 

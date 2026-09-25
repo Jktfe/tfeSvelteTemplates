@@ -15,7 +15,11 @@ DatabaseStatus displays a visual badge showing whether the application is connec
   let { data } = $props();
 </script>
 
-<DatabaseStatus usingDatabase={data.usingDatabase} />
+<DatabaseStatus
+  usingDatabase={data.usingDatabase}
+  source={data.dataSource}
+  message={data.dataSourceMessage}
+/>
 ```
 
 ---
@@ -24,7 +28,9 @@ DatabaseStatus displays a visual badge showing whether the application is connec
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `usingDatabase` | `boolean` | required | Whether DATABASE_URL is configured and active |
+| `usingDatabase` | `boolean` | required | Whether this page's data actually came from the database (from `DataSourceResult.usingDatabase`) |
+| `source` | `'database' \| 'fallback' \| 'error' \| 'static'` | derived from `usingDatabase` | Precise status from `DataSourceResult.source`; distinguishes a failed query (`error`) from an unconfigured database (`fallback`) |
+| `message` | `string` | `''` | Optional reason shown alongside the badge (from `DataSourceResult.message`) |
 | `class` | `string` | `''` | Additional CSS classes for styling |
 
 ---
@@ -48,13 +54,20 @@ DatabaseStatus displays a visual badge showing whether the application is connec
 
 ```typescript
 // src/routes/cardstack/+page.server.ts
-import { loadCardsFromDatabase } from '$lib/server/cards';
+import { loadCardsWithSource } from '$lib/server/cards';
 
 export const load: PageServerLoad = async () => {
-  const cards = await loadCardsFromDatabase();
-  const usingDatabase = !!process.env.DATABASE_URL;
+  // Take the status from the loader's DataSourceResult. Checking
+  // `!!process.env.DATABASE_URL` instead would claim "connected" for the
+  // .env.example placeholder and for queries that failed and fell back.
+  const result = await loadCardsWithSource();
 
-  return { cards, usingDatabase };
+  return {
+    cards: result.data,
+    usingDatabase: result.usingDatabase,
+    dataSource: result.source,
+    dataSourceMessage: result.message
+  };
 };
 ```
 
@@ -136,19 +149,23 @@ color: #854d0e;           /* Amber text */
 DatabaseStatus works with the graceful fallback pattern used throughout the TFE Svelte Templates library:
 
 ```svelte
-<!-- 1. Server utility checks DATABASE_URL -->
-<!-- 2. Returns database data OR fallback constants -->
-<!-- 3. Pass connection status to client -->
+<!-- 1. Server utility calls loadWithFallback (dataSource.ts) -->
+<!-- 2. Returns a DataSourceResult: data + source + usingDatabase + message -->
+<!-- 3. Page load passes those fields straight through to the client -->
 
 <!-- Server-side (+page.server.ts) -->
 <script lang="ts">
-  import { loadCardsFromDatabase } from '$lib/server/cards';
+  import { loadCardsWithSource } from '$lib/server/cards';
 
   export const load = async () => {
-    const cards = await loadCardsFromDatabase();
-    const usingDatabase = !!process.env.DATABASE_URL;
+    const result = await loadCardsWithSource();
 
-    return { cards, usingDatabase };
+    return {
+      cards: result.data,
+      usingDatabase: result.usingDatabase,
+      dataSource: result.source,
+      dataSourceMessage: result.message
+    };
   };
 </script>
 
@@ -158,7 +175,11 @@ DatabaseStatus works with the graceful fallback pattern used throughout the TFE 
   let { data } = $props();
 </script>
 
-<DatabaseStatus usingDatabase={data.usingDatabase} />
+<DatabaseStatus
+  usingDatabase={data.usingDatabase}
+  source={data.dataSource}
+  message={data.dataSourceMessage}
+/>
 ```
 
 ---
