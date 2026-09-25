@@ -117,6 +117,11 @@
 		class: className = ''
 	}: Props = $props();
 
+	// $props.id() gives each instance its own stable (SSR-safe) id so two heroes
+	// on one page do not fight over the same aria-labelledby target.
+	const uid = $props.id();
+	const headingId = `gsap-suite-title-${uid}`;
+
 	let root: HTMLElement | null = null;
 	let headlineElement: HTMLHeadingElement | null = null;
 	let gsapInstance: Gsap | null = null;
@@ -235,11 +240,11 @@
 	class={`split-text-hero ${className}`}
 	class:is-dark={theme === 'dark'}
 	class:is-light={theme === 'light'}
-	aria-labelledby="gsap-suite-title"
+	aria-labelledby={headingId}
 >
 	<div class="hero-copy">
 		<p class="eyebrow">{eyebrow}</p>
-		<h1 id="gsap-suite-title" bind:this={headlineElement} class="headline">{headline}</h1>
+		<h1 id={headingId} bind:this={headlineElement} class="headline">{headline}</h1>
 		<p class="lede">{copy}</p>
 	</div>
 

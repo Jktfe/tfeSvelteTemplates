@@ -88,6 +88,10 @@
 		class: extraClass = ''
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+
 	// SvelteSet gives O(1) has/add/delete and is reactive — Svelte 5
 	// tracks reads/writes for fine-grained updates without full reassignment.
 	// untrack: defaultOpen seeds initial state only; user clicks own state after that.
@@ -129,8 +133,8 @@
 					type="button"
 					class="accordion-trigger"
 					aria-expanded={open}
-					aria-controls={`panel-${item.id}`}
-					id={`trigger-${item.id}`}
+					aria-controls={`panel-${uid}-${item.id}`}
+					id={`trigger-${uid}-${item.id}`}
 					disabled={item.disabled}
 					onclick={() => toggle(item.id)}
 				>
@@ -156,8 +160,8 @@
 			<div
 				class="accordion-panel"
 				role="region"
-				id={`panel-${item.id}`}
-				aria-labelledby={`trigger-${item.id}`}
+				id={`panel-${uid}-${item.id}`}
+				aria-labelledby={`trigger-${uid}-${item.id}`}
 				aria-hidden={!open}
 			>
 				<div class="accordion-content">

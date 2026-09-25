@@ -1,26 +1,29 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-
   /**
    * Text that follows the SVG path and morphs when hovered.
    */
-  export let originalText: string = '';
-  export let morphedText: string = '';
-  const repeatCount: number = 4; // Repeat to span the whole path
-
-  let displayText: string;
-  function setDisplay(text: string) {
-    displayText = text.repeat(repeatCount);
+  interface Props {
+    originalText?: string;
+    morphedText?: string;
   }
 
-  onMount(() => setDisplay(originalText));
+  let { originalText = '', morphedText = '' }: Props = $props();
+  const repeatCount: number = 4; // Repeat to span the whole path
+
+  // A per-instance path id keeps two AnimatedText blocks on one page from
+  // sharing (and fighting over) a single id="wave-path".
+  const uid = $props.id();
+  const pathId = `wave-path-${uid}`;
+
+  let hovered = $state(false);
+  const displayText = $derived((hovered ? morphedText : originalText).repeat(repeatCount));
 
   function handleEnter() {
-    setDisplay(morphedText);
+    hovered = true;
   }
 
   function handleLeave() {
-    setDisplay(originalText);
+    hovered = false;
   }
 </script>
 
@@ -28,19 +31,19 @@
   class="signal-container"
   role="img"
   aria-label={`${originalText} morphs to ${morphedText}`}
-  on:mouseenter={handleEnter}
-  on:mouseleave={handleLeave}
+  onmouseenter={handleEnter}
+  onmouseleave={handleLeave}
 >
   <svg viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid slice">
     <path
-      id="wave-path"
+      id={pathId}
       d="M -300 150 Q 0 -50 300 150 T 900 150 T 1500 150 T 2100 150"
       fill="none"
       stroke="none"
     />
 
     <text class="wave-text">
-      <textPath href="#wave-path" startOffset="0%">
+      <textPath href="#{pathId}" startOffset="0%">
         {displayText}
 
         <animate

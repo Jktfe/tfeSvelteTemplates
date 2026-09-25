@@ -19,3 +19,9 @@ both light and dark visual themes.
 	theme="light"
 />
 ```
+
+## Multiple instances
+
+The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built
+from `$props.id()`, so several heroes can share a page without duplicate ids — each section
+always points at its own headline.

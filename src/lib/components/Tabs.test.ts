@@ -56,11 +56,12 @@ describe('Tabs', () => {
 	it('aria-controls + aria-labelledby paired correctly', () => {
 		const { container } = render(Tabs, { props: { tabs: TABS, active: 'a' } });
 		const tab = container.querySelector('[role="tab"][aria-selected="true"]') as HTMLElement;
-		expect(tab.getAttribute('aria-controls')).toBe('panel-a');
-		expect(tab.id).toBe('tab-a');
+		// Ids carry a per-instance prefix ($props.id()) so two Tabs never collide.
+		expect(tab.id).toMatch(/^tab-.*-a$/);
 		const panel = container.querySelector('[role="tabpanel"]') as HTMLElement;
-		expect(panel.id).toBe('panel-a');
-		expect(panel.getAttribute('aria-labelledby')).toBe('tab-a');
+		expect(panel.id).toMatch(/^panel-/);
+		expect(tab.getAttribute('aria-controls')).toBe(panel.id);
+		expect(panel.getAttribute('aria-labelledby')).toBe(tab.id);
 	});
 
 	it('click activates tab', async () => {

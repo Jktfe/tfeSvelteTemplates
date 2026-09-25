@@ -45,6 +45,13 @@
 		panel
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	// One shared panel renders whichever tab is active, so every tab controls
+	// the same element (a per-tab panel id pointed inactive tabs at nothing).
+	const panelId = `panel-${uid}`;
+
 	let buttons: HTMLButtonElement[] = $state([]);
 
 	function indexOfId(id: string) {
@@ -110,11 +117,11 @@
 				bind:this={buttons[i]}
 				type="button"
 				role="tab"
-				id="tab-{tab.id}"
+				id="tab-{uid}-{tab.id}"
 				class="tab"
 				class:active={tab.id === active}
 				aria-selected={tab.id === active}
-				aria-controls="panel-{tab.id}"
+				aria-controls={panelId}
 				tabindex={tab.id === active ? 0 : -1}
 				disabled={tab.disabled}
 				onclick={() => activate(tab.id)}
@@ -127,8 +134,8 @@
 	<div
 		class="panel"
 		role="tabpanel"
-		id="panel-{active}"
-		aria-labelledby="tab-{active}"
+		id={panelId}
+		aria-labelledby="tab-{uid}-{active}"
 		tabindex="0"
 	>
 		{#if panel}{@render panel(active)}{/if}

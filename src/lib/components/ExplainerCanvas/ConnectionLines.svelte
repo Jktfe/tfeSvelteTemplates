@@ -26,6 +26,12 @@
 		hoveredCardId = null
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const arrowId = `arrow-${uid}`;
+	const arrowActiveId = `arrow-active-${uid}`;
+
 	/**
 	 * Build a map of card IDs to positions for quick lookup
 	 */
@@ -107,7 +113,7 @@
 	<defs>
 		<!-- Arrow marker for line ends - refX=5 puts arrow tip exactly at line endpoint -->
 		<marker
-			id="arrow"
+			id={arrowId}
 			viewBox="0 0 10 10"
 			refX="5"
 			refY="5"
@@ -118,7 +124,7 @@
 			<path d="M 0 0 L 10 5 L 0 10 z" fill="var(--ec-line-color, #999)" />
 		</marker>
 		<marker
-			id="arrow-active"
+			id={arrowActiveId}
 			viewBox="0 0 10 10"
 			refX="5"
 			refY="5"
@@ -135,7 +141,7 @@
 			d={conn.path}
 			class="connection-line"
 			class:active={conn.isActive}
-			marker-end={conn.isActive ? 'url(#arrow-active)' : 'url(#arrow)'}
+			marker-end={conn.isActive ? `url(#${arrowActiveId})` : `url(#${arrowId})`}
 		/>
 	{/each}
 </svg>

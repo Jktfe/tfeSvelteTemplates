@@ -20,3 +20,9 @@ light/dark themes.
 	theme="light"
 />
 ```
+
+## Multiple instances
+
+The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built
+from `$props.id()`, so several grids can share a page (the demo route mounts four) without
+duplicate ids — each section always points at its own title.

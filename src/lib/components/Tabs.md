@@ -40,18 +40,19 @@ render:
     for each tab:
       <button role="tab"
               aria-selected={tab.id === active}
-              aria-controls="panel-{id}"
+              id="tab-{uid}-{id}"
+              aria-controls="panel-{uid}"
               tabindex={tab.id === active ? 0 : -1}
               disabled={tab.disabled}>
         icon? + label
       </button>
   </div>
-  <div role="tabpanel" id="panel-{active}" aria-labelledby="tab-{active}">
+  <div role="tabpanel" id="panel-{uid}" aria-labelledby="tab-{uid}-{active}">
     {@render panel(active)}
   </div>
 ```
 
-The tablist + tabpanel are wired with two id pairs: `id="tab-{id}"` on the button is referenced by `aria-labelledby` on the panel, and `id="panel-{id}"` on the panel is referenced by `aria-controls` on the button. Screen readers use these to announce the relationship — "*tab Overview, selected, controls panel Overview content*".
+The tablist + tabpanel are wired with ids prefixed by a per-instance `uid` from `$props.id()`: `id="tab-{uid}-{id}"` on each button is referenced by `aria-labelledby` on the panel, and the single shared panel's `id="panel-{uid}"` is referenced by `aria-controls` on every button (there is only one panel element, so every tab controls it). Screen readers use these to announce the relationship — "*tab Overview, selected, controls panel Overview content*".
 
 ## The Core Concept: Roving Tabindex
 
@@ -140,7 +141,7 @@ The two variants share the same DOM structure — only CSS differs. Switching `v
 | User has `prefers-reduced-motion: reduce` | The colour and background transitions on tabs are removed; the panel swap is instant. |
 | Panel content is heavy (e.g. data fetch) | The `panel` snippet runs on every active change; render-side caching is the consumer's responsibility. Common pattern: render a wrapper component per tab id and let it manage its own load. |
 | Vertical orientation in a constrained-height container | The tablist becomes a vertical flex column, panel shares the row. Set `min-width` on the tablist if labels are long; otherwise it'll squeeze. |
-| Two Tabs on the same page sharing tab ids | DOM uses `id="tab-{id}"` and `id="panel-{id}"` — duplicate ids break aria-labelledby. Use unique ids across the page. |
+| Two Tabs on the same page sharing tab ids | Safe — every DOM id is prefixed with the instance's `$props.id()`, so identical `tabs` arrays still produce unique ids and correct aria wiring. |
 
 ## Dependencies
 

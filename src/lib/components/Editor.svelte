@@ -51,6 +51,11 @@
 		onCancel = () => {} // [CR] Callback when user cancels/closes
 	}: EditorProps = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `editor-title-${uid}`;
+
 	// [CR] FORM STATE MANAGEMENT
 	// [NTL] This is the component's "memory" - all the form field values!
 
@@ -264,7 +269,7 @@
 		class="editor-modal"
 		role="dialog"
 		aria-modal="true"
-		aria-labelledby="editor-title"
+		aria-labelledby={titleId}
 		tabindex="-1"
 		use:setupFocusTrap
 		onclick={(e) => e.stopPropagation()}
@@ -272,7 +277,7 @@
 	>
 		<!-- Modal Header -->
 		<header class="editor-header">
-			<h2 id="editor-title" class="editor-title">
+			<h2 id={titleId} class="editor-title">
 				{mode === 'create' ? 'Create New Card' : 'Edit Card'}
 			</h2>
 

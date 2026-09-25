@@ -8,17 +8,26 @@
    *  - amplitude: vertical wave amplitude in pixels (default 20)
    *  - wavelength: horizontal distance between peaks (default 200)
    */
-  export let text = "WAVING TEXT";
-  export let amplitude = 20;
-  export let wavelength = 200;
+  interface Props {
+    text?: string;
+    amplitude?: number;
+    wavelength?: number;
+  }
+
+  let { text = "WAVING TEXT", amplitude = 20, wavelength = 200 }: Props = $props();
+
+  // Each instance draws its own wave, so the <textPath> must point at this
+  // instance's <path>. A shared id="wave" made every copy follow the first one.
+  const uid = $props.id();
+  const pathId = `wave-${uid}`;
 
   // Generate a path data string for a sine wave.
-  const generatePath = () => {
+  const generatePath = (amp: number, length: number) => {
     const points: Array<[number, number]> = [];
     const totalWidth = 1200; // keep constant width for consistency
-    const step = wavelength / 20;
+    const step = length / 20;
     for (let x = 0; x <= totalWidth + step; x += step) {
-      const y = amplitude * Math.sin((2 * Math.PI * x) / wavelength);
+      const y = amp * Math.sin((2 * Math.PI * x) / length);
       points.push([x, y + 150]); // center at 150
     }
     const d = points
@@ -27,8 +36,7 @@
     return d;
   };
 
-  let pathData = "";
-  $: pathData = generatePath();
+  const pathData = $derived(generatePath(amplitude, wavelength));
 </script>
 
 <style>
@@ -49,10 +57,10 @@
 
 <svg viewBox="0 0 1200 300" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <path id="wave" d={pathData} fill="none" stroke="transparent" />
+    <path id={pathId} d={pathData} fill="none" stroke="transparent" />
   </defs>
   <text>
-    <textPath href="#wave" startOffset="50%" method="align" spacing="auto" calcMode="linear">
+    <textPath href="#{pathId}" startOffset="50%" method="align" spacing="auto" calcMode="linear">
       {text}
     </textPath>
   </text>

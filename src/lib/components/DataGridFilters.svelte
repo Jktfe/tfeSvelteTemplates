@@ -57,6 +57,15 @@
 		onFiltersChange
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const panelId = `filter-panel-${uid}`;
+	const salaryMinId = `salary-min-${uid}`;
+	const salaryMaxId = `salary-max-${uid}`;
+	const dateFromId = `date-from-${uid}`;
+	const dateToId = `date-to-${uid}`;
+
 	/**
 	 * Filter state
 	 * Tracks all active filter values
@@ -156,7 +165,7 @@
 			class="expand-button"
 			onclick={() => isExpanded = !isExpanded}
 			aria-expanded={isExpanded}
-			aria-controls="filter-panel"
+			aria-controls={panelId}
 		>
 			<span class="expand-icon" aria-hidden="true">
 				{isExpanded ? '▼' : '▶'}
@@ -184,7 +193,7 @@
 
 	<!-- Filter Panel (Collapsible) -->
 	{#if isExpanded}
-		<div class="filters-panel" id="filter-panel">
+		<div class="filters-panel" id={panelId}>
 			<!-- Department Filter -->
 			{#if departments.length > 0}
 				<div class="filter-group">
@@ -236,9 +245,9 @@
 				</label>
 				<div class="range-inputs">
 					<div class="range-input-wrapper">
-						<label for="salary-min" class="range-label">Min</label>
+						<label for={salaryMinId} class="range-label">Min</label>
 						<input
-							id="salary-min"
+							id={salaryMinId}
 							type="range"
 							min={salaryRange.min}
 							max={salaryRange.max}
@@ -249,9 +258,9 @@
 						<span class="range-value">{formatSalary(filters.salaryMin)}</span>
 					</div>
 					<div class="range-input-wrapper">
-						<label for="salary-max" class="range-label">Max</label>
+						<label for={salaryMaxId} class="range-label">Max</label>
 						<input
-							id="salary-max"
+							id={salaryMaxId}
 							type="range"
 							min={salaryRange.min}
 							max={salaryRange.max}
@@ -271,18 +280,18 @@
 				<label class="filter-label">Hire Date Range</label>
 				<div class="date-inputs">
 					<div class="date-input-wrapper">
-						<label for="date-from" class="date-label">From</label>
+						<label for={dateFromId} class="date-label">From</label>
 						<input
-							id="date-from"
+							id={dateFromId}
 							type="date"
 							bind:value={filters.hireDateFrom}
 							aria-label="Hire date from"
 						/>
 					</div>
 					<div class="date-input-wrapper">
-						<label for="date-to" class="date-label">To</label>
+						<label for={dateToId} class="date-label">To</label>
 						<input
-							id="date-to"
+							id={dateToId}
 							type="date"
 							bind:value={filters.hireDateTo}
 							aria-label="Hire date to"

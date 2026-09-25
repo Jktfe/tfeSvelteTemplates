@@ -185,6 +185,15 @@
 
 	let { entries, title = 'Copy-paste composer', initialHref }: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `cpc-title-${uid}`;
+	const filesTitleId = `cpc-files-title-${uid}`;
+	const commandsTitleId = `cpc-commands-title-${uid}`;
+	const checklistTitleId = `cpc-checklist-title-${uid}`;
+	const usageTitleId = `cpc-usage-title-${uid}`;
+
 	let selectedHref = $state('');
 	let includeDocs = $state(defaultCopyPasteOptions.includeDocs);
 	let includeDemo = $state(defaultCopyPasteOptions.includeDemo);
@@ -222,11 +231,11 @@
 	});
 </script>
 
-<section class="copy-paste-composer" aria-labelledby="cpc-title">
+<section class="copy-paste-composer" aria-labelledby={titleId}>
 	<header class="cpc-head">
 		<div>
 			<p class="cpc-kicker">Catalogue handoff</p>
-			<h2 id="cpc-title">{title}</h2>
+			<h2 id={titleId}>{title}</h2>
 			<p>Choose a component and build the exact source, docs, demo, dependency, and usage bundle to hand to another repo.</p>
 		</div>
 		{#if selectedEntry}
@@ -268,9 +277,9 @@
 		</fieldset>
 
 		<div class="cpc-grid">
-			<section class="cpc-panel" aria-labelledby="cpc-files-title">
+			<section class="cpc-panel" aria-labelledby={filesTitleId}>
 				<header>
-					<h3 id="cpc-files-title">Selected files</h3>
+					<h3 id={filesTitleId}>Selected files</h3>
 					<span>{selectedFiles.length}</span>
 				</header>
 				<ul class="cpc-file-list">
@@ -284,9 +293,9 @@
 				</ul>
 			</section>
 
-			<section class="cpc-panel" aria-labelledby="cpc-commands-title">
+			<section class="cpc-panel" aria-labelledby={commandsTitleId}>
 				<header>
-					<h3 id="cpc-commands-title">Command block</h3>
+					<h3 id={commandsTitleId}>Command block</h3>
 					<span>{commands.length}</span>
 				</header>
 				<pre class="cpc-command" role="region" aria-label="Install commands"><code>{commandText}</code></pre>
@@ -294,9 +303,9 @@
 		</div>
 
 		<div class="cpc-grid">
-			<section class="cpc-panel" aria-labelledby="cpc-checklist-title">
+			<section class="cpc-panel" aria-labelledby={checklistTitleId}>
 				<header>
-					<h3 id="cpc-checklist-title">Checklist</h3>
+					<h3 id={checklistTitleId}>Checklist</h3>
 				</header>
 				<ol class="cpc-checklist">
 					{#each checklist as item (item)}
@@ -305,9 +314,9 @@
 				</ol>
 			</section>
 
-			<section class="cpc-panel" aria-labelledby="cpc-usage-title">
+			<section class="cpc-panel" aria-labelledby={usageTitleId}>
 				<header>
-					<h3 id="cpc-usage-title">Usage</h3>
+					<h3 id={usageTitleId}>Usage</h3>
 				</header>
 				<pre class="cpc-usage"><code>{selectedEntry.usage}</code></pre>
 			</section>

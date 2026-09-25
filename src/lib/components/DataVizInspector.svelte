@@ -51,6 +51,11 @@
 
 	let { specs, title = 'Data viz inspector', class: extraClass = '' }: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `viz-title-${uid}`;
+
 	let activeTitle = $state('');
 	$effect(() => {
 		if (!activeTitle && specs[0]) activeTitle = specs[0].title;
@@ -62,10 +67,10 @@
 	const verdict = $derived(dataVizVerdict(score));
 </script>
 
-<section class="viz-inspector {extraClass}" aria-labelledby="viz-title">
+<section class="viz-inspector {extraClass}" aria-labelledby={titleId}>
 	<header>
 		<p>Chart QA</p>
-		<h2 id="viz-title">{title}</h2>
+		<h2 id={titleId}>{title}</h2>
 	</header>
 
 	<div class="vi-layout">
