@@ -874,7 +874,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🎴',
 				'4-direction rolling deck with scoped keyboard control.',
 				{
-					screenshotFile: 'CardStackMotionFlipShot.svg',
+					screenshotFile: 'CardStackMotionFlipShot.webp',
 					themeSupport: 'dual',
 					relatedFiles: ['src/lib/scrollLock.ts', 'src/lib/types.ts'],
 					usage:
@@ -985,7 +985,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🖼️',
 				'Scroll-driven paintings portfolio with fan, conveyor, and detail-view phases.',
 				{
-					screenshotFile: 'InteractiveCardsShot.svg',
+					screenshotFile: 'InteractiveCardsShot.webp',
 					themeSupport: 'dual',
 					source: 'src/lib/components/InteractiveCards.svelte',
 					relatedFiles: [
@@ -1165,7 +1165,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🎞️',
 				'Reusable GSAP primitives for Svelte sequencing, text, canvas, deck, and grid motion.',
 				{
-					screenshotFile: 'GsapSuiteShot.svg',
+					screenshotFile: 'GsapSuiteShot.webp',
 					themeSupport: 'dual',
 					source: 'src/lib/components/GsapSplitTextHero.svelte',
 					docs: 'src/lib/components/GsapSplitTextHero.md',
@@ -1309,7 +1309,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🧬',
 				'Three.js and GSAP colour topology scene with hover extrusion.',
 				{
-					screenshotFile: 'TopologyColorGridShot.svg',
+					screenshotFile: 'TopologyColorGridShot.webp',
 					themeSupport: 'dual',
 					dependencies: ['three', 'gsap'],
 					agentHint: 'Mount this client-side; the component owns its Three.js renderer and GSAP cleanup.'
@@ -1419,6 +1419,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <CalendarHeatmap {data} />`
 			}),
 			component('Gantt', '/gantt', '📊', 'Native SVG Gantt with deps, milestones, today, weekends, % complete.', {
+				screenshotFile: 'GanttShot.webp',
 				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Gantt from '$lib/components/Gantt.svelte';

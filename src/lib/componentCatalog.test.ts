@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
 	componentCatalogEntries,
@@ -127,5 +129,32 @@ describe('componentCatalog agent metadata', () => {
 	it('labels light-only and dual theme support for the visual audit trail', () => {
 		expect(themeSupportLabel('light')).toBe('Light mode');
 		expect(themeSupportLabel('dual')).toBe('Light and dark mode');
+	});
+
+	it('points every entry at a real raster screenshot in static/ComponentScreenshots', () => {
+		// Hand-drawn SVG placeholders slipped into the catalogue once; real captures only from here on.
+		const problems = componentCatalogEntries.flatMap(({ item }) => {
+			const issues: string[] = [];
+			if (!item.screenshot.startsWith('/ComponentScreenshots/')) {
+				issues.push(`${item.name}: screenshot outside /ComponentScreenshots (${item.screenshot})`);
+			}
+			if (!/\.(png|webp)$/i.test(item.screenshot)) {
+				issues.push(`${item.name}: screenshot must be a raster capture, not ${item.screenshot}`);
+			}
+			if (!existsSync(resolve('static', `.${item.screenshot}`))) {
+				issues.push(`${item.name}: missing file static${item.screenshot}`);
+			}
+			return issues;
+		});
+
+		expect(problems).toEqual([]);
+	});
+
+	it('points every entry at a docs file that exists on disk', () => {
+		const missing = componentCatalogEntries
+			.filter(({ item }) => !existsSync(resolve(item.docs)))
+			.map(({ item }) => `${item.name}: ${item.docs}`);
+
+		expect(missing).toEqual([]);
 	});
 });
