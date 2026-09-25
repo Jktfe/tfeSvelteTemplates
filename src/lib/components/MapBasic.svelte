@@ -33,9 +33,28 @@
   • leaflet - Industry-standard map library (too complex to build natively)
   • Leaflet CSS (add to app.html or import globally)
 
+  THEMING (see docs/THEMING.md)
+  --map-* chrome tokens on .map-basic-container flip under
+  prefers-color-scheme: dark (zoom buttons, popups, attribution,
+  tile-gap canvas). OpenStreetMap tiles are content and stay as-is.
+
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import type { MapBasicProps, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
@@ -86,6 +105,14 @@
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
 
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
+
 	// ==================================================
 	// EFFECTS - Lifecycle and reactive updates
 	// ==================================================
@@ -98,27 +125,34 @@
 		// Only run on client-side when container is available
 		if (!isBrowser || !mapContainer) return;
 
-		// Async initialization to dynamically import Leaflet
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
 			// Dynamically import Leaflet (SSR safe)
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
 			// Check for reduced motion preference
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
+
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
 
 			// Create the map instance
-			mapInstance = L.map(mapContainer, {
+			mapInstance = L.map(container, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: enableScrollZoom,
 				zoomControl: showZoomControl,
 				attributionControl: showAttribution,
 				// Disable animations if user prefers reduced motion
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion,
-				markerZoomAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion,
+				markerZoomAnimation: !reduceMotion
 			});
 
 			// Add OpenStreetMap tile layer
@@ -146,6 +180,7 @@
 
 		// Cleanup function - destroy map on unmount
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -159,7 +194,7 @@
 	 */
 	$effect(() => {
 		if (map) {
-			map.setView([center.lat, center.lng], zoom);
+			map.setView([center.lat, center.lng], zoom, { animate: !prefersReducedMotion() });
 		}
 	});
 
@@ -190,10 +225,11 @@
 	 */
 	export function panTo(position: LatLng, newZoom?: number): void {
 		if (map) {
+			const animate = !prefersReducedMotion();
 			if (newZoom !== undefined) {
-				map.setView([position.lat, position.lng], newZoom);
+				map.setView([position.lat, position.lng], newZoom, { animate });
 			} else {
-				map.panTo([position.lat, position.lng]);
+				map.panTo([position.lat, position.lng], { animate });
 			}
 		}
 	}
@@ -205,7 +241,7 @@
 	 */
 	export function setView(position: LatLng, newZoom: number): void {
 		if (map) {
-			map.setView([position.lat, position.lng], newZoom);
+			map.setView([position.lat, position.lng], newZoom, { animate: !prefersReducedMotion() });
 		}
 	}
 </script>
@@ -226,6 +262,39 @@
 
 <style>
 	/* ==================================================
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips under prefers-color-scheme: dark. The accent
+     (--map-accent) is brand and stays put on both schemes; the
+     danger tints lighten within the same red hue so the meaning
+     survives while staying readable on dark surfaces.
+     ================================================== */
+	.map-basic-container {
+		--map-canvas: #f0f0f0;
+		--map-surface: #ffffff;
+		--map-surface-hover: #f5f5f5;
+		--map-fg: #333333;
+		--map-fg-muted: #666666;
+		--map-link: #146ef5;
+		--map-shadow: rgba(0, 0, 0, 0.15);
+		--map-attribution-bg: rgba(255, 255, 255, 0.85);
+		--map-attribution-fg: #333333;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-basic-container {
+			--map-canvas: #111827;
+			--map-surface: #1f2937;
+			--map-surface-hover: #374151;
+			--map-fg: #f3f4f6;
+			--map-fg-muted: #9ca3af;
+			--map-link: #60a5fa;
+			--map-shadow: rgba(0, 0, 0, 0.5);
+			--map-attribution-bg: rgba(17, 24, 39, 0.85);
+			--map-attribution-fg: #d1d5db;
+		}
+	}
+
+	/* ==================================================
      Container Styles
      ================================================== */
 	.map-basic-container {
@@ -234,7 +303,7 @@
 		height: var(--map-height, 400px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--map-canvas);
 	}
 
 	/* Map element fills container */
@@ -264,7 +333,7 @@
 	/* Improve zoom control styling */
 	.map-basic-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -274,14 +343,14 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--map-fg);
+		background: var(--map-surface);
 		border: none !important;
 		transition: background-color 0.15s ease;
 	}
 
 	.map-basic-container :global(.leaflet-control-zoom a:hover) {
-		background: #f5f5f5;
+		background: var(--map-surface-hover);
 	}
 
 	.map-basic-container :global(.leaflet-control-zoom a:focus) {
@@ -291,7 +360,6 @@
 
 	/* Attribution styling */
 	.map-basic-container :global(.leaflet-control-attribution) {
-		background: rgba(255, 255, 255, 0.85);
 		padding: 2px 8px;
 		font-size: 11px;
 		border-radius: 4px 0 0 0;
@@ -312,6 +380,44 @@
 			transition: none !important;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* ==================================================
+     Theme-aware Leaflet chrome
+     Leaflet's own stylesheet paints popups and attribution white;
+     these rules route them through the tokens so they flip too.
+     ================================================== */
+	.map-basic-container :global(.leaflet-popup-content-wrapper),
+	.map-basic-container :global(.leaflet-popup-tip) {
+		background: var(--map-surface);
+		color: var(--map-fg);
+	}
+
+	.map-basic-container :global(.leaflet-control-attribution) {
+		background: var(--map-attribution-bg);
+		color: var(--map-attribution-fg);
+	}
+
+	/* Leaflet's own link (#0078a8) and close-button (#757575) colours are
+	   too dim on dark chrome, so only the dark scheme swaps them. */
+	@media (prefers-color-scheme: dark) {
+		.map-basic-container :global(.leaflet-control-attribution a) {
+			color: var(--map-link);
+		}
+
+		.map-basic-container :global(.leaflet-container a.leaflet-popup-close-button) {
+			color: var(--map-fg-muted);
+		}
+
+		/* Leaflet paints not-yet-loaded tile gaps #ddd; match the dark canvas. */
+		.map-basic-container :global(.leaflet-container) {
+			background: var(--map-canvas);
+		}
+
+		/* Leaflet greys out a zoom button at min/max zoom with a light fill. */
+		.map-basic-container :global(.leaflet-bar a.leaflet-disabled) {
+			background: var(--map-surface);
+			color: var(--map-fg-muted);
+			opacity: 0.5;
+		}
+	}
+</style>

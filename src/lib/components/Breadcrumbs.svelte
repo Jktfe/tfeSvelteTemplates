@@ -1,3 +1,48 @@
+<!--
+  ============================================================
+  Breadcrumbs — Hierarchical Path Navigation
+  ============================================================
+  WHAT — An ordered trail of links from a root (e.g. Home) to the current
+  page, with the last item shown as plain text.
+
+  WHY — Orientation in deep content hierarchies; collapses long paths so
+  the row stays on one line on narrow screens.
+
+  FEATURES
+  - Last item rendered as text with aria-current="page"
+  - Optional middle collapse to "…" via maxVisible, always keeping the
+    first and last items
+  - Custom separator string
+  - Six themeable CSS custom properties with a dark flip under
+    prefers-color-scheme (full override notes in the script docblock)
+
+  ACCESSIBILITY
+  - <nav aria-label="Breadcrumb"> wrapper around a semantic <ol>
+  - aria-current="page" on the final item
+  - Separators and the ellipsis are aria-hidden
+  - Visible keyboard focus ring on links
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — One derived array; negligible.
+
+  USAGE
+      <Breadcrumbs items={[
+        { label: 'Home', href: '/' },
+        { label: 'Components', href: '/components' },
+        { label: 'Breadcrumbs' }
+      ]} />
+
+  PROPS
+  | Prop       | Type    | Default      | Description |
+  |------------|---------|--------------|-------------|
+  | items      | Crumb[] | required     | Trail items ({ label, href? }) |
+  | separator  | string  | '/'          | Text between items |
+  | maxVisible | number  | 0            | Collapse the middle when longer (0 = never) |
+  | ariaLabel  | string  | 'Breadcrumb' | Label for the nav landmark |
+  | class      | string  | ''           | Extra classes on the nav |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Breadcrumbs

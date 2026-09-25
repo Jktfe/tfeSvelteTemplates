@@ -29,25 +29,29 @@ GeoChoropleth:
             || feature.properties.RGN22CD
             || feature.properties.CTRY22CD
     value    = valueMap.get(regionId) ?? null
-    fill     = value === null ? '#eee' : colorScale(value)
-    <GeoPath {feature} fill={fill} stroke={strokeColor} on:click on:mouseover />
+    fill     = value === null ? '#e5e7eb' : colorScale(value)
+    <GeoPath {feature} fill={fill} stroke={strokeColor}
+             tabindex=0 role="button" aria-label="{name}: {label | value | 'no data'}"
+             onclick onpointermove onpointerleave onfocus onblur onkeydown(Enter/Space) />
 
 GeoBubbleMap:
-  derive radiusScale = scaleSqrt().domain([0, maxValue]).range([minRadius, maxRadius])
+  derive radiusScale = scaleSqrt().domain([minValue, maxValue]).range([minRadius, maxRadius])
   derive sortedData  = data sorted descending by value (largest renders first)
   for each point in sortedData:
     [x, y]  = projection([point.long, point.lat])
     radius  = radiusScale(point.value)
-    <Circle cx={x} cy={y} r={radius} fill={point.color ?? bubbleColor} />
+    <g role="button" tabindex=0 aria-label="{name}: {value}" onfocus/onblur → tooltip, Enter/Space → click>
+      <Circle cx={x} cy={y} r={radius} fill={point.color ?? bubbleColor} />
 
 GeoSpikeMap:
-  derive heightScale = scaleLinear().domain([0, maxValue]).range([minSpikeHeight, maxSpikeHeight])
+  derive heightScale = scaleLinear().domain([minValue, maxValue]).range([minSpikeHeight, maxSpikeHeight])
   derive sortedData  = data sorted by lat descending (north-to-south, so southern spikes render on top)
   for each point in sortedData:
     [x, y]  = projection([point.long, point.lat])
     h       = heightScale(point.value)
     w       = spikeWidth
-    <path d="M {x-w/2},{y} L {x},{y-h} L {x+w/2},{y} Z" fill="url(#spike-grad)" />
+    <g role="button" tabindex=0 transform="translate({x}, {y})" …same focus/keyboard wiring as bubbles>
+      <path d="M 0,0 L {-w/2},0 L 0,{-h} L {w/2},0 Z" fill="url(#spike-gradient-{uid})" />
 ```
 
 ## The Core Concept: Projections, fitGeojson, and Why scaleSqrt for Bubbles
@@ -93,14 +97,16 @@ For sorting performance, the rendering order matters:
 
 SVG-based geographic visualisations have a baseline accessibility advantage over canvas: every region or marker is a focusable, hit-testable DOM element. The components lean on that:
 
-- **Tooltips fire on `mouseover` and `focus`.** Keyboard users can Tab through `<GeoPath>` regions and `<Circle>` bubbles to read values; screen readers announce them via the configured `aria-label`.
-- **Region/marker click handlers** receive structured data (`GeoRegionProperties`, `GeoDataPoint`) so the parent can wire keyboard `Enter` / `Space` activation if needed.
+- **Every region, bubble and spike is a keyboard stop.** Each one is `role="button"` with `tabindex="0"` and an `aria-label` of the form "London: 8900000" (choropleth regions use the data `label` when supplied). Screen readers announce the value without needing to see the colour or size.
+- **Tooltips follow focus as well as the pointer.** `pointermove` positions the tooltip at the cursor; `focus` anchors it to the element's bounding box and `blur` hides it, so keyboard users get the same readout as mouse users.
+- **`Enter` and `Space` activate**, calling the same `onRegionClick` / `onBubbleClick` / `onSpikeClick` handler as a click, with structured data (`GeoRegionProperties`, `GeoDataPoint`).
+- **Visible focus ring.** A 2px `:focus-visible` outline marks the focused shape; mouse clicks don't trigger it.
 - **The legend renders as semantic HTML.** Colour swatches are `<div>`s with adjacent text labels, not buried in SVG, so AT users get the value scale without needing to interpret a colour gradient.
-- **Choropleths with no data for a region** colour them grey (`#eee`) and label them "No data" in the tooltip — important for users who otherwise cannot distinguish "low value" (light blue) from "no value at all".
+- **Choropleths with no data for a region** colour them grey (`#e5e7eb`) and their accessible name ends in "no data" — important for users who otherwise cannot distinguish "low value" (light blue) from "no value at all".
 
 The hard part is colour blindness: a sequential blue-scale choropleth is fine, but red-green diverging scales are unreadable for ~8% of men. The components accept any colour array via the `colorScale.colors` prop, so designers can substitute viridis or cividis (perceptually uniform, colourblind-safe palettes from the matplotlib world) without modifying the component itself.
 
-For motion-sensitive users, the components have no auto-animations — fills change on hover via short CSS transitions only, which `prefers-reduced-motion` users can override globally with their browser settings.
+For motion-sensitive users, the components have no auto-animations — the only motion is a 150 ms opacity transition on hover, and each component switches that off inside `@media (prefers-reduced-motion: reduce)` so feedback is instant.
 
 ## State Flow Diagram
 
@@ -148,12 +154,12 @@ For motion-sensitive users, the components have no auto-animations — fills cha
 | `data` | `GeoRegionData[]` | `[]` | Array of `{ regionId, value, label? }`. `regionId` must match the GeoJSON feature property. |
 | `colorScale` | `GeoColorScale` | sequential blues | `{ type: 'sequential' \| 'diverging', colors: string[], domain?: [min, max] }`. |
 | `height` | `number` | `500` | Container height. Width is 100% of parent. |
-| `showLegend` | `boolean` | `true` | Render the colour-swatch legend below the map. |
-| `showTooltip` | `boolean` | `true` | Show LayerChart tooltip on hover. |
+| `showLegend` | `boolean` | `true` | Render the colour-swatch legend (overlaid bottom-right; hidden when `data` is empty). |
+| `showTooltip` | `boolean` | `true` | Show the tooltip on hover and keyboard focus. |
 | `strokeColor` | `string` | `'#fff'` | Region border colour. |
 | `strokeWidth` | `number` | `1` | Region border width in pixels. |
 | `onRegionClick` | `(region: GeoRegionProperties) => void` | `undefined` | Fires on region click. |
-| `onRegionHover` | `(region: GeoRegionProperties \| null) => void` | `undefined` | Fires on enter/leave; `null` on leave. |
+| `onRegionHover` | `(region: GeoRegionProperties \| null) => void` | `undefined` | Fires on hover/focus; `null` on leave/blur. |
 | `class` | `string` | `''` | Extra classes. |
 
 ### GeoBubbleMap
@@ -167,7 +173,7 @@ For motion-sensitive users, the components have no auto-animations — fills cha
 | `maxRadius` | `number` | `40` | Largest bubble size in pixels. |
 | `bubbleColor` | `string` | `'rgba(59, 130, 246, 0.6)'` | Default fill when point has no `color`. |
 | `bubbleStroke` | `string` | `'#fff'` | Bubble border colour. |
-| `showLabels` | `boolean` | `false` | Show name labels on the largest bubbles. |
+| `showLabels` | `boolean` | `false` | Show name labels inside bubbles whose radius exceeds 15px. |
 | `showTooltip` | `boolean` | `true` | Hover tooltip. |
 | `onBubbleClick` | `(point: GeoDataPoint) => void` | `undefined` | Fires on bubble click. |
 | `class` | `string` | `''` | Extra classes. |
@@ -187,11 +193,40 @@ For motion-sensitive users, the components have no auto-animations — fills cha
 | `onSpikeClick` | `(point: GeoDataPoint) => void` | `undefined` | Fires on spike click. |
 | `class` | `string` | `''` | Extra classes. |
 
+## Theming
+
+All three components follow `docs/THEMING.md`: **chrome flips, data stays**. Chrome tokens are declared on each root (`.geo-choropleth`, `.geo-bubble-map`, `.geo-spike-map`) with light defaults inline and a `@media (prefers-color-scheme: dark)` override. The data colours — `colorScale`, `bubbleColor`, `spikeColor`, `strokeColor`, and per-point `color` — are props and never flip, because the colour *is* the value.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--geo-surface` | `#f9fafb` | `#111827` | Map background |
+| `--geo-land-fill` | `#e5e7eb` | `#374151` | Background geography (bubble / spike) |
+| `--geo-land-stroke` | `#d1d5db` | `#4b5563` | Background geography outline |
+| `--geo-no-data` | `#e5e7eb` | `#374151` | Choropleth regions with no matching data row |
+| `--geo-legend-bg` | `#ffffff` | `#1f2937` | Legend card |
+| `--geo-legend-fg` | `#374151` | `#e5e7eb` | Legend title (bubble / spike) |
+| `--geo-legend-muted` | `#6b7280` | `#9ca3af` | Legend labels |
+| `--geo-legend-shadow` | soft grey | deeper black | Legend card shadow |
+| `--geo-tooltip-bg` | `rgba(0,0,0,0.85)` | `rgba(3,7,18,0.92)` | Hover tooltip |
+| `--geo-tooltip-border` | `transparent` | `rgba(255,255,255,0.14)` | Tooltip edge so it separates from a dark map |
+
+The SVG land paths still carry `fill` / `stroke` presentation attributes as a fallback, but the scoped CSS (`fill: var(--geo-land-fill)`) beats them, which is how the geography flips without a prop. Choropleth regions without data get a `region--no-data` class for the same reason.
+
+```css
+/* Warmer land on a dashboard with its own palette */
+body .geo-bubble-map.geo-bubble-map {
+  --geo-surface: #fffbeb;
+  --geo-land-fill: #fde68a;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
-| Region in GeoJSON but no entry in `data` | Coloured neutral grey (`#eee`); tooltip reads "No data". |
+| Region in GeoJSON but no entry in `data` | Coloured neutral grey (`#e5e7eb`); the tooltip shows the name only and the accessible name ends in "no data". |
+| Region has a value but no custom `label` | The tooltip shows the formatted value (en-GB grouping) rather than repeating the region name. |
+| Empty `data` array (bubble / spike) | No markers render; the legend falls back to a 0–100 range rather than showing `Infinity`. |
 | `data` entry with `regionId` that does not match any feature | Silently ignored. No console warning — add validation in your loader if you want one. |
 | GeoJSON property is `RGN23CD` not `RGN24CD` | The fallback chain in property lookup catches it (`RGN24CD || RGN23CD || RGN22CD || CTRY22CD`). |
 | All values identical | `extent` returns `[v, v]`; the colour scale collapses to a single colour. Add `domain: [0, v]` manually if you want a gradient anchored at zero. |
@@ -221,11 +256,13 @@ src/lib/components/GeoChoropleth.svelte    # region-colouring choropleth
 src/lib/components/GeoBubbleMap.svelte     # sized circles at coordinates
 src/lib/components/GeoSpikeMap.svelte      # vertical spikes at coordinates
 src/lib/components/GeoViz.md               # this file (rendered inside ComponentPageShell)
+src/lib/components/Geo{Choropleth,BubbleMap,SpikeMap}.test.ts   # behaviour tests (layerchart stubbed)
+src/lib/components/GeoViz.test.ts          # shared type / helper checks
+src/lib/testing/layerchartMock.ts          # lightweight layerchart stand-ins used by the tests
 src/routes/geo/+page.svelte                # demo page (all three variants)
+src/routes/geo/+page.server.ts             # fetches ONS GeoJSON (regions + countries)
 src/lib/types.ts                           # GeoChoroplethProps, GeoBubbleMapProps,
                                            # GeoSpikeMapProps, GeoDataPoint, GeoRegionData,
                                            # GeoColorScale, GeoRegionProperties
-src/lib/constants.ts                       # GEO_COLOR_SCALES (blues, orangeRed, diverging)
-static/geojson/                            # cached, simplified GeoJSON files (UK regions, etc.)
-database/schema_geo.sql                    # geo_data_points schema (optional Neon table)
+src/lib/constants.ts                       # GEO_COLOR_SCALES, UK_*_GEOJSON_URL, sample points
 ```

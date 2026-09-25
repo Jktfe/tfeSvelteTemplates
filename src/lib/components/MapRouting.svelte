@@ -60,7 +60,7 @@
   Pin the accent to your brand colour:
 
   ```css
-  .my-app .map-routing-container {
+  .my-app .map-routing-container.map-routing-container {
     --mr-accent: #6366f1;
     --mr-accent-soft: rgba(99, 102, 241, 0.9);
   }
@@ -69,7 +69,7 @@
   Force light chrome inside a dark page section:
 
   ```css
-  .dark-page .map-routing-container {
+  .dark-page .map-routing-container.map-routing-container {
     --mr-canvas: #fafafa;
     --mr-surface: #ffffff;
     --mr-text: #1f2937;
@@ -96,6 +96,20 @@
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import type {
 		MapRoutingProps,
@@ -192,6 +206,14 @@
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
 
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next fit.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
+
 	/** Format distance for display */
 	function formatDistance(metres: number): string {
 		if (metres >= 1000) {
@@ -233,12 +255,16 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
 			// Calculate initial center
 			let initialCenter = center;
@@ -253,14 +279,18 @@
 				initialCenter = destination;
 			}
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [initialCenter.lat, initialCenter.lng],
 				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right
@@ -295,6 +325,7 @@
 		})();
 
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -326,9 +357,11 @@
 	 * Create marker icon
 	 */
 	async function createMarkerIcon(type: 'origin' | 'destination') {
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
-		const color = type === 'origin' ? '#22c55e' : '#ef4444';
+		// Colours come from the semantic --mr-origin / --mr-destination tokens so
+		// consumers can retheme the pins from CSS without touching this script.
+		const color = type === 'origin' ? 'var(--mr-origin)' : 'var(--mr-destination)';
 		const label = type === 'origin' ? 'A' : 'B';
 
 		return L.divIcon({
@@ -349,7 +382,7 @@
 	async function updateMarkers(): Promise<void> {
 		if (!map) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		// Update origin marker
 		if (origin) {
@@ -405,7 +438,13 @@
 	async function calculateRoute(): Promise<void> {
 		if (!origin || !destination || !map) return;
 
-		const L = await import('leaflet');
+		// Read everything the request depends on *before* the first await, so the
+		// calling $effect tracks them — switching travel mode then re-routes.
+		const start = origin;
+		const end = destination;
+		const activeProfile = profile;
+
+		const L = await loadLeaflet();
 
 		// Cancel any pending request to prevent race conditions
 		if (abortController) {
@@ -418,8 +457,9 @@
 
 		try {
 			// Use custom OSRM server or default public demo server
-			const osrmProfile = profile === 'walking' ? 'foot' : profile === 'cycling' ? 'bike' : 'car';
-			const url = `${osrmApiUrl}/route/v1/${osrmProfile}/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson&steps=true`;
+			const osrmProfile =
+				activeProfile === 'walking' ? 'foot' : activeProfile === 'cycling' ? 'bike' : 'car';
+			const url = `${osrmApiUrl}/route/v1/${osrmProfile}/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&steps=true`;
 
 			const response = await fetch(url, { signal: abortController.signal });
 
@@ -481,8 +521,9 @@
 				}).addTo(map);
 			}
 
-			// Fit bounds to show full route
-			map.fitBounds(routeLine.getBounds(), { padding: [50, 50] });
+			// Fit bounds to show full route. The fly-to-fit is skipped for users who
+			// have asked the OS for reduced motion — they get an instant jump instead.
+			map.fitBounds(routeLine.getBounds(), { padding: [50, 50], animate: !prefersReducedMotion() });
 
 			onRouteCalculated?.(result);
 		} catch (error) {
@@ -539,7 +580,7 @@
 	<!-- Control Panel -->
 	<div class="control-panel">
 		<!-- Profile Selector -->
-		<div class="profile-selector" role="radiogroup" aria-label="Travel mode">
+		<div class="profile-selector" role="group" aria-label="Travel mode">
 			{#each ['driving', 'cycling', 'walking'] as p (p)}
 				<button
 					type="button"
@@ -548,6 +589,7 @@
 					onclick={() => (profile = p as RoutingProfile)}
 					aria-pressed={profile === p}
 					title={p.charAt(0).toUpperCase() + p.slice(1)}
+					aria-label={p.charAt(0).toUpperCase() + p.slice(1)}
 				>
 					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
@@ -684,15 +726,85 @@
 
 <style>
 	/* ==================================================
-     Container Styles
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips for prefers-color-scheme: dark. The origin and
+     destination colours are semantic (green = start, red = end) and
+     stay constant in both modes so the A/B pins read the same on any
+     base-map tile. Override any token at a deeper scope, e.g.
+     .my-app .map-routing-container.map-routing-container { ... }
      ================================================== */
 	.map-routing-container {
+		/* Surfaces */
+		--mr-canvas: #f0f0f0;
+		--mr-surface: #ffffff;
+		--mr-surface-hover: #f5f5f5;
+		--mr-panel-bg: rgba(255, 255, 255, 0.95);
+		--mr-overlay-bg: rgba(255, 255, 255, 0.8);
+
+		/* Text */
+		--mr-text: #333333;
+		--mr-text-muted: #666666;
+		--mr-accent-text: #ffffff;
+
+		/* Strokes */
+		--mr-border-soft: #dddddd;
+		--mr-divider: #f0f0f0;
+		--mr-divider-strong: #eeeeee;
+
+		/* Accent (active profile, links, step numbers, spinner) */
+		--mr-accent: #146ef5;
+		--mr-accent-soft: rgba(20, 110, 245, 0.9);
+
+		/* Errors */
+		--mr-error-bg: #fef2f2;
+		--mr-error-bg-soft: #fee2e2;
+		--mr-error-border: #fecaca;
+		--mr-error-text: #dc2626;
+
+		/* Shadows */
+		--mr-shadow-soft: rgba(0, 0, 0, 0.1);
+		--mr-shadow-medium: rgba(0, 0, 0, 0.15);
+		--mr-shadow-strong: rgba(0, 0, 0, 0.2);
+		--mr-marker-shadow: rgba(0, 0, 0, 0.3);
+
+		/* Semantic — deliberately NOT flipped in dark mode */
+		--mr-origin: #22c55e;
+		--mr-destination: #ef4444;
+
+		/* Layout */
 		position: relative;
 		width: 100%;
 		height: var(--map-height, 500px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--mr-canvas);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-routing-container {
+			--mr-canvas: #1a1a1a;
+			--mr-surface: #2a2a2a;
+			--mr-surface-hover: #3a3a3a;
+			--mr-panel-bg: rgba(31, 31, 31, 0.95);
+			--mr-overlay-bg: rgba(17, 17, 17, 0.75);
+			--mr-text: #e5e5e5;
+			--mr-text-muted: #a3a3a3;
+			--mr-accent-text: #ffffff;
+			--mr-border-soft: #4b5563;
+			--mr-divider: #333333;
+			--mr-divider-strong: #3f3f3f;
+			--mr-accent: #60a5fa;
+			--mr-accent-soft: rgba(37, 99, 235, 0.9);
+			--mr-error-bg: #3f1f1f;
+			--mr-error-bg-soft: #5f2f2f;
+			--mr-error-border: #7f1f1f;
+			--mr-error-text: #fca5a5;
+			--mr-shadow-soft: rgba(0, 0, 0, 0.4);
+			--mr-shadow-medium: rgba(0, 0, 0, 0.5);
+			--mr-shadow-strong: rgba(0, 0, 0, 0.55);
+			--mr-marker-shadow: rgba(0, 0, 0, 0.6);
+			/* origin / destination intentionally unchanged — semantic tokens */
+		}
 	}
 
 	.map-element {
@@ -716,9 +828,9 @@
 		flex-direction: column;
 		gap: 8px;
 		padding: 12px;
-		background: rgba(255, 255, 255, 0.95);
+		background: var(--mr-panel-bg);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--mr-shadow-medium);
 		max-width: 280px;
 	}
 
@@ -726,7 +838,7 @@
 		display: flex;
 		gap: 4px;
 		padding: 4px;
-		background: #f0f0f0;
+		background: var(--mr-canvas);
 		border-radius: 6px;
 	}
 
@@ -746,20 +858,20 @@
 	.profile-btn svg {
 		width: 20px;
 		height: 20px;
-		color: #666;
+		color: var(--mr-text-muted);
 	}
 
 	.profile-btn:hover {
-		background: rgba(255, 255, 255, 0.8);
+		background: var(--mr-surface-hover);
 	}
 
 	.profile-btn.active {
-		background: white;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+		background: var(--mr-surface);
+		box-shadow: 0 1px 3px var(--mr-shadow-soft);
 	}
 
 	.profile-btn.active svg {
-		color: #146ef5;
+		color: var(--mr-accent);
 	}
 
 	.point-inputs {
@@ -783,30 +895,30 @@
 		justify-content: center;
 		font-size: 12px;
 		font-weight: 700;
-		color: white;
+		color: var(--mr-accent-text);
 		border-radius: 50%;
 	}
 
 	.point-badge.origin {
-		background: #22c55e;
+		background: var(--mr-origin);
 	}
 
 	.point-badge.destination {
-		background: #ef4444;
+		background: var(--mr-destination);
 	}
 
 	.point-text {
 		flex: 1;
 		font-size: 12px;
 		font-family: monospace;
-		color: #666;
+		color: var(--mr-text-muted);
 	}
 
 	.set-point-btn {
 		padding: 0;
 		border: none;
 		background: transparent;
-		color: #146ef5;
+		color: var(--mr-accent);
 		font-size: 12px;
 		cursor: pointer;
 		text-decoration: underline;
@@ -823,16 +935,16 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0;
-		border: 1px solid #ddd;
-		background: white;
+		border: 1px solid var(--mr-border-soft);
+		background: var(--mr-surface);
 		border-radius: 50%;
 		cursor: pointer;
 		transition: all 0.15s ease;
 	}
 
 	.swap-btn:hover:not(:disabled) {
-		background: #f5f5f5;
-		border-color: #146ef5;
+		background: var(--mr-surface-hover);
+		border-color: var(--mr-accent);
 	}
 
 	.swap-btn:disabled {
@@ -843,7 +955,7 @@
 	.swap-btn svg {
 		width: 16px;
 		height: 16px;
-		color: #666;
+		color: var(--mr-text-muted);
 	}
 
 	.clear-btn {
@@ -853,8 +965,8 @@
 		gap: 4px;
 		padding: 8px;
 		border: none;
-		background: #f0f0f0;
-		color: #666;
+		background: var(--mr-canvas);
+		color: var(--mr-text-muted);
 		font-size: 12px;
 		border-radius: 6px;
 		cursor: pointer;
@@ -862,8 +974,8 @@
 	}
 
 	.clear-btn:hover {
-		background: #fee2e2;
-		color: #dc2626;
+		background: var(--mr-error-bg-soft);
+		color: var(--mr-error-text);
 	}
 
 	.clear-btn svg {
@@ -882,18 +994,18 @@
 		display: flex;
 		gap: 8px;
 		padding: 8px 12px;
-		background: rgba(255, 255, 255, 0.95);
+		background: var(--mr-panel-bg);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--mr-shadow-medium);
 	}
 
 	.route-distance {
 		font-weight: 600;
-		color: #333;
+		color: var(--mr-text);
 	}
 
 	.route-duration {
-		color: #666;
+		color: var(--mr-text-muted);
 	}
 
 	/* ==================================================
@@ -906,9 +1018,9 @@
 		z-index: 1000;
 		max-width: 300px;
 		max-height: 300px;
-		background: rgba(255, 255, 255, 0.95);
+		background: var(--mr-panel-bg);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--mr-shadow-medium);
 		overflow: hidden;
 	}
 
@@ -922,7 +1034,7 @@
 		background: transparent;
 		font-size: 13px;
 		font-weight: 500;
-		color: #333;
+		color: var(--mr-text);
 		cursor: pointer;
 		text-align: left;
 	}
@@ -940,14 +1052,14 @@
 	.instructions-list {
 		max-height: 200px;
 		overflow-y: auto;
-		border-top: 1px solid #eee;
+		border-top: 1px solid var(--mr-divider-strong);
 	}
 
 	.instruction-item {
 		display: flex;
 		gap: 10px;
 		padding: 10px 12px;
-		border-bottom: 1px solid #f0f0f0;
+		border-bottom: 1px solid var(--mr-divider);
 	}
 
 	.instruction-item:last-child {
@@ -963,8 +1075,8 @@
 		justify-content: center;
 		font-size: 11px;
 		font-weight: 600;
-		color: white;
-		background: #146ef5;
+		color: var(--mr-accent-text);
+		background: var(--mr-accent);
 		border-radius: 50%;
 	}
 
@@ -977,12 +1089,12 @@
 
 	.step-instruction {
 		font-size: 13px;
-		color: #333;
+		color: var(--mr-text);
 	}
 
 	.step-distance {
 		font-size: 11px;
-		color: #666;
+		color: var(--mr-text-muted);
 	}
 
 	/* ==================================================
@@ -995,11 +1107,11 @@
 		transform: translateX(-50%);
 		z-index: 1000;
 		padding: 8px 16px;
-		background: rgba(20, 110, 245, 0.9);
-		color: white;
+		background: var(--mr-accent-soft);
+		color: var(--mr-accent-text);
 		font-size: 13px;
 		border-radius: 20px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		box-shadow: 0 2px 8px var(--mr-shadow-strong);
 		white-space: nowrap;
 	}
 
@@ -1018,15 +1130,15 @@
 		align-items: center;
 		justify-content: center;
 		gap: 12px;
-		background: rgba(255, 255, 255, 0.8);
-		color: #333;
+		background: var(--mr-overlay-bg);
+		color: var(--mr-text);
 	}
 
 	.calculating-spinner {
 		width: 32px;
 		height: 32px;
-		border: 3px solid #f0f0f0;
-		border-top-color: #146ef5;
+		border: 3px solid var(--mr-divider);
+		border-top-color: var(--mr-accent);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -1050,10 +1162,10 @@
 		align-items: center;
 		gap: 8px;
 		padding: 10px 12px;
-		background: #fef2f2;
-		border: 1px solid #fecaca;
+		background: var(--mr-error-bg);
+		border: 1px solid var(--mr-error-border);
 		border-radius: 8px;
-		color: #dc2626;
+		color: var(--mr-error-text);
 		font-size: 13px;
 	}
 
@@ -1102,10 +1214,10 @@
 		justify-content: center;
 		font-size: 13px;
 		font-weight: 700;
-		color: white;
+		color: var(--mr-accent-text);
 		background: var(--marker-color);
 		border-radius: 50%;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+		box-shadow: 0 2px 6px var(--mr-marker-shadow);
 	}
 
 	/* ==================================================
@@ -1113,7 +1225,7 @@
      ================================================== */
 	.map-routing-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--mr-shadow-medium);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -1123,9 +1235,13 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--mr-text);
+		background: var(--mr-surface);
 		border: none !important;
+	}
+
+	.map-routing-container :global(.leaflet-control-zoom a:hover) {
+		background: var(--mr-surface-hover);
 	}
 
 	/* ==================================================

@@ -1,3 +1,44 @@
+<!--
+  ============================================================
+  TokenSwatchGrid — Grouped Design-Token Swatches
+  ============================================================
+  WHAT — Shows colour tokens as swatch cards grouped into chrome, brand
+  and semantic, each with its name, value, usage note and contrast label.
+
+  WHY — Review the actual token inventory before or beside
+  ThemeTokenInspector.
+
+  FEATURES
+  - Grouping by chrome / brand / semantic in source order
+  - Friendly names from CSS custom-property names
+  - WCAG contrast ratio against an optional foreground (#111827 default)
+  - AA / Review / Unknown labels (Unknown for non 6-digit hex values)
+  - Pure helpers exported: readableTokenName, contrastRatio,
+    tokenContrastLabel, groupTokenSwatches
+
+  ACCESSIBILITY
+  - Each group is a section labelled by its heading
+  - Contrast status written as text
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Static render derived from the tokens array.
+
+  USAGE
+      <TokenSwatchGrid tokens={[
+        { name: '--brand-accent', value: '#146ef5', group: 'brand',
+          usage: 'Primary buttons', foreground: '#ffffff' }
+      ]} />
+
+  PROPS
+  | Prop   | Type          | Default             | Description |
+  |--------|---------------|---------------------|-------------|
+  | tokens | TokenSwatch[] | required            | Tokens (name, value, group, usage, foreground?) |
+  | title  | string        | 'Token swatch grid' | Heading |
+  | class  | string        | ''                  | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface TokenSwatch {
 		name: string;
@@ -63,19 +104,24 @@
 
 	let { tokens, title = 'Token swatch grid', class: extraClass = '' }: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `token-grid-title-${uid}`;
+
 	const groups = $derived(groupTokenSwatches(tokens));
 </script>
 
-<section class="token-grid {extraClass}" aria-labelledby="token-grid-title">
+<section class="token-grid {extraClass}" aria-labelledby={titleId}>
 	<header>
 		<p>Theme tokens</p>
-		<h2 id="token-grid-title">{title}</h2>
+		<h2 id={titleId}>{title}</h2>
 	</header>
 
 	<div class="tg-groups">
 		{#each (['chrome', 'brand', 'semantic'] as TokenSwatch['group'][]) as group (group)}
-			<section class="tg-group" aria-labelledby={`${group}-tokens`}>
-				<h3 id={`${group}-tokens`}>{group}</h3>
+			<section class="tg-group" aria-labelledby={`${group}-tokens-${uid}`}>
+				<h3 id={`${group}-tokens-${uid}`}>{group}</h3>
 				<div class="tg-swatches">
 					{#each groups[group] as token (token.name)}
 						<article class="tg-card">

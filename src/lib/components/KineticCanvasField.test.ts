@@ -14,7 +14,9 @@ import { describe, it, expect } from 'vitest';
 import KineticCanvasField, {
 	clampParticleCount,
 	createKineticParticle,
-	stepKineticParticle
+	stepKineticParticle,
+	tickerFrameDelta,
+	MAX_FRAME_DELTA
 } from './KineticCanvasField.svelte';
 
 describe('KineticCanvasField particle helpers', () => {
@@ -62,6 +64,46 @@ describe('KineticCanvasField particle helpers', () => {
 		p.maxLife = 1;
 		const dead = stepKineticParticle(p, 5);
 		expect(dead.life).toBe(0);
+	});
+});
+
+describe('KineticCanvasField tickerFrameDelta', () => {
+	// Regression: gsap.ticker passes time in seconds. The draw loop used to
+	// divide by 1000 again, making each frame ~1000x too short.
+	it('treats gsap.ticker time as seconds (no extra /1000)', () => {
+		expect(tickerFrameDelta(10 + 1 / 60, 10)).toBeCloseTo(1 / 60, 6);
+		expect(tickerFrameDelta(2.03, 2)).toBeCloseTo(0.03, 6);
+	});
+
+	it('returns a nominal 60fps step on the first frame', () => {
+		expect(tickerFrameDelta(0, null)).toBeCloseTo(1 / 60);
+		expect(tickerFrameDelta(5.2, null)).toBeCloseTo(1 / 60);
+	});
+
+	it('handles a first real frame at time 0 followed by a normal frame', () => {
+		expect(tickerFrameDelta(0.016, 0)).toBeCloseTo(0.016, 6);
+	});
+
+	it('clamps long gaps (e.g. a backgrounded tab) to MAX_FRAME_DELTA', () => {
+		expect(tickerFrameDelta(12, 2)).toBe(MAX_FRAME_DELTA);
+	});
+
+	it('falls back to the nominal step when time does not advance', () => {
+		expect(tickerFrameDelta(3, 3)).toBeCloseTo(1 / 60);
+		expect(tickerFrameDelta(2, 3)).toBeCloseTo(1 / 60);
+	});
+
+	it('moves a particle a visible distance over one second of 60fps frames', () => {
+		let particle = createKineticParticle(0, 0, 0, 100, 0);
+		particle.maxLife = 10;
+		let last: number | null = null;
+		for (let frame = 0; frame <= 60; frame += 1) {
+			const time = frame / 60;
+			particle = stepKineticParticle(particle, tickerFrameDelta(time, last));
+			last = time;
+		}
+		// With the old ms maths this was well under 1px; seconds maths gives ~16px.
+		expect(particle.x).toBeGreaterThan(10);
 	});
 });
 

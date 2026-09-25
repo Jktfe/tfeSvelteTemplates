@@ -4,6 +4,7 @@
 
 	let {
 		name,
+		id,
 		label,
 		value = $bindable(''),
 		placeholder = '',
@@ -19,12 +20,18 @@
 		oninput
 	}: TimeFieldProps = $props();
 
+	// Every instance gets its own id prefix from Svelte, so two forms with the
+	// same field names on one page never share ids. `name` stays the form
+	// submission key; pass `id` only when something outside needs to target
+	// the control (e.g. a skip link or an external <label for>).
+	const uid = $props.id();
+
 	/**
 	 * Generate IDs for aria associations
 	 */
-	let fieldId = $derived(`field-${name}`);
-	let helpId = $derived(`${name}-help`);
-	let errorId = $derived(`${name}-error`);
+	let fieldId = $derived(id ?? `field-${uid}`);
+	let helpId = $derived(`${fieldId}-help`);
+	let errorId = $derived(`${fieldId}-error`);
 
 	/**
 	 * Determine if field has error state for styling
@@ -50,7 +57,7 @@
 	}
 </script>
 
-<FormField {name} {label} {required} {error} {touched} {helpText}>
+<FormField id={fieldId} {label} {required} {error} {touched} {helpText}>
 	<input
 		type="time"
 		id={fieldId}
@@ -148,6 +155,16 @@
 			padding: 0.5rem 0.75rem;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	/* Vendor pseudo-elements get their own rules: one unknown selector in a
+	   shared list would make the other engine drop the whole rule. */
+	@media (prefers-reduced-motion: reduce) {
+		.time-field-input {
+			transition: none;
+		}
+		.time-field-input::-webkit-calendar-picker-indicator {
+			transition: none;
+		}
+	}
+</style>

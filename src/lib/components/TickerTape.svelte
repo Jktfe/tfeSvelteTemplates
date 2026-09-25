@@ -28,6 +28,14 @@
   • Surrogate-pair-safe — emoji and combined glyphs render
     as single tokens in labels/values
 
+  🌗 THEMING
+  Dual light / dark. Every colour is a --tickertape-* custom property.
+  The default, finance and sports variants paint their own dark strip, so
+  they look identical on either page scheme. The minimal variant is
+  transparent, so its chrome tokens flip under prefers-color-scheme: dark.
+  Up / down / flat deltas are semantic — they only lift in lightness on
+  dark, never change hue. See docs/THEMING.md.
+
   ♿ ACCESSIBILITY
   • Outer wrapper is `role="marquee"` with `aria-live="off"`
     (animated content, screen readers should not announce
@@ -307,8 +315,30 @@
 		--tickertape-py: 0.5rem;
 		--tickertape-fs: 0.8125rem;
 		--tickertape-fw: 400;
-		border-top: 1px solid #e2e8f0;
-		border-bottom: 1px solid #e2e8f0;
+		--tickertape-rule: #e2e8f0;
+		border-top: 1px solid var(--tickertape-rule);
+		border-bottom: 1px solid var(--tickertape-rule);
+	}
+
+	/*
+	 * Dark scheme — only the minimal variant needs to flip. Default, finance
+	 * and sports paint their own dark strip, so they already read on either
+	 * page colour. Minimal is transparent and inherits the page surface, so
+	 * its chrome (text, label, separator, hairlines) has to follow the scheme.
+	 * The up / down deltas lift a step so green and red keep their contrast
+	 * without changing meaning.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.tickertape--minimal {
+			--tickertape-fg: #e2e8f0;
+			--tickertape-label: #94a3b8;
+			--tickertape-value: #f8fafc;
+			--tickertape-up: #34d399;
+			--tickertape-down: #f87171;
+			--tickertape-flat: #94a3b8;
+			--tickertape-sep: #475569;
+			--tickertape-rule: #334155;
+		}
 	}
 
 	.tickertape__track {

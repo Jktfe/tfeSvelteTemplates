@@ -31,7 +31,8 @@
 	♿ ACCESSIBILITY
 	• Each card is a <button> with descriptive aria-label
 	• Escape key closes detail view
-	• prefers-reduced-motion shortens / disables the spring loop
+	• prefers-reduced-motion skips the entrance and snaps cards to their
+	  scroll-driven pose (no spring easing, no CSS fades)
 	• Screen-reader-only summary of hidden cards
 
 	📦 DEPENDENCIES
@@ -361,7 +362,9 @@
 	// detail so the featured card drifts in elegantly.
 	// ------------------------------------------------------------------
 	function applyCards() {
-		const spring = detailIdx !== -1 ? 0.15 : 0.25;
+		// Reduced motion snaps straight to the target (spring = 1) so cards
+		// still follow the scroll position without any drifting or overshoot.
+		const spring = reducedMotion ? 1 : detailIdx !== -1 ? 0.15 : 0.25;
 		for (let i = 0; i < cards.length; i++) {
 			const c = cards[i];
 			c.cx += (c.tx - c.cx) * spring;
@@ -384,10 +387,18 @@
 	}
 
 	// ------------------------------------------------------------------
-	// The loop. If the user prefers reduced motion we bail after the first
-	// frame — everything still works, just without the gentle spring.
+	// The loop. Reduced-motion readers skip the rise/fan entrance entirely and
+	// get snapped (spring = 1) poses — the loop keeps running so the gallery
+	// still responds to scroll, hover and the detail view, it just never
+	// eases or drifts between frames.
 	// ------------------------------------------------------------------
 	function tick(now: number) {
+		if (!entranceDone && reducedMotion) {
+			entranceDone = true;
+			if (heroEl) heroEl.style.opacity = '1';
+			if (subEl) subEl.style.opacity = '1';
+		}
+
 		if (!entranceDone) {
 			if (!entranceStart) entranceStart = now;
 			const t = clamp((now - entranceStart) / ENTRANCE_DURATION, 0, 1);
@@ -398,9 +409,7 @@
 		applyCards();
 		updateHero();
 
-		if (!reducedMotion) {
-			rafId = requestAnimationFrame(tick);
-		}
+		rafId = requestAnimationFrame(tick);
 	}
 
 	function updateHero() {
@@ -749,6 +758,14 @@
 		.rating-strip {
 			flex-direction: column;
 			gap: 0.35rem;
+		}
+	}
+
+	/* Reduced motion: hero + sub copy appear without the 0.4s cross-fade. */
+	@media (prefers-reduced-motion: reduce) {
+		.hero,
+		.sub-content {
+			transition: none;
 		}
 	}
 </style>

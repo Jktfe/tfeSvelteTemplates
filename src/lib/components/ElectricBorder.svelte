@@ -1,3 +1,49 @@
+<!--
+  ============================================================
+  ElectricBorder — Crackling SVG-Filter Border Wrapper
+  ============================================================
+  WHAT — Wraps any content in a glowing border whose outline is distorted
+  by animated SVG turbulence, so it flickers like live electricity.
+
+  WHY — A high-energy highlight for a featured card, a CTA or a "new"
+  pricing tier, without canvas or images.
+
+  FEATURES
+  - Three intensities: mild / crackling / lightning (noise frequency,
+    distortion scale, animation speed, stroke width, glow blur)
+  - Three palettes: electric-blue / plasma-purple / volt-yellow
+  - Configurable corner radius
+  - Unique SVG filter id per instance (assigned on mount) so several
+    borders can share a page
+  - Pure helpers exported: pickIntensity, pickPalette, clamp01,
+    clampPositive, nextFilterId, frequencyValuesString, isReducedMotion
+
+  ACCESSIBILITY
+  - Border SVG is aria-hidden; content stays in the normal tree
+  - prefers-reduced-motion: reduce removes the <animate> element and
+    sets displacement to 0, leaving a calm static glow
+  - Wrapper adds no focusable elements of its own
+
+  DEPENDENCIES — Zero. Pure SVG filters (feTurbulence +
+  feDisplacementMap) and scoped CSS.
+
+  PERFORMANCE — SVG filters repaint every frame while animating; use a
+  handful per page, not dozens. Higher intensities cost more.
+
+  USAGE
+      <ElectricBorder intensity="lightning" palette="plasma-purple" radius={16}>
+        <div class="card">Featured plan</div>
+      </ElectricBorder>
+
+  PROPS
+  | Prop      | Type                                                | Default         | Description |
+  |-----------|-----------------------------------------------------|-----------------|-------------|
+  | intensity | 'mild' | 'crackling' | 'lightning'                  | 'crackling'     | Distortion profile |
+  | palette   | 'electric-blue' | 'plasma-purple' | 'volt-yellow'   | 'electric-blue' | Stroke and glow colours |
+  | radius    | number                                              | 12              | Corner radius in pixels |
+  | children  | Snippet                                             | —               | Wrapped content |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type IntensityName = 'mild' | 'crackling' | 'lightning';
 	export type PaletteName = 'electric-blue' | 'plasma-purple' | 'volt-yellow';

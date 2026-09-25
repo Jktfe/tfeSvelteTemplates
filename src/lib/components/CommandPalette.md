@@ -192,6 +192,31 @@ Each segment renders through Svelte's normal text interpolation, which escapes H
 | `onClose` | `() => void` | `undefined` | Fires after the palette closes for any reason. |
 | `class` | `string` | `''` | Extra classes on the backdrop wrapper. |
 
+## Theming
+
+Follows `docs/THEMING.md`. Tokens live on `.command-palette-backdrop` (the outermost element, so the dialog inherits them) with light defaults inline and a `@media (prefers-color-scheme: dark)` flip. The palette has no brand variant API, so **every token is chrome** and the whole set flips.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--cp-backdrop` | `rgba(0,0,0,0.5)` | `rgba(2,6,23,0.7)` | Overlay behind the dialog |
+| `--cp-bg` | `#fff` | `#0f172a` | Dialog surface |
+| `--cp-border` | `#e2e8f0` | `#334155` | Dialog, header/footer rules, chips |
+| `--cp-fg` | `#1e293b` | `#f1f5f9` | Input text, item labels |
+| `--cp-muted` | `#94a3b8` | `#94a3b8` | Placeholder, group headers, descriptions |
+| `--cp-subtle-fg` | `#64748b` | `#cbd5e1` | ESC badge and footer kbd text |
+| `--cp-chip-bg` / `--cp-chip-bg-soft` | `#f1f5f9` / `#f8fafc` | `#1e293b` | Shortcut chips |
+| `--cp-active-bg` | `#f1f5f9` | `#1e293b` | Keyboard-active row |
+| `--cp-match` | `#2563eb` | `#93c5fd` | Fuzzy-match highlight (lightened for navy) |
+| `--cp-shadow` / `--cp-ring` | black alphas | deeper black / white hairline | Dialog elevation |
+| `--cp-scroll-thumb` / `--cp-scroll-thumb-hover` | `#cbd5e1` / `#94a3b8` | `#475569` / `#64748b` | Results scrollbar |
+
+```css
+/* Brand the match highlight across the app */
+body .command-palette-backdrop.command-palette-backdrop {
+  --cp-match: #7c3aed;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

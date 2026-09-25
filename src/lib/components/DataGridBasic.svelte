@@ -1,250 +1,204 @@
 <!--
 	============================================================
-	DataGridBasic - Self-Contained Data Grid (Zero Dependencies)
+	DataGridBasic
 	============================================================
+	WHAT — A lightweight, zero-dependency data table with sorting, global
+	       search and pagination, built from plain Svelte 5 runes.
+	WHY  — The 80% case: a few hundred rows that need to be scannable and
+	       sortable, in a file you can copy into any project and read end to end.
 
-	[CR] WHAT IT DOES
-	A lightweight, fully self-contained data grid with sorting, filtering,
-	and pagination. All logic is vanilla Svelte 5 - no external libraries.
-	Designed to be COPY-PASTE READY into any project.
+	FEATURES
+	- Click (or Enter/Space on) a header to sort ↑ / ↓
+	- Global search across every column, with a live result count
+	- Pagination with a windowed page list (first / neighbours / last)
+	- Column formatters, inline cell styles, cell classes and sanitised HTML renderers
+	- Striped / hoverable / compact variants
+	- Light + dark via CSS custom properties (see THEMING below)
 
-	[NTL] THE SIMPLE VERSION
-	Think of a spreadsheet that you can sort by clicking column headers,
-	search through with a search box, and flip through pages like a book.
-	This does all that without needing any extra code libraries!
+	ACCESSIBILITY
+	- Sortable headers are focusable, expose aria-sort and respond to Enter/Space
+	- Search input and pagination buttons are labelled; current page uses aria-current
+	- Result count is announced through aria-live
+	- Visible focus rings; hover transitions are disabled under prefers-reduced-motion
 
-	============================================================
+	DEPENDENCIES
+	- Zero external packages.
+	- $lib/types (type-only), $lib/dataGridFormatters.sanitizeClassName and
+	  $lib/utils.sanitizeHTML — both tiny; copy them alongside if you lift this file.
+	- Heads-up: sanitizeHTML is currently a pass-through seam. cellRenderer output
+	  is trusted developer HTML today; plug a real sanitiser into that one
+	  function before rendering anything user-supplied.
 
-	FEATURES:
-	- Column sorting (click headers to sort ↑↓)
-	- Global search/filter across all columns
-	- Pagination with configurable page size
-	- Responsive design (works on mobile!)
-	- Keyboard accessible (Tab, Enter to sort)
-	- Striped/hoverable row styles
-	- Dark mode support
+	PERFORMANCE
+	- Filter → sort → paginate is a $derived chain, so each stage only reruns
+	  when its inputs change. Comfortable up to ~500 rows; beyond ~2,000 reach
+	  for DataGridAdvanced (virtual scrolling).
 
-	PERFECT FOR:
-	- Small-medium datasets (up to ~500 rows)
-	- Learning how data grids work
-	- Projects where bundle size matters
-	- Quick prototypes
+	THEMING (docs/THEMING.md)
+	- Chrome tokens (surfaces, borders, text, hover, stripes) flip under
+	  prefers-color-scheme: dark.
+	- Brand token --dgb-accent (focus ring, active page, sort arrow) stays constant
+	  so the grid keeps the product's accent on both schemes.
+	- No semantic tokens — status colour comes from your own cellStyle/cellRenderer.
 
-	NOT IDEAL FOR:
-	- Large datasets (1000s of rows) - use DataGridAdvanced instead
-	- Inline editing - use DataGridAdvanced instead
-	- Complex column filters - use DataGridAdvanced instead
+	USAGE
+	<DataGridBasic {data} {columns} pageSize={10} />
 
-	DEPENDENCIES:
-	- Zero external dependencies (copy-paste ready!)
-	- Uses $lib/types for TypeScript interfaces
-	- Uses $lib/utils for sanitizeHTML — currently a pass-through. Safe because
-	  cell values come from typed Employee[] data, not free-form HTML. If you
-	  add a column whose formatter returns user-supplied HTML, replace
-	  sanitizeHTML in $lib/utils with a real sanitiser first.
-
-	ACCESSIBILITY:
-	- Sortable columns are keyboard focusable
-	- aria-sort announces sort direction
-	- Pagination buttons have aria-labels
-	- Screen reader friendly results count
-
-	WARNINGS: None expected
-
+	PROPS
+	| Prop       | Type             | Default  | Description                                 |
+	|------------|------------------|----------|---------------------------------------------|
+	| data       | T[]              | []       | Rows; keys match column ids.                |
+	| columns    | DataGridColumn[] | required | Column definitions.                         |
+	| sortable   | boolean          | true     | Header-click sorting.                       |
+	| filterable | boolean          | true     | Show the global search box.                 |
+	| pageSize   | number           | 10       | Rows per page (0 = show everything).        |
+	| striped    | boolean          | true     | Alternating row backgrounds.                |
+	| hoverable  | boolean          | true     | Highlight the row under the pointer.        |
+	| compact    | boolean          | false    | Tighter cell padding.                       |
 	============================================================
 -->
 
-<script lang="ts">
-	// [CR] Type imports for props and data structures
-	import type { DataGridBasicProps, Employee, DataGridColumn } from '$lib/types';
+<script lang="ts" generics="T extends object">
+	import type { DataGridBasicProps, DataGridColumn } from '$lib/types';
 	import { sanitizeClassName } from '$lib/dataGridFormatters';
 	import { sanitizeHTML } from '$lib/utils';
 
-	// [CR] ============================================================
-	// [CR] PROPS - All the "knobs and dials" for customising the grid
-	// [NTL] These are the settings you can tweak when using the component
-	// [CR] ============================================================
 	let {
-		data = [],           // [NTL] The array of objects to display (your spreadsheet data)
-		columns,             // [NTL] Which columns to show and how to format them
-		sortable = true,     // [NTL] Can users click headers to sort?
-		filterable = true,   // [NTL] Show the search box?
-		pageSize = 10,       // [NTL] How many rows per page (0 = show all)
-		striped = true,      // [NTL] Alternating row colours for readability
-		hoverable = true,    // [NTL] Highlight row when mouse hovers over it
-		compact = false      // [NTL] Smaller padding for dense data
-	}: DataGridBasicProps = $props();
+		data = [],
+		columns,
+		sortable = true,
+		filterable = true,
+		pageSize = 10,
+		striped = true,
+		hoverable = true,
+		compact = false
+	}: DataGridBasicProps<T> = $props();
 
-	// [CR] ============================================================
-	// [CR] STATE MANAGEMENT - Reactive variables that drive the UI
-	// [NTL] These keep track of what's happening in the grid right now
-	// [CR] ============================================================
-
-	// [CR] Sorting state - which column is sorted and in which direction
-	// [NTL] When you click a column header, these remember your choice
+	// Sorting — which column, which way.
 	let sortColumn = $state<string | null>(null);
 	let sortDirection = $state<'asc' | 'desc'>('asc');
 
-	// [CR] Filter state - the current search query
-	// [NTL] Whatever you type in the search box lives here
+	// Whatever the user has typed in the search box.
 	let filterText = $state('');
 
-	// [CR] Pagination state - which page we're viewing
-	// [NTL] Like knowing which page of a book you're on
+	// 1-indexed, like the page numbers the user sees.
 	let currentPage = $state(1);
 
-	// [CR] ============================================================
-	// [CR] HELPER FUNCTIONS
-	// [CR] ============================================================
-
-	// [CR] Type-safe accessor for row values by column ID
-	// [NTL] Since each row can have different columns, this safely grabs
-	// [NTL] the value for any column name you ask for
-	function getRowValue(row: Employee, columnId: string): unknown {
-		// [CR] Double cast through unknown to safely access dynamic column values
-		return (row as unknown as Record<string, unknown>)[columnId];
+	/** Rows can be any shape, so read values through a string index. */
+	function getRowValue(row: T, columnId: string): unknown {
+		return (row as Record<string, unknown>)[columnId];
 	}
 
-	// [CR] ============================================================
-	// [CR] DERIVED VALUES - Computed from state, auto-update when state changes
-	// [NTL] These are like formulas in a spreadsheet - they recalculate automatically!
-	// [CR] ============================================================
+	/** Prefer a row's own id as the {#each} key; fall back to its index. */
+	function rowKey(row: T, index: number): unknown {
+		return (row as { id?: unknown }).id ?? index;
+	}
 
-	// [CR] Filtered Data - apply global search filter
-	// [NTL] When you type in the search box, this filters your data to only
-	// [NTL] show rows where ANY column contains your search text
-	const filteredData = $derived(() => {
-		if (!filterable || !filterText.trim()) {
-			return data;
-		}
+	// ------------------------------------------------------------
+	// Filter → sort → paginate. Each stage is its own $derived so, for
+	// example, flipping pages never re-runs the filter.
+	// ------------------------------------------------------------
 
+	const filteredData = $derived.by<T[]>(() => {
+		if (!filterable || !filterText.trim()) return data;
 		const searchTerm = filterText.toLowerCase();
-
-		return data.filter((row) => {
-			// [CR] Search across all column values - returns true if ANY column matches
-			return columns.some((col) => {
+		return data.filter((row) =>
+			columns.some((col) => {
 				const value = getRowValue(row, col.id);
 				if (value === null || value === undefined) return false;
 				return String(value).toLowerCase().includes(searchTerm);
-			});
-		});
+			})
+		);
 	});
 
-	// [CR] Sorted Data - apply sorting to the already-filtered data
-	// [NTL] After filtering, this puts the results in order based on
-	// [NTL] which column header you clicked (A-Z, Z-A, 1-9, 9-1)
-	const sortedData = $derived(() => {
-		if (!sortable || !sortColumn) {
-			return filteredData();
-		}
-
-		// [CR] Create a copy to avoid mutating the original array
-		const sorted = [...filteredData()];
+	const sortedData = $derived.by<T[]>(() => {
+		if (!sortable || !sortColumn) return filteredData;
 		const columnKey = sortColumn;
+		const direction = sortDirection === 'asc' ? 1 : -1;
 
-		sorted.sort((a, b) => {
+		// Copy first — sorting in place would mutate the caller's array.
+		return [...filteredData].sort((a, b) => {
 			const aValue = getRowValue(a, columnKey);
 			const bValue = getRowValue(b, columnKey);
 
-			// [CR] Handle null/undefined - push them to the end
-			if (aValue === null || aValue === undefined) return sortDirection === 'asc' ? 1 : -1;
-			if (bValue === null || bValue === undefined) return sortDirection === 'asc' ? -1 : 1;
+			// Blanks always sink to the bottom, whichever way we're sorting.
+			if (aValue === null || aValue === undefined) return 1;
+			if (bValue === null || bValue === undefined) return -1;
 
-			// [CR] Numeric comparison - for numbers, use mathematical comparison
 			if (typeof aValue === 'number' && typeof bValue === 'number') {
-				return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+				return (aValue - bValue) * direction;
 			}
 
-			// [CR] String comparison - for text, use alphabetical ordering
 			const aStr = String(aValue).toLowerCase();
 			const bStr = String(bValue).toLowerCase();
-
-			if (aStr < bStr) return sortDirection === 'asc' ? -1 : 1;
-			if (aStr > bStr) return sortDirection === 'asc' ? 1 : -1;
+			if (aStr < bStr) return -1 * direction;
+			if (aStr > bStr) return 1 * direction;
 			return 0;
 		});
-
-		return sorted;
 	});
 
-	// [CR] Pagination calculations
-	// [NTL] Figure out how many pages we have and which rows to show
-	const totalRows = $derived(sortedData().length);
-	const totalPages = $derived(pageSize > 0 ? Math.ceil(totalRows / pageSize) : 1);
+	const totalRows = $derived(sortedData.length);
+	const totalPages = $derived(pageSize > 0 ? Math.max(1, Math.ceil(totalRows / pageSize)) : 1);
 
-	// [CR] Paginated data - slice out just the rows for the current page
-	// [NTL] If you're on page 2 with 10 rows per page, this grabs rows 11-20
-	const paginatedData = $derived(() => {
-		if (pageSize === 0) {
-			return sortedData(); // [NTL] pageSize of 0 means "show everything"
-		}
-
+	const paginatedData = $derived.by<T[]>(() => {
+		if (pageSize === 0) return sortedData;
 		const startIndex = (currentPage - 1) * pageSize;
-		const endIndex = startIndex + pageSize;
-		return sortedData().slice(startIndex, endIndex);
+		return sortedData.slice(startIndex, startIndex + pageSize);
 	});
 
-	// [CR] ============================================================
-	// [CR] EVENT HANDLERS
-	// [NTL] Functions that respond to user clicks and interactions
-	// [CR] ============================================================
+	/**
+	 * A seven-slot page window: always first and last, with the current page
+	 * and its neighbours in between. Keeps the control a fixed width no
+	 * matter how many pages there are.
+	 */
+	const pageWindow = $derived.by<number[]>(() => {
+		const slots = Math.min(7, totalPages);
+		return Array.from({ length: slots }, (_, i) => {
+			if (totalPages <= 7) return i + 1;
+			if (i === 0) return 1;
+			if (i === 6) return totalPages;
+			if (currentPage <= 4) return i + 1;
+			if (currentPage >= totalPages - 3) return totalPages - 6 + i;
+			return currentPage - 3 + i;
+		});
+	});
 
-	// [CR] Handle column header click for sorting
-	// [NTL] When you click a column header, this decides whether to
-	// [NTL] sort A-Z, Z-A, or switch to a different column
-	function handleSort(columnId: string) {
-		if (!sortable) return;
+	function isSortable(column: DataGridColumn): boolean {
+		return sortable && column.sortable !== false;
+	}
 
-		// [CR] Check if this specific column has sorting disabled
-		const column = columns.find((col) => col.id === columnId);
-		if (column?.sortable === false) return;
-
-		if (sortColumn === columnId) {
-			// [NTL] Clicked same column? Flip the direction!
+	function handleSort(column: DataGridColumn) {
+		if (!isSortable(column)) return;
+		if (sortColumn === column.id) {
 			sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
 		} else {
-			// [NTL] Clicked new column? Start fresh with ascending
-			sortColumn = columnId;
+			sortColumn = column.id;
 			sortDirection = 'asc';
 		}
-
-		// [CR] Reset to first page when sorting changes
+		// A new order makes the old page number meaningless.
 		currentPage = 1;
 	}
 
-	// [CR] ============================================================
-	// [CR] CELL FORMATTING - How values are displayed in cells
-	// [CR] ============================================================
+	function handleHeaderKeydown(event: KeyboardEvent, column: DataGridColumn) {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			handleSort(column);
+		}
+	}
 
-	// [CR] Format cell value for display
-	// [NTL] Takes raw data (like 50000) and makes it pretty (like "50,000")
-	function formatCellValue(value: any, column: DataGridColumn, row?: any): string {
+	/** Raw value → display string. Renderers/formatters win over type defaults. */
+	function formatCellValue(value: unknown, column: DataGridColumn, row: T): string {
 		if (value === null || value === undefined) return '';
+		if (column.cellRenderer) return column.cellRenderer(value, row);
+		if (column.formatter) return column.formatter(value, row);
 
-		// [CR] Use custom renderer for HTML output (with XSS protection)
-		if (column.cellRenderer) {
-			return column.cellRenderer(value, row);
-		}
-
-		// [CR] Use custom formatter for text output
-		if (column.formatter) {
-			return column.formatter(value, row);
-		}
-
-		// [CR] Default formatting based on column type
 		switch (column.type) {
 			case 'number':
-				// [NTL] Numbers get thousands separators (1000 → 1,000)
 				return typeof value === 'number' ? value.toLocaleString('en-GB') : String(value);
 			case 'date':
-				// [NTL] Dates become DD/MM/YYYY format
-				if (value instanceof Date) {
-					return value.toLocaleDateString('en-GB');
-				}
-				// [CR] Handle ISO string dates (2024-01-15 → 15/01/2024)
+				if (value instanceof Date) return value.toLocaleDateString('en-GB');
 				if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value)) {
-					const date = new Date(value);
-					return date.toLocaleDateString('en-GB');
+					return new Date(value).toLocaleDateString('en-GB');
 				}
 				return String(value);
 			default:
@@ -252,64 +206,33 @@
 		}
 	}
 
-	// [CR] Get inline CSS styles for a cell
-	function getCellStyle(value: any, column: DataGridColumn, row?: any): string {
-		if (column.cellStyle) {
-			return column.cellStyle(value, row);
-		}
-		return '';
+	function getCellStyle(value: unknown, column: DataGridColumn, row: T): string {
+		return column.cellStyle ? column.cellStyle(value, row) : '';
 	}
 
-	// [CR] Get CSS classes for a cell - sanitized to prevent XSS
-	function getCellClass(value: any, column: DataGridColumn, row?: any): string {
-		if (column.cellClass) {
-			const className = column.cellClass(value, row);
-			return sanitizeClassName(className);
-		}
-		return '';
+	function getCellClass(value: unknown, column: DataGridColumn, row: T): string {
+		return column.cellClass ? sanitizeClassName(column.cellClass(value, row)) : '';
 	}
-
-	// [CR] ============================================================
-	// [CR] PAGINATION CONTROLS
-	// [NTL] Functions to navigate between pages
-	// [CR] ============================================================
 
 	function goToPage(page: number) {
 		if (page < 1 || page > totalPages) return;
 		currentPage = page;
 	}
 
-	function nextPage() {
-		goToPage(currentPage + 1);
-	}
-
-	function previousPage() {
-		goToPage(currentPage - 1);
-	}
-
-	// [CR] Reset to first page when filter changes
-	// [NTL] When you search, jump back to page 1 to see results from the start
+	// Typing a new search jumps back to page 1 so results start from the top.
 	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _ = filterText;
+		void filterText;
 		currentPage = 1;
+	});
+
+	// If the data shrinks under us (a parent filter, say), don't strand the
+	// user on a page that no longer exists.
+	$effect(() => {
+		if (currentPage > totalPages) currentPage = totalPages;
 	});
 </script>
 
-<!--
-	[CR] ============================================================
-	[CR] TEMPLATE - The visual structure of the grid
-	[NTL] This is what actually appears on screen!
-	[CR] ============================================================
-
-	Structure:
-	1. Filter/search input (if filterable)
-	2. Data table with sortable headers
-	3. Pagination controls (if pageSize > 0)
--->
-
 <div class="datagrid-basic-wrapper">
-	<!-- Filter Input -->
 	{#if filterable}
 		<div class="datagrid-filter">
 			<input
@@ -320,40 +243,37 @@
 				aria-label="Filter table data"
 			/>
 			{#if filterText}
-				<span class="filter-count">
-					{filteredData().length} result{filteredData().length === 1 ? '' : 's'}
+				<span class="filter-count" aria-live="polite">
+					{filteredData.length} result{filteredData.length === 1 ? '' : 's'}
 				</span>
 			{/if}
 		</div>
 	{/if}
 
-	<!-- Data Table -->
 	<div class="table-container">
 		<table class="datagrid-table" class:striped class:hoverable class:compact>
 			<thead>
 				<tr>
 					{#each columns as column, columnIndex (`${columnIndex}-${column.id}`)}
 						<th
-							class:sortable={sortable && column.sortable !== false}
+							class:sortable={isSortable(column)}
 							class:sorted={sortColumn === column.id}
 							class:asc={sortColumn === column.id && sortDirection === 'asc'}
 							class:desc={sortColumn === column.id && sortDirection === 'desc'}
 							style={column.width ? `width: ${column.width}px` : ''}
-							onclick={() => handleSort(column.id)}
-							onkeydown={(e) => e.key === 'Enter' && handleSort(column.id)}
-							tabindex={sortable && column.sortable !== false ? 0 : -1}
-							role={sortable && column.sortable !== false ? 'button' : undefined}
-							aria-sort={
-								sortColumn === column.id
-									? sortDirection === 'asc'
-										? 'ascending'
-										: 'descending'
-									: 'none'
-							}
+							onclick={() => handleSort(column)}
+							onkeydown={(e) => handleHeaderKeydown(e, column)}
+							tabindex={isSortable(column) ? 0 : -1}
+							role={isSortable(column) ? 'button' : undefined}
+							aria-sort={sortColumn === column.id
+								? sortDirection === 'asc'
+									? 'ascending'
+									: 'descending'
+								: 'none'}
 						>
 							<span class="header-content">
 								{column.header}
-								{#if sortable && column.sortable !== false}
+								{#if isSortable(column)}
 									<span class="sort-indicator" aria-hidden="true">
 										{#if sortColumn === column.id}
 											{sortDirection === 'asc' ? '↑' : '↓'}
@@ -368,14 +288,14 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#if paginatedData().length === 0}
+				{#if paginatedData.length === 0}
 					<tr>
 						<td colspan={columns.length} class="empty-state">
 							{filterText ? 'No results found' : 'No data available'}
 						</td>
 					</tr>
 				{:else}
-					{#each paginatedData() as row, rowIndex (row.id ?? rowIndex)}
+					{#each paginatedData as row, rowIndex (rowKey(row, rowIndex))}
 						<tr>
 							{#each columns as column, columnIndex (`${columnIndex}-${column.id}`)}
 								{@const cellValue = getRowValue(row, column.id)}
@@ -398,7 +318,6 @@
 		</table>
 	</div>
 
-	<!-- Pagination Controls -->
 	{#if pageSize > 0 && totalPages > 1}
 		<div class="datagrid-pagination">
 			<div class="pagination-info">
@@ -408,7 +327,8 @@
 
 			<div class="pagination-controls">
 				<button
-					onclick={previousPage}
+					type="button"
+					onclick={() => goToPage(currentPage - 1)}
 					disabled={currentPage === 1}
 					aria-label="Previous page"
 					class="pagination-button"
@@ -416,18 +336,10 @@
 					←
 				</button>
 
-				<!-- Page numbers -->
 				<div class="page-numbers">
-					{#each Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
-						// Show first page, last page, current page, and neighbors
-						if (totalPages <= 7) return i + 1;
-						if (i === 0) return 1;
-						if (i === 6) return totalPages;
-						if (currentPage <= 4) return i + 1;
-						if (currentPage >= totalPages - 3) return totalPages - 6 + i;
-						return currentPage - 3 + i;
-					}) as pageNum (pageNum)}
+					{#each pageWindow as pageNum (pageNum)}
 						<button
+							type="button"
 							onclick={() => goToPage(pageNum)}
 							class="page-button"
 							class:active={pageNum === currentPage}
@@ -440,7 +352,8 @@
 				</div>
 
 				<button
-					onclick={nextPage}
+					type="button"
+					onclick={() => goToPage(currentPage + 1)}
 					disabled={currentPage === totalPages}
 					aria-label="Next page"
 					class="pagination-button"
@@ -453,23 +366,62 @@
 </div>
 
 <style>
-	/**
-	 * Component Styles
-	 * All styles scoped to this component
+	/*
+	 * Tokens: light defaults live on the root; the dark block below flips
+	 * chrome only. --dgb-accent is brand and deliberately stays put.
 	 */
-
 	.datagrid-basic-wrapper {
+		/* Chrome */
+		--dgb-bg: #ffffff;
+		--dgb-header-bg: #f9fafb;
+		--dgb-header-hover-bg: #f3f4f6;
+		--dgb-stripe-bg: #f9fafb;
+		--dgb-row-hover-bg: #f3f4f6;
+		--dgb-border: #e5e7eb;
+		--dgb-input-border: #d1d5db;
+		--dgb-input-bg: #ffffff;
+		--dgb-header-fg: #374151;
+		--dgb-cell-fg: #1f2937;
+		--dgb-muted-fg: #6b7280;
+		--dgb-empty-fg: #9ca3af;
+		--dgb-button-bg: #ffffff;
+		--dgb-button-fg: #1f2937;
+		--dgb-button-hover-bg: #f3f4f6;
+
+		/* Brand (not flipped) */
+		--dgb-accent: #146ef5;
+		--dgb-on-accent: #ffffff;
+		--dgb-focus-ring: rgba(20, 110, 245, 0.2);
+
 		width: 100%;
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+		font-family:
+			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 	}
 
-	/* ===================
-	   Filter Section
-	   =================== */
+	@media (prefers-color-scheme: dark) {
+		.datagrid-basic-wrapper {
+			--dgb-bg: #1f2937;
+			--dgb-header-bg: #111827;
+			--dgb-header-hover-bg: #1f2937;
+			--dgb-stripe-bg: #111827;
+			--dgb-row-hover-bg: #374151;
+			--dgb-border: #374151;
+			--dgb-input-border: #4b5563;
+			--dgb-input-bg: #1f2937;
+			--dgb-header-fg: #f9fafb;
+			--dgb-cell-fg: #e5e7eb;
+			--dgb-muted-fg: #9ca3af;
+			--dgb-empty-fg: #6b7280;
+			--dgb-button-bg: #1f2937;
+			--dgb-button-fg: #f9fafb;
+			--dgb-button-hover-bg: #374151;
+		}
+	}
 
+	/* Filter */
 	.datagrid-filter {
 		display: flex;
 		align-items: center;
@@ -480,43 +432,41 @@
 		flex: 1;
 		max-width: 400px;
 		padding: 0.5rem 0.75rem;
-		border: 1px solid #d1d5db;
+		background: var(--dgb-input-bg);
+		color: var(--dgb-cell-fg);
+		border: 1px solid var(--dgb-input-border);
 		border-radius: 6px;
 		font-size: 0.875rem;
 		transition: border-color 0.2s;
 	}
 
-	.filter-input:focus {
+	.filter-input:focus-visible {
 		outline: none;
-		border-color: #146ef5;
-		box-shadow: 0 0 0 3px rgba(20, 110, 245, 0.1);
+		border-color: var(--dgb-accent);
+		box-shadow: 0 0 0 3px var(--dgb-focus-ring);
 	}
 
 	.filter-count {
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--dgb-muted-fg);
 	}
 
-	/* ===================
-	   Table Styles
-	   =================== */
-
+	/* Table */
 	.table-container {
 		overflow-x: auto;
-		border: 1px solid #e5e7eb;
+		border: 1px solid var(--dgb-border);
 		border-radius: 8px;
 	}
 
 	.datagrid-table {
 		width: 100%;
 		border-collapse: collapse;
-		background: white;
+		background: var(--dgb-bg);
 	}
 
-	/* Table header */
 	thead {
-		background: #f9fafb;
-		border-bottom: 2px solid #e5e7eb;
+		background: var(--dgb-header-bg);
+		border-bottom: 2px solid var(--dgb-border);
 	}
 
 	th {
@@ -524,7 +474,7 @@
 		text-align: left;
 		font-weight: 600;
 		font-size: 0.875rem;
-		color: #374151;
+		color: var(--dgb-header-fg);
 		white-space: nowrap;
 		user-select: none;
 	}
@@ -535,11 +485,11 @@
 	}
 
 	th.sortable:hover {
-		background: #f3f4f6;
+		background: var(--dgb-header-hover-bg);
 	}
 
 	th.sortable:focus-visible {
-		outline: 2px solid #146ef5;
+		outline: 2px solid var(--dgb-accent);
 		outline-offset: -2px;
 	}
 
@@ -556,12 +506,11 @@
 
 	th.sorted .sort-indicator {
 		opacity: 1;
-		color: #146ef5;
+		color: var(--dgb-accent);
 	}
 
-	/* Table body */
 	tbody tr {
-		border-bottom: 1px solid #e5e7eb;
+		border-bottom: 1px solid var(--dgb-border);
 	}
 
 	tbody tr:last-child {
@@ -571,37 +520,30 @@
 	td {
 		padding: 0.75rem 1rem;
 		font-size: 0.875rem;
-		color: #1f2937;
+		color: var(--dgb-cell-fg);
 	}
 
-	/* Striped rows */
 	.datagrid-table.striped tbody tr:nth-child(even) {
-		background: #f9fafb;
+		background: var(--dgb-stripe-bg);
 	}
 
-	/* Hover effect */
 	.datagrid-table.hoverable tbody tr:hover {
-		background: #f3f4f6;
+		background: var(--dgb-row-hover-bg);
 	}
 
-	/* Compact mode */
 	.datagrid-table.compact th,
 	.datagrid-table.compact td {
 		padding: 0.5rem 0.75rem;
 	}
 
-	/* Empty state */
 	.empty-state {
 		text-align: center;
 		padding: 2rem;
-		color: #9ca3af;
+		color: var(--dgb-empty-fg);
 		font-style: italic;
 	}
 
-	/* ===================
-	   Pagination Styles
-	   =================== */
-
+	/* Pagination */
 	.datagrid-pagination {
 		display: flex;
 		justify-content: space-between;
@@ -612,7 +554,7 @@
 
 	.pagination-info {
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--dgb-muted-fg);
 	}
 
 	.pagination-controls {
@@ -629,18 +571,21 @@
 	.pagination-button,
 	.page-button {
 		padding: 0.5rem 0.75rem;
-		border: 1px solid #d1d5db;
+		border: 1px solid var(--dgb-input-border);
 		border-radius: 6px;
-		background: white;
+		background: var(--dgb-button-bg);
+		color: var(--dgb-button-fg);
 		font-size: 0.875rem;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition:
+			background-color 0.2s,
+			border-color 0.2s;
 	}
 
 	.pagination-button:hover:not(:disabled),
 	.page-button:hover {
-		background: #f3f4f6;
-		border-color: #146ef5;
+		background: var(--dgb-button-hover-bg);
+		border-color: var(--dgb-accent);
 	}
 
 	.pagination-button:disabled {
@@ -649,20 +594,16 @@
 	}
 
 	.page-button.active {
-		background: #146ef5;
-		color: white;
-		border-color: #146ef5;
+		background: var(--dgb-accent);
+		color: var(--dgb-on-accent);
+		border-color: var(--dgb-accent);
 	}
 
 	.pagination-button:focus-visible,
 	.page-button:focus-visible {
-		outline: 2px solid #146ef5;
+		outline: 2px solid var(--dgb-accent);
 		outline-offset: 2px;
 	}
-
-	/* ===================
-	   Responsive Design
-	   =================== */
 
 	@media (max-width: 768px) {
 		.filter-input {
@@ -682,72 +623,16 @@
 
 		.pagination-controls {
 			justify-content: center;
+			flex-wrap: wrap;
 		}
 	}
 
-	/* ===================
-	   Dark Mode Support
-	   =================== */
-
-	@media (prefers-color-scheme: dark) {
-		.datagrid-table {
-			background: #1f2937;
-		}
-
-		thead {
-			background: #111827;
-			border-color: #374151;
-		}
-
-		th {
-			color: #f9fafb;
-		}
-
-		th.sortable:hover {
-			background: #1f2937;
-		}
-
-		tbody tr {
-			border-color: #374151;
-		}
-
-		td {
-			color: #e5e7eb;
-		}
-
-		.datagrid-table.striped tbody tr:nth-child(even) {
-			background: #111827;
-		}
-
-		.datagrid-table.hoverable tbody tr:hover {
-			background: #374151;
-		}
-
-		.filter-input {
-			background: #1f2937;
-			border-color: #374151;
-			color: #f9fafb;
-		}
-
+	@media (prefers-reduced-motion: reduce) {
+		.filter-input,
+		th.sortable,
 		.pagination-button,
 		.page-button {
-			background: #1f2937;
-			border-color: #374151;
-			color: #f9fafb;
-		}
-
-		.pagination-button:hover:not(:disabled),
-		.page-button:hover {
-			background: #374151;
-		}
-
-		.table-container {
-			border-color: #374151;
+			transition: none;
 		}
 	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

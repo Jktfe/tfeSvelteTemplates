@@ -31,6 +31,27 @@ RoutePreviewItem[]
 | `title` | `string` | `"Route preview rail"` | Heading shown above the rail. |
 | `subtitle` | `string` | Visual-QA default | Context below the heading. |
 
+## Theming
+
+Follows `docs/THEMING.md`: tokens live on `.route-rail` with light defaults inline and a `@media (prefers-color-scheme: dark)` flip. Chrome tokens read the host app's shared tokens first (`--fg-1`, `--fg-2`, `--fg-3`, `--border`, `--surface`, `--surface-2`, `--accent`) and fall back to built-in values, so the component flips correctly both inside this showcase and when copied into an app that defines none of them. If your host defines those tokens but never flips them, override the component tokens directly.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--rpr-fg-1` / `--rpr-fg-2` / `--rpr-fg-3` | `var(--fg-*, …)` | `var(--fg-*, …)` dark fallbacks | Text tiers |
+| `--rpr-border` / `--rpr-surface` | `var(--border/--surface, …)` | dark fallbacks | Cards, search, status filter |
+| `--rpr-kicker` | `#9f1239` | `#fda4af` | Header kicker |
+| `--rpr-frame-bg` | `#f1f5f9` | `#1f2937` | Screenshot frame behind images |
+| `--rpr-{ready,review,missing}-{accent,bg,border}` | green / amber / red pastels | same hues, deep tints, light text | Route cards and status chips |
+
+Status tones are semantic and keep their hue on both schemes. Screenshots are content and are shown as-is.
+
+```css
+/* Tighter contrast for a projector-friendly dashboard */
+body .route-rail.route-rail {
+  --rpr-border: #94a3b8;
+}
+```
+
 ## Edge Cases
 
 - Items without a status are treated as `ready`; route-level code can mark missing screenshots as `missing`.

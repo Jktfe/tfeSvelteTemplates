@@ -9,6 +9,10 @@
  * - PUT    /datagrid/api           - Update employee (requires id in body)
  * - DELETE /datagrid/api?id=123    - Delete single employee
  * - DELETE /datagrid/api?ids=1,2,3 - Bulk delete employees
+ *
+ * Writes (POST/PUT/DELETE) are guarded by requireAuthAPI — 401 when signed
+ * out, 403 for the read-only public demo account — and answer 503 when no
+ * database is configured, so "nothing to write to" isn't reported as a 404.
  */
 
 import { json } from '@sveltejs/kit';
@@ -24,6 +28,30 @@ import {
 	deleteEmployees
 } from '$lib/server/dataGrid';
 import { VALIDATION_FIELDS } from '$lib/constants';
+import { requireAuthAPI } from '$lib/server/auth';
+import { isDatabaseConfigured } from '$lib/server/dataSource';
+
+/**
+ * Shared gate for every write handler. Auth runs first (and outside any
+ * try/catch) so the demo user's 403 is never masked by a generic 500.
+ *
+ * @returns A 503 response when there is no database, otherwise null
+ */
+function guardWrite(event: Parameters<RequestHandler>[0]): Response | null {
+	requireAuthAPI(event);
+
+	if (!isDatabaseConfigured()) {
+		return json(
+			{
+				success: false,
+				error: 'Database not configured. Changes cannot be saved without a database connection.'
+			},
+			{ status: 503 }
+		);
+	}
+
+	return null;
+}
 
 /**
  * Validate dropdown field values against allowed options
@@ -91,7 +119,11 @@ export const GET: RequestHandler = async ({ url }) => {
  *
  * Body: Employee data (without id)
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	const blocked = guardWrite(event);
+	if (blocked) return blocked;
+	const { request } = event;
+
 	try {
 		const data = await request.json();
 
@@ -127,7 +159,7 @@ export const POST: RequestHandler = async ({ request }) => {
 			return json(
 				{
 					success: false,
-					error: 'Failed to create employee. Database may not be configured.'
+					error: 'Failed to create employee'
 				},
 				{ status: 500 }
 			);
@@ -155,7 +187,11 @@ export const POST: RequestHandler = async ({ request }) => {
  *
  * Body: Partial employee data with id
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async (event) => {
+	const blocked = guardWrite(event);
+	if (blocked) return blocked;
+	const { request } = event;
+
 	try {
 		const data = await request.json();
 
@@ -218,7 +254,11 @@ export const PUT: RequestHandler = async ({ request }) => {
  * - id: Single employee ID to delete
  * - ids: Comma-separated employee IDs for bulk delete
  */
-export const DELETE: RequestHandler = async ({ url }) => {
+export const DELETE: RequestHandler = async (event) => {
+	const blocked = guardWrite(event);
+	if (blocked) return blocked;
+	const { url } = event;
+
 	try {
 		const id = url.searchParams.get('id');
 		const idsParam = url.searchParams.get('ids');

@@ -45,6 +45,11 @@
 	| onSelect     | (item) => void        | undefined                     | Callback when command selected  |
 	| onClose      | () => void            | undefined                     | Callback when palette closes    |
 
+	THEMING (see docs/THEMING.md)
+	All chrome: --cp-* tokens on .command-palette-backdrop flip together
+	under prefers-color-scheme: dark. There is no brand variant API, so
+	nothing is held back from the flip.
+
 	============================================================
 -->
 <script lang="ts">
@@ -395,6 +400,49 @@
 {/if}
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md. Every token here is chrome (the
+	 * palette has no brand variant API), so the whole set flips under
+	 * prefers-color-scheme: dark. Tokens live on the backdrop, the
+	 * outermost element, so the dialog and its children inherit them.
+	 * The match highlight lightens in dark to stay readable on navy.
+	 */
+	.command-palette-backdrop {
+		--cp-backdrop: rgba(0, 0, 0, 0.5);
+		--cp-bg: #fff;
+		--cp-border: #e2e8f0;
+		--cp-fg: #1e293b;
+		--cp-muted: #94a3b8;
+		--cp-subtle-fg: #64748b;
+		--cp-chip-bg: #f1f5f9;
+		--cp-chip-bg-soft: #f8fafc;
+		--cp-active-bg: #f1f5f9;
+		--cp-match: #2563eb;
+		--cp-shadow: rgba(0, 0, 0, 0.25);
+		--cp-ring: rgba(0, 0, 0, 0.05);
+		--cp-scroll-thumb: #cbd5e1;
+		--cp-scroll-thumb-hover: #94a3b8;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.command-palette-backdrop {
+			--cp-backdrop: rgba(2, 6, 23, 0.7);
+			--cp-bg: #0f172a;
+			--cp-border: #334155;
+			--cp-fg: #f1f5f9;
+			--cp-muted: #94a3b8;
+			--cp-subtle-fg: #cbd5e1;
+			--cp-chip-bg: #1e293b;
+			--cp-chip-bg-soft: #1e293b;
+			--cp-active-bg: #1e293b;
+			--cp-match: #93c5fd;
+			--cp-shadow: rgba(0, 0, 0, 0.6);
+			--cp-ring: rgba(255, 255, 255, 0.06);
+			--cp-scroll-thumb: #475569;
+			--cp-scroll-thumb-hover: #64748b;
+		}
+	}
+
 	/* -- Backdrop overlay -- */
 	.command-palette-backdrop {
 		position: fixed;
@@ -404,7 +452,7 @@
 		align-items: flex-start;
 		justify-content: center;
 		padding-top: 20vh;
-		background: rgba(0, 0, 0, 0.5);
+		background: var(--cp-backdrop);
 		backdrop-filter: blur(4px);
 		animation: backdrop-fade-in 0.15s ease-out;
 	}
@@ -414,12 +462,12 @@
 		width: 100%;
 		max-width: 560px;
 		margin: 0 1rem;
-		background: #fff;
-		border: 1px solid #e2e8f0;
+		background: var(--cp-bg);
+		border: 1px solid var(--cp-border);
 		border-radius: 12px;
 		box-shadow:
-			0 25px 50px -12px rgba(0, 0, 0, 0.25),
-			0 0 0 1px rgba(0, 0, 0, 0.05);
+			0 25px 50px -12px var(--cp-shadow),
+			0 0 0 1px var(--cp-ring);
 		overflow: hidden;
 		animation: palette-slide-in 0.15s ease-out;
 	}
@@ -430,13 +478,13 @@
 		align-items: center;
 		gap: 0.75rem;
 		padding: 0.875rem 1rem;
-		border-bottom: 1px solid #e2e8f0;
+		border-bottom: 1px solid var(--cp-border);
 	}
 
 	.search-icon {
 		width: 1.25rem;
 		height: 1.25rem;
-		color: #94a3b8;
+		color: var(--cp-muted);
 		flex-shrink: 0;
 	}
 
@@ -446,13 +494,13 @@
 		outline: none;
 		font-size: 1rem;
 		line-height: 1.5;
-		color: #1e293b;
+		color: var(--cp-fg);
 		background: transparent;
 		font-family: inherit;
 	}
 
 	.command-palette-input::placeholder {
-		color: #94a3b8;
+		color: var(--cp-muted);
 	}
 
 	.shortcut-badge {
@@ -460,9 +508,9 @@
 		padding: 0.125rem 0.5rem;
 		font-size: 0.75rem;
 		font-family: inherit;
-		color: #64748b;
-		background: #f1f5f9;
-		border: 1px solid #e2e8f0;
+		color: var(--cp-subtle-fg);
+		background: var(--cp-chip-bg);
+		border: 1px solid var(--cp-border);
 		border-radius: 4px;
 	}
 
@@ -476,7 +524,7 @@
 	.command-palette-empty {
 		padding: 2rem 1rem;
 		text-align: center;
-		color: #94a3b8;
+		color: var(--cp-muted);
 		font-size: 0.875rem;
 	}
 
@@ -491,7 +539,7 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #94a3b8;
+		color: var(--cp-muted);
 	}
 
 	/* -- Individual result item -- */
@@ -505,7 +553,7 @@
 	}
 
 	.command-palette-item.active {
-		background: #f1f5f9;
+		background: var(--cp-active-bg);
 	}
 
 	.item-icon {
@@ -525,7 +573,7 @@
 
 	.item-label {
 		font-size: 0.875rem;
-		color: #1e293b;
+		color: var(--cp-fg);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -535,13 +583,13 @@
 	.item-label mark,
 	.item-description mark {
 		background: transparent;
-		color: #2563eb;
+		color: var(--cp-match);
 		font-weight: 600;
 	}
 
 	.item-description {
 		font-size: 0.75rem;
-		color: #94a3b8;
+		color: var(--cp-muted);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -552,9 +600,9 @@
 		padding: 0.125rem 0.375rem;
 		font-size: 0.6875rem;
 		font-family: inherit;
-		color: #94a3b8;
-		background: #f8fafc;
-		border: 1px solid #e2e8f0;
+		color: var(--cp-muted);
+		background: var(--cp-chip-bg-soft);
+		border: 1px solid var(--cp-border);
 		border-radius: 4px;
 	}
 
@@ -564,9 +612,9 @@
 		align-items: center;
 		justify-content: space-between;
 		padding: 0.5rem 1rem;
-		border-top: 1px solid #e2e8f0;
+		border-top: 1px solid var(--cp-border);
 		font-size: 0.75rem;
-		color: #94a3b8;
+		color: var(--cp-muted);
 	}
 
 	.footer-hint {
@@ -578,9 +626,9 @@
 		padding: 0 0.25rem;
 		font-family: inherit;
 		font-size: 0.6875rem;
-		color: #64748b;
-		background: #f1f5f9;
-		border: 1px solid #e2e8f0;
+		color: var(--cp-subtle-fg);
+		background: var(--cp-chip-bg);
+		border: 1px solid var(--cp-border);
 		border-radius: 3px;
 	}
 
@@ -634,11 +682,11 @@
 	}
 
 	.command-palette-body::-webkit-scrollbar-thumb {
-		background: #cbd5e1;
+		background: var(--cp-scroll-thumb);
 		border-radius: 3px;
 	}
 
 	.command-palette-body::-webkit-scrollbar-thumb:hover {
-		background: #94a3b8;
+		background: var(--cp-scroll-thumb-hover);
 	}
 </style>

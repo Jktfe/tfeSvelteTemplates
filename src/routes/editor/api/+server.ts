@@ -4,7 +4,9 @@
  * This file implements standard HTTP methods for Create, Read, Update, and Delete
  * operations on editor data. It demonstrates best practices for SvelteKit API routes:
  * - Type-safe request handlers with RequestHandler type
- * - Proper HTTP status codes (200, 201, 400, 404, 500)
+ * - Proper HTTP status codes (200, 201, 400, 401, 403, 404, 500, 503)
+ * - Writes (POST/PUT/DELETE) guarded by requireAuthAPI: 401 when signed out,
+ *   403 for the read-only public demo account. Reads stay public.
  * - JSON request/response handling
  * - Error handling with descriptive messages
  * - Integration with server utilities
@@ -20,6 +22,7 @@ import {
 	updateEditorData,
 	deleteEditorData
 } from '$lib/server/editorData';
+import { requireAuthAPI } from '$lib/server/auth';
 
 /**
  * GET - Read all editor data items
@@ -87,7 +90,11 @@ export const GET: RequestHandler = async ({ url }) => {
  * const { data } = await res.json();
  * ```
  */
-export const POST: RequestHandler = async ({ request }) => {
+export const POST: RequestHandler = async (event) => {
+	// Outside the try so the 401/403 reaches the client untouched.
+	requireAuthAPI(event);
+	const { request } = event;
+
 	try {
 		const body = await request.json();
 
@@ -148,7 +155,10 @@ export const POST: RequestHandler = async ({ request }) => {
  * const { data } = await res.json();
  * ```
  */
-export const PUT: RequestHandler = async ({ request }) => {
+export const PUT: RequestHandler = async (event) => {
+	requireAuthAPI(event);
+	const { request } = event;
+
 	try {
 		const { id, ...data } = await request.json();
 
@@ -196,7 +206,10 @@ export const PUT: RequestHandler = async ({ request }) => {
  * const { success } = await res.json();
  * ```
  */
-export const DELETE: RequestHandler = async ({ url }) => {
+export const DELETE: RequestHandler = async (event) => {
+	requireAuthAPI(event);
+	const { url } = event;
+
 	try {
 		const id = parseInt(url.searchParams.get('id') || '');
 

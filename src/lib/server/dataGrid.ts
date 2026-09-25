@@ -11,83 +11,82 @@
 import { neon } from '@neondatabase/serverless';
 import type { Employee, EmployeeRow } from '$lib/types';
 import { FALLBACK_EMPLOYEES } from '$lib/constants';
+import { getConfiguredDatabaseUrl, loadWithFallback, type DataSourceResult } from './dataSource';
+
+/** snake_case row → camelCase Employee, shared by every read and write path. */
+function rowToEmployee(row: EmployeeRow): Employee {
+	return {
+		id: row.id,
+		firstName: row.first_name,
+		lastName: row.last_name,
+		email: row.email,
+		department: row.department,
+		position: row.position,
+		salary: Number(row.salary), // Neon returns DECIMAL as a string
+		hireDate: row.hire_date, // Database returns Date object
+		status: row.status,
+		location: row.location || undefined,
+		phone: row.phone || undefined,
+		notes: row.notes || undefined
+	};
+}
 
 /**
- * Load employee data from database with fallback to constants
+ * Load employee data along with where it came from, so the page can show an
+ * honest DatabaseStatus badge (a configured-but-failing database is reported
+ * as `error`, not as "connected").
  *
- * @returns Promise<Employee[]> - Array of employee records
- *
- * Behavior:
- * - If DATABASE_URL is not set, returns FALLBACK_EMPLOYEES
- * - If database query succeeds, returns transformed database rows
- * - If database query fails, logs error and returns FALLBACK_EMPLOYEES
- * - Only returns active employees (is_active = TRUE)
- * - Sorts by last_name, then first_name
+ * - Not configured (missing or placeholder URL) → FALLBACK_EMPLOYEES, source `fallback`
+ * - Query succeeds → active employees sorted by last, then first name
+ * - `employees` table missing → fallback with a hint to run schema_datagrid.sql
+ * - Any other failure → FALLBACK_EMPLOYEES, source `error`
+ */
+export async function loadEmployeesWithSource(): Promise<DataSourceResult<Employee[]>> {
+	return loadWithFallback(
+		FALLBACK_EMPLOYEES,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
+
+			const rows = (await sql`
+				SELECT
+					id,
+					first_name,
+					last_name,
+					email,
+					department,
+					position,
+					salary,
+					hire_date,
+					status,
+					location,
+					phone,
+					notes,
+					is_active,
+					created_at,
+					updated_at
+				FROM employees
+				WHERE is_active = TRUE
+				ORDER BY last_name ASC, first_name ASC
+			`) as unknown as EmployeeRow[];
+
+			return rows.map(rowToEmployee);
+		},
+		{ label: 'DataGrid', schemaFile: 'schema_datagrid.sql' }
+	);
+}
+
+/**
+ * Load employee data from database with fallback to constants.
+ * Convenience wrapper for callers that only need the rows.
  */
 export async function loadEmployeesFromDatabase(): Promise<Employee[]> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[DataGrid] DATABASE_URL not configured, using fallback employee data');
-			return FALLBACK_EMPLOYEES;
-		}
-
-		const sql = neon(databaseUrl);
-
-		// Query active employees, sorted by name
-		// Note: Neon returns Record<string, any>[], so we type assert to EmployeeRow[]
-		const rows = (await sql`
-			SELECT
-				id,
-				first_name,
-				last_name,
-				email,
-				department,
-				position,
-				salary,
-				hire_date,
-				status,
-				location,
-				phone,
-				notes,
-				is_active,
-				created_at,
-				updated_at
-			FROM employees
-			WHERE is_active = TRUE
-			ORDER BY last_name ASC, first_name ASC
-		`) as unknown as EmployeeRow[];
-
-		console.log(`[DataGrid] Loaded ${rows.length} employees from database`);
-
-		// Transform database rows (snake_case) to component props (camelCase)
-		return rows.map((row) => ({
-			id: row.id,
-			firstName: row.first_name,
-			lastName: row.last_name,
-			email: row.email,
-			department: row.department,
-			position: row.position,
-			salary: Number(row.salary), // Convert DECIMAL to number
-			hireDate: row.hire_date, // Database returns Date object
-			status: row.status,
-			location: row.location || undefined,
-			phone: row.phone || undefined,
-			notes: row.notes || undefined
-		}));
-	} catch (error) {
-		console.error('[DataGrid] Error loading employees from database:', error);
-		console.warn('[DataGrid] Falling back to constant employee data');
-		return FALLBACK_EMPLOYEES;
-	}
+	return (await loadEmployeesWithSource()).data;
 }
 
 /**
  * Load employees filtered by department
  *
  * @param department - Department name to filter by (e.g., 'Engineering', 'Sales')
- * @returns Promise<Employee[]> - Array of employee records in the specified department
  */
 export async function loadEmployeesByDepartment(department: string): Promise<Employee[]> {
 	const allEmployees = await loadEmployeesFromDatabase();
@@ -98,7 +97,6 @@ export async function loadEmployeesByDepartment(department: string): Promise<Emp
  * Load employees filtered by status
  *
  * @param status - Employment status to filter by (e.g., 'active', 'on-leave')
- * @returns Promise<Employee[]> - Array of employee records with the specified status
  */
 export async function loadEmployeesByStatus(status: string): Promise<Employee[]> {
 	const allEmployees = await loadEmployeesFromDatabase();
@@ -107,8 +105,6 @@ export async function loadEmployeesByStatus(status: string): Promise<Employee[]>
 
 /**
  * Get unique list of departments from employee data
- *
- * @returns Promise<string[]> - Sorted array of unique department names
  */
 export async function getDepartments(): Promise<string[]> {
 	const employees = await loadEmployeesFromDatabase();
@@ -116,26 +112,23 @@ export async function getDepartments(): Promise<string[]> {
 	return Array.from(departments).sort();
 }
 
-/**
- * Get statistics about employees
- *
- * @returns Promise<object> - Statistics including total count, average salary, departments
- */
-export async function getEmployeeStatistics(): Promise<{
+export interface EmployeeStatistics {
 	totalEmployees: number;
 	averageSalary: number;
 	departmentCount: number;
 	departmentBreakdown: Record<string, number>;
-}> {
-	const employees = await loadEmployeesFromDatabase();
+}
 
+/**
+ * Summarise an already-loaded employee list. Pure, so a page that has just
+ * loaded employees can derive stats without a second round-trip.
+ */
+export function computeEmployeeStatistics(employees: Employee[]): EmployeeStatistics {
 	const departmentBreakdown: Record<string, number> = {};
 	let totalSalary = 0;
 
 	for (const emp of employees) {
-		// Count by department
 		departmentBreakdown[emp.department] = (departmentBreakdown[emp.department] || 0) + 1;
-		// Sum salaries
 		totalSalary += emp.salary;
 	}
 
@@ -148,33 +141,35 @@ export async function getEmployeeStatistics(): Promise<{
 }
 
 /**
+ * Get statistics about employees (loads them first).
+ */
+export async function getEmployeeStatistics(): Promise<EmployeeStatistics> {
+	return computeEmployeeStatistics(await loadEmployeesFromDatabase());
+}
+
+/**
  * Update an employee record
  *
  * @param id - Employee ID to update
  * @param data - Partial employee data to update
- * @returns Promise<Employee | null> - Updated employee or null if not found/failed
+ * @returns Updated employee, or null if not configured / not found / failed
  *
- * Behavior:
- * - If DATABASE_URL is not set, returns null (read-only mode)
- * - Uses SQL COALESCE to only update provided fields
- * - Updates updated_at timestamp automatically via trigger
- * - Returns updated employee data
+ * Uses SQL COALESCE so only provided fields change; updated_at is bumped by a trigger.
  */
 export async function updateEmployee(
 	id: number,
 	data: Partial<Omit<Employee, 'id'>>
 ): Promise<Employee | null> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn('[DataGrid] DATABASE_URL not configured, cannot update employee');
+		return null;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[DataGrid] DATABASE_URL not configured, cannot update employee');
-			return null;
-		}
-
 		const sql = neon(databaseUrl);
 
-		// Build update query with COALESCE for partial updates
 		const result = (await sql`
 			UPDATE employees
 			SET
@@ -198,24 +193,7 @@ export async function updateEmployee(
 			return null;
 		}
 
-		const row = result[0];
-		console.log(`[DataGrid] Updated employee ${id}`);
-
-		// Transform to Employee format
-		return {
-			id: row.id,
-			firstName: row.first_name,
-			lastName: row.last_name,
-			email: row.email,
-			department: row.department,
-			position: row.position,
-			salary: Number(row.salary), // Convert DECIMAL to number
-			hireDate: row.hire_date, // Database returns Date object
-			status: row.status,
-			location: row.location || undefined,
-			phone: row.phone || undefined,
-			notes: row.notes || undefined
-		};
+		return rowToEmployee(result[0]);
 	} catch (error) {
 		console.error('[DataGrid] Error updating employee:', error);
 		return null;
@@ -225,39 +203,33 @@ export async function updateEmployee(
 /**
  * Delete an employee (soft delete by setting is_active = FALSE)
  *
- * @param id - Employee ID to delete
- * @returns Promise<boolean> - True if deleted successfully, false otherwise
+ * @returns True if a row was deleted, false if not configured / not found / failed
  *
- * Behavior:
- * - If DATABASE_URL is not set, returns false (read-only mode)
- * - Performs soft delete (sets is_active = FALSE)
- * - Maintains audit trail by keeping record in database
+ * The Neon HTTP driver returns only rows (no affected-row count), so we ask
+ * Postgres to hand back the ids it touched and count those.
  */
 export async function deleteEmployee(id: number): Promise<boolean> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn('[DataGrid] DATABASE_URL not configured, cannot delete employee');
+		return false;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[DataGrid] DATABASE_URL not configured, cannot delete employee');
-			return false;
-		}
-
 		const sql = neon(databaseUrl);
 
-		const result = await sql`
+		const result = (await sql`
 			UPDATE employees
 			SET is_active = FALSE
 			WHERE id = ${id} AND is_active = TRUE
-		`;
+			RETURNING id
+		`) as unknown as Array<{ id: number }>;
 
-		// Type assertion: Neon result has count property for UPDATE queries
-		const success = (result as any).count > 0;
-		if (success) {
-			console.log(`[DataGrid] Deleted employee ${id}`);
-		} else {
+		const success = result.length > 0;
+		if (!success) {
 			console.warn(`[DataGrid] Employee ${id} not found or already deleted`);
 		}
-
 		return success;
 	} catch (error) {
 		console.error('[DataGrid] Error deleting employee:', error);
@@ -268,30 +240,27 @@ export async function deleteEmployee(id: number): Promise<boolean> {
 /**
  * Delete multiple employees (bulk soft delete)
  *
- * @param ids - Array of employee IDs to delete
- * @returns Promise<number> - Number of employees deleted
+ * @returns Number of employees actually deleted (0 when not configured or on failure)
  */
 export async function deleteEmployees(ids: number[]): Promise<number> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn('[DataGrid] DATABASE_URL not configured, cannot delete employees');
+		return 0;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[DataGrid] DATABASE_URL not configured, cannot delete employees');
-			return 0;
-		}
-
 		const sql = neon(databaseUrl);
 
-		const result = await sql`
+		const result = (await sql`
 			UPDATE employees
 			SET is_active = FALSE
 			WHERE id = ANY(${ids}) AND is_active = TRUE
-		`;
+			RETURNING id
+		`) as unknown as Array<{ id: number }>;
 
-		// Type assertion: Neon result has count property for UPDATE queries
-		const count = (result as any).count;
-		console.log(`[DataGrid] Bulk deleted ${count} employees`);
-		return count;
+		return result.length;
 	} catch (error) {
 		console.error('[DataGrid] Error bulk deleting employees:', error);
 		return 0;
@@ -301,20 +270,17 @@ export async function deleteEmployees(ids: number[]): Promise<number> {
 /**
  * Create a new employee
  *
- * @param data - Employee data (without ID)
- * @returns Promise<Employee | null> - Created employee with ID or null if failed
+ * @returns Created employee with ID, or null if not configured / failed
  */
-export async function createEmployee(
-	data: Omit<Employee, 'id'>
-): Promise<Employee | null> {
+export async function createEmployee(data: Omit<Employee, 'id'>): Promise<Employee | null> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		console.warn('[DataGrid] DATABASE_URL not configured, cannot create employee');
+		return null;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[DataGrid] DATABASE_URL not configured, cannot create employee');
-			return null;
-		}
-
 		const sql = neon(databaseUrl);
 
 		const result = (await sql`
@@ -330,26 +296,9 @@ export async function createEmployee(
 			RETURNING *
 		`) as unknown as EmployeeRow[];
 
-		const row = result[0];
-		console.log(`[DataGrid] Created employee ${row.id}`);
-
-		return {
-			id: row.id,
-			firstName: row.first_name,
-			lastName: row.last_name,
-			email: row.email,
-			department: row.department,
-			position: row.position,
-			salary: Number(row.salary), // Convert DECIMAL to number
-			hireDate: row.hire_date, // Database returns Date object
-			status: row.status,
-			location: row.location || undefined,
-			phone: row.phone || undefined,
-			notes: row.notes || undefined
-		};
+		return rowToEmployee(result[0]);
 	} catch (error) {
 		console.error('[DataGrid] Error creating employee:', error);
 		return null;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.

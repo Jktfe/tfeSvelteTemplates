@@ -2,7 +2,7 @@
 
 ## What Does It Do? (Plain English)
 
-A suite of 13 typed form-field components built around one shared wrapper called `FormField`. Each field — text, textarea, number, select, radio group, checkbox, checkbox group, range, date, time, switch, colour, plus the bare `FormField` itself for custom inputs — exposes a consistent prop surface (`name`, `label`, `value`, `error`, `touched`, `helpText`, `required`, `disabled`, `readonly`) so swapping one input for another is a one-line change. Every field uses the same "show errors only after touched" UX pattern, the same ARIA wiring for label / help / error association, and the same focus / disabled / responsive styling.
+A suite of 13 typed form-field components built around one shared wrapper called `FormField`. Each field — text, textarea, number, select, radio group, checkbox, checkbox group, range, date, time, switch, colour, plus the bare `FormField` itself for custom inputs — exposes a consistent prop surface (`name`, `id`, `label`, `value`, `error`, `touched`, `helpText`, `required`, `disabled`, `readonly`) so swapping one input for another is a one-line change. Every field uses the same "show errors only after touched" UX pattern, the same ARIA wiring for label / help / error association, and the same focus / disabled / responsive styling.
 
 Think of it as a typewriter with interchangeable typeballs — the carriage, ribbon, and paper feed (the FormField wrapper) stay constant, and you swap the typeball (the input element) for the type of character you need to enter. You learn the carriage once and every typeball Just Works.
 
@@ -10,17 +10,19 @@ Think of it as a typewriter with interchangeable typeballs — the carriage, rib
 
 ```
 SHARED WRAPPER (FormField):
+  props: id (the control's id, handed down by the field component)
   state:
-    fieldId  = `field-${name}`
-    helpId   = `${name}-help`
-    errorId  = `${name}-error`
+    fieldId  = id ?? `field-${$props.id()}`
+    labelId  = `${fieldId}-label`
+    helpId   = `${fieldId}-help`
+    errorId  = `${fieldId}-error`
 
   derive visibleError:
     touched && error    // only show error after user interaction
 
   render:
     <div class:has-error={visibleError}>
-      <label for={fieldId}>
+      <label id={labelId} for={group ? undefined : fieldId}>
         {label}
         {#if required} <span aria-label="required">*</span> {/if}
       </label>
@@ -35,9 +37,20 @@ SHARED WRAPPER (FormField):
 
 INDIVIDUAL FIELD (e.g. TextField):
   takes the same base props plus type-specific ones (type, maxlength, pattern…)
-  passes name/label/required/error/touched/helpText through to FormField
-  renders the actual <input> with bind:value, aria-required, aria-invalid,
-    aria-describedby={helpId}, aria-errormessage={errorId}
+  uid     = $props.id()                 // unique per mounted instance
+  fieldId = id ?? `field-${uid}`         // optional override wins
+  passes id={fieldId}/label/required/error/touched/helpText to FormField
+  renders the actual <input id={fieldId} {name}> with aria-required,
+    aria-invalid, aria-describedby={helpId}, aria-errormessage={errorId}
+
+GROUP FIELD (RadioGroup, CheckboxGroup):
+  groupId = id ?? `radio-group-${uid}` (or `checkbox-group-…`)
+  <FormField id={groupId} group>        // label drops `for`
+  <div role="radiogroup" aria-labelledby={`${groupId}-label`} …>
+    each option input id = `${groupId}-${index}`, name = {name}
+  RadioGroup: aria-describedby={helpId}, aria-errormessage={errorId}
+  CheckboxGroup: role="group" can't carry aria-errormessage, so the
+    visible error id joins aria-describedby alongside helpId
 
 CONSUMER:
   let value = $state('')
@@ -72,7 +85,7 @@ RadioGroup   →  <FormField {props}> {options.map(o => <input type="radio">)} <
 ... etc.
 ```
 
-Every wrapper produces the *exact same DOM scaffold* — same label structure, same error position, same ID scheme, same focus ring on `:focus-visible`, same red border + pink background when `has-error`. The only thing that varies is what's inside the `field-input` slot.
+Every wrapper produces the *exact same DOM scaffold* — same label structure, same error position, same per-instance ID scheme, same focus ring on `:focus-visible`, same red border + pink background when `has-error`. The only thing that varies is what's inside the `field-input` slot.
 
 This is `composition over inheritance` for components: rather than have 13 classes inheriting from a base class with override hooks, you have 13 components that wrap one shared component and pass the right innards through a snippet.
 
@@ -97,7 +110,8 @@ Every field component follows the same prop shape (with type-specific extensions
 
 ```typescript
 interface BaseFieldProps {
-  name: string;            // required — drives ID generation
+  name: string;            // required — form submission key only
+  id?: string;              // optional override; default comes from $props.id()
   label: string;            // required — visible label + ARIA name
   value?: T;                // bindable — the field's value
   placeholder?: string;
@@ -208,7 +222,8 @@ The base contract — present on every field component:
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `name` | `string` | required | Field identifier; drives ID generation for ARIA wiring. |
+| `name` | `string` | required | Form submission key (the control's `name` attribute). Not used for ids. |
+| `id` | `string` | per-instance | Optional id override for the control. By default each instance derives its id from `$props.id()`; help / error ids hang off it (`${id}-help`, `${id}-error`). |
 | `label` | `string` | required | Visible label + ARIA name. |
 | `value` | `string \| number \| boolean \| string[]` | varies | Bindable value. `CheckboxField`/`SwitchField` use `checked`; `CheckboxGroup` uses `values`. |
 | `placeholder` | `string` | — | Hint text in empty inputs (where supported). |
@@ -243,15 +258,16 @@ Field-specific extensions:
 | `touched=true` but `error` is empty | No alert renders. `has-error` class is not applied. The label stays the default colour. |
 | `disabled=true` and `readonly=true` together | Both `disabled` and `readonly` attributes apply. Browsers prefer `disabled` — the field is greyed out and not submitted with the form. |
 | `required` + empty value at submit | The `required` attribute triggers the browser's native invalid-form state on submit. Pair with the touched-pattern for immediate inline feedback. |
-| `aria-describedby` references both `helpId` and `errorId` | When `helpText` and a visible error are both present, both IDs are referenced; AT reads help text and the error in sequence. |
-| Two forms on one page sharing field names (`name='email'`) | Both fields would generate `id="field-email"` — duplicate IDs, broken label-for. Scope names per form (`signup-email` vs `login-email`). |
+| `helpText` and a visible error at the same time | `aria-describedby` points at the help text and `aria-errormessage` (plus `aria-invalid`) points at the error, so AT announces both without the error being read as a description. |
+| Two forms on one page sharing field names (`name='email'`) | Safe. Ids come from `$props.id()`, not `name`, so each instance gets its own label / help / error ids and both forms still submit `email`. |
+| Something outside the field needs to target the control (skip link, external `<label for>`) | Pass `id="…"`; the help and error ids are derived from it. You're responsible for keeping an explicit id unique. |
 | User submits without ever touching a field | Parent should bulk-flip `touched` before validating; otherwise the form's invalid state is hidden. The pattern is documented in the suite. |
-| Rendering a custom input via `<FormField>` directly | Pass children as a `Snippet`; the wrapper's structure stays the same. Useful for date-range pickers, tag inputs, etc. |
+| Rendering a custom input via `<FormField>` directly | Pass `id` and give your input the same id (plus `aria-describedby="${id}-help"`); without `id` the wrapper generates one and the label won't find your input. |
 | `error` text contains HTML | Rendered as text, not HTML. No injection risk; the text shows literally. |
 
 ## Dependencies
 
-- **Svelte 5.x** — `$state`, `$derived`, `$bindable`, `$props`, snippets. The whole suite is runes-only.
+- **Svelte 5.20+** — `$state`, `$derived`, `$bindable`, `$props`, `$props.id()` (5.20+), snippets. The whole suite is runes-only.
 - Zero external dependencies. Native form elements, scoped CSS, inline SVG for custom icons (checkmarks, dropdown arrows).
 
 ## File Structure

@@ -66,7 +66,10 @@ export default defineConfig({
 		// Tell Vitest how to resolve SvelteKit aliases
 		alias: {
 			$lib: '/src/lib',
-			$app: '/node_modules/@sveltejs/kit/src/runtime/app'
+			$app: '/node_modules/@sveltejs/kit/src/runtime/app',
+			// SvelteKit's virtual env modules, so server utilities (e.g. auth.ts) can load
+			'$env/dynamic/public': '/vitest.env-stub.ts',
+			'$env/dynamic/private': '/vitest.env-stub.ts'
 		},
 
 		// Coverage reporting (optional but nice to have)

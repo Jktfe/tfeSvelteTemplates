@@ -20,6 +20,13 @@
     its compositor layer
   • Settles to a static gradient under prefers-reduced-motion
 
+  🌗 THEMING
+  Dual light / dark by construction. The host is transparent and
+  every colour on screen is a palette colour — brand, in the
+  docs/THEMING.md taxonomy — so there is no chrome to flip. The
+  mesh reads the same over a light or a dark backdrop; pick the
+  backdrop (and palette) at the call site.
+
   ♿ ACCESSIBILITY
   • Host carries role="presentation" — purely decorative
   • prefers-reduced-motion: reduce → all blob animations

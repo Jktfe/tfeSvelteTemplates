@@ -1,3 +1,48 @@
+<!--
+  ============================================================
+  KineticCanvasField — Pointer Trail and Click-Burst Particle Layer
+  ============================================================
+  WHAT — Wraps content in a canvas particle layer: moving the pointer
+  leaves a glowing trail and clicking fires a radial burst of sparks.
+
+  WHY — Playful, bounded interactivity for hero panels and demo stages
+  where content must stay clickable above the effect.
+
+  FEATURES
+  - Three palettes: aurora / ember / mono (hue ranges)
+  - Click bursts of `density` particles; trail bursts of density / 12
+  - Frame-rate independent friction plus gentle gravity
+  - Hard cap of 260 live particles; frame delta clamped to 40ms
+  - Canvas resized with ResizeObserver; device pixel ratio capped at 2
+  - Pure helpers exported: clampParticleCount, createKineticParticle,
+    stepKineticParticle
+
+  ACCESSIBILITY
+  - Canvas is aria-hidden and pointer-events: none; content sits above it
+  - prefers-reduced-motion: reduce attaches no listeners or ticker and
+    hides the canvas with CSS
+
+  DEPENDENCIES — gsap (only gsap.ticker), lazily imported through
+  $lib/gsapMotion. Copy that helper alongside.
+
+  PERFORMANCE — One shared ticker callback; particle cap bounds the
+  draw cost; listeners and ticker removed on unmount.
+
+  USAGE
+      <KineticCanvasField density={96} palette="aurora">
+        <section>Interactive content stays above the canvas.</section>
+      </KineticCanvasField>
+
+  PROPS
+  | Prop     | Type                          | Default  | Description |
+  |----------|-------------------------------|----------|-------------|
+  | density  | number                        | 72       | Particles per click burst (clamped 8–260) |
+  | trail    | boolean                       | true     | Emit a trail on pointer move |
+  | palette  | 'aurora' | 'ember' | 'mono'   | 'aurora' | Particle hue range |
+  | children | Snippet                       | —        | Content above the canvas |
+  | class    | string                        | ''       | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	import { clamp } from '$lib/gsapMotion';
 
@@ -33,6 +78,23 @@
 			size: 2 + Math.random() * 5,
 			hue
 		};
+	}
+
+	/** Longest step we will simulate in one frame; stops a backgrounded tab from teleporting particles. */
+	export const MAX_FRAME_DELTA = 0.04;
+
+	/**
+	 * Seconds elapsed since the previous frame, clamped for stability.
+	 *
+	 * `gsap.ticker` hands listeners its elapsed time already in SECONDS (unlike
+	 * `requestAnimationFrame`, which passes milliseconds), so there is no
+	 * `/ 1000` here — dividing again would make every frame ~1000x too short and
+	 * freeze the particles in place. The first frame (no previous time) and any
+	 * backwards jump fall back to a nominal 60fps step.
+	 */
+	export function tickerFrameDelta(time: number, lastTime: number | null): number {
+		if (lastTime === null || !Number.isFinite(time) || time <= lastTime) return 1 / 60;
+		return Math.min(MAX_FRAME_DELTA, time - lastTime);
 	}
 
 	export function stepKineticParticle(particle: KineticParticle, delta: number): KineticParticle {
@@ -72,7 +134,7 @@
 	let canvas: HTMLCanvasElement | null = null;
 	let gsapInstance: Gsap | null = null;
 	let particles: KineticParticle[] = [];
-	let lastTime = 0;
+	let lastTime: number | null = null;
 	let width = 0;
 	let height = 0;
 	let pixelRatio = 1;
@@ -129,7 +191,8 @@
 		const context = canvas.getContext('2d');
 		if (!context) return;
 
-		const delta = lastTime === 0 ? 1 / 60 : Math.min(0.04, (time - lastTime) / 1000);
+		// `time` is gsap.ticker's elapsed time in seconds — see tickerFrameDelta.
+		const delta = tickerFrameDelta(time, lastTime);
 		lastTime = time;
 		particles = particles.map((particle) => stepKineticParticle(particle, delta)).filter((p) => p.life > 0);
 
@@ -167,6 +230,7 @@
 			root?.removeEventListener('pointermove', handlePointerMove);
 			root?.removeEventListener('pointerdown', handlePointerDown);
 			gsapInstance?.ticker.remove(draw);
+			lastTime = null;
 		};
 	});
 </script>

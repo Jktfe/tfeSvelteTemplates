@@ -13,17 +13,23 @@
 
 import type { PageServerLoad } from './$types';
 import type { Card } from '$lib/types';
-import { loadCardsFromDatabase } from '$lib/server/cards';
+import { loadCardsWithSource } from '$lib/server/cards';
+import type { DataSourceStatus } from '$lib/server/dataSource';
 
-export const load: PageServerLoad = async (): Promise<{ cards: Card[]; usingDatabase: boolean }> => {
-	// Load cards from database with automatic fallback to static data
-	const cards = await loadCardsFromDatabase();
-
-	// Check if we're using the database or fallback data
-	const usingDatabase = !!process.env.DATABASE_URL;
+export const load: PageServerLoad = async (): Promise<{
+	cards: Card[];
+	usingDatabase: boolean;
+	dataSource: DataSourceStatus;
+	dataSourceMessage?: string;
+}> => {
+	// usingDatabase comes from the result, not from "is DATABASE_URL set?", so a
+	// placeholder URL or a failed query is reported honestly as not-connected.
+	const result = await loadCardsWithSource();
 
 	return {
-		cards,
-		usingDatabase
+		cards: result.data,
+		usingDatabase: result.usingDatabase,
+		dataSource: result.source,
+		dataSourceMessage: result.message
 	};
 };

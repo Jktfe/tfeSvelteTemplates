@@ -45,12 +45,32 @@
   • Leaflet CSS (add to app.html or import globally)
   • Nominatim API (free, no key required, rate-limited)
 
+  THEMING (see docs/THEMING.md)
+  --map-* chrome tokens on .map-search-container flip under
+  prefers-color-scheme: dark (search box, results, popups,
+  attribution). --map-accent is brand and deliberately not flipped.
+
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import type { MapSearchProps, GeoSearchResult } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
+	import { escapeHtml } from '$lib/htmlUtils';
 	import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 
 	// ==================================================
@@ -108,12 +128,31 @@
 	/** Debounce timer ID */
 	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
+	/**
+	 * The label we wrote into the input after a selection. Without this, the
+	 * debounced search would see the new text, re-query Nominatim and pop the
+	 * dropdown straight back open over the map the user just moved.
+	 */
+	let selectedLabel: string | null = null;
+
+	/** Unique per instance so two search maps on one page never share ARIA ids */
+	const uid = $props.id();
+	const listboxId = `${uid}-results`;
+
 	// ==================================================
 	// DERIVED STATE
 	// ==================================================
 
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
+
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
 
 	// ==================================================
 	// EFFECTS - Lifecycle and reactive updates
@@ -125,21 +164,29 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right to avoid overlapping UI elements
@@ -155,6 +202,7 @@
 		})();
 
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -178,6 +226,10 @@
 			isDropdownOpen = false;
 			return;
 		}
+
+		// The query is just the label of the place we already picked
+		if (searchQuery === selectedLabel) return;
+		selectedLabel = null;
 
 		// Debounce the search
 		debounceTimer = setTimeout(() => {
@@ -258,10 +310,11 @@
 	async function selectResult(result: GeoSearchResult): Promise<void> {
 		if (!map) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		// Update search query to selected location name
-		searchQuery = result.displayName.split(',')[0]; // Just the main name
+		selectedLabel = result.displayName.split(',')[0]; // Just the main name
+		searchQuery = selectedLabel;
 		isDropdownOpen = false;
 		searchResults = [];
 
@@ -272,7 +325,8 @@
 
 		// Add marker at selected location
 		marker = L.marker([result.position.lat, result.position.lng]).addTo(map);
-		marker.bindPopup(`<strong>${result.displayName.split(',')[0]}</strong>`, {
+		// Place names come from a third-party geocoder — escape before they hit innerHTML
+		marker.bindPopup(`<strong>${escapeHtml(result.displayName.split(',')[0])}</strong>`, {
 			autoPan: true,
 			autoPanPaddingTopLeft: L.point(50, 80),
 			autoPanPaddingBottomRight: L.point(50, 50)
@@ -281,12 +335,17 @@
 		// Pan to location
 		if (result.boundingBox) {
 			// Use bounding box for better fit
-			map.fitBounds([
-				[result.boundingBox[0], result.boundingBox[2]],
-				[result.boundingBox[1], result.boundingBox[3]]
-			]);
+			map.fitBounds(
+				[
+					[result.boundingBox[0], result.boundingBox[2]],
+					[result.boundingBox[1], result.boundingBox[3]]
+				],
+				{ animate: !prefersReducedMotion() }
+			);
 		} else {
-			map.setView([result.position.lat, result.position.lng], 15);
+			map.setView([result.position.lat, result.position.lng], 15, {
+				animate: !prefersReducedMotion()
+			});
 		}
 
 		// Call callback if provided
@@ -374,7 +433,11 @@
 				aria-label="Search for a location"
 				aria-expanded={isDropdownOpen}
 				aria-haspopup="listbox"
-				aria-controls="search-results"
+				aria-controls={listboxId}
+				aria-autocomplete="list"
+				aria-activedescendant={isDropdownOpen && highlightedIndex >= 0
+					? `${listboxId}-${highlightedIndex}`
+					: undefined}
 				autocomplete="off"
 			/>
 
@@ -396,9 +459,10 @@
 
 		<!-- Search Results Dropdown -->
 		{#if isDropdownOpen && searchResults.length > 0}
-			<ul id="search-results" class="search-results" role="listbox" aria-label="Search results">
+			<ul id={listboxId} class="search-results" role="listbox" aria-label="Search results">
 				{#each searchResults as result, index (result.displayName)}
 					<li
+						id={`${listboxId}-${index}`}
 						role="option"
 						class="search-result-item"
 						class:highlighted={index === highlightedIndex}
@@ -435,6 +499,48 @@
 
 <style>
 	/* ==================================================
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips under prefers-color-scheme: dark. The accent
+     (--map-accent) is brand and stays put on both schemes; the
+     danger tints lighten within the same red hue so the meaning
+     survives while staying readable on dark surfaces.
+     ================================================== */
+	.map-search-container {
+		--map-canvas: #f0f0f0;
+		--map-surface: #ffffff;
+		--map-surface-hover: #f5f5f5;
+		--map-fg: #333333;
+		--map-fg-muted: #666666;
+		--map-fg-subtle: #999999;
+		--map-pill-bg: #f0f0f0;
+		--map-pill-hover: #e0e0e0;
+		--map-divider: #f0f0f0;
+		--map-link: #146ef5;
+		--map-accent: #146ef5;
+		--map-shadow: rgba(0, 0, 0, 0.15);
+		--map-attribution-bg: rgba(255, 255, 255, 0.85);
+		--map-attribution-fg: #333333;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-search-container {
+			--map-canvas: #111827;
+			--map-surface: #1f2937;
+			--map-surface-hover: #374151;
+			--map-fg: #f3f4f6;
+			--map-fg-muted: #9ca3af;
+			--map-fg-subtle: #9ca3af;
+			--map-pill-bg: #374151;
+			--map-pill-hover: #4b5563;
+			--map-divider: #374151;
+			--map-link: #60a5fa;
+			--map-shadow: rgba(0, 0, 0, 0.5);
+			--map-attribution-bg: rgba(17, 24, 39, 0.85);
+			--map-attribution-fg: #d1d5db;
+		}
+	}
+
+	/* ==================================================
      Container Styles
      ================================================== */
 	.map-search-container {
@@ -443,7 +549,7 @@
 		height: var(--map-height, 400px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--map-canvas);
 	}
 
 	.map-element {
@@ -467,9 +573,9 @@
 		position: relative;
 		display: flex;
 		align-items: center;
-		background: white;
+		background: var(--map-surface);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		overflow: hidden;
 	}
 
@@ -478,7 +584,7 @@
 		left: 12px;
 		width: 18px;
 		height: 18px;
-		color: #666;
+		color: var(--map-fg-muted);
 		pointer-events: none;
 	}
 
@@ -487,16 +593,17 @@
 		padding: 12px 40px 12px 40px;
 		border: none;
 		font-size: 14px;
+		color: var(--map-fg);
 		background: transparent;
 		outline: none;
 	}
 
 	.search-input::placeholder {
-		color: #999;
+		color: var(--map-fg-subtle);
 	}
 
 	.search-input:focus {
-		box-shadow: inset 0 0 0 2px #146ef5;
+		box-shadow: inset 0 0 0 2px var(--map-accent);
 		border-radius: 8px;
 	}
 
@@ -510,15 +617,15 @@
 		height: 24px;
 		padding: 0;
 		border: none;
-		background: #f0f0f0;
+		background: var(--map-pill-bg);
 		border-radius: 50%;
 		cursor: pointer;
-		color: #666;
+		color: var(--map-fg-muted);
 		transition: background-color 0.15s ease;
 	}
 
 	.clear-button:hover {
-		background: #e0e0e0;
+		background: var(--map-pill-hover);
 	}
 
 	.clear-button svg {
@@ -532,8 +639,8 @@
 		right: 12px;
 		width: 18px;
 		height: 18px;
-		border: 2px solid #f0f0f0;
-		border-top-color: #146ef5;
+		border: 2px solid var(--map-pill-bg);
+		border-top-color: var(--map-accent);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -555,9 +662,9 @@
 		margin: 4px 0 0 0;
 		padding: 0;
 		list-style: none;
-		background: white;
+		background: var(--map-surface);
 		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 12px var(--map-shadow);
 		max-height: 300px;
 		overflow-y: auto;
 	}
@@ -569,7 +676,7 @@
 		padding: 10px 12px;
 		cursor: pointer;
 		transition: background-color 0.1s ease;
-		border-bottom: 1px solid #f0f0f0;
+		border-bottom: 1px solid var(--map-divider);
 	}
 
 	.search-result-item:last-child {
@@ -578,14 +685,14 @@
 
 	.search-result-item:hover,
 	.search-result-item.highlighted {
-		background-color: #f5f5f5;
+		background-color: var(--map-surface-hover);
 	}
 
 	.result-icon {
 		flex-shrink: 0;
 		width: 20px;
 		height: 20px;
-		color: #146ef5;
+		color: var(--map-link);
 	}
 
 	.result-text {
@@ -597,7 +704,7 @@
 
 	.result-name {
 		font-weight: 500;
-		color: #333;
+		color: var(--map-fg);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -605,7 +712,7 @@
 
 	.result-address {
 		font-size: 12px;
-		color: #666;
+		color: var(--map-fg-muted);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -615,9 +722,9 @@
 		flex-shrink: 0;
 		font-size: 10px;
 		padding: 2px 6px;
-		background: #f0f0f0;
+		background: var(--map-pill-bg);
 		border-radius: 4px;
-		color: #666;
+		color: var(--map-fg-muted);
 		text-transform: capitalize;
 	}
 
@@ -626,7 +733,7 @@
      ================================================== */
 	.map-search-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -636,18 +743,18 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--map-fg);
+		background: var(--map-surface);
 		border: none !important;
 	}
 
 	.map-search-container :global(.leaflet-control-zoom a:hover) {
-		background: #f5f5f5;
+		background: var(--map-surface-hover);
 	}
 
 	.map-search-container :global(.leaflet-popup-content-wrapper) {
 		border-radius: 8px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 12px var(--map-shadow);
 	}
 
 	.map-search-container :global(.leaflet-popup-content) {
@@ -663,6 +770,44 @@
 			opacity: 0.5;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* ==================================================
+     Theme-aware Leaflet chrome
+     Leaflet's own stylesheet paints popups and attribution white;
+     these rules route them through the tokens so they flip too.
+     ================================================== */
+	.map-search-container :global(.leaflet-popup-content-wrapper),
+	.map-search-container :global(.leaflet-popup-tip) {
+		background: var(--map-surface);
+		color: var(--map-fg);
+	}
+
+	.map-search-container :global(.leaflet-control-attribution) {
+		background: var(--map-attribution-bg);
+		color: var(--map-attribution-fg);
+	}
+
+	/* Leaflet's own link (#0078a8) and close-button (#757575) colours are
+	   too dim on dark chrome, so only the dark scheme swaps them. */
+	@media (prefers-color-scheme: dark) {
+		.map-search-container :global(.leaflet-control-attribution a) {
+			color: var(--map-link);
+		}
+
+		.map-search-container :global(.leaflet-container a.leaflet-popup-close-button) {
+			color: var(--map-fg-muted);
+		}
+
+		/* Leaflet paints not-yet-loaded tile gaps #ddd; match the dark canvas. */
+		.map-search-container :global(.leaflet-container) {
+			background: var(--map-canvas);
+		}
+
+		/* Leaflet greys out a zoom button at min/max zoom with a light fill. */
+		.map-search-container :global(.leaflet-bar a.leaflet-disabled) {
+			background: var(--map-surface);
+			color: var(--map-fg-muted);
+			opacity: 0.5;
+		}
+	}
+</style>

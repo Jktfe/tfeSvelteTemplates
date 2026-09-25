@@ -4,7 +4,8 @@
 	 *
 	 * Adopts ComponentPageShell while keeping the full CRUD demo:
 	 *  - Server-loaded data via +page.server.ts
-	 *  - Database vs in-memory mode (driven by data.usingDatabase)
+	 *  - Database vs in-memory mode (driven by data.canPersist: a live database
+	 *    plus a signed-in, non-demo user, since the API rejects everyone else)
 	 *  - Create / edit / delete through the Editor modal
 	 */
 
@@ -47,7 +48,7 @@
 	async function handleSave(formData: EditorData) {
 		loading = true;
 		try {
-			if (data.usingDatabase) {
+			if (data.canPersist) {
 				if (editorMode === 'create') {
 					await handleDatabaseCreate(formData);
 				} else {
@@ -118,7 +119,7 @@
 		if (!confirmed) return;
 		loading = true;
 		try {
-			if (data.usingDatabase) {
+			if (data.canPersist) {
 				await handleDatabaseDelete(item.id!);
 			} else {
 				handleInMemoryDelete(item.id!);
@@ -178,7 +179,11 @@
 	{#snippet demo()}
 		<div class="ed-demo">
 			<div class="ed-status">
-				<DatabaseStatus usingDatabase={data.usingDatabase} />
+				<DatabaseStatus
+					usingDatabase={data.usingDatabase}
+					source={data.dataSource}
+					message={data.dataSourceMessage}
+				/>
 			</div>
 
 			<div class="ed-actions">
@@ -250,7 +255,7 @@
 			<Editor
 				mode={editorMode}
 				initialData={editingItem || {}}
-				usingDatabase={data.usingDatabase}
+				usingDatabase={data.canPersist}
 				onSave={handleSave}
 				onCancel={closeEditor}
 			/>

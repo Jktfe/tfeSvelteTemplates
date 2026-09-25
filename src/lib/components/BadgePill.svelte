@@ -18,6 +18,15 @@
   • Pure CSS — no animations, no observers, zero JS overhead at rest
   • Honours prefers-reduced-motion (transitions disable cleanly)
 
+  🌗 THEMING
+  Dual light / dark via CSS custom properties (see docs/THEMING.md).
+  Each .badge-<tone> class sets --badge-fg, --badge-soft-bg, --badge-border
+  and --badge-solid-bg. Chrome (soft tint, text, border, dismiss hover)
+  flips under prefers-color-scheme: dark to a deep tint of the same hue.
+  Semantic: --badge-solid-bg never flips — green must read as "OK" on both
+  schemes. Override one tone app-wide with doubled-class specificity:
+      body .badge-brand.badge-brand { --badge-solid-bg: #0f766e; }
+
   ♿ ACCESSIBILITY
   • Dismiss button is a real <button> with aria-label="Dismiss"
   • Dot is decorative (aria-hidden) — colour alone never carries meaning
@@ -140,6 +149,10 @@
 
 <style>
 	.badge-pill {
+		/* Shared chrome tokens — tone-specific ones live on .badge-<tone> below */
+		--badge-solid-fg: #ffffff;
+		--badge-dismiss-hover-bg: rgba(0, 0, 0, 0.08);
+
 		display: inline-flex;
 		align-items: center;
 		gap: 0.375rem;
@@ -202,7 +215,7 @@
 	}
 	.badge-dismiss:hover {
 		opacity: 1;
-		background: rgba(0, 0, 0, 0.08);
+		background: var(--badge-dismiss-hover-bg);
 	}
 	.badge-dismiss:focus-visible {
 		outline: 2px solid currentColor;
@@ -210,86 +223,112 @@
 		opacity: 1;
 	}
 
+	/*
+	 * Tone tokens — each tone class sets the same five custom properties and
+	 * the variant classes below consume them. That keeps the 3 × 6 grid down
+	 * to one rule per tone plus one per variant, and gives consumers a single
+	 * place to retheme a tone (see docs/THEMING.md).
+	 *
+	 * --badge-solid-bg is semantic (green = OK on any surface) so it never
+	 * flips. The soft tint, text and border are chrome — they have to sit on
+	 * whatever surface the page provides, so they flip under dark mode while
+	 * keeping the same hue.
+	 */
+	.badge-neutral {
+		--badge-fg: #475569;
+		--badge-soft-bg: #f1f5f9;
+		--badge-border: #cbd5e1;
+		--badge-solid-bg: #475569;
+	}
+	.badge-info {
+		--badge-fg: #1d4ed8;
+		--badge-soft-bg: #dbeafe;
+		--badge-border: #93c5fd;
+		--badge-solid-bg: #2563eb;
+	}
+	.badge-success {
+		--badge-fg: #15803d;
+		--badge-soft-bg: #dcfce7;
+		--badge-border: #86efac;
+		--badge-solid-bg: #16a34a;
+	}
+	.badge-warning {
+		--badge-fg: #b45309;
+		--badge-soft-bg: #fef3c7;
+		--badge-border: #fcd34d;
+		--badge-solid-bg: #d97706;
+	}
+	.badge-danger {
+		--badge-fg: #b91c1c;
+		--badge-soft-bg: #fee2e2;
+		--badge-border: #fca5a5;
+		--badge-solid-bg: #dc2626;
+	}
+	.badge-brand {
+		--badge-fg: #6d28d9;
+		--badge-soft-bg: #ede9fe;
+		--badge-border: #c4b5fd;
+		--badge-solid-bg: #7c3aed;
+	}
+
 	/* Soft variant — pastel bg + saturated text. Default look. */
-	.badge-soft.badge-neutral {
-		background: #f1f5f9;
-		color: #475569;
-	}
-	.badge-soft.badge-info {
-		background: #dbeafe;
-		color: #1d4ed8;
-	}
-	.badge-soft.badge-success {
-		background: #dcfce7;
-		color: #15803d;
-	}
-	.badge-soft.badge-warning {
-		background: #fef3c7;
-		color: #b45309;
-	}
-	.badge-soft.badge-danger {
-		background: #fee2e2;
-		color: #b91c1c;
-	}
-	.badge-soft.badge-brand {
-		background: #ede9fe;
-		color: #6d28d9;
+	.badge-soft {
+		background: var(--badge-soft-bg);
+		color: var(--badge-fg);
 	}
 
 	/* Solid variant — saturated bg, white text. Maximum visual weight. */
-	.badge-solid.badge-neutral {
-		background: #475569;
-		color: #ffffff;
-	}
-	.badge-solid.badge-info {
-		background: #2563eb;
-		color: #ffffff;
-	}
-	.badge-solid.badge-success {
-		background: #16a34a;
-		color: #ffffff;
-	}
-	.badge-solid.badge-warning {
-		background: #d97706;
-		color: #ffffff;
-	}
-	.badge-solid.badge-danger {
-		background: #dc2626;
-		color: #ffffff;
-	}
-	.badge-solid.badge-brand {
-		background: #7c3aed;
-		color: #ffffff;
+	.badge-solid {
+		background: var(--badge-solid-bg);
+		color: var(--badge-solid-fg);
 	}
 
 	/* Outline variant — transparent bg, coloured border. Lightest weight. */
 	.badge-outline {
 		background: transparent;
-		border: 1px solid;
+		border: 1px solid var(--badge-border);
+		color: var(--badge-fg);
 	}
-	.badge-outline.badge-neutral {
-		color: #475569;
-		border-color: #cbd5e1;
-	}
-	.badge-outline.badge-info {
-		color: #1d4ed8;
-		border-color: #93c5fd;
-	}
-	.badge-outline.badge-success {
-		color: #15803d;
-		border-color: #86efac;
-	}
-	.badge-outline.badge-warning {
-		color: #b45309;
-		border-color: #fcd34d;
-	}
-	.badge-outline.badge-danger {
-		color: #b91c1c;
-		border-color: #fca5a5;
-	}
-	.badge-outline.badge-brand {
-		color: #6d28d9;
-		border-color: #c4b5fd;
+
+	/*
+	 * Dark scheme — flip the chrome half of every tone (tint, text, border)
+	 * to a deep tint of the same hue with a light foreground. Solid fills are
+	 * semantic and deliberately left alone.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.badge-pill {
+			--badge-dismiss-hover-bg: rgba(255, 255, 255, 0.14);
+		}
+		.badge-neutral {
+			--badge-fg: #cbd5e1;
+			--badge-soft-bg: #1e293b;
+			--badge-border: #475569;
+		}
+		.badge-info {
+			--badge-fg: #93c5fd;
+			--badge-soft-bg: #172554;
+			--badge-border: #1d4ed8;
+		}
+		.badge-success {
+			--badge-fg: #86efac;
+			--badge-soft-bg: #052e16;
+			--badge-border: #15803d;
+		}
+		.badge-warning {
+			--badge-fg: #fcd34d;
+			--badge-soft-bg: #451a03;
+			--badge-border: #b45309;
+		}
+		.badge-danger {
+			--badge-fg: #fca5a5;
+			--badge-soft-bg: #450a0a;
+			--badge-border: #b91c1c;
+		}
+		.badge-brand {
+			--badge-fg: #c4b5fd;
+			--badge-soft-bg: #2e1065;
+			--badge-border: #6d28d9;
+		}
 	}
 
 	/* Reduced motion — transitions are subtle but kill them when requested */

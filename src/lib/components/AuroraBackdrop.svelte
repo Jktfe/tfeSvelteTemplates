@@ -1,3 +1,47 @@
+<!--
+  ============================================================
+  AuroraBackdrop — Northern-Lights Ambient Background
+  ============================================================
+  WHAT — Four blurred conic-gradient ribbons slowly rotating over a dark
+  base colour, producing a soft aurora glow behind hero content.
+
+  WHY — A zero-asset ambient surface for hero sections, empty states and
+  sign-in pages when you want atmosphere without images or WebGL.
+
+  FEATURES
+  - Three palettes: classic (cyan/violet/green), dawn (pink/amber), deep (navy/cyan)
+  - Prime-number rotation periods (8s, 13s, 19s, 29s) so the ribbons
+    never visibly sync up into a repeating loop
+  - Alternating rotation directions and staggered negative delays
+  - intensity scales the periods (higher = slower; floor of 0.25x)
+  - Adjustable blur radius
+  - Pure helpers exported: pickPalette, ribbonConfig,
+    buildRibbonGradient, isReducedMotion
+
+  ACCESSIBILITY
+  - Entirely decorative: the root is aria-hidden="true"
+  - prefers-reduced-motion: reduce stops the ribbon animation via CSS
+  - Place readable content above it with its own contrast
+
+  DEPENDENCIES — Zero. Pure CSS conic gradients, filters and keyframes.
+
+  PERFORMANCE — Four elements animating transform only; the blur filter
+  is the main GPU cost, so keep blur modest on low-end devices.
+
+  USAGE
+      <div style="height: 420px">
+        <AuroraBackdrop palette="dawn" intensity={1.2} blur={24} />
+      </div>
+
+  PROPS
+  | Prop      | Type                        | Default   | Description |
+  |-----------|-----------------------------|-----------|-------------|
+  | palette   | 'classic' | 'dawn' | 'deep' | 'classic' | Colour set for the ribbons and base |
+  | intensity | number                      | 1         | Multiplies rotation periods (min 0.25) |
+  | blur      | number                      | 20        | Ribbon blur radius in pixels |
+  | class     | string                      | ''        | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type AuroraPaletteName = 'classic' | 'dawn' | 'deep';
 

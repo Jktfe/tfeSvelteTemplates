@@ -169,6 +169,25 @@ Five waypoints, all on `transform` (compositor-only, no layout). The `-50%, -50%
 | `speed` | `number` | `1` | Animation-duration multiplier (inverted: `1/speed`). `0` freezes; `2` runs double-time. |
 | `class` | `string` | `''` | Extra classes on the host. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`. MeshGradient has **no chrome tokens** — the host is transparent and every colour on screen is a palette colour, which is brand in the chrome / brand / semantic taxonomy. That is deliberate: there is nothing structural to flip, so the mesh reads the same over a light or a dark backdrop and needs no `prefers-color-scheme` block.
+
+Choose the backdrop and palette at the call site instead:
+
+```svelte
+<div class="hero">
+  <MeshGradient palette="cosmic" />
+</div>
+
+<style>
+  .hero { background: #ffffff; }
+  @media (prefers-color-scheme: dark) {
+    .hero { background: #0a0a1a; }
+  }
+</style>
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

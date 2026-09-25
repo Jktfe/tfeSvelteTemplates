@@ -1,3 +1,47 @@
+<!--
+  ============================================================
+  Avatar — User Identity Image with Initials Fallback
+  ============================================================
+  WHAT — Shows a user's photo, or their initials on a colour derived from
+  their name when there is no photo or it fails to load.
+
+  WHY — The single identity element; for overlapping groups with an
+  overflow counter, use AvatarStack.
+
+  FEATURES
+  - Automatic <img> onerror fallback to initials (resets if src changes)
+  - Deterministic background colour from the name, so the same user
+    gets the same colour everywhere
+  - Three sizes (sm / md / lg) and three shapes (circle / rounded / square)
+  - Optional presence dot: online / away / busy / offline
+  - children snippet to render a custom glyph instead of initials
+
+  ACCESSIBILITY
+  - role="img" with aria-label (alt, then name, then "User")
+  - Inner image, initials and status dot are aria-hidden so the label
+    is announced once
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Trivial; initials and colour are $derived.
+
+  USAGE
+      <Avatar name="Ada Lovelace" src="/ada.jpg" size="lg" status="online" />
+
+  PROPS
+  | Prop     | Type                                     | Default  | Description |
+  |----------|------------------------------------------|----------|-------------|
+  | src      | string                                   | —        | Image URL; falls back to initials on error |
+  | name     | string                                   | —        | Used for initials, colour and the label |
+  | alt      | string                                   | name     | Accessible label override |
+  | size     | 'sm' | 'md' | 'lg'                      | 'md'     | Diameter scale |
+  | shape    | 'circle' | 'rounded' | 'square'        | 'circle' | Corner treatment |
+  | status   | 'online' | 'away' | 'busy' | 'offline' | —        | Presence dot |
+  | children | Snippet                                  | —        | Custom content instead of initials |
+  | class    | string                                   | ''       | Extra classes |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Avatar
@@ -6,6 +50,12 @@
 	 * with onerror auto-fallback to initials. If no src (or the image fails),
 	 * renders the user's initials on a deterministically-coloured background
 	 * derived from the name, so the same user gets the same colour everywhere.
+	 *
+	 * Theming: dual light / dark. The only chrome is --avatar-ring, the
+	 * cut-out ring around the status dot, which has to match the surface the
+	 * avatar sits on — so it flips under prefers-color-scheme: dark. Initials
+	 * colours are brand (identity) and status colours are semantic; neither
+	 * flips. See docs/THEMING.md.
 	 *
 	 * For overlapping groups with overflow counter, see AvatarStack.
 	 */
@@ -102,13 +152,24 @@
 </span>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.avatar {
+		--avatar-initials-fg: #fff;
+		--avatar-status-online: #10b981;
+		--avatar-status-away: #f59e0b;
+		--avatar-status-busy: #ef4444;
+		--avatar-status-offline: #94a3b8;
+		--avatar-ring: #fff;
+	}
+
 	.avatar {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		overflow: visible;
-		color: #fff;
+		color: var(--avatar-initials-fg);
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 		font-weight: 600;
 		line-height: 1;
@@ -169,7 +230,7 @@
 		width: 0.6em;
 		height: 0.6em;
 		border-radius: 9999px;
-		border: 2px solid #fff;
+		border: 2px solid var(--avatar-ring);
 		box-sizing: content-box;
 	}
 
@@ -180,15 +241,25 @@
 	}
 
 	.status-online {
-		background: #10b981;
+		background: var(--avatar-status-online);
 	}
 	.status-away {
-		background: #f59e0b;
+		background: var(--avatar-status-away);
 	}
 	.status-busy {
-		background: #ef4444;
+		background: var(--avatar-status-busy);
 	}
 	.status-offline {
-		background: #94a3b8;
+		background: var(--avatar-status-offline);
+	}
+
+	/*
+	 * Dark scheme — only the status-dot ring flips so it keeps punching a
+	 * clean hole against a dark surface. Identity and status colours stay.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.avatar {
+			--avatar-ring: #111827;
+		}
 	}
 </style>

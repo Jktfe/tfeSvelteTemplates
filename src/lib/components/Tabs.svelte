@@ -1,3 +1,48 @@
+<!--
+  ============================================================
+  Tabs — WAI-ARIA Tabbed Content Switcher
+  ============================================================
+  WHAT — A row (or column) of tabs that switches the content panel below,
+  with full tablist semantics and keyboard support.
+
+  WHY — Grouping related views on one page without navigation.
+
+  FEATURES
+  - Horizontal or vertical orientation
+  - Underline or pill visual variant
+  - $bindable active tab id
+  - Optional per-tab icon and disabled state (skipped by keyboard focus)
+  - Panel rendered via the `panel` snippet, which receives the active id
+
+  ACCESSIBILITY
+  - role="tablist" / "tab" / "tabpanel" with aria-selected,
+    aria-controls and aria-labelledby wired up
+  - Roving tabindex: exactly one tab is tabbable at a time
+  - ArrowLeft/Right (or Up/Down when vertical) move focus and wrap;
+    Home/End jump; Enter/Space activate the focused tab
+  - prefers-reduced-motion: reduce removes tab transitions
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Only the active panel renders.
+
+  USAGE
+      <Tabs tabs={[{ id: 'a', label: 'Overview' }, { id: 'b', label: 'API' }]} bind:active>
+        {#snippet panel(id)}<p>Panel {id}</p>{/snippet}
+      </Tabs>
+
+  PROPS
+  | Prop        | Type                       | Default      | Description |
+  |-------------|----------------------------|--------------|-------------|
+  | tabs        | TabItem[]                  | required     | Tabs ({ id, label, icon?, disabled? }) |
+  | active      | string (bindable)          | first tab id | Active tab id |
+  | orientation | 'horizontal' | 'vertical'  | 'horizontal' | Layout and arrow-key axis |
+  | variant     | 'underline' | 'pill'       | 'underline'  | Visual style |
+  | ariaLabel   | string                     | 'Tabs'       | Label for the tablist |
+  | panel       | Snippet<[string]>          | —            | Renders the active panel |
+  | class       | string                     | ''           | Extra classes |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Tabs
@@ -10,6 +55,11 @@
 	 *   - <div role="tabpanel"> with aria-labelledby pointing back at its tab
 	 *   - keyboard: ArrowLeft/Right (or Up/Down vertical) moves focus, wraps;
 	 *     Home -> first, End -> last, Enter/Space activates focused tab.
+	 *
+	 * Theming: dual light / dark. Chrome tokens (--tabs-fg, --tabs-border,
+	 * --tabs-tab-fg, --tabs-hover-bg, --tabs-pill-*) flip under
+	 * prefers-color-scheme: dark. --tabs-accent (underline + focus ring) is
+	 * brand and stays put. See docs/THEMING.md.
 	 *
 	 * Panels are rendered via the `panel` Snippet which receives the active id,
 	 * letting consumers branch on id without coupling to a panels prop shape.
@@ -44,6 +94,13 @@
 		class: className = '',
 		panel
 	}: Props = $props();
+
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	// One shared panel renders whichever tab is active, so every tab controls
+	// the same element (a per-tab panel id pointed inactive tabs at nothing).
+	const panelId = `panel-${uid}`;
 
 	let buttons: HTMLButtonElement[] = $state([]);
 
@@ -110,11 +167,11 @@
 				bind:this={buttons[i]}
 				type="button"
 				role="tab"
-				id="tab-{tab.id}"
+				id="tab-{uid}-{tab.id}"
 				class="tab"
 				class:active={tab.id === active}
 				aria-selected={tab.id === active}
-				aria-controls="panel-{tab.id}"
+				aria-controls={panelId}
 				tabindex={tab.id === active ? 0 : -1}
 				disabled={tab.disabled}
 				onclick={() => activate(tab.id)}
@@ -127,8 +184,8 @@
 	<div
 		class="panel"
 		role="tabpanel"
-		id="panel-{active}"
-		aria-labelledby="tab-{active}"
+		id={panelId}
+		aria-labelledby="tab-{uid}-{active}"
 		tabindex="0"
 	>
 		{#if panel}{@render panel(active)}{/if}
@@ -136,9 +193,21 @@
 </div>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.tabs {
+		--tabs-fg: #0f172a;
+		--tabs-border: #e2e8f0;
+		--tabs-tab-fg: #475569;
+		--tabs-hover-bg: #f8fafc;
+		--tabs-pill-track: #f1f5f9;
+		--tabs-pill-active-bg: #fff;
+		--tabs-accent: #2563eb;
+	}
+
 	.tabs {
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		color: #0f172a;
+		color: var(--tabs-fg);
 	}
 
 	.tabs-vertical {
@@ -153,12 +222,12 @@
 	}
 
 	.tabs-horizontal.tabs-underline .tablist {
-		border-bottom: 1px solid #e2e8f0;
+		border-bottom: 1px solid var(--tabs-border);
 	}
 
 	.tabs-vertical .tablist {
 		flex-direction: column;
-		border-right: 1px solid #e2e8f0;
+		border-right: 1px solid var(--tabs-border);
 		min-width: 10rem;
 	}
 
@@ -170,7 +239,7 @@
 		font: inherit;
 		font-size: 0.9375rem;
 		font-weight: 500;
-		color: #475569;
+		color: var(--tabs-tab-fg);
 		background: transparent;
 		border: 0;
 		cursor: pointer;
@@ -187,12 +256,12 @@
 	}
 
 	.tab:hover:not(:disabled):not(.active) {
-		color: #0f172a;
-		background: #f8fafc;
+		color: var(--tabs-fg);
+		background: var(--tabs-hover-bg);
 	}
 
 	.tab:focus-visible {
-		outline: 2px solid #2563eb;
+		outline: 2px solid var(--tabs-accent);
 		outline-offset: 2px;
 	}
 
@@ -212,8 +281,8 @@
 	}
 
 	.tabs-horizontal.tabs-underline .tab.active {
-		color: #0f172a;
-		border-bottom-color: #2563eb;
+		color: var(--tabs-fg);
+		border-bottom-color: var(--tabs-accent);
 	}
 
 	.tabs-vertical.tabs-underline .tab {
@@ -223,15 +292,15 @@
 	}
 
 	.tabs-vertical.tabs-underline .tab.active {
-		color: #0f172a;
-		border-right-color: #2563eb;
+		color: var(--tabs-fg);
+		border-right-color: var(--tabs-accent);
 	}
 
 	/* Pill variant — rounded background on active */
 	.tabs-pill .tablist {
 		gap: 0.375rem;
 		padding: 0.25rem;
-		background: #f1f5f9;
+		background: var(--tabs-pill-track);
 		border-radius: 0.625rem;
 		display: inline-flex;
 	}
@@ -248,8 +317,8 @@
 	}
 
 	.tabs-pill .tab.active {
-		background: #fff;
-		color: #0f172a;
+		background: var(--tabs-pill-active-bg);
+		color: var(--tabs-fg);
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 	}
 
@@ -271,8 +340,27 @@
 	}
 
 	.panel:focus-visible {
-		outline: 2px solid #2563eb;
+		outline: 2px solid var(--tabs-accent);
 		outline-offset: 2px;
 		border-radius: 0.25rem;
+	}
+
+	/*
+	 * Dark scheme — chrome only. --tabs-accent is brand and is not flipped;
+	 * blue-600 keeps enough contrast against a dark surface for the underline
+	 * and focus ring.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.tabs {
+			--tabs-fg: #f1f5f9;
+			--tabs-border: #334155;
+			--tabs-tab-fg: #94a3b8;
+			--tabs-hover-bg: #273449;
+			--tabs-pill-track: #1e293b;
+			--tabs-pill-active-bg: #334155;
+		}
+		.tabs-pill .tab.active {
+			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+		}
 	}
 </style>

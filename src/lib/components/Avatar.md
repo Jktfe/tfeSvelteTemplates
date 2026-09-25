@@ -146,6 +146,29 @@ If you're rendering avatars in a `for` loop and they don't overlap, use Avatar. 
 | `children` | `Snippet` | `undefined` | Custom inner content — overrides image and initials. |
 | `class` | `string` | `''` | Extra classes appended to the wrapper. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The only chrome is the ring around the status dot, which must match the surface the avatar sits on. Initials colours are identity (brand) and status colours are semantic — neither flips.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--avatar-initials-fg` | `#fff` | *(unchanged — brand / semantic)* | `.avatar` |
+| `--avatar-status-online` | `#10b981` | *(unchanged — brand / semantic)* | `.status-online` |
+| `--avatar-status-away` | `#f59e0b` | *(unchanged — brand / semantic)* | `.status-away` |
+| `--avatar-status-busy` | `#ef4444` | *(unchanged — brand / semantic)* | `.status-busy` |
+| `--avatar-status-offline` | `#94a3b8` | *(unchanged — brand / semantic)* | `.status-offline` |
+| `--avatar-ring` | `#fff` | `#111827` | `.status` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .avatar.avatar {
+  --avatar-ring: #f8fafc; /* match a tinted card surface */
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

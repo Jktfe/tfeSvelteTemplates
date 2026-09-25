@@ -22,6 +22,20 @@
 import { render } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
 import ShineBorder from './ShineBorder.svelte';
+import shineSource from './ShineBorder.svelte?raw';
+
+// happy-dom cannot evaluate media queries, so the reduced-motion contract is
+// pinned against the scoped stylesheet itself.
+describe('ShineBorder reduced motion', () => {
+	it('stops the looping shine under prefers-reduced-motion: reduce', () => {
+		const style = shineSource
+			.slice(shineSource.indexOf('<style>'))
+			.replace(/\/\*[\s\S]*?\*\//g, '');
+		expect(style).toMatch(
+			/@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.shine-border-wrapper\s*\{\s*animation:\s*none;/
+		);
+	});
+});
 
 describe('ShineBorder', () => {
 	// First things first - does it render at all?

@@ -27,21 +27,25 @@ export interface FormFieldIds {
  * - input[aria-describedby] -> helpText[id]
  * - input[aria-errormessage] -> error[id]
  *
- * @param name - Field name used as base for ID generation
+ * Pass a per-instance value (typically `$props.id()`), never the field's
+ * `name`: two forms on one page often share names like `email`, and deriving
+ * ids from the name would give both the same ids and cross-wire their labels.
+ *
+ * @param uid - Unique per-instance base, e.g. the result of `$props.id()`
  * @returns Object containing fieldId, helpId, and errorId
  *
  * @example
  * ```typescript
- * const { fieldId, helpId, errorId } = generateFieldIds('email');
- * // Returns:
- * // { fieldId: 'field-email', helpId: 'email-help', errorId: 'email-error' }
+ * const { fieldId, helpId, errorId } = generateFieldIds($props.id());
+ * // e.g. { fieldId: 'field-s1', helpId: 'field-s1-help', errorId: 'field-s1-error' }
  * ```
  */
-export function generateFieldIds(name: string): FormFieldIds {
+export function generateFieldIds(uid: string): FormFieldIds {
+	const fieldId = `field-${uid}`;
 	return {
-		fieldId: `field-${name}`,
-		helpId: `${name}-help`,
-		errorId: `${name}-error`
+		fieldId,
+		helpId: `${fieldId}-help`,
+		errorId: `${fieldId}-error`
 	};
 }
 

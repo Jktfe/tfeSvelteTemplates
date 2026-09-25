@@ -1,51 +1,75 @@
 <!--
-/**
- * DataGridFilters Component - Advanced filtering interface for DataGrid
- *
- * Provides a comprehensive filtering UI with:
- * - Department multi-select
- * - Status multi-select
- * - Salary range slider
- * - Hire date range picker
- * - Active filter count badge
- * - Clear all filters button
- * - Collapsible panel
- *
- * This component demonstrates:
- * - Complex state management with Svelte 5 runes
- * - Derived reactive computations
- * - Form control accessibility
- * - Responsive design patterns
- *
- * @component DataGridFilters
- * @example
- * ```svelte
- * <DataGridFilters
- *   departments={['Engineering', 'Sales', 'Marketing']}
- *   statuses={['active', 'on-leave', 'inactive']}
- *   salaryRange={{ min: 30000, max: 150000 }}
- *   onFiltersChange={(filters) => console.log(filters)}
- * />
- * ```
- */
+	============================================================
+	DataGridFilters
+	============================================================
+	WHAT — A collapsible filter panel (department + status checkboxes, a salary
+	       range and a hire-date range) that reports a plain filter object to
+	       its parent.
+	WHY  — Global search answers "find me Alice"; structured filters answer
+	       "show me active engineers hired this year". The panel owns the UI
+	       state only — the parent decides how to apply the filters, so it
+	       pairs with DataGridBasic, DataGridAdvanced or a server query alike.
+
+	FEATURES
+	- Multi-select department and status checkboxes
+	- Min / max salary sliders that can never cross each other
+	- From / to hire-date inputs
+	- Active-filter count badge and a one-click "Clear all"
+	- Collapsible panel (collapsed by default) with a gentle reveal
+	- Emits a *snapshot* (plain object), never the live reactive proxy
+
+	ACCESSIBILITY
+	- Toggle button exposes aria-expanded + aria-controls
+	- Each group is a <fieldset> with a <legend>, so screen readers announce context
+	- Every control has a visible label; ids are unique per instance ($props.id)
+	- Reveal animation is dropped under prefers-reduced-motion
+
+	DEPENDENCIES
+	- Zero external packages. $lib/types is a type-only import.
+
+	PERFORMANCE
+	- One $effect emits on any change; the parent's filter pass is the only
+	  real work. Debounce in the parent if that pass is expensive.
+
+	THEMING (docs/THEMING.md)
+	- Chrome (surface, borders, text, inputs) flips under prefers-color-scheme: dark.
+	- Brand --dgf-accent (badge, slider thumb, checkbox tint, focus) stays constant.
+
+	USAGE
+	<DataGridFilters
+		departments={['Engineering', 'Sales']}
+		statuses={['active', 'on-leave']}
+		salaryRange={{ min: 30000, max: 150000 }}
+		onFiltersChange={(f) => (filters = f)}
+	/>
+
+	PROPS
+	| Prop              | Type                                   | Default                        | Description                          |
+	|-------------------|----------------------------------------|--------------------------------|--------------------------------------|
+	| departments       | string[]                               | []                             | Department checkbox options.         |
+	| statuses          | string[]                               | []                             | Status checkbox options.             |
+	| salaryRange       | { min: number; max: number }           | { min: 30000, max: 150000 }    | Slider bounds (also the "no filter" state). |
+	| salaryStep        | number                                 | 5000                           | Slider step.                         |
+	| initiallyExpanded | boolean                                | false                          | Start with the panel open.           |
+	| onFiltersChange   | (filters: DataGridFilterValues) => void | —                             | Fires on mount and on every change.  |
+	============================================================
 -->
 
 <script lang="ts">
 	import type { DataGridFilterValues } from '$lib/types';
 
-	/**
-	 * Component Props
-	 */
 	interface Props {
-		/** Available department options */
+		/** Department checkbox options */
 		departments?: string[];
-		/** Available status options */
+		/** Status checkbox options */
 		statuses?: string[];
-		/** Salary range boundaries */
+		/** Slider bounds — also what "no salary filter" means */
 		salaryRange?: { min: number; max: number };
-		/** Initial expanded state */
+		/** Slider step size */
+		salaryStep?: number;
+		/** Start with the panel open */
 		initiallyExpanded?: boolean;
-		/** Callback when filters change */
+		/** Receives a plain snapshot of the filters on mount and on every change */
 		onFiltersChange?: (filters: DataGridFilterValues) => void;
 	}
 
@@ -53,85 +77,17 @@
 		departments = [],
 		statuses = [],
 		salaryRange = { min: 30000, max: 150000 },
+		salaryStep = 5000,
 		initiallyExpanded = false,
 		onFiltersChange
 	}: Props = $props();
 
-	/**
-	 * Filter state
-	 * Tracks all active filter values
-	 */
-	/* svelte-ignore state_referenced_locally */
-	let filters = $state<DataGridFilterValues>({
-		departments: [],
-		statuses: [],
-		salaryMin: salaryRange.min,
-		salaryMax: salaryRange.max,
-		hireDateFrom: '',
-		hireDateTo: ''
-	});
+	// Unique per instance, so two panels on one page never share ids.
+	const uid = $props.id();
+	const panelId = `${uid}-panel`;
 
-	/**
-	 * UI state
-	 */
-	/* svelte-ignore state_referenced_locally */
-	let isExpanded = $state(initiallyExpanded);
-
-	/**
-	 * Count active filters for badge display
-	 * A filter is "active" if it differs from the default/empty state
-	 */
-	let activeFilterCount = $derived(() => {
-		let count = 0;
-		if (filters.departments.length > 0) count++;
-		if (filters.statuses.length > 0) count++;
-		if (filters.salaryMin !== salaryRange.min || filters.salaryMax !== salaryRange.max) count++;
-		if (filters.hireDateFrom || filters.hireDateTo) count++;
-		return count;
-	});
-
-	/**
-	 * Notify parent component when filters change
-	 */
-	$effect(() => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const _ = JSON.stringify(filters);
-		if (onFiltersChange) {
-			onFiltersChange(filters);
-		}
-	});
-
-	/**
-	 * Toggle department filter
-	 * @param dept - Department to toggle
-	 */
-	function toggleDepartment(dept: string) {
-		const index = filters.departments.indexOf(dept);
-		if (index === -1) {
-			filters.departments = [...filters.departments, dept];
-		} else {
-			filters.departments = filters.departments.filter((d) => d !== dept);
-		}
-	}
-
-	/**
-	 * Toggle status filter
-	 * @param status - Status to toggle
-	 */
-	function toggleStatus(status: string) {
-		const index = filters.statuses.indexOf(status);
-		if (index === -1) {
-			filters.statuses = [...filters.statuses, status];
-		} else {
-			filters.statuses = filters.statuses.filter((s) => s !== status);
-		}
-	}
-
-	/**
-	 * Clear all filters and reset to defaults
-	 */
-	function clearAllFilters() {
-		filters = {
+	function emptyFilters(): DataGridFilterValues {
+		return {
 			departments: [],
 			statuses: [],
 			salaryMin: salaryRange.min,
@@ -141,178 +97,239 @@
 		};
 	}
 
-	/**
-	 * Format salary for display (with commas and £)
-	 */
+	// Seeded once from the props; after that the panel owns its own state.
+	let filters = $state<DataGridFilterValues>(emptyFilters());
+
+	/* svelte-ignore state_referenced_locally */
+	let isExpanded = $state(initiallyExpanded);
+
+	/** A filter counts as "active" when it differs from the empty state. */
+	const activeFilterCount = $derived.by(() => {
+		let count = 0;
+		if (filters.departments.length > 0) count++;
+		if (filters.statuses.length > 0) count++;
+		if (filters.salaryMin !== salaryRange.min || filters.salaryMax !== salaryRange.max) count++;
+		if (filters.hireDateFrom || filters.hireDateTo) count++;
+		return count;
+	});
+
+	// $state.snapshot both tracks every nested field and hands the parent a
+	// plain object — so the parent can't accidentally mutate our state.
+	$effect(() => {
+		const snapshot = $state.snapshot(filters);
+		onFiltersChange?.(snapshot);
+	});
+
+	function toggleValue(list: string[], value: string): string[] {
+		return list.includes(value) ? list.filter((item) => item !== value) : [...list, value];
+	}
+
+	// Keep min ≤ max: whichever thumb the user drags pushes the other along.
+	function setSalaryMin(value: number) {
+		filters.salaryMin = value;
+		if (value > filters.salaryMax) filters.salaryMax = value;
+	}
+
+	function setSalaryMax(value: number) {
+		filters.salaryMax = value;
+		if (value < filters.salaryMin) filters.salaryMin = value;
+	}
+
+	function clearAllFilters() {
+		filters = emptyFilters();
+	}
+
 	function formatSalary(value: number): string {
 		return `£${value.toLocaleString('en-GB')}`;
 	}
 </script>
 
 <div class="filters-container">
-	<!-- Filter Header -->
 	<div class="filters-header">
 		<button
+			type="button"
 			class="expand-button"
-			onclick={() => isExpanded = !isExpanded}
+			onclick={() => (isExpanded = !isExpanded)}
 			aria-expanded={isExpanded}
-			aria-controls="filter-panel"
+			aria-controls={panelId}
 		>
-			<span class="expand-icon" aria-hidden="true">
-				{isExpanded ? '▼' : '▶'}
-			</span>
+			<svg class="expand-icon" class:expanded={isExpanded} viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
+				<path d="M4 2.5L7.5 6 4 9.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+			</svg>
 			<span class="filter-title">
 				Filters
-				{#if activeFilterCount() > 0}
-					<span class="filter-badge" aria-label="{activeFilterCount()} active filters">
-						{activeFilterCount()}
+				{#if activeFilterCount > 0}
+					<span class="filter-badge" aria-label="{activeFilterCount} active filters">
+						{activeFilterCount}
 					</span>
 				{/if}
 			</span>
 		</button>
 
-		{#if activeFilterCount() > 0}
-			<button
-				class="clear-button"
-				onclick={clearAllFilters}
-				aria-label="Clear all filters"
-			>
-				Clear All
+		{#if activeFilterCount > 0}
+			<button type="button" class="clear-button" onclick={clearAllFilters} aria-label="Clear all filters">
+				Clear all
 			</button>
 		{/if}
 	</div>
 
-	<!-- Filter Panel (Collapsible) -->
 	{#if isExpanded}
-		<div class="filters-panel" id="filter-panel">
-			<!-- Department Filter -->
+		<div class="filters-panel" id={panelId}>
 			{#if departments.length > 0}
-				<div class="filter-group">
-					<!-- This label is a group heading, not associated with a single control. ARIA labels on children provide accessibility. -->
-					<!-- svelte-ignore a11y_label_has_associated_control -->
-					<label class="filter-label">Department</label>
-					<div class="checkbox-group" role="group" aria-label="Department filters">
+				<fieldset class="filter-group">
+					<legend class="filter-label">Department</legend>
+					<div class="checkbox-group">
 						{#each departments as dept (dept)}
 							<label class="checkbox-label">
 								<input
 									type="checkbox"
 									checked={filters.departments.includes(dept)}
-									onchange={() => toggleDepartment(dept)}
+									onchange={() => (filters.departments = toggleValue(filters.departments, dept))}
 								/>
 								<span>{dept}</span>
 							</label>
 						{/each}
 					</div>
-				</div>
+				</fieldset>
 			{/if}
 
-			<!-- Status Filter -->
 			{#if statuses.length > 0}
-				<div class="filter-group">
-					<!-- This label is a group heading, not associated with a single control. ARIA labels on children provide accessibility. -->
-					<!-- svelte-ignore a11y_label_has_associated_control -->
-					<label class="filter-label">Status</label>
-					<div class="checkbox-group" role="group" aria-label="Status filters">
+				<fieldset class="filter-group">
+					<legend class="filter-label">Status</legend>
+					<div class="checkbox-group">
 						{#each statuses as status (status)}
 							<label class="checkbox-label">
 								<input
 									type="checkbox"
 									checked={filters.statuses.includes(status)}
-									onchange={() => toggleStatus(status)}
+									onchange={() => (filters.statuses = toggleValue(filters.statuses, status))}
 								/>
 								<span class="status-text">{status}</span>
 							</label>
 						{/each}
 					</div>
-				</div>
+				</fieldset>
 			{/if}
 
-			<!-- Salary Range Filter -->
-			<div class="filter-group">
-				<!-- This label is a group heading for salary range inputs. Individual controls have their own labels. -->
-				<!-- svelte-ignore a11y_label_has_associated_control -->
-				<label class="filter-label">
-					Salary Range: {formatSalary(filters.salaryMin)} - {formatSalary(filters.salaryMax)}
-				</label>
+			<fieldset class="filter-group">
+				<legend class="filter-label">
+					Salary range: {formatSalary(filters.salaryMin)} – {formatSalary(filters.salaryMax)}
+				</legend>
 				<div class="range-inputs">
 					<div class="range-input-wrapper">
-						<label for="salary-min" class="range-label">Min</label>
+						<label for="{uid}-salary-min" class="range-label">Minimum salary</label>
 						<input
-							id="salary-min"
+							id="{uid}-salary-min"
 							type="range"
 							min={salaryRange.min}
 							max={salaryRange.max}
-							step="5000"
-							bind:value={filters.salaryMin}
-							aria-label="Minimum salary"
+							step={salaryStep}
+							value={filters.salaryMin}
+							oninput={(e) => setSalaryMin(Number(e.currentTarget.value))}
+							aria-valuetext={formatSalary(filters.salaryMin)}
 						/>
 						<span class="range-value">{formatSalary(filters.salaryMin)}</span>
 					</div>
 					<div class="range-input-wrapper">
-						<label for="salary-max" class="range-label">Max</label>
+						<label for="{uid}-salary-max" class="range-label">Maximum salary</label>
 						<input
-							id="salary-max"
+							id="{uid}-salary-max"
 							type="range"
 							min={salaryRange.min}
 							max={salaryRange.max}
-							step="5000"
-							bind:value={filters.salaryMax}
-							aria-label="Maximum salary"
+							step={salaryStep}
+							value={filters.salaryMax}
+							oninput={(e) => setSalaryMax(Number(e.currentTarget.value))}
+							aria-valuetext={formatSalary(filters.salaryMax)}
 						/>
 						<span class="range-value">{formatSalary(filters.salaryMax)}</span>
 					</div>
 				</div>
-			</div>
+			</fieldset>
 
-			<!-- Hire Date Range Filter -->
-			<div class="filter-group">
-				<!-- This label is a group heading for date range inputs. Individual controls have their own labels. -->
-				<!-- svelte-ignore a11y_label_has_associated_control -->
-				<label class="filter-label">Hire Date Range</label>
+			<fieldset class="filter-group">
+				<legend class="filter-label">Hire date range</legend>
 				<div class="date-inputs">
 					<div class="date-input-wrapper">
-						<label for="date-from" class="date-label">From</label>
+						<label for="{uid}-date-from" class="date-label">Hired from</label>
 						<input
-							id="date-from"
+							id="{uid}-date-from"
 							type="date"
 							bind:value={filters.hireDateFrom}
-							aria-label="Hire date from"
+							max={filters.hireDateTo || undefined}
 						/>
 					</div>
 					<div class="date-input-wrapper">
-						<label for="date-to" class="date-label">To</label>
+						<label for="{uid}-date-to" class="date-label">Hired to</label>
 						<input
-							id="date-to"
+							id="{uid}-date-to"
 							type="date"
 							bind:value={filters.hireDateTo}
-							aria-label="Hire date to"
+							min={filters.hireDateFrom || undefined}
 						/>
 					</div>
 				</div>
-			</div>
+			</fieldset>
 		</div>
 	{/if}
 </div>
 
 <style>
-	/**
-	 * Filter Container Styles
-	 */
 	.filters-container {
-		background: white;
-		border: 1px solid #e5e7eb;
+		/* Chrome */
+		--dgf-surface: #ffffff;
+		--dgf-border: #e5e7eb;
+		--dgf-fg: #1f2937;
+		--dgf-label-fg: #374151;
+		--dgf-body-fg: #4b5563;
+		--dgf-muted-fg: #6b7280;
+		--dgf-input-bg: #ffffff;
+		--dgf-input-border: #d1d5db;
+		--dgf-track: #e5e7eb;
+		--dgf-button-bg: #f3f4f6;
+		--dgf-button-hover-bg: #e5e7eb;
+		--dgf-button-hover-border: #9ca3af;
+
+		/* Brand (not flipped) */
+		--dgf-accent: #146ef5;
+		--dgf-accent-hover: #0f5fd4;
+		--dgf-on-accent: #ffffff;
+		--dgf-focus-ring: rgba(20, 110, 245, 0.2);
+
+		background: var(--dgf-surface);
+		border: 1px solid var(--dgf-border);
 		border-radius: 8px;
-		margin-bottom: 1.5rem;
 		overflow: hidden;
+		color: var(--dgf-fg);
 	}
 
-	/* Filter Header */
+	@media (prefers-color-scheme: dark) {
+		.filters-container {
+			--dgf-surface: #1f2937;
+			--dgf-border: #374151;
+			--dgf-fg: #f9fafb;
+			--dgf-label-fg: #e5e7eb;
+			--dgf-body-fg: #d1d5db;
+			--dgf-muted-fg: #9ca3af;
+			--dgf-input-bg: #111827;
+			--dgf-input-border: #4b5563;
+			--dgf-track: #374151;
+			--dgf-button-bg: #374151;
+			--dgf-button-hover-bg: #4b5563;
+			--dgf-button-hover-border: #6b7280;
+		}
+	}
+
 	.filters-header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+		gap: 1rem;
 		padding: 1rem 1.25rem;
-		border-bottom: 1px solid #e5e7eb;
+	}
+
+	.filters-header:has(+ .filters-panel) {
+		border-bottom: 1px solid var(--dgf-border);
 	}
 
 	.expand-button {
@@ -323,19 +340,29 @@
 		border: none;
 		font-size: 1rem;
 		font-weight: 600;
-		color: #1f2937;
+		color: var(--dgf-fg);
 		cursor: pointer;
 		padding: 0;
 		transition: color 0.2s;
 	}
 
 	.expand-button:hover {
-		color: #146ef5;
+		color: var(--dgf-accent);
+	}
+
+	.expand-button:focus-visible,
+	.clear-button:focus-visible {
+		outline: 2px solid var(--dgf-accent);
+		outline-offset: 2px;
+		border-radius: 4px;
 	}
 
 	.expand-icon {
-		font-size: 0.75rem;
 		transition: transform 0.2s;
+	}
+
+	.expand-icon.expanded {
+		transform: rotate(90deg);
 	}
 
 	.filter-title {
@@ -351,8 +378,8 @@
 		min-width: 1.5rem;
 		height: 1.5rem;
 		padding: 0 0.5rem;
-		background: #146ef5;
-		color: white;
+		background: var(--dgf-accent);
+		color: var(--dgf-on-accent);
 		border-radius: 12px;
 		font-size: 0.75rem;
 		font-weight: 600;
@@ -360,31 +387,32 @@
 
 	.clear-button {
 		padding: 0.5rem 1rem;
-		background: #f3f4f6;
-		border: 1px solid #d1d5db;
+		background: var(--dgf-button-bg);
+		border: 1px solid var(--dgf-input-border);
 		border-radius: 6px;
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #374151;
+		color: var(--dgf-label-fg);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition:
+			background-color 0.2s,
+			border-color 0.2s;
 	}
 
 	.clear-button:hover {
-		background: #e5e7eb;
-		border-color: #9ca3af;
+		background: var(--dgf-button-hover-bg);
+		border-color: var(--dgf-button-hover-border);
 	}
 
-	/* Filter Panel */
 	.filters-panel {
 		padding: 1.5rem 1.25rem;
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
 		gap: 1.5rem;
-		animation: slideDown 0.2s ease-out;
+		animation: dgf-slide-down 0.2s ease-out;
 	}
 
-	@keyframes slideDown {
+	@keyframes dgf-slide-down {
 		from {
 			opacity: 0;
 			transform: translateY(-10px);
@@ -395,21 +423,25 @@
 		}
 	}
 
-	/* Filter Group */
+	/* Fieldsets come with browser chrome we don't want. */
 	.filter-group {
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
+		margin: 0;
+		padding: 0;
+		border: none;
+		min-width: 0;
 	}
 
 	.filter-label {
+		padding: 0;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: #374151;
-		margin-bottom: 0.25rem;
+		color: var(--dgf-label-fg);
+		margin-bottom: 0.75rem;
 	}
 
-	/* Checkbox Group */
 	.checkbox-group {
 		display: flex;
 		flex-direction: column;
@@ -421,77 +453,78 @@
 		align-items: center;
 		gap: 0.5rem;
 		font-size: 0.875rem;
-		color: #4b5563;
+		color: var(--dgf-body-fg);
 		cursor: pointer;
 		transition: color 0.2s;
 	}
 
 	.checkbox-label:hover {
-		color: #1f2937;
+		color: var(--dgf-fg);
 	}
 
 	.checkbox-label input[type='checkbox'] {
 		width: 1rem;
 		height: 1rem;
-		border: 2px solid #d1d5db;
-		border-radius: 4px;
 		cursor: pointer;
-	}
-
-	.checkbox-label input[type='checkbox']:checked {
-		accent-color: #146ef5;
+		accent-color: var(--dgf-accent);
 	}
 
 	.status-text {
 		text-transform: capitalize;
 	}
 
-	/* Range Inputs */
 	.range-inputs {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 	}
 
-	.range-input-wrapper {
+	.range-input-wrapper,
+	.date-input-wrapper {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	.range-label {
+	.range-label,
+	.date-label {
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: #6b7280;
+		color: var(--dgf-muted-fg);
 	}
 
 	input[type='range'] {
 		width: 100%;
 		height: 6px;
-		background: #e5e7eb;
+		background: var(--dgf-track);
 		border-radius: 3px;
-		outline: none;
 		cursor: pointer;
+		accent-color: var(--dgf-accent);
+	}
+
+	input[type='range']:focus-visible {
+		outline: 2px solid var(--dgf-accent);
+		outline-offset: 4px;
 	}
 
 	input[type='range']::-webkit-slider-thumb {
 		appearance: none;
 		width: 18px;
 		height: 18px;
-		background: #146ef5;
+		background: var(--dgf-accent);
 		border-radius: 50%;
 		cursor: pointer;
 		transition: background 0.2s;
 	}
 
 	input[type='range']::-webkit-slider-thumb:hover {
-		background: #0f5fd4;
+		background: var(--dgf-accent-hover);
 	}
 
 	input[type='range']::-moz-range-thumb {
 		width: 18px;
 		height: 18px;
-		background: #146ef5;
+		background: var(--dgf-accent);
 		border: none;
 		border-radius: 50%;
 		cursor: pointer;
@@ -499,16 +532,15 @@
 	}
 
 	input[type='range']::-moz-range-thumb:hover {
-		background: #0f5fd4;
+		background: var(--dgf-accent-hover);
 	}
 
 	.range-value {
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: #146ef5;
+		color: var(--dgf-accent);
 	}
 
-	/* Date Inputs */
 	.date-inputs {
 		display: flex;
 		gap: 1rem;
@@ -516,33 +548,25 @@
 
 	.date-input-wrapper {
 		flex: 1;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.date-label {
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: #6b7280;
 	}
 
 	input[type='date'] {
 		padding: 0.5rem;
-		border: 1px solid #d1d5db;
+		background: var(--dgf-input-bg);
+		border: 1px solid var(--dgf-input-border);
 		border-radius: 6px;
 		font-size: 0.875rem;
-		color: #374151;
+		color: var(--dgf-label-fg);
+		color-scheme: light dark;
 		transition: border-color 0.2s;
 	}
 
-	input[type='date']:focus {
+	input[type='date']:focus-visible {
 		outline: none;
-		border-color: #146ef5;
-		box-shadow: 0 0 0 3px rgba(20, 110, 245, 0.1);
+		border-color: var(--dgf-accent);
+		box-shadow: 0 0 0 3px var(--dgf-focus-ring);
 	}
 
-	/* Responsive Design */
 	@media (max-width: 768px) {
 		.filters-panel {
 			grid-template-columns: 1fr;
@@ -552,8 +576,18 @@
 			flex-direction: column;
 		}
 	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.filters-panel {
+			animation: none;
+		}
+
+		.expand-icon,
+		.expand-button,
+		.clear-button,
+		.checkbox-label,
+		input[type='date'] {
+			transition: none;
+		}
+	}
 </style>
-
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

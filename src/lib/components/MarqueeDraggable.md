@@ -14,7 +14,9 @@ MarqueeDraggable is an enhanced Marquee component that adds manual control. Cont
 WHEN component mounts:
   1. MEASURE container and content widths
   2. SET UP Intersection Observer (pause when off-screen)
-  3. START automatic animation loop
+  3. READ prefers-reduced-motion (and listen for changes)
+  4. START automatic animation loop — unless reduced motion is on
+     or the region has keyboard focus
 
 ANIMATION LOOP (runs ~60fps):
   1. CALCULATE time since last frame (delta)
@@ -38,6 +40,12 @@ WHEN user releases:
      SET direction based on drag velocity
   2. RESTART automatic animation
   3. Content now scrolls in the direction you pushed!
+     (under reduced motion it simply stays where you left it)
+
+WHEN the region has focus:
+  1. PAUSE automatic animation
+  2. ArrowLeft/ArrowRight (ArrowUp/ArrowDown when vertical) nudge 80px
+  3. RESUME auto-scroll once focus leaves the region
 ```
 
 ---
@@ -115,6 +123,32 @@ Benefits:
 
 ---
 
+## State Flow Diagram
+
+```
+                    ┌──────────────────────────┐
+     mount + rAF ──▶│  AUTO-SCROLLING          │◀───────────────────────┐
+     measure        │  rAF loop moves offset   │                        │
+                    │  at contentWidth/duration│                        │
+                    └────┬──────────────┬──────┘                        │
+       pointerdown       │              │ scrolled off-screen            │
+       (dragEnabled)     │              ▼                               │
+                         │     ┌──────────────────────┐   back on screen│
+                         │     │  PAUSED (hidden)     │─────────────────┤
+                         │     │  rAF cancelled       │                 │
+                         │     └──────────────────────┘                 │
+                         ▼                                              │
+                    ┌──────────────────────────┐                        │
+                    │  DRAGGING                │   pointerup /          │
+                    │  rAF stopped             │   pointercancel        │
+                    │  offset = start + delta  │────────────────────────┘
+                    │  lastVelocity = movement │   |velocity| > 5 and
+                    └──────────────────────────┘   dragMomentum → adopt
+                                                   drag direction
+```
+
+---
+
 ## Props Reference
 
 | Prop | Type | Default | Description |
@@ -124,6 +158,7 @@ Benefits:
 | `reverse` | `boolean` | `false` | Start scrolling in opposite direction |
 | `dragEnabled` | `boolean` | `true` | Allow drag interaction |
 | `dragMomentum` | `boolean` | `true` | Continue in drag direction after release |
+| `repeat` | `number` | `4` | Minimum number of content copies; raised automatically when the container is wide enough to need more |
 | `class` | `string` | `''` | Additional CSS classes |
 | `children` | `Snippet` | - | Content to scroll |
 
@@ -147,6 +182,26 @@ observer = new IntersectionObserver((entries) => {
 // Result: Marquees in long pages don't waste battery
 // when scrolled out of view
 ```
+
+---
+
+## Reduced Motion & Keyboard Control
+
+Continuously moving content can be distracting or cause discomfort, so the
+component reads `prefers-reduced-motion: reduce` on mount and listens for
+changes:
+
+| Situation | Auto-scroll | Drag | Arrow keys |
+|-----------|-------------|------|------------|
+| No preference | Runs | Works | Works (auto-scroll pauses while focused) |
+| `reduce` | Never starts; stops if the setting flips mid-session | Works (no momentum drift afterwards) | Works |
+
+The region is focusable (`tabindex="0"`, `aria-roledescription="marquee"`)
+with a visible `:focus-visible` outline. While it holds focus the
+auto-scroll pauses so keyboard users can read at their own pace; the arrow
+keys along the scroll axis move the strip in 80px steps. The region carries
+`data-reduced-motion="true"` while the preference is active, which is handy
+for styling or tests.
 
 ---
 
@@ -189,7 +244,7 @@ This feels natural - like pushing a physical object!
 - **RAF animation** - ~60fps JavaScript updates (more CPU than CSS)
 - **Pointer capture** - Ensures smooth drag even outside element
 - **Visibility observer** - Pauses when off-screen to save battery
-- **Two copies** - Fewer DOM nodes than Marquee (4 copies)
+- **Auto-sized copies** - At least `repeat` (4) copies, raised to `ceil(container × 3 / content) + 1` so the loop never shows a gap
 - **will-change: transform** - Hints GPU acceleration
 
 ---
@@ -216,6 +271,22 @@ This feels natural - like pushing a physical object!
 
 ---
 
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Content narrower than the container | More copies are rendered (`ceil(container × 3 / content) + 1`, minimum 4) so there is never a visible gap. |
+| Window resized | Widths are re-measured on `resize` and the copy count recalculated. |
+| Marquee scrolled out of view | `IntersectionObserver` cancels the rAF loop; it resumes when visible again. |
+| Slow drag then release | Velocity under the 5px threshold keeps the previous direction. |
+| `dragMomentum={false}` | Release always resumes the original direction. |
+| `dragEnabled={false}` | Pointer events are ignored and the cursor is the default arrow. |
+| Pointer leaves the element mid-drag | Pointer capture keeps the drag alive until release or `pointercancel`. |
+| `prefers-reduced-motion: reduce` | Not yet honoured by the rAF loop — auto-scroll still runs. Gate the mount behind a `matchMedia('(prefers-reduced-motion: reduce)')` check in the host page if your audience needs it. |
+| `duration` or direction changes | An `$effect` restarts the loop so the new speed applies immediately. |
+
+---
+
 ## Dependencies
 
 - **$lib/utils** (cn helper for class merging)
@@ -230,7 +301,3 @@ MarqueeDraggable.svelte  # The component
 MarqueeDraggable.test.ts # Unit tests
 MarqueeDraggable.md      # This explainer
 ```
-
----
-
-*Last updated: 26 December 2025*

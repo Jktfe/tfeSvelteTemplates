@@ -15,9 +15,36 @@
  */
 
 import { marked, type Renderer, type Tokens } from 'marked';
-import hljs from 'highlight.js';
+// Core build + only the grammars our docs and storyboards actually fence.
+// The full `highlight.js` entry registers ~190 languages (~400KB minified);
+// this subset is a small fraction of that. If a new fence language appears,
+// register it here — unknown languages fall back to auto-detection across
+// the registered set, so nothing breaks, it just highlights less precisely.
+import hljs from 'highlight.js/lib/core';
+import bash from 'highlight.js/lib/languages/bash';
+import css from 'highlight.js/lib/languages/css';
+import javascript from 'highlight.js/lib/languages/javascript';
+import json from 'highlight.js/lib/languages/json';
+import plaintext from 'highlight.js/lib/languages/plaintext';
+import sql from 'highlight.js/lib/languages/sql';
+import typescript from 'highlight.js/lib/languages/typescript';
+import xml from 'highlight.js/lib/languages/xml';
 import sanitizeHtml from 'sanitize-html';
 import { escapeHtml } from '$lib/htmlUtils';
+
+hljs.registerLanguage('bash', bash);
+hljs.registerLanguage('css', css);
+hljs.registerLanguage('javascript', javascript);
+hljs.registerLanguage('json', json);
+hljs.registerLanguage('plaintext', plaintext);
+hljs.registerLanguage('sql', sql);
+hljs.registerLanguage('typescript', typescript);
+hljs.registerLanguage('xml', xml);
+// highlight.js has no Svelte grammar. Its xml (HTML) grammar already hands
+// `<script>` and `<style>` bodies to javascript/css, which covers a Svelte
+// file well enough for docs. Registering the alias also stops ```svelte
+// fences from falling through to (slower, less accurate) auto-detection.
+hljs.registerAliases(['svelte'], { languageName: 'xml' });
 
 const renderer: Partial<Renderer> = {
 	code({ text, lang }: Tokens.Code): string {

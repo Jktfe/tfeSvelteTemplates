@@ -97,13 +97,14 @@ The Editor itself is dumb about transport. Everything network-facing lives in th
 
 **Layer 1 — REST API at `/editor/api/+server.ts`.** Standard SvelteKit `RequestHandler` exports for GET, POST, PUT, and DELETE. Each:
 
+- Writes (POST/PUT/DELETE) call `requireAuthAPI(event)` first, outside the try/catch: 401 when signed out, 403 for the read-only public demo account. GET stays public.
 - Parses input (JSON body for POST/PUT; query string for GET/DELETE).
 - Performs minimum-viable validation (required fields, ID present and numeric).
 - Delegates to the server utility.
-- Returns appropriate HTTP status: 200 (read/update OK), 201 (create OK), 400 (bad input), 404 (not found), 503 (`DATABASE_URL` not configured), 500 (anything else).
+- Returns appropriate HTTP status: 200 (read/update OK), 201 (create OK), 400 (bad input), 401/403 (auth), 404 (not found), 503 (`DATABASE_URL` not configured), 500 (anything else).
 - Catches the specific "DATABASE_URL not configured" error from the utility and translates it into a 503 with a friendly message, so clients can distinguish "service down" from "your input is wrong".
 
-**Layer 2 — server utility at `src/lib/server/editorData.ts`.** Four exported functions: `loadEditorDataFromDatabase`, `createEditorData`, `updateEditorData`, `deleteEditorData`. Each follows the same skeleton: read `DATABASE_URL`, branch to fallback if missing (read only) or throw if missing (writes), wrap the SQL in try/catch, transform `snake_case` columns to `camelCase` props on the way out. The update uses `COALESCE(${field}, field)` so callers can pass partial objects and the database keeps existing values for anything omitted.
+**Layer 2 — server utility at `src/lib/server/editorData.ts`.** Exported functions: `loadEditorDataWithSource` (rows plus a `DataSourceResult` status), `loadEditorDataFromDatabase` (rows only), `createEditorData`, `updateEditorData`, `deleteEditorData`. Reads go through `loadWithFallback` from `dataSource.ts`; writes get their connection string from `requireDatabaseUrl`, which throws the "DATABASE_URL not configured" error the API turns into a 503. SQL is wrapped in try/catch and `snake_case` columns become `camelCase` props on the way out. The soft delete uses `RETURNING id` because the Neon HTTP driver hands back rows, not an affected-row count — without it, every delete would look like "not found". The update uses `COALESCE(${field}, field)` so callers can pass partial objects and the database keeps existing values for anything omitted.
 
 **Layer 3 — schema at `database/schema_editor.sql`.** A single table, `editor_data`, with `id`, the user-facing columns, `display_order`, `is_active`, and `created_at`/`updated_at`. A trigger (`update_editor_data_updated_at`) keeps `updated_at` honest on every UPDATE. New items get `MAX(display_order) + 1` for their category — appending without manual ordering.
 
@@ -115,9 +116,9 @@ The whole stack is built around the assumption that *the database may not exist*
 
 How the fallback decides:
 
-- **Reads** (`loadEditorDataFromDatabase`): if `DATABASE_URL` is unset or matches a placeholder string, log a warning and return `FALLBACK_EDITOR_DATA` from `src/lib/constants.ts`. On any DB error, return the fallback rather than throw. Pages always render.
+- **Reads** (`loadEditorDataFromDatabase`): if `DATABASE_URL` is unset or matches a placeholder string, log a warning and return `FALLBACK_EDITOR_DATA` from `src/lib/constants.ts` (filtered by the requested category). On any DB error, return the same filtered fallback flagged `source: 'error'` rather than throw. Pages always render.
 - **Writes** (`create`/`update`/`delete`): without a DB, *throw* a specific error. The API handler catches it and returns 503. The client surfaces this as a "Database not configured" message rather than silently pretending the write worked.
-- **Component awareness**: the Editor takes a `usingDatabase` boolean prop. When false, it shows a yellow banner inside the modal: "Changes won't be saved — no database connected." Set by the page's `+page.server.ts` from `!!process.env.DATABASE_URL`.
+- **Component awareness**: the Editor takes a `usingDatabase` boolean prop. When false, it shows a yellow banner inside the modal: "Changes won't be saved — no database connected." The demo page passes `data.canPersist` from its `+page.server.ts`: true only when the editor data really came from the database *and* the visitor is signed in as a non-demo user — because the API's write handlers go through `requireAuthAPI` (401 signed out, 403 for the read-only demo account), anyone else gets the in-memory path rather than a failed save.
 
 The `dataSource.ts` utility (`src/lib/server/dataSource.ts`) provides typed helpers — `fromDatabase`, `fromFallback`, `fromDatabaseError`, `combineDataSources` — for pages that want a richer status object (e.g. the `DatabaseStatus` indicator at the top of the page). The Editor itself only needs the boolean.
 
@@ -212,7 +213,7 @@ DATABASE BRANCH (server utility):
 |------|------|---------|-------------|
 | `mode` | `'create' \| 'edit'` | `'create'` | Controls submit button label and which validation messaging applies. |
 | `initialData` | `Partial<EditorData>` | `{}` | Pre-fills the form. In `edit` mode this should include `id` so the parent can route to PUT. |
-| `usingDatabase` | `boolean` | `false` | When `false`, renders an in-modal warning that changes will not persist. Mirrors `!!process.env.DATABASE_URL` from the page loader. |
+| `usingDatabase` | `boolean` | `false` | When `false`, renders an in-modal warning that changes will not persist. The demo page passes `data.canPersist` (live database + signed-in, non-demo user). |
 | `onSave` | `(data: EditorData) => void \| Promise<void>` | `undefined` | Fires on valid submit. Parent decides whether to POST or PUT. The Editor does not perform any network call itself. |
 | `onCancel` | `() => void` | `undefined` | Fires on Escape, backdrop click, or Cancel button. Parent flips its `open` flag. |
 
@@ -260,7 +261,7 @@ src/lib/server/dataSource.ts                  # typed source-status helpers
 src/lib/constants.ts                          # FALLBACK_EDITOR_DATA
 src/lib/types.ts                              # EditorData / EditorDataRow / EditorProps
 src/routes/editor/+page.svelte                # demo page (list + open Editor)
-src/routes/editor/+page.server.ts             # SSR load: folders + usingDatabase flag
+src/routes/editor/+page.server.ts             # SSR load: editor data + DataSourceResult status + canPersist
 src/routes/editor/api/+server.ts              # GET / POST / PUT / DELETE
 database/schema_editor.sql                    # editor_data table + trigger + seed
 ```

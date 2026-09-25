@@ -4,6 +4,7 @@
 
 	let {
 		name,
+		id,
 		label,
 		value = $bindable(''),
 		options,
@@ -18,12 +19,19 @@
 		oninput
 	}: RadioGroupProps = $props();
 
+	// Every instance gets its own id prefix from Svelte, so two forms with the
+	// same field names on one page never share ids. `name` stays the form
+	// submission key; pass `id` only when something outside needs to target
+	// the control (e.g. a skip link or an external <label for>).
+	const uid = $props.id();
+
 	/**
 	 * Generate IDs for aria associations
 	 */
-	let groupId = $derived(`radio-group-${name}`);
-	let helpId = $derived(`${name}-help`);
-	let errorId = $derived(`${name}-error`);
+	let groupId = $derived(id ?? `radio-group-${uid}`);
+	let helpId = $derived(`${groupId}-help`);
+	let errorId = $derived(`${groupId}-error`);
+	let labelId = $derived(`${groupId}-label`);
 
 	/**
 	 * Determine if field has error state for styling
@@ -49,7 +57,7 @@
 	}
 </script>
 
-<FormField {name} {label} {required} {error} {touched} {helpText}>
+<FormField id={groupId} group {label} {required} {error} {touched} {helpText}>
 	<div
 		role="radiogroup"
 		id={groupId}
@@ -57,6 +65,7 @@
 		class:horizontal={orientation === 'horizontal'}
 		class:vertical={orientation === 'vertical'}
 		class:error={hasError}
+		aria-labelledby={labelId}
 		aria-invalid={hasError}
 		aria-describedby={helpText ? helpId : undefined}
 		aria-errormessage={hasError ? errorId : undefined}
@@ -64,7 +73,7 @@
 		onblur={handleBlur}
 	>
 		{#each options as option, index (option.value)}
-			{@const optionId = `${name}-${index}`}
+			{@const optionId = `${groupId}-${index}`}
 			{@const isDisabled = disabled || option.disabled}
 			{@const isChecked = String(value) === String(option.value)}
 
@@ -227,6 +236,11 @@
 			flex-direction: column;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	@media (prefers-reduced-motion: reduce) {
+		.radio-custom {
+			transition: none;
+		}
+	}
+</style>

@@ -33,6 +33,30 @@ AgentLane[]
 | `title` | `string` | `"Agent lane board"` | Board heading. |
 | `subtitle` | `string` | Delivery-focused default | Short context below the heading. |
 
+## Theming
+
+Follows `docs/THEMING.md`: tokens live on `.lane-board` with light defaults inline and a `@media (prefers-color-scheme: dark)` flip. Chrome tokens read the host app's shared tokens first (`--fg-1`, `--fg-2`, `--fg-3`, `--border`, `--surface`, `--surface-2`, `--accent`) and fall back to built-in values, so the component flips correctly both inside this showcase and when copied into an app that defines none of them. If your host defines those tokens but never flips them, override the component tokens directly.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--lb-fg` / `--lb-fg-2` / `--lb-fg-3` | `var(--fg-*, …)` light greys | `var(--fg-*, …)` light-on-dark greys | Text tiers |
+| `--lb-border` / `--lb-surface` / `--lb-surface-2` | `var(--border/--surface/--surface-2, …)` | dark fallbacks | Cards, summary buttons, file chips |
+| `--lb-hero-bg` | `linear-gradient(135deg, #f8fafc, #ecfdf5)` | `linear-gradient(135deg, #111827, #052e24)` | Board header |
+| `--lb-kicker` | `#047857` | `#34d399` | Header kicker |
+| `--lb-score-bg` / `--lb-score-border` / `--lb-score-fg` | `#dcfce7` / `#86efac` / `#14532d` | green tint / `#166534` / `#bbf7d0` | Completion score |
+| `--lb-active-ring` / `--lb-active-glow` | `#0f766e` / teal alpha | `#2dd4bf` / teal alpha | Selected summary filter |
+| `--lb-next-bg` / `--lb-next-fg` | `#fffbeb` / `#78350f` | amber tint / `#fde68a` | "Next attention" strip (border stays `#f59e0b`) |
+| `--lb-{progress,warn,bad,good}-{accent,bg,border}` | blue / amber / red / green pastels | same hues, deep tints, light text | Lane cards and status chips |
+
+Lane tones are semantic: active stays blue, review amber, blocked red, done green on both schemes.
+
+```css
+/* Tighter contrast for a projector-friendly dashboard */
+body .lane-board.lane-board {
+  --lb-border: #94a3b8;
+}
+```
+
 ## Edge Cases
 
 - Empty lane arrays show `0%` complete and no next-attention block.

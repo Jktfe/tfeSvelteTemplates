@@ -1,3 +1,46 @@
+<!--
+  ============================================================
+  InteractionLab — Micro-Interaction Review Bench
+  ============================================================
+  WHAT — Lists hover, press, drag and keyboard scenarios with timing,
+  easing and risk; previews the selected one on a live target and gives
+  a one-line readiness note.
+
+  WHY — A shared place for designers and engineers to agree motion is
+  ready, including its reduced-motion fallback.
+
+  FEATURES
+  - Live preview driven by --duration and --ease custom properties
+  - Durations clamped to 80–1200ms for the preview
+  - Reduced-motion preview toggle (collapses the preview to 80ms)
+  - Readiness rules: reduced-motion fallback, drag risk, long timing
+  - Footer counts scenarios per mode
+  - Pure helpers exported: clampDuration, motionReadiness, modeCount
+
+  ACCESSIBILITY
+  - Scenario list is a labelled <nav> of native buttons
+  - Reduced-motion toggle is a native labelled checkbox
+  - Keyboard scenarios respond to :focus-within
+  - The lab does not read the OS reduced-motion setting itself; use the toggle
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Only transform and background animate; negligible.
+
+  USAGE
+      <InteractionLab scenarios={[
+        { id: 'lift', label: 'Card lift', mode: 'hover', durationMs: 180,
+          easing: 'ease-out', risk: 'low' }
+      ]} />
+
+  PROPS
+  | Prop      | Type                  | Default           | Description |
+  |-----------|-----------------------|-------------------|-------------|
+  | scenarios | InteractionScenario[] | required          | Scenarios to review |
+  | title     | string                | 'Interaction lab' | Heading |
+  | class     | string                | ''                | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type InteractionMode = 'hover' | 'press' | 'drag' | 'keyboard';
 
@@ -43,6 +86,11 @@
 
 	let { scenarios, title = 'Interaction lab', class: extraClass = '' }: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `interaction-lab-title-${uid}`;
+
 	let activeId = $state('');
 	let reducedMotion = $state(false);
 
@@ -54,11 +102,11 @@
 	const counts = $derived(modeCount(scenarios));
 </script>
 
-<section class="interaction-lab {extraClass}" aria-labelledby="interaction-lab-title">
+<section class="interaction-lab {extraClass}" aria-labelledby={titleId}>
 	<header>
 		<div>
 			<p>Interaction QA</p>
-			<h2 id="interaction-lab-title">{title}</h2>
+			<h2 id={titleId}>{title}</h2>
 		</div>
 		<label>
 			<input bind:checked={reducedMotion} type="checkbox" />

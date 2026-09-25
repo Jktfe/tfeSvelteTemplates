@@ -7,15 +7,58 @@
 import { neon } from '@neondatabase/serverless';
 import type { CalendarDataPoint } from '$lib/types';
 import { FALLBACK_CALENDAR_DATA } from '$lib/constants';
+import { getConfiguredDatabaseUrl, loadWithFallback, type DataSourceResult } from './dataSource';
 
 /**
- * Load calendar activity data from Neon database
- * Falls back to FALLBACK_CALENDAR_DATA if database is not configured or query fails
+ * Load calendar activity data plus where it came from (database / fallback / error).
+ * Falls back to FALLBACK_CALENDAR_DATA if the database is not configured or the query fails.
  *
  * @param category - Optional category filter (e.g., 'general', 'coding', 'exercise')
  * @param userId - Optional user ID filter (default: 1)
  * @param days - Number of days to fetch (default: 365)
- * @returns Array of CalendarDataPoint objects (date + value)
+ */
+export async function loadCalendarDataWithSource(
+	category: string = 'general',
+	userId: number = 1,
+	days: number = 365
+): Promise<DataSourceResult<CalendarDataPoint[]>> {
+	return loadWithFallback(
+		FALLBACK_CALENDAR_DATA,
+		async (databaseUrl) => {
+			const sql = neon(databaseUrl);
+
+			const rows = await sql`
+				SELECT
+					activity_date,
+					activity_count
+				FROM calendar_activity
+				WHERE
+					user_id = ${userId}
+					AND category = ${category}
+					AND activity_date >= CURRENT_DATE - (${days} || ' days')::INTERVAL
+					AND is_active = TRUE
+				ORDER BY activity_date ASC
+			`;
+
+			// Neon may return Date objects or ISO strings - handle both cases
+			return rows.map((row) => {
+				const dateVal = row.activity_date;
+				const dateStr =
+					dateVal instanceof Date
+						? dateVal.toISOString().split('T')[0]
+						: String(dateVal).split('T')[0];
+				return {
+					date: dateStr,
+					value: Number(row.activity_count)
+				};
+			});
+		},
+		{ label: 'CalendarData', schemaFile: 'schema_calendar.sql' }
+	);
+}
+
+/**
+ * Load calendar activity data from Neon database (rows only).
  *
  * @example
  * ```typescript
@@ -31,57 +74,7 @@ export async function loadCalendarDataFromDatabase(
 	userId: number = 1,
 	days: number = 365
 ): Promise<CalendarDataPoint[]> {
-	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			console.warn('[CalendarData] DATABASE_URL not configured, using fallback data');
-			return FALLBACK_CALENDAR_DATA;
-		}
-
-		const sql = neon(databaseUrl);
-
-		// Query calendar activity for specified user, category, and date range
-		const rows = await sql`
-			SELECT
-				activity_date,
-				activity_count
-			FROM calendar_activity
-			WHERE
-				user_id = ${userId}
-				AND category = ${category}
-				AND activity_date >= CURRENT_DATE - (${days} || ' days')::INTERVAL
-				AND is_active = TRUE
-			ORDER BY activity_date ASC
-		`;
-
-		// Transform database rows to CalendarDataPoint format
-		// Neon may return Date objects or ISO strings - handle both cases
-		const data: CalendarDataPoint[] = rows.map((row) => {
-			const dateVal = row.activity_date;
-			let dateStr: string;
-			if (dateVal instanceof Date) {
-				// Format Date object to YYYY-MM-DD
-				dateStr = dateVal.toISOString().split('T')[0];
-			} else {
-				// Handle string format (ISO or other)
-				dateStr = String(dateVal).split('T')[0];
-			}
-			return {
-				date: dateStr,
-				value: Number(row.activity_count)
-			};
-		});
-
-		console.log(
-			`[CalendarData] Loaded ${data.length} activity records for category "${category}"`
-		);
-		return data;
-	} catch (error) {
-		console.error('[CalendarData] Error loading from database:', error);
-		console.warn('[CalendarData] Falling back to constant data');
-		return FALLBACK_CALENDAR_DATA;
-	}
+	return (await loadCalendarDataWithSource(category, userId, days)).data;
 }
 
 /**
@@ -92,13 +85,13 @@ export async function loadCalendarDataFromDatabase(
  * @returns Array of category names
  */
 export async function getCalendarCategories(userId: number = 1): Promise<string[]> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		return ['general'];
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			return ['general'];
-		}
-
 		const sql = neon(databaseUrl);
 
 		const rows = await sql`
@@ -132,13 +125,13 @@ export async function getCalendarStats(
 	maxActivity: number;
 	totalActivity: number;
 } | null> {
+	const databaseUrl = getConfiguredDatabaseUrl();
+
+	if (!databaseUrl) {
+		return null;
+	}
+
 	try {
-		const databaseUrl = process.env.DATABASE_URL;
-
-		if (!databaseUrl) {
-			return null;
-		}
-
 		const sql = neon(databaseUrl);
 
 		const rows = await sql`

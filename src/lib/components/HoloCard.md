@@ -227,6 +227,23 @@ The intensity preset table:
 | `iridescent` | 0.32                      | 0.45       | 5           |
 | `cosmic`     | 0.50                      | 0.60       | 7           |
 
+## Theming
+
+HoloCard has **no chrome of its own** — it is an effect layer over whatever you slot in — so there is nothing to flip under `prefers-color-scheme`, and it renders the same on light and dark pages (see `docs/THEMING.md` for why all-effect components skip the dark block). The palette and sheen are brand/effect and stay identical on both schemes. The blend modes are exposed as tokens on `.holo` for cards whose content is dark:
+
+| Property | Default | Used by |
+| --- | --- | --- |
+| `--holo-foil-blend` | `color-dodge` | Foil layer `mix-blend-mode` |
+| `--holo-sheen-blend` | `overlay` | Sheen layer `mix-blend-mode` |
+| `--holo-sheen-rgb` | `255, 255, 255` | Sheen highlight colour (RGB triplet, alpha is computed) |
+
+```css
+/* colour-dodge barely shows on near-black art; screen keeps the foil visible */
+.my-dark-card :global(.holo.holo) {
+  --holo-foil-blend: screen;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

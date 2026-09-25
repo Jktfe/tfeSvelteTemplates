@@ -205,6 +205,10 @@
 		class: extraClass = ''
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+
 	let ripples = $state<Ripple[]>([]);
 	let nextId = 0;
 	let prefersReduced = $state(false);
@@ -264,7 +268,7 @@
 		event.preventDefault();
 		focusRow = nr;
 		focusCol = nc;
-		const cellId = `cell-${nr}-${nc}`;
+		const cellId = `cell-${uid}-${nr}-${nc}`;
 		const next = document.getElementById(cellId);
 		next?.focus();
 	}
@@ -286,7 +290,7 @@
 			{#each Array.from({ length: cols }, (_, c) => c) as c (c)}
 				{@const isFocus = r === focusRow && c === focusCol}
 				<button
-					id="cell-{r}-{c}"
+					id="cell-{uid}-{r}-{c}"
 					class="cell"
 					role="gridcell"
 					type="button"

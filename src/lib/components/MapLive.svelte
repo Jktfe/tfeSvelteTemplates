@@ -49,9 +49,29 @@
   • leaflet - Industry-standard map library (too complex to build natively)
   • Leaflet CSS (add to app.html or import globally)
 
+  THEMING (see docs/THEMING.md)
+  --map-* chrome tokens on .map-live-container flip under
+  prefers-color-scheme: dark (control bar, popup editor inputs,
+  attribution). --map-accent is brand and stays; the danger pair is
+  semantic and only lightens within the same red hue.
+
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { MapLiveProps, MapMarker, LatLng } from '$lib/types';
@@ -103,6 +123,15 @@
 	/** Map of marker IDs to Leaflet markers */
 	let markerMap: SvelteMap<number, LeafletMarker> = new SvelteMap();
 
+	/**
+	 * One AbortController per open popup. Aborting it detaches the save/delete
+	 * click listeners in a single call, so re-opening a popup never stacks a
+	 * second (or tenth) copy of the handlers onto the same buttons. Plain Map —
+	 * nothing in the template reads it, so it doesn't need to be reactive.
+	 */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only, never rendered
+	const popupListeners = new Map<number, AbortController>();
+
 	/** Counter for generating unique marker IDs */
 	let nextMarkerId = $state(1);
 
@@ -123,6 +152,14 @@
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
 
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
+
 	/** Whether we can add more markers */
 	let canAddMore = $derived(maxMarkers === 0 || markers.length < maxMarkers);
 
@@ -136,21 +173,29 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right to avoid overlapping UI elements
@@ -187,6 +232,11 @@
 		})();
 
 		return () => {
+			cancelled = true;
+			// Detach any popup listeners still bound before Leaflet tears down the DOM
+			for (const controller of popupListeners.values()) controller.abort();
+			popupListeners.clear();
+
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -229,7 +279,7 @@
 	async function addLeafletMarker(markerData: MapMarker, animate: boolean): Promise<void> {
 		if (!map || !markerLayer) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		const leafletMarker = L.marker([markerData.position.lat, markerData.position.lng], {
 			draggable: true
@@ -244,9 +294,15 @@
 			autoPanPaddingBottomRight: L.point(50, 50)
 		});
 
-		// Handle popup open - set up form handlers
-		leafletMarker.on('popupopen', () => {
-			setupPopupHandlers(markerData);
+		// Handle popup open - wire the form buttons inside *this* popup's element.
+		// Leaflet has already rendered the content by the time popupopen fires.
+		leafletMarker.on('popupopen', (e) => {
+			setupPopupHandlers(markerData.id, e.popup.getElement());
+		});
+
+		// Handle popup close - drop the listeners we attached on open
+		leafletMarker.on('popupclose', () => {
+			teardownPopupHandlers(markerData.id);
 		});
 
 		// Handle drag end - update marker position
@@ -304,37 +360,57 @@
 	}
 
 	/**
-	 * Set up event handlers for popup form
+	 * Set up event handlers for popup form.
+	 *
+	 * Listeners are registered with an AbortSignal and torn down on popupclose,
+	 * marker removal and component unmount. We query inside the popup's own
+	 * element (not `document`) so two MapLive instances on one page can't grab
+	 * each other's buttons when their marker IDs collide.
 	 */
-	function setupPopupHandlers(markerData: MapMarker): void {
-		// Small delay to ensure popup is rendered
-		setTimeout(() => {
-			const popup = document.querySelector(`.live-popup[data-marker-id="${markerData.id}"]`);
-			if (!popup) return;
+	function setupPopupHandlers(id: number, popupEl: HTMLElement | undefined): void {
+		teardownPopupHandlers(id);
+		if (!popupEl) return;
 
-			const titleInput = popup.querySelector('.popup-title-input') as HTMLInputElement;
-			const descInput = popup.querySelector('.popup-description-input') as HTMLTextAreaElement;
-			const saveBtn = popup.querySelector('.popup-save-btn');
-			const deleteBtn = popup.querySelector('.popup-delete-btn');
+		const popup = popupEl.querySelector('.live-popup');
+		if (!popup) return;
 
-			// Save handler - stop propagation to prevent map click adding new marker
-			saveBtn?.addEventListener('click', (e) => {
+		const controller = new AbortController();
+		popupListeners.set(id, controller);
+		const { signal } = controller;
+
+		const titleInput = popup.querySelector<HTMLInputElement>('.popup-title-input');
+		const descInput = popup.querySelector<HTMLTextAreaElement>('.popup-description-input');
+		const saveBtn = popup.querySelector('.popup-save-btn');
+		const deleteBtn = popup.querySelector('.popup-delete-btn');
+
+		// Save handler - stop propagation to prevent map click adding new marker
+		saveBtn?.addEventListener(
+			'click',
+			(e) => {
 				e.stopPropagation();
 				const newTitle = titleInput?.value || 'Untitled';
 				const newDesc = descInput?.value || '';
-				updateMarkerDetails(markerData.id, newTitle, newDesc);
+				updateMarkerDetails(id, newTitle, newDesc);
+				markerMap.get(id)?.closePopup();
+			},
+			{ signal }
+		);
 
-				// Close popup
-				const leafletMarker = markerMap.get(markerData.id);
-				leafletMarker?.closePopup();
-			});
-
-			// Delete handler - stop propagation to prevent map click adding new marker
-			deleteBtn?.addEventListener('click', (e) => {
+		// Delete handler - stop propagation to prevent map click adding new marker
+		deleteBtn?.addEventListener(
+			'click',
+			(e) => {
 				e.stopPropagation();
-				removeMarker(markerData.id);
-			});
-		}, 50);
+				removeMarker(id);
+			},
+			{ signal }
+		);
+	}
+
+	/** Detach the popup listeners for one marker (safe to call when none exist) */
+	function teardownPopupHandlers(id: number): void {
+		popupListeners.get(id)?.abort();
+		popupListeners.delete(id);
 	}
 
 	/**
@@ -371,6 +447,7 @@
 
 		// Remove from array
 		markers = markers.filter((m) => m.id !== id);
+		teardownPopupHandlers(id);
 
 		// Remove Leaflet marker
 		const leafletMarker = markerMap.get(id);
@@ -391,6 +468,8 @@
 			onMarkerRemove?.(marker);
 		}
 		markers = [];
+		for (const controller of popupListeners.values()) controller.abort();
+		popupListeners.clear();
 		markerLayer?.clearLayers();
 		markerMap = new SvelteMap();
 	}
@@ -473,6 +552,62 @@
 
 <style>
 	/* ==================================================
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips under prefers-color-scheme: dark. The accent
+     (--map-accent) is brand and stays put on both schemes; the
+     danger tints lighten within the same red hue so the meaning
+     survives while staying readable on dark surfaces.
+     ================================================== */
+	.map-live-container {
+		--map-canvas: #f0f0f0;
+		--map-surface: #ffffff;
+		--map-surface-hover: #f5f5f5;
+		--map-panel-bg: rgba(255, 255, 255, 0.95);
+		--map-fg: #333333;
+		--map-fg-muted: #666666;
+		--map-fg-subtle: #888888;
+		--map-pill-bg: #f0f0f0;
+		--map-pill-fg: #555555;
+		--map-pill-hover: #e0e0e0;
+		--map-border: #dddddd;
+		--map-input-bg: #ffffff;
+		--map-link: #146ef5;
+		--map-accent: #146ef5;
+		--map-accent-hover: #0d5fd3;
+		--map-accent-fg: #ffffff;
+		--map-shadow: rgba(0, 0, 0, 0.15);
+		--map-attribution-bg: rgba(255, 255, 255, 0.85);
+		--map-attribution-fg: #333333;
+		--map-danger-fg: #dc2626;
+		--map-danger-bg: #fee2e2;
+		--map-danger-bg-hover: #fecaca;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-live-container {
+			--map-canvas: #111827;
+			--map-surface: #1f2937;
+			--map-surface-hover: #374151;
+			--map-panel-bg: rgba(31, 41, 55, 0.95);
+			--map-fg: #f3f4f6;
+			--map-fg-muted: #9ca3af;
+			--map-fg-subtle: #9ca3af;
+			--map-pill-bg: #374151;
+			--map-pill-fg: #e5e7eb;
+			--map-pill-hover: #4b5563;
+			--map-border: #4b5563;
+			--map-input-bg: #111827;
+			--map-link: #60a5fa;
+			--map-shadow: rgba(0, 0, 0, 0.5);
+			--map-attribution-bg: rgba(17, 24, 39, 0.85);
+			--map-attribution-fg: #d1d5db;
+			--map-danger-fg: #f87171;
+			--map-danger-bg: rgba(220, 38, 38, 0.2);
+			--map-danger-bg-hover: rgba(220, 38, 38, 0.32);
+		}
+	}
+
+	/* ==================================================
      Container Styles
      ================================================== */
 	.map-live-container {
@@ -481,7 +616,7 @@
 		height: var(--map-height, 500px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--map-canvas);
 	}
 
 	.map-element {
@@ -506,9 +641,9 @@
 		align-items: center;
 		gap: 12px;
 		padding: 8px 12px;
-		background: rgba(255, 255, 255, 0.95);
+		background: var(--map-panel-bg);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 	}
 
 	.control-btn {
@@ -518,8 +653,8 @@
 		padding: 8px 12px;
 		font-size: 13px;
 		font-weight: 500;
-		color: #555;
-		background: #f0f0f0;
+		color: var(--map-pill-fg);
+		background: var(--map-pill-bg);
 		border: none;
 		border-radius: 6px;
 		cursor: pointer;
@@ -532,24 +667,24 @@
 	}
 
 	.control-btn:hover {
-		background: #e0e0e0;
+		background: var(--map-pill-hover);
 	}
 
 	.control-btn.active {
-		color: white;
-		background: #146ef5;
+		color: var(--map-accent-fg);
+		background: var(--map-accent);
 	}
 
 	.control-btn.danger {
-		color: #dc2626;
+		color: var(--map-danger-fg);
 	}
 
 	.control-btn.danger:hover {
-		background: #fee2e2;
+		background: var(--map-danger-bg);
 	}
 
 	.control-btn:focus {
-		outline: 2px solid #146ef5;
+		outline: 2px solid var(--map-accent);
 		outline-offset: 2px;
 	}
 
@@ -557,7 +692,7 @@
 		flex: 1;
 		text-align: center;
 		font-size: 13px;
-		color: #666;
+		color: var(--map-fg-muted);
 	}
 
 	/* ==================================================
@@ -601,7 +736,7 @@
      ================================================== */
 	.map-live-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -611,19 +746,19 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--map-fg);
+		background: var(--map-surface);
 		border: none !important;
 	}
 
 	.map-live-container :global(.leaflet-control-zoom a:hover) {
-		background: #f5f5f5;
+		background: var(--map-surface-hover);
 	}
 
 	/* Popup Styling */
 	.map-live-container :global(.leaflet-popup-content-wrapper) {
 		border-radius: 8px;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 16px var(--map-shadow);
 		padding: 0;
 		overflow: hidden;
 	}
@@ -646,7 +781,9 @@
 		padding: 8px;
 		font-size: 14px;
 		font-weight: 600;
-		border: 1px solid #ddd;
+		color: var(--map-fg);
+		background: var(--map-input-bg);
+		border: 1px solid var(--map-border);
 		border-radius: 4px;
 		outline: none;
 	}
@@ -660,7 +797,9 @@
 		width: 100%;
 		padding: 8px;
 		font-size: 13px;
-		border: 1px solid #ddd;
+		color: var(--map-fg);
+		background: var(--map-input-bg);
+		border: 1px solid var(--map-border);
 		border-radius: 4px;
 		outline: none;
 		resize: vertical;
@@ -676,7 +815,7 @@
 	.map-live-container :global(.popup-coords) {
 		margin-top: 8px;
 		font-size: 11px;
-		color: #888;
+		color: var(--map-fg-subtle);
 		font-family: monospace;
 	}
 
@@ -699,21 +838,21 @@
 	}
 
 	.map-live-container :global(.popup-save-btn) {
-		color: white;
-		background: #146ef5;
+		color: var(--map-accent-fg);
+		background: var(--map-accent);
 	}
 
 	.map-live-container :global(.popup-save-btn:hover) {
-		background: #0d5fd3;
+		background: var(--map-accent-hover);
 	}
 
 	.map-live-container :global(.popup-delete-btn) {
-		color: #dc2626;
-		background: #fee2e2;
+		color: var(--map-danger-fg);
+		background: var(--map-danger-bg);
 	}
 
 	.map-live-container :global(.popup-delete-btn:hover) {
-		background: #fecaca;
+		background: var(--map-danger-bg-hover);
 	}
 
 	/* Draggable marker cursor */
@@ -754,6 +893,44 @@
 			transition: none;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* ==================================================
+     Theme-aware Leaflet chrome
+     Leaflet's own stylesheet paints popups and attribution white;
+     these rules route them through the tokens so they flip too.
+     ================================================== */
+	.map-live-container :global(.leaflet-popup-content-wrapper),
+	.map-live-container :global(.leaflet-popup-tip) {
+		background: var(--map-surface);
+		color: var(--map-fg);
+	}
+
+	.map-live-container :global(.leaflet-control-attribution) {
+		background: var(--map-attribution-bg);
+		color: var(--map-attribution-fg);
+	}
+
+	/* Leaflet's own link (#0078a8) and close-button (#757575) colours are
+	   too dim on dark chrome, so only the dark scheme swaps them. */
+	@media (prefers-color-scheme: dark) {
+		.map-live-container :global(.leaflet-control-attribution a) {
+			color: var(--map-link);
+		}
+
+		.map-live-container :global(.leaflet-container a.leaflet-popup-close-button) {
+			color: var(--map-fg-muted);
+		}
+
+		/* Leaflet paints not-yet-loaded tile gaps #ddd; match the dark canvas. */
+		.map-live-container :global(.leaflet-container) {
+			background: var(--map-canvas);
+		}
+
+		/* Leaflet greys out a zoom button at min/max zoom with a light fill. */
+		.map-live-container :global(.leaflet-bar a.leaflet-disabled) {
+			background: var(--map-surface);
+			color: var(--map-fg-muted);
+			opacity: 0.5;
+		}
+	}
+</style>

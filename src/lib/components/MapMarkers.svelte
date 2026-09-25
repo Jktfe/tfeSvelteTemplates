@@ -42,9 +42,28 @@
   • leaflet - Industry-standard map library (too complex to build natively)
   • Leaflet CSS (add to app.html or import globally)
 
+  THEMING (see docs/THEMING.md)
+  --map-* chrome tokens on .map-markers-container flip under
+  prefers-color-scheme: dark (filter bar, pills, popups, count badge,
+  attribution). --map-accent is brand and deliberately not flipped.
+
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { MapMarkersProps, MapMarker, LatLng } from '$lib/types';
@@ -99,6 +118,14 @@
 
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
+
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
 
 	/** Get unique categories from markers */
 	let categories = $derived(() => {
@@ -155,26 +182,34 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
 			// Use provided center/zoom or calculate from markers
 			const initialBounds = markerBounds();
 			const initialCenter = center ?? initialBounds.center;
 			const initialZoom = zoom ?? initialBounds.zoom;
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [initialCenter.lat, initialCenter.lng],
 				zoom: initialZoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right to avoid overlapping UI elements
@@ -196,6 +231,7 @@
 		})();
 
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -225,7 +261,7 @@
 	async function addMarkersToMap(markersToAdd: MapMarker[]): Promise<void> {
 		if (!map || !markerLayer) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		// Clear existing markers
 		markerLayer.clearLayers();
@@ -258,7 +294,7 @@
 		// Fit bounds to show all markers
 		if (markersToAdd.length > 0) {
 			const bounds = L.latLngBounds(markersToAdd.map((m) => [m.position.lat, m.position.lng]));
-			map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+			map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: !prefersReducedMotion() });
 		}
 	}
 
@@ -294,7 +330,12 @@
 				content += `<div class="popup-meta-item"><strong>Phone:</strong> <a href="tel:${safePhone}">${safePhone}</a></div>`;
 			}
 			if (markerData.metadata.website) {
-				content += `<div class="popup-meta-item"><strong>Website:</strong> <a href="${escapeHtml(markerData.metadata.website)}" target="_blank" rel="noopener">Visit</a></div>`;
+				// escapeHtml stops attribute break-out but not `javascript:` URLs, so
+				// only http(s) links are rendered as clickable.
+				const website = markerData.metadata.website.trim();
+				if (/^https?:\/\//i.test(website)) {
+					content += `<div class="popup-meta-item"><strong>Website:</strong> <a href="${escapeHtml(website)}" target="_blank" rel="noopener noreferrer">Visit</a></div>`;
+				}
 			}
 			if (markerData.metadata.hours) {
 				content += `<div class="popup-meta-item"><strong>Hours:</strong> ${escapeHtml(markerData.metadata.hours)}</div>`;
@@ -373,6 +414,53 @@
 
 <style>
 	/* ==================================================
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips under prefers-color-scheme: dark. The accent
+     (--map-accent) is brand and stays put on both schemes; the
+     danger tints lighten within the same red hue so the meaning
+     survives while staying readable on dark surfaces.
+     ================================================== */
+	.map-markers-container {
+		--map-canvas: #f0f0f0;
+		--map-surface: #ffffff;
+		--map-surface-hover: #f5f5f5;
+		--map-panel-bg: rgba(255, 255, 255, 0.95);
+		--map-fg: #333333;
+		--map-fg-muted: #666666;
+		--map-pill-bg: #f0f0f0;
+		--map-pill-fg: #555555;
+		--map-pill-hover: #e0e0e0;
+		--map-divider: #eeeeee;
+		--map-link: #146ef5;
+		--map-accent: #146ef5;
+		--map-accent-fg: #ffffff;
+		--map-accent-soft: rgba(20, 110, 245, 0.1);
+		--map-shadow: rgba(0, 0, 0, 0.15);
+		--map-attribution-bg: rgba(255, 255, 255, 0.85);
+		--map-attribution-fg: #333333;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-markers-container {
+			--map-canvas: #111827;
+			--map-surface: #1f2937;
+			--map-surface-hover: #374151;
+			--map-panel-bg: rgba(31, 41, 55, 0.95);
+			--map-fg: #f3f4f6;
+			--map-fg-muted: #9ca3af;
+			--map-pill-bg: #374151;
+			--map-pill-fg: #e5e7eb;
+			--map-pill-hover: #4b5563;
+			--map-divider: #374151;
+			--map-link: #60a5fa;
+			--map-accent-soft: rgba(96, 165, 250, 0.18);
+			--map-shadow: rgba(0, 0, 0, 0.5);
+			--map-attribution-bg: rgba(17, 24, 39, 0.85);
+			--map-attribution-fg: #d1d5db;
+		}
+	}
+
+	/* ==================================================
      Container Styles
      ================================================== */
 	.map-markers-container {
@@ -381,7 +469,7 @@
 		height: var(--map-height, 500px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--map-canvas);
 	}
 
 	.map-element {
@@ -402,9 +490,9 @@
 		flex-wrap: wrap;
 		gap: 8px;
 		padding: 8px;
-		background: rgba(255, 255, 255, 0.95);
+		background: var(--map-panel-bg);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 	}
 
 	.filter-pill {
@@ -413,8 +501,8 @@
 		padding: 6px 12px;
 		font-size: 13px;
 		font-weight: 500;
-		color: #555;
-		background: #f0f0f0;
+		color: var(--map-pill-fg);
+		background: var(--map-pill-bg);
 		border: none;
 		border-radius: 20px;
 		cursor: pointer;
@@ -423,16 +511,16 @@
 	}
 
 	.filter-pill:hover {
-		background: #e0e0e0;
+		background: var(--map-pill-hover);
 	}
 
 	.filter-pill.active {
-		color: white;
-		background: #146ef5;
+		color: var(--map-accent-fg);
+		background: var(--map-accent);
 	}
 
 	.filter-pill:focus {
-		outline: 2px solid #146ef5;
+		outline: 2px solid var(--map-accent);
 		outline-offset: 2px;
 	}
 
@@ -446,8 +534,8 @@
 		z-index: 1000;
 		padding: 6px 12px;
 		font-size: 12px;
-		color: #333;
-		background: rgba(255, 255, 255, 0.95);
+		color: var(--map-fg);
+		background: var(--map-panel-bg);
 		border-radius: 4px;
 		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 	}
@@ -457,7 +545,7 @@
      ================================================== */
 	.map-markers-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -467,19 +555,19 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--map-fg);
+		background: var(--map-surface);
 		border: none !important;
 	}
 
 	.map-markers-container :global(.leaflet-control-zoom a:hover) {
-		background: #f5f5f5;
+		background: var(--map-surface-hover);
 	}
 
 	/* Popup Styling */
 	.map-markers-container :global(.leaflet-popup-content-wrapper) {
 		border-radius: 8px;
-		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 16px var(--map-shadow);
 		padding: 0;
 		overflow: hidden;
 	}
@@ -505,30 +593,30 @@
 		margin: 12px 16px 8px;
 		font-size: 16px;
 		font-weight: 600;
-		color: #333;
+		color: var(--map-fg);
 	}
 
 	.map-markers-container :global(.popup-description) {
 		margin: 0 16px 8px;
 		font-size: 13px;
-		color: #666;
+		color: var(--map-fg-muted);
 		line-height: 1.4;
 	}
 
 	.map-markers-container :global(.popup-metadata) {
 		margin: 8px 16px;
 		padding-top: 8px;
-		border-top: 1px solid #eee;
+		border-top: 1px solid var(--map-divider);
 	}
 
 	.map-markers-container :global(.popup-meta-item) {
 		font-size: 12px;
-		color: #666;
+		color: var(--map-fg-muted);
 		margin-bottom: 4px;
 	}
 
 	.map-markers-container :global(.popup-meta-item a) {
-		color: #146ef5;
+		color: var(--map-link);
 		text-decoration: none;
 	}
 
@@ -542,8 +630,8 @@
 		padding: 2px 8px;
 		font-size: 11px;
 		font-weight: 500;
-		color: #146ef5;
-		background: rgba(20, 110, 245, 0.1);
+		color: var(--map-link);
+		background: var(--map-accent-soft);
 		border-radius: 4px;
 		text-transform: capitalize;
 	}
@@ -571,6 +659,44 @@
 			transition: none;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* ==================================================
+     Theme-aware Leaflet chrome
+     Leaflet's own stylesheet paints popups and attribution white;
+     these rules route them through the tokens so they flip too.
+     ================================================== */
+	.map-markers-container :global(.leaflet-popup-content-wrapper),
+	.map-markers-container :global(.leaflet-popup-tip) {
+		background: var(--map-surface);
+		color: var(--map-fg);
+	}
+
+	.map-markers-container :global(.leaflet-control-attribution) {
+		background: var(--map-attribution-bg);
+		color: var(--map-attribution-fg);
+	}
+
+	/* Leaflet's own link (#0078a8) and close-button (#757575) colours are
+	   too dim on dark chrome, so only the dark scheme swaps them. */
+	@media (prefers-color-scheme: dark) {
+		.map-markers-container :global(.leaflet-control-attribution a) {
+			color: var(--map-link);
+		}
+
+		.map-markers-container :global(.leaflet-container a.leaflet-popup-close-button) {
+			color: var(--map-fg-muted);
+		}
+
+		/* Leaflet paints not-yet-loaded tile gaps #ddd; match the dark canvas. */
+		.map-markers-container :global(.leaflet-container) {
+			background: var(--map-canvas);
+		}
+
+		/* Leaflet greys out a zoom button at min/max zoom with a light fill. */
+		.map-markers-container :global(.leaflet-bar a.leaflet-disabled) {
+			background: var(--map-surface);
+			color: var(--map-fg-muted);
+			opacity: 0.5;
+		}
+	}
+</style>

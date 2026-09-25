@@ -28,6 +28,11 @@
 		onClose
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const resultsId = `search-results-${uid}`;
+
 	let inputRef: HTMLInputElement | undefined = $state();
 	let selectedIndex = $state(-1);
 
@@ -119,7 +124,7 @@
 				role="combobox"
 				aria-label="Search cards"
 				aria-autocomplete="list"
-				aria-controls="search-results"
+				aria-controls={resultsId}
 				aria-expanded={results.length > 0}
 			/>
 			<button
@@ -138,7 +143,7 @@
 		<!-- Search results -->
 		{#if query.length >= 2}
 			<ul
-				id="search-results"
+				id={resultsId}
 				class="search-results"
 				role="listbox"
 				aria-label="Search results"
@@ -373,5 +378,3 @@
 		box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
 	}
 </style>
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

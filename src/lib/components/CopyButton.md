@@ -151,6 +151,34 @@ The visual icon also flips — clipboard glyph → checkmark — so colour is no
 | `onCopy` | `(value: string) => void` | — | Fires only after a successful copy. |
 | `class` | `string` | `''` | Extra classes on the button. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The copied state is semantic green: its border never flips and its tint keeps the same hue on both schemes.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--copy-border` | `#d4d4d8` | `#3f3f46` | `.copy-btn` |
+| `--copy-fg` | `#18181b` | `#f4f4f5` | `.copy-btn` |
+| `--copy-bg-hover` | `#fafafa` | `#27272a` | `.copy-btn:hover` |
+| `--copy-border-hover` | `#a1a1aa` | `#71717a` | `.copy-btn:hover` |
+| `--copy-focus-ring` | `#3b82f6` | *(unchanged — brand / semantic)* | `.copy-btn:focus-visible` |
+| `--copy-bg-active` | `#f4f4f5` | `#3f3f46` | `.copy-btn:active` |
+| `--copy-success-bg` | `#ecfdf5` | `#022c22` | `.copy-btn.is-copied` |
+| `--copy-success-border` | `#10b981` | *(unchanged — brand / semantic)* | `.copy-btn.is-copied` |
+| `--copy-success-fg` | `#065f46` | `#6ee7b7` | `.copy-btn.is-copied` |
+| `--copy-bg` | `#ffffff` | `#18181b` | `.copy-btn` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .copy-btn.copy-btn {
+  --copy-bg: #f8fafc;
+  --copy-focus-ring: #7c3aed;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

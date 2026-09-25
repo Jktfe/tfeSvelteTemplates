@@ -1,3 +1,46 @@
+<!--
+  ============================================================
+  HoloCard — Holographic Foil Card Wrapper
+  ============================================================
+  WHAT — Wraps content in a trading-card style holographic foil whose hue
+  and sheen shift as the pointer moves around the card.
+
+  WHY — Collectible-card flair for profile cards, badges, pricing tiers
+  or achievements, with no images or WebGL.
+
+  FEATURES
+  - Three intensities: subtle / iridescent / cosmic (saturation,
+    sheen strength, number of hue bands)
+  - Four palettes: rainbow / pastel / cosmic / gold
+  - Hue follows the pointer angle around the card centre
+  - Resets to neutral when the pointer leaves
+  - Pure helpers exported: pickIntensity, pickPalette, clamp01,
+    cursorAngle, hueAtAngle, sheenAtAngle, isReducedMotion
+
+  ACCESSIBILITY
+  - Decorative wrapper: slotted content stays in the DOM and a11y tree
+  - Foil and sheen overlays are aria-hidden and pointer-events: none
+  - Pointer handlers are no-ops under prefers-reduced-motion: reduce,
+    where CSS swaps in a calm, static foil and sheen
+
+  DEPENDENCIES — Zero. Pure CSS gradients, blend modes and custom properties.
+
+  PERFORMANCE — Pointer moves only update two numbers (hue, sheen)
+  written as CSS variables; no layout work.
+
+  USAGE
+      <HoloCard intensity="cosmic" palette="gold">
+        <div class="card">Legendary</div>
+      </HoloCard>
+
+  PROPS
+  | Prop      | Type                                     | Default      | Description |
+  |-----------|------------------------------------------|--------------|-------------|
+  | intensity | 'subtle' | 'iridescent' | 'cosmic'       | 'iridescent' | Foil strength |
+  | palette   | 'rainbow' | 'pastel' | 'cosmic' | 'gold' | 'rainbow'    | Foil colours |
+  | children  | Snippet                                  | —            | Wrapped content |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type IntensityName = 'subtle' | 'iridescent' | 'cosmic';
 	export type PaletteName = 'rainbow' | 'pastel' | 'cosmic' | 'gold';
@@ -135,7 +178,18 @@
 </div>
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md. HoloCard has no chrome of its own: it
+	 * is an effect layer over whatever surface you slot in, so there is
+	 * nothing to flip under prefers-color-scheme. The palette and sheen are
+	 * brand/effect tokens and deliberately stay identical on both schemes.
+	 * They are still exposed so a dark card can opt into a brighter blend:
+	 *   .my-dark-card :global(.holo.holo) { --holo-foil-blend: screen; }
+	 */
 	.holo {
+		--holo-foil-blend: color-dodge;
+		--holo-sheen-blend: overlay;
+		--holo-sheen-rgb: 255, 255, 255;
 		position: relative;
 		display: inline-block;
 		overflow: hidden;
@@ -154,7 +208,7 @@
 		z-index: 2;
 		pointer-events: none;
 		opacity: var(--holo-saturation, 0.32);
-		mix-blend-mode: color-dodge;
+		mix-blend-mode: var(--holo-foil-blend);
 		transition: opacity 200ms ease-out;
 	}
 
@@ -166,10 +220,10 @@
 		background: linear-gradient(
 			105deg,
 			transparent 30%,
-			rgba(255, 255, 255, calc(0.85 * var(--holo-sheen, 0))) 50%,
+			rgba(var(--holo-sheen-rgb), calc(0.85 * var(--holo-sheen, 0))) 50%,
 			transparent 70%
 		);
-		mix-blend-mode: overlay;
+		mix-blend-mode: var(--holo-sheen-blend);
 		transition: background 80ms linear;
 	}
 
@@ -181,7 +235,7 @@
 		background: linear-gradient(
 			105deg,
 			transparent 30%,
-			rgba(255, 255, 255, 0.15) 50%,
+			rgba(var(--holo-sheen-rgb), 0.15) 50%,
 			transparent 70%
 		);
 	}
@@ -194,7 +248,7 @@
 			background: linear-gradient(
 				105deg,
 				transparent 30%,
-				rgba(255, 255, 255, 0.15) 50%,
+				rgba(var(--holo-sheen-rgb), 0.15) 50%,
 				transparent 70%
 			);
 		}

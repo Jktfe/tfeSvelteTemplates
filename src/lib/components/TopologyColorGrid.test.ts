@@ -72,4 +72,19 @@ describe('TopologyColorGrid', () => {
 		expect(root?.classList.contains('is-light')).toBe(true);
 		expect(screen.getByRole('button', { name: 'Dark Mode' })).toBeTruthy();
 	});
+
+	// Regression: the heading id used to be hard-coded, so two grids on one page
+	// produced duplicate ids and both sections were labelled by the first h1.
+	it('gives each mounted instance a unique heading id', () => {
+		const first = render(TopologyColorGrid, { title: 'First grid' });
+		const second = render(TopologyColorGrid, { title: 'Second grid' });
+		const firstId = first.container.querySelector('h1')?.id;
+		const secondId = second.container.querySelector('h1')?.id;
+		expect(firstId).toBeTruthy();
+		expect(secondId).toBeTruthy();
+		expect(firstId).not.toBe(secondId);
+		expect(first.container.querySelector('section')?.getAttribute('aria-labelledby')).toBe(firstId);
+		expect(second.container.querySelector('section')?.getAttribute('aria-labelledby')).toBe(secondId);
+		expect(document.querySelectorAll(`[id="${firstId}"]`)).toHaveLength(1);
+	});
 });

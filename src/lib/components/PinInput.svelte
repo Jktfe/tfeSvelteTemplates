@@ -31,6 +31,13 @@
     SMS-delivered code automatically
   - Disabled state honoured at the input level (not just CSS)
 
+  THEMING
+  - Dual light / dark via --pin-* custom properties on .pin-input
+  - Chrome (cell fg / bg / border, filled and disabled states) flips
+    under prefers-color-scheme: dark
+  - --pin-accent (caret, focus border) is brand and never flips
+    (docs/THEMING.md)
+
   USAGE
   Default 4-cell OTP:
       <PinInput bind:value={code} onComplete={(v) => verify(v)} />
@@ -278,6 +285,20 @@
 </div>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.pin-input {
+		--pin-fg: #111827;
+		--pin-bg: #ffffff;
+		--pin-border: #d1d5db;
+		--pin-accent: #3b82f6;
+		--pin-filled-border: #6b7280;
+		--pin-filled-bg: #f9fafb;
+		--pin-disabled-bg: #f3f4f6;
+		--pin-disabled-fg: #9ca3af;
+		--pin-disabled-border: #e5e7eb;
+	}
+
 	.pin-input {
 		display: inline-flex;
 		gap: 0.5rem;
@@ -288,11 +309,11 @@
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 		font-weight: 600;
 		text-align: center;
-		color: #111827;
-		background: #ffffff;
-		border: 2px solid #d1d5db;
+		color: var(--pin-fg);
+		background: var(--pin-bg);
+		border: 2px solid var(--pin-border);
 		border-radius: 0.5rem;
-		caret-color: #3b82f6;
+		caret-color: var(--pin-accent);
 		transition:
 			border-color 120ms ease,
 			box-shadow 120ms ease,
@@ -303,20 +324,20 @@
 
 	.pin-cell:focus {
 		outline: none;
-		border-color: #3b82f6;
+		border-color: var(--pin-accent);
 		box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
 	}
 
 	.pin-cell-filled {
-		border-color: #6b7280;
-		background: #f9fafb;
+		border-color: var(--pin-filled-border);
+		background: var(--pin-filled-bg);
 	}
 
 	.pin-cell-disabled {
-		background: #f3f4f6;
-		color: #9ca3af;
+		background: var(--pin-disabled-bg);
+		color: var(--pin-disabled-fg);
 		cursor: not-allowed;
-		border-color: #e5e7eb;
+		border-color: var(--pin-disabled-border);
 	}
 
 	.pin-input-sm .pin-cell {
@@ -342,6 +363,22 @@
 	@media (prefers-reduced-motion: reduce) {
 		.pin-cell {
 			transition: none;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome only. The focus accent is brand and stays.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.pin-input {
+			--pin-fg: #f3f4f6;
+			--pin-bg: #111827;
+			--pin-border: #4b5563;
+			--pin-filled-border: #9ca3af;
+			--pin-filled-bg: #1f2937;
+			--pin-disabled-bg: #1f2937;
+			--pin-disabled-fg: #6b7280;
+			--pin-disabled-border: #374151;
 		}
 	}
 </style>

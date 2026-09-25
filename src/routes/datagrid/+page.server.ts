@@ -1,42 +1,32 @@
 /**
- * Server-side data loading for DataGrid demo page
+ * Server-side data loading for the DataGrid demo page
  *
- * This module handles:
- * - Loading employee data from database or fallback constants
- * - Providing database connection status to the client
- * - Pre-computing statistics for display
+ * - Loads employees from Neon, or the FALLBACK_EMPLOYEES constants, via the
+ *   dataSource.ts helpers so the page status is always honest
+ * - Tells the page whether writes can actually persist (a working database)
+ * - Tells the page whether the viewer is the read-only public demo user, so
+ *   the editing demo can explain why saves are refused
+ * - Tells the page whether anyone is signed in: the write API requires a
+ *   session (requireAuthAPI), so anonymous visitors edit in memory instead
  */
 
-import { loadEmployeesFromDatabase, getEmployeeStatistics } from '$lib/server/dataGrid';
+import { loadEmployeesWithSource, computeEmployeeStatistics } from '$lib/server/dataGrid';
+import { checkAuth, isDemoUser } from '$lib/server/auth';
 import type { PageServerLoad } from './$types';
 
-/**
- * Load employee data and statistics on the server
- *
- * This data is loaded once on the server and sent to the client.
- * Benefits of server-side loading:
- * - Data is available immediately on page load (no loading state needed)
- * - SEO-friendly (data rendered in initial HTML)
- * - Single source of truth for database connection status
- *
- * @returns Object containing:
- * - employees: Array of employee records
- * - usingDatabase: Boolean indicating if connected to database
- * - stats: Employee statistics (count, averages, etc.)
- */
-export const load: PageServerLoad = async () => {
-	// Load employee data (with automatic fallback)
-	const employees = await loadEmployeesFromDatabase();
-
-	// Check if DATABASE_URL is configured
-	const usingDatabase = !!process.env.DATABASE_URL;
-
-	// Load statistics for display
-	const stats = await getEmployeeStatistics();
+export const load: PageServerLoad = async (event) => {
+	const result = await loadEmployeesWithSource();
 
 	return {
-		employees,
-		usingDatabase,
-		stats
+		employees: result.data,
+		// Only true when the rows really came from the database — the
+		// .env.example placeholder and failed queries both report false.
+		usingDatabase: result.usingDatabase,
+		dataSource: result.source,
+		dataSourceMessage: result.message,
+		isSignedIn: checkAuth(event).authenticated,
+		isDemoUser: isDemoUser(event),
+		// Derived from the rows we already have — no second query.
+		stats: computeEmployeeStatistics(result.data)
 	};
 };

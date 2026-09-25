@@ -33,6 +33,7 @@
 	• Each section is a real <section> with an aria-labelledby
 	• Headings step h1 → h2 → h3 in document order
 	• Code blocks have role="region" + aria-label
+	• Hover transitions are disabled under prefers-reduced-motion
 
 	USAGE
 	<ComponentPageShell
@@ -75,6 +76,9 @@
 	| resources        | no       | { label, href }[]                      |
 	| usageSnippet     | no       | Code inside the implementation block   |
 	| codeExplanation  | no       | Prose paragraph beneath the code       |
+	| docsPath         | no       | Sibling .md path; HTML comes from the  |
+	|                  |          | server via page.data.componentDocs     |
+	| docsHtml         | no       | Pre-rendered HTML (overrides docsPath) |
 
 	SNIPPETS
 	| name | what                                              |
@@ -129,16 +133,24 @@
 		shelfNavigation?: ShelfNavigation;
 		/**
 		 * Pre-rendered, sanitised HTML for the "Logic explainer" section.
-		 * Comes from the sibling `<Component>.md` via `getDocsHtmlForPath`.
-		 * When omitted the section is hidden.
+		 * Takes precedence over `docsPath` when both are given.
 		 */
 		docsHtml?: string;
+		/**
+		 * Repo-relative path of the sibling `<Component>.md`. The root
+		 * `+layout.server.ts` renders that doc on the server and exposes it as
+		 * `page.data.componentDocs`; the shell only uses it when the paths
+		 * match, so a stray doc from another route can never leak in. When
+		 * neither this nor `docsHtml` resolves, the section is hidden.
+		 */
+		docsPath?: string;
 		demo?: import('svelte').Snippet;
 		api?: import('svelte').Snippet;
 	}
 </script>
 
 <script lang="ts">
+	import { page } from '$app/state';
 	import AgentPromptCopy from './AgentPromptCopy.svelte';
 	import CodeBlock from './CodeBlock.svelte';
 	import CopyButton from './CopyButton.svelte';
@@ -160,11 +172,21 @@
 		codeLanguage = 'svelte',
 		shelfNavigation,
 		docsHtml,
+		docsPath,
 		demo,
 		api
 	}: ComponentPageShellProps = $props();
 
 	const resolvedFileName = $derived(codeFileName ?? `${name}.svelte`);
+
+	// Docs are rendered server-side so the markdown pipeline and the full doc
+	// corpus never ship to the browser; each page receives only its own HTML.
+	const resolvedDocsHtml = $derived.by(() => {
+		if (docsHtml) return docsHtml;
+		const serverDocs = page.data.componentDocs;
+		if (docsPath && serverDocs && serverDocs.path === docsPath) return serverDocs.html;
+		return undefined;
+	});
 </script>
 
 {#snippet shelfNavBlock(placement: 'header' | 'footer')}
@@ -269,15 +291,15 @@
 				{/if}
 
 				<!-- Logic explainer (rendered from the sibling .md doc) -->
-				{#if docsHtml}
+				{#if resolvedDocsHtml}
 					<section class="cp-card cp-explainer" aria-labelledby="cp-explainer-title">
 						<header class="cp-card__head">
 							<h2 id="cp-explainer-title">Logic explainer</h2>
 							<span class="cp-eyebrow">03</span>
 						</header>
-						<!-- docsHtml is sanitised by sanitize-html upstream in renderMarkdown -->
+						<!-- Docs HTML is sanitised by sanitize-html upstream in renderMarkdown -->
 						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						<div class="cp-explainer__body">{@html docsHtml}</div>
+						<div class="cp-explainer__body">{@html resolvedDocsHtml}</div>
 					</section>
 				{/if}
 
@@ -932,6 +954,18 @@
 		}
 		.cp-shelf-nav__link--next {
 			text-align: left;
+		}
+	}
+
+	/* Reduced motion: shelf links and breadcrumbs change colour instantly and
+	   the 1px hover lift is dropped so nothing nudges under the pointer. */
+	@media (prefers-reduced-motion: reduce) {
+		.cp-crumb a,
+		.cp-shelf-nav__link {
+			transition: none;
+		}
+		.cp-shelf-nav__link:hover {
+			transform: none;
 		}
 	}
 </style>

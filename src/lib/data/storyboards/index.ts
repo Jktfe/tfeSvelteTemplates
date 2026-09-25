@@ -17,6 +17,8 @@
 import type { ExplainerCanvasData } from '$lib/types';
 import { shineBorderStoryboard } from './shineborder';
 import { timelineStoryboard } from './timeline';
+import { animatedTextStoryboard } from './animatedtext';
+import { waveTextStoryboard } from './wavetext';
 
 /**
  * Map of component names to their storyboard data.
@@ -24,7 +26,9 @@ import { timelineStoryboard } from './timeline';
  */
 export const storyboards: Record<string, ExplainerCanvasData> = {
 	shineborder: shineBorderStoryboard,
-	timeline: timelineStoryboard
+	timeline: timelineStoryboard,
+	animatedtext: animatedTextStoryboard,
+	wavetext: waveTextStoryboard
 	// Add more storyboards here as they're created:
 	// cardstack: cardStackStoryboard,
 	// marquee: marqueeStoryboard,
@@ -49,4 +53,4 @@ export function getAvailableStoryboards(): string[] {
 }
 
 // Re-export individual storyboards for direct import
-export { shineBorderStoryboard, timelineStoryboard };
+export { shineBorderStoryboard, timelineStoryboard, animatedTextStoryboard, waveTextStoryboard };

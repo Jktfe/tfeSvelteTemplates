@@ -40,18 +40,19 @@ render:
     for each tab:
       <button role="tab"
               aria-selected={tab.id === active}
-              aria-controls="panel-{id}"
+              id="tab-{uid}-{id}"
+              aria-controls="panel-{uid}"
               tabindex={tab.id === active ? 0 : -1}
               disabled={tab.disabled}>
         icon? + label
       </button>
   </div>
-  <div role="tabpanel" id="panel-{active}" aria-labelledby="tab-{active}">
+  <div role="tabpanel" id="panel-{uid}" aria-labelledby="tab-{uid}-{active}">
     {@render panel(active)}
   </div>
 ```
 
-The tablist + tabpanel are wired with two id pairs: `id="tab-{id}"` on the button is referenced by `aria-labelledby` on the panel, and `id="panel-{id}"` on the panel is referenced by `aria-controls` on the button. Screen readers use these to announce the relationship — "*tab Overview, selected, controls panel Overview content*".
+The tablist + tabpanel are wired with ids prefixed by a per-instance `uid` from `$props.id()`: `id="tab-{uid}-{id}"` on each button is referenced by `aria-labelledby` on the panel, and the single shared panel's `id="panel-{uid}"` is referenced by `aria-controls` on every button (there is only one panel element, so every tab controls it). Screen readers use these to announce the relationship — "*tab Overview, selected, controls panel Overview content*".
 
 ## The Core Concept: Roving Tabindex
 
@@ -129,6 +130,30 @@ The two variants share the same DOM structure — only CSS differs. Switching `v
 | `class` | `string` | `''` | Extra classes on the wrapper. |
 | `panel` | `Snippet<[string]>` | — | Snippet that receives the active id and renders the panel. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+`--tabs-accent` (active underline and focus ring) is brand and stays the same blue on both schemes.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--tabs-fg` | `#0f172a` | `#f1f5f9` | `.tabs`, `.tab:hover:not(:disabled):not(.active)` |
+| `--tabs-border` | `#e2e8f0` | `#334155` | `.tabs-horizontal.tabs-underline .tablist`, `.tabs-vertical .tablist` |
+| `--tabs-tab-fg` | `#475569` | `#94a3b8` | `.tab` |
+| `--tabs-hover-bg` | `#f8fafc` | `#273449` | `.tab:hover:not(:disabled):not(.active)` |
+| `--tabs-pill-track` | `#f1f5f9` | `#1e293b` | `.tabs-pill .tablist` |
+| `--tabs-pill-active-bg` | `#fff` | `#334155` | `.tabs-pill .tab.active` |
+| `--tabs-accent` | `#2563eb` | *(unchanged — brand / semantic)* | `.tab:focus-visible`, `.tabs-horizontal.tabs-underline .tab.active` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .tabs.tabs {
+  --tabs-accent: #7c3aed;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |
@@ -140,7 +165,7 @@ The two variants share the same DOM structure — only CSS differs. Switching `v
 | User has `prefers-reduced-motion: reduce` | The colour and background transitions on tabs are removed; the panel swap is instant. |
 | Panel content is heavy (e.g. data fetch) | The `panel` snippet runs on every active change; render-side caching is the consumer's responsibility. Common pattern: render a wrapper component per tab id and let it manage its own load. |
 | Vertical orientation in a constrained-height container | The tablist becomes a vertical flex column, panel shares the row. Set `min-width` on the tablist if labels are long; otherwise it'll squeeze. |
-| Two Tabs on the same page sharing tab ids | DOM uses `id="tab-{id}"` and `id="panel-{id}"` — duplicate ids break aria-labelledby. Use unique ids across the page. |
+| Two Tabs on the same page sharing tab ids | Safe — every DOM id is prefixed with the instance's `$props.id()`, so identical `tabs` arrays still produce unique ids and correct aria wiring. |
 
 ## Dependencies
 

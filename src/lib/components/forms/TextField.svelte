@@ -24,6 +24,7 @@
 	// [NTL] All the ways you can customise this text input!
 	let {
 		name,
+		id,
 		label,
 		type = 'text', // [NTL] Can be: text, email, url, tel, password, search
 		value = $bindable(''), // [CR] Two-way binding with $bindable rune
@@ -41,10 +42,16 @@
 		oninput
 	}: TextFieldProps = $props();
 
+	// Every instance gets its own id prefix from Svelte, so two forms with the
+	// same field names on one page never share ids. `name` stays the form
+	// submission key; pass `id` only when something outside needs to target
+	// the control (e.g. a skip link or an external <label for>).
+	const uid = $props.id();
+
 	// [CR] DERIVED VALUES - Computed IDs for accessibility
-	let fieldId = $derived(`field-${name}`);
-	let helpId = $derived(`${name}-help`);
-	let errorId = $derived(`${name}-error`);
+	let fieldId = $derived(id ?? `field-${uid}`);
+	let helpId = $derived(`${fieldId}-help`);
+	let errorId = $derived(`${fieldId}-error`);
 
 	// [CR] Error state for conditional styling
 	// [NTL] Only show error styling after the field has been "touched"
@@ -71,7 +78,7 @@
 	}
 </script>
 
-<FormField {name} {label} {required} {error} {touched} {helpText}>
+<FormField id={fieldId} {label} {required} {error} {touched} {helpText}>
 	<input
 		id={fieldId}
 		{name}
@@ -162,6 +169,11 @@
 			padding: 0.5rem 0.75rem;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	@media (prefers-reduced-motion: reduce) {
+		.text-field-input {
+			transition: none;
+		}
+	}
+</style>

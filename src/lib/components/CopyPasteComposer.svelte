@@ -1,3 +1,43 @@
+<!--
+  ============================================================
+  CopyPasteComposer — Catalogue Handoff Bundle Builder
+  ============================================================
+  WHAT — Pick a catalogue component, tick the artefacts you want, and get
+  the file list, install/copy commands, checklist and usage snippet.
+
+  WHY — Turns catalogue metadata into a practical "copy this into your
+  repo" pack for people or agents.
+
+  FEATURES
+  - Source is always included; docs, demo, tests and related files toggle
+  - Test files in relatedFiles are only bundled when Tests is on; other
+    related files stay behind the Related files toggle
+  - bun / pnpm / npm / yarn install lines and a custom target root
+  - Deduplicated mkdir -p and cp commands
+  - Pure helpers exported: deriveSelectedFiles, deriveInstallCommands,
+    dependencyInstallCommand, testCandidatesFor, checklistFor, normalisePath
+
+  ACCESSIBILITY
+  - Native select, text input and checkboxes inside labelled fields
+  - Panels are sections labelled by their headings
+  - Command block is a labelled region
+  - No motion
+
+  DEPENDENCIES — Zero beyond Svelte (svelte/reactivity SvelteSet).
+
+  PERFORMANCE — All outputs are $derived from toggle state; instant.
+
+  USAGE
+      <CopyPasteComposer entries={catalogEntries} initialHref="/speeddial" />
+
+  PROPS
+  | Prop        | Type                    | Default               | Description |
+  |-------------|-------------------------|-----------------------|-------------|
+  | entries     | CopyPasteCatalogEntry[] | required              | Catalogue rows to choose from |
+  | title       | string                  | 'Copy-paste composer' | Heading |
+  | initialHref | string                  | first entry           | Entry to preselect |
+  ============================================================
+-->
 <script lang="ts" module>
 	import { SvelteSet } from 'svelte/reactivity';
 
@@ -185,6 +225,15 @@
 
 	let { entries, title = 'Copy-paste composer', initialHref }: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `cpc-title-${uid}`;
+	const filesTitleId = `cpc-files-title-${uid}`;
+	const commandsTitleId = `cpc-commands-title-${uid}`;
+	const checklistTitleId = `cpc-checklist-title-${uid}`;
+	const usageTitleId = `cpc-usage-title-${uid}`;
+
 	let selectedHref = $state('');
 	let includeDocs = $state(defaultCopyPasteOptions.includeDocs);
 	let includeDemo = $state(defaultCopyPasteOptions.includeDemo);
@@ -222,11 +271,11 @@
 	});
 </script>
 
-<section class="copy-paste-composer" aria-labelledby="cpc-title">
+<section class="copy-paste-composer" aria-labelledby={titleId}>
 	<header class="cpc-head">
 		<div>
 			<p class="cpc-kicker">Catalogue handoff</p>
-			<h2 id="cpc-title">{title}</h2>
+			<h2 id={titleId}>{title}</h2>
 			<p>Choose a component and build the exact source, docs, demo, dependency, and usage bundle to hand to another repo.</p>
 		</div>
 		{#if selectedEntry}
@@ -268,9 +317,9 @@
 		</fieldset>
 
 		<div class="cpc-grid">
-			<section class="cpc-panel" aria-labelledby="cpc-files-title">
+			<section class="cpc-panel" aria-labelledby={filesTitleId}>
 				<header>
-					<h3 id="cpc-files-title">Selected files</h3>
+					<h3 id={filesTitleId}>Selected files</h3>
 					<span>{selectedFiles.length}</span>
 				</header>
 				<ul class="cpc-file-list">
@@ -284,9 +333,9 @@
 				</ul>
 			</section>
 
-			<section class="cpc-panel" aria-labelledby="cpc-commands-title">
+			<section class="cpc-panel" aria-labelledby={commandsTitleId}>
 				<header>
-					<h3 id="cpc-commands-title">Command block</h3>
+					<h3 id={commandsTitleId}>Command block</h3>
 					<span>{commands.length}</span>
 				</header>
 				<pre class="cpc-command" role="region" aria-label="Install commands"><code>{commandText}</code></pre>
@@ -294,9 +343,9 @@
 		</div>
 
 		<div class="cpc-grid">
-			<section class="cpc-panel" aria-labelledby="cpc-checklist-title">
+			<section class="cpc-panel" aria-labelledby={checklistTitleId}>
 				<header>
-					<h3 id="cpc-checklist-title">Checklist</h3>
+					<h3 id={checklistTitleId}>Checklist</h3>
 				</header>
 				<ol class="cpc-checklist">
 					{#each checklist as item (item)}
@@ -305,9 +354,9 @@
 				</ol>
 			</section>
 
-			<section class="cpc-panel" aria-labelledby="cpc-usage-title">
+			<section class="cpc-panel" aria-labelledby={usageTitleId}>
 				<header>
-					<h3 id="cpc-usage-title">Usage</h3>
+					<h3 id={usageTitleId}>Usage</h3>
 				</header>
 				<pre class="cpc-usage"><code>{selectedEntry.usage}</code></pre>
 			</section>

@@ -81,6 +81,11 @@
 		inactiveHoverText = '#ffffff'
 	}: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const filterId = `gooey-filter-${uid}`;
+
 	// Each entry corresponds to the tab at the same index. `bind:this` populates them.
 	let tabEls = $state<(HTMLButtonElement | null)[]>([]);
 	let pillWidth = $state(0);
@@ -148,7 +153,7 @@
 	-->
 	<svg width="0" height="0" class="absolute pointer-events-none" aria-hidden="true">
 		<defs>
-			<filter id="gooey-filter">
+			<filter id={filterId}>
 				<feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
 				<feColorMatrix
 					in="blur"
@@ -166,7 +171,7 @@
 	</svg>
 
 	<!-- The moving pill lives inside the gooey-filtered layer so its motion looks fluid. -->
-	<div class="absolute inset-0 pointer-events-none" style="filter: url(#gooey-filter);">
+	<div class="absolute inset-0 pointer-events-none" style="filter: url(#{filterId});">
 		<div
 			class={cn(
 				'ltb-pill absolute rounded-full top-2 bottom-2',

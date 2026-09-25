@@ -563,6 +563,20 @@
 	.card-expand-indicator svg.rotated {
 		transform: rotate(180deg);
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: hover states, tooltips and the expand chevron all snap
+	   to their end state rather than easing or sliding into place. */
+	@media (prefers-reduced-motion: reduce) {
+		.card-dot,
+		.explainer-card,
+		.drag-handle,
+		.drag-handle[data-tooltip]::after,
+		.children-indicator[data-tooltip]::after,
+		.link-pill,
+		.dive-in-btn,
+		.card-expand-indicator,
+		.card-expand-indicator svg {
+			transition: none;
+		}
+	}
+</style>

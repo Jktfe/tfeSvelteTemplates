@@ -41,6 +41,25 @@ commands/items props
 | `screenshotHref` | `string` | `undefined` | Link to visual proof. |
 | `class` | `string` | `""` | Extra root classes. |
 
+## Theming
+
+Follows `docs/THEMING.md`: tokens live on `.evidence-card` with light defaults inline and a `@media (prefers-color-scheme: dark)` flip. Chrome tokens read the host app's shared tokens first (`--fg-1`, `--fg-2`, `--fg-3`, `--border`, `--surface`, `--surface-2`, `--accent`) and fall back to built-in values, so the component flips correctly both inside this showcase and when copied into an app that defines none of them. If your host defines those tokens but never flips them, override the component tokens directly.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--evc-fg-1` / `--evc-fg-2` / `--evc-fg-3` | `var(--fg-*, …)` | `var(--fg-*, …)` dark fallbacks | Text tiers |
+| `--evc-border` / `--evc-surface` / `--evc-surface-2` | `var(--border/--surface/--surface-2, …)` | dark fallbacks | Card and fact tiles |
+| `--evc-{good,bad,warn,neutral}-{accent,bg,border}` | green / red / amber / blue pastels | same hues, deep tints, light text | Status badge, left rule, route text |
+
+Status tones are semantic and keep their hue on both schemes. The command log block is a terminal and is intentionally dark in both schemes, so it is not part of the flip.
+
+```css
+/* Tighter contrast for a projector-friendly dashboard */
+body .evidence-card.evidence-card {
+  --evc-border: #94a3b8;
+}
+```
+
 ## Edge Cases
 
 - Failed commands dominate the overall status.

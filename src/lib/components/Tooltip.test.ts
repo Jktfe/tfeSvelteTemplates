@@ -23,6 +23,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, fireEvent } from '@testing-library/svelte';
+import { createRawSnippet } from 'svelte';
 import Tooltip from './Tooltip.svelte';
 
 describe('Tooltip', () => {
@@ -176,5 +177,83 @@ describe('Tooltip', () => {
 		vi.advanceTimersByTime(100);
 		await Promise.resolve();
 		expect(container.querySelector('[role="tooltip"]')).toBeTruthy();
+	});
+});
+
+describe('Tooltip keyboard dismissal and describedby wiring', () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	const buttonChild = (attrs = '') =>
+		createRawSnippet(() => ({
+			render: () => `<button type="button" ${attrs}>Save</button>`
+		}));
+
+	async function hoverOpen(wrap: Element) {
+		await fireEvent.mouseEnter(wrap);
+		vi.advanceTimersByTime(0);
+		await Promise.resolve();
+	}
+
+	it('closes a hover-opened tooltip on Escape even when focus is elsewhere', async () => {
+		const outside = document.createElement('input');
+		document.body.appendChild(outside);
+		outside.focus();
+
+		const { container } = render(Tooltip, { props: { text: 'Hi', showDelay: 0 } });
+		await hoverOpen(container.querySelector('.tooltip-wrap')!);
+		expect(container.querySelector('[role="tooltip"]')).toBeTruthy();
+
+		await fireEvent.keyDown(outside, { key: 'Escape' });
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+		outside.remove();
+	});
+
+	it('cancels a pending show when Escape is pressed before the delay elapses', async () => {
+		const { container } = render(Tooltip, { props: { text: 'Hi', showDelay: 300 } });
+		await fireEvent.mouseEnter(container.querySelector('.tooltip-wrap')!);
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		vi.advanceTimersByTime(300);
+		await Promise.resolve();
+		expect(container.querySelector('[role="tooltip"]')).toBeNull();
+	});
+
+	it('puts aria-describedby on the focusable child, not just the wrapper span', async () => {
+		const { container } = render(Tooltip, {
+			props: { text: 'Hi', showDelay: 0, id: 'tip-save', children: buttonChild() }
+		});
+		const button = container.querySelector('button')!;
+		expect(button.getAttribute('aria-describedby')).toBeNull();
+
+		await hoverOpen(container.querySelector('.tooltip-wrap')!);
+		expect(button.getAttribute('aria-describedby')).toBe('tip-save');
+
+		await fireEvent.mouseLeave(container.querySelector('.tooltip-wrap')!);
+		await Promise.resolve();
+		expect(button.getAttribute('aria-describedby')).toBeNull();
+	});
+
+	it("preserves the child's own aria-describedby ids", async () => {
+		const { container } = render(Tooltip, {
+			props: {
+				text: 'Hi',
+				showDelay: 0,
+				id: 'tip-save',
+				children: buttonChild('aria-describedby="hint-a"')
+			}
+		});
+		const button = container.querySelector('button')!;
+
+		await hoverOpen(container.querySelector('.tooltip-wrap')!);
+		expect(button.getAttribute('aria-describedby')).toBe('hint-a tip-save');
+
+		await fireEvent.mouseLeave(container.querySelector('.tooltip-wrap')!);
+		await Promise.resolve();
+		expect(button.getAttribute('aria-describedby')).toBe('hint-a');
 	});
 });

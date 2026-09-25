@@ -388,4 +388,18 @@
 		opacity: 0.65;
 		font-style: normal;
 	}
+
+	/* Reduced motion: the panel appears in place and the cart button no longer
+	   nudges on press. State changes stay visible, they just aren't animated. */
+	@media (prefers-reduced-motion: reduce) {
+		.panel,
+		.pill,
+		.cart-btn {
+			transition: none;
+		}
+
+		.cart-btn:active {
+			transform: none;
+		}
+	}
 </style>

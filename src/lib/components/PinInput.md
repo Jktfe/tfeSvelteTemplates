@@ -127,6 +127,32 @@ This matters most for the paste path. A user pasting a styled OTP from an SMS pr
 | `ariaLabel` | `string` | `'Verification code'` | Forwarded to the wrapper `role="group"`. |
 | `class` | `string` | `''` | Extra classes on the wrapper. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+`--pin-accent` (caret and focus border) is brand and never flips.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--pin-fg` | `#111827` | `#f3f4f6` | `.pin-cell` |
+| `--pin-bg` | `#ffffff` | `#111827` | `.pin-cell` |
+| `--pin-border` | `#d1d5db` | `#4b5563` | `.pin-cell` |
+| `--pin-accent` | `#3b82f6` | *(unchanged — brand / semantic)* | `.pin-cell`, `.pin-cell:focus` |
+| `--pin-filled-border` | `#6b7280` | `#9ca3af` | `.pin-cell-filled` |
+| `--pin-filled-bg` | `#f9fafb` | `#1f2937` | `.pin-cell-filled` |
+| `--pin-disabled-bg` | `#f3f4f6` | `#1f2937` | `.pin-cell-disabled` |
+| `--pin-disabled-fg` | `#9ca3af` | `#6b7280` | `.pin-cell-disabled` |
+| `--pin-disabled-border` | `#e5e7eb` | `#374151` | `.pin-cell-disabled` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .pin-input.pin-input {
+  --pin-accent: #7c3aed;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

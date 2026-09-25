@@ -1,5 +1,4 @@
 import type { MenuCategory } from './types';
-import { getDocsHtmlForPath } from './componentDocs';
 
 export interface ComponentCatalogItem {
 	name: string;
@@ -56,7 +55,7 @@ const component = (
 	href: string,
 	icon: string,
 	description: string,
-	screenshotOrOptions: string | ComponentCatalogOptions = `${componentFileName(name)}Shot.png`,
+	screenshotOrOptions: string | ComponentCatalogOptions = `${componentFileName(name)}Shot.webp`,
 	options: ComponentCatalogOptions = {}
 ): ComponentCatalogItem => {
 	const resolvedOptions =
@@ -70,7 +69,7 @@ const component = (
 		href,
 		icon,
 		description,
-		screenshot: screenshot(resolvedOptions.screenshotFile ?? `${baseName}Shot.png`),
+		screenshot: screenshot(resolvedOptions.screenshotFile ?? `${baseName}Shot.webp`),
 		themeSupport: resolvedOptions.themeSupport ?? 'light',
 		source: resolvedOptions.source ?? `src/lib/components/${baseName}.svelte`,
 		docs: resolvedOptions.docs ?? `src/lib/components/${baseName}.md`,
@@ -104,7 +103,8 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Sidebar {items} activeHref="/dashboard" title="Acme" />`
 			}),
 			component('Navbar', '/navbar', '☰', 'Responsive app navigation with a sliding panel.', {
-				screenshotFile: 'NavBarShot.png',
+				themeSupport: 'dual',
+				screenshotFile: 'NavBarShot.webp',
 				usage: `<script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
   import type { MenuCategory } from '$lib/types';
@@ -206,6 +206,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Breadcrumbs {items} separator="/" maxVisible={4} />`
 			}),
 			component('Pagination', '/pagination', '📑', 'Page-number navigation with ellipsis handling.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Pagination from '$lib/components/Pagination.svelte';
 
@@ -254,6 +255,43 @@ export const componentCategories: ComponentCatalogCategory[] = [
   position="top"
   color="#6366f1"
 />`
+			}),
+			component('StaggeredMenu', '/staggeredmenu', '🪜', 'Navigation list whose links cascade in one after another on open.', {
+				screenshotFile: 'StaggeredMenuShot.webp',
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/types.ts', 'src/lib/components/StaggeredMenu.test.ts'],
+				usage: `<script lang="ts">
+  import StaggeredMenu from '$lib/components/StaggeredMenu.svelte';
+  import type { MenuItem } from '$lib/types';
+
+  let open = $state(false);
+
+  const items: MenuItem[] = [
+    { href: '/', label: 'Home', icon: '🏠', active: true },
+    { href: '/work', label: 'Work', icon: '💼' },
+    { href: '/about', label: 'About', icon: '👋' },
+    { href: '/contact', label: 'Contact', icon: '✉️' }
+  ];
+</script>
+
+<button
+  type="button"
+  aria-expanded={open}
+  aria-controls="site-menu"
+  onclick={() => (open = !open)}
+>
+  {open ? 'Close menu' : 'Open menu'}
+</button>
+
+<StaggeredMenu
+  id="site-menu"
+  {items}
+  bind:isOpen={open}
+  orientation="vertical"
+  staggerMs={60}
+/>`,
+				agentHint:
+					'The cascade is pure CSS keyed off --stagger-delay; keep every href unique (it is the each-block key) and keep total settle time under ~600ms.'
 			})
 		]
 	},
@@ -382,6 +420,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				agentHint: 'Copy the field components you need, or copy the whole forms folder for the full suite.'
 			}),
 			component('PinInput', '/pininput', '🔢', 'Segmented OTP and verification-code entry.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import PinInput from '$lib/components/PinInput.svelte';
   let code = $state('');
@@ -390,6 +429,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <PinInput bind:value={code} length={6} onComplete={(v) => console.log('done', v)} />`
 			}),
 			component('UploadDropzone', '/uploaddropzone', '📤', 'Drag, paste, and validate file uploads.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import UploadDropzone from '$lib/components/UploadDropzone.svelte';
 </script>
@@ -428,7 +468,24 @@ export const componentCategories: ComponentCatalogCategory[] = [
 
 <SegmentedControl {options} bind:value={view} ariaLabel="View mode" />`
 			}),
-			component('FilterChips', '/filterchips', '🎚️', 'Toggleable chips for search and filtering.'),
+			component('FilterChips', '/filterchips', '🎚️', 'Toggleable chips for search and filtering.', {
+				relatedFiles: ['src/lib/components/FilterChips.test.ts'],
+				usage: `<script lang="ts">
+  import FilterChips from '$lib/components/FilterChips.svelte';
+
+  const options = [
+    { value: 'design', label: 'Design', count: 12 },
+    { value: 'engineering', label: 'Engineering', count: 8 },
+    { value: 'marketing', label: 'Marketing', count: 5 }
+  ];
+  let selected = $state<string[]>(['design']);
+</script>
+
+<FilterChips {options} bind:selected showAll ariaLabel="Filter by team" />
+<p>Active: {selected.join(', ') || 'none'}</p>`,
+				agentHint:
+					'Bind selected (string[]) for the active values; use mode="single" for radio-style chips and removable with onRemove for applied-filter pills.'
+			}),
 			component('RatingStars', '/ratingstars', '⭐', 'Keyboard-friendly star rating control.', {
 				themeSupport: 'dual',
 				relatedFiles: ['src/lib/components/RatingStars.test.ts'],
@@ -461,6 +518,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Accordion items={faqs} />`
 			}),
 			component('Tabs', '/tabs', '🗂', 'ARIA-correct tabbed content switcher.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Tabs from '$lib/components/Tabs.svelte';
   const tabs = [
@@ -480,6 +538,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </Tabs>`
 			}),
 			component('CommandPalette', '/commandpalette', '🔎', 'Spotlight-style fuzzy command launcher.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import CommandPalette from '$lib/components/CommandPalette.svelte';
   const items = [
@@ -523,6 +582,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				}
 			),
 			component('CopyButton', '/copybutton', '📋', 'Clipboard button with copied-state feedback.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import CopyButton from '$lib/components/CopyButton.svelte';
 </script>
@@ -583,6 +643,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <button onclick={() => addToast({ message: 'Saved!', severity: 'success' })}>Save</button>`
 			}),
 			component('AlertBanner', '/alertbanner', '🚨', 'Inline status banner for common tones.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import AlertBanner from '$lib/components/AlertBanner.svelte';
   let shown = $state(true);
@@ -630,6 +691,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </ProgressRing>`
 			}),
 			component('ProgressBar', '/progressbar', '📊', 'Linear progress indicator with labels and variants.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import ProgressBar from '$lib/components/ProgressBar.svelte';
 </script>
@@ -646,6 +708,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </button>`
 			}),
 			component('BadgePill', '/badgepill', '🏷️', 'Status pills, tags, and dismissible chips.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import BadgePill from '$lib/components/BadgePill.svelte';
 </script>
@@ -654,6 +717,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <BadgePill label="Frontend" tone="info" dismissible />`
 			}),
 			component('Avatar', '/avatar', '🙂', 'User image with initials and status fallback.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Avatar from '$lib/components/Avatar.svelte';
 </script>
@@ -677,6 +741,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <AvatarStack people={team} max={3} size={36} />`
 			}),
 			component('StatCard', '/statcard', '📈', 'KPI card with trend-aware sentiment.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import StatCard from '$lib/components/StatCard.svelte';
 </script>
@@ -704,6 +769,43 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </script>
 
 <ShinyText text="Premium" baseColor="#475569" shineColor="#fbbf24" duration={2.5} />`
+			}),
+			component('AnimatedText', '/animated-text', '➰', 'Text ribbon drifting along an SVG path that cross-fades into a hidden phrase.', {
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/components/AnimatedText.test.ts', 'src/lib/types.ts'],
+				usage: `<script lang="ts">
+  import AnimatedText from '$lib/components/AnimatedText.svelte';
+
+  let morphed = $state(false);
+</script>
+
+<AnimatedText
+  originalText="STATIC DRIFT TRANSMIT RECEIVE"
+  morphedText="SIGNAL FOUND — SAY HELLO"
+  trigger="hover"
+  speed={30}
+  direction="left"
+  bind:morphed
+/>
+<p>Showing: {morphed ? 'morphed' : 'original'}</p>`,
+				agentHint:
+					'Zero-dep SVG textPath ribbon. Uses $props.id() (Svelte 5.20+) for per-instance path ids, so multiple mounts never collide. Interactive modes render a real <button aria-pressed>: hover and keyboard focus-visible morph, tap / Enter / Space toggle, Escape resets; trigger="none" renders role="img". The rAF drift loop stops off-screen, when paused and under prefers-reduced-motion (morph becomes an instant swap). Theme via --animated-text-bg / --animated-text-fg / --animated-text-focus-ring (chrome, flip in dark) and --animated-text-accent (brand, stays). Import AnimatedTextProps from $lib/types or inline it.'
+			}),
+			component('WaveText', '/wavetext', '🌊', 'Phrase set on a generated sine wave that ripples on hover, focus or tap.', {
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/components/WaveText.test.ts', 'src/lib/types.ts'],
+				usage: `<script lang="ts">
+  import WaveText from '$lib/components/WaveText.svelte';
+
+  let playing = $state(false);
+</script>
+
+<WaveText text="Making waves" amplitude={24} wavelength={240} speed={0.6} bind:playing />
+<button type="button" onclick={() => (playing = !playing)}>
+  {playing ? 'Pause' : 'Play'} ripple
+</button>`,
+				agentHint:
+					'Zero-dep SVG sine path generated from amplitude + wavelength; advancing the phase makes the ripple flow. Styles are scoped (.wt-root / .wt-text) — never :global — and $props.id() (Svelte 5.20+) keeps path ids unique per mount. Interactive modes render <button aria-pressed> with hover, keyboard focus-visible, tap / Enter / Space toggle and Escape to stop; trigger="none" renders role="img" for purely decorative use. Under prefers-reduced-motion the wave flips half a cycle instead of animating. Theme via --wave-text-fg / --wave-text-bg / --wave-text-focus-ring (chrome, flip in dark) plus --wave-text-font / --wave-text-size.'
 			}),
 			component('ScrambledText', '/scrambledtext', '🔀', 'Glyph shuffle that resolves into readable copy.', {
 				usage: `<script lang="ts">
@@ -742,6 +844,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <SplitFlap {value} charset="alnum" stagger={60} flipDuration={320} size="lg" />`
 			}),
 			component('TickerTape', '/tickertape', '📈', 'Structured infinite-scroll information strip.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import TickerTape from '$lib/components/TickerTape.svelte';
   const items = [
@@ -789,6 +892,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 					'Copy src/lib/tokenize.ts with the component; it is the local tokenizer that replaces a heavyweight highlighter dependency.'
 			}),
 			component('Countdown', '/countdown', '⏱️', 'Animated timer for deadlines and launches.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Countdown from '$lib/components/Countdown.svelte';
 </script>
@@ -874,7 +978,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🎴',
 				'4-direction rolling deck with scoped keyboard control.',
 				{
-					screenshotFile: 'CardStackMotionFlipShot.svg',
+					screenshotFile: 'CardStackMotionFlipShot.webp',
 					themeSupport: 'dual',
 					relatedFiles: ['src/lib/scrollLock.ts', 'src/lib/types.ts'],
 					usage:
@@ -985,7 +1089,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🖼️',
 				'Scroll-driven paintings portfolio with fan, conveyor, and detail-view phases.',
 				{
-					screenshotFile: 'InteractiveCardsShot.svg',
+					screenshotFile: 'InteractiveCardsShot.webp',
 					themeSupport: 'dual',
 					source: 'src/lib/components/InteractiveCards.svelte',
 					relatedFiles: [
@@ -1035,6 +1139,26 @@ export const componentCategories: ComponentCatalogCategory[] = [
     The dialog grew out of the button you just clicked.
   </p>
 </MorphingDialog>`
+			}),
+			component('InfiniteCardSlider', '/infinitecardslider', '🎠', 'Looping card carousel with a focal centre card, drag, arrows and keys.', {
+				screenshotFile: 'InfiniteCardSliderShot.webp',
+				dependencies: ['gsap'],
+				relatedFiles: ['src/lib/gsapMotion.ts', 'src/lib/components/InfiniteCardSlider.test.ts'],
+				usage: `<script lang="ts">
+  import InfiniteCardSlider, { type SliderItem } from '$lib/components/InfiniteCardSlider.svelte';
+
+  const cards: SliderItem[] = [
+    { id: 1, title: 'Northern Lights', description: 'Five nights chasing aurora above the Arctic Circle.' },
+    { id: 2, title: 'Coastal Path', description: 'Cliff-top walking with a pub at every cove.' },
+    { id: 3, title: 'Alpine Rail', description: 'Glaciers from the window of a panoramic carriage.' },
+    { id: 4, title: 'Desert Stars', description: 'Dark-sky camping far from any city glow.' },
+    { id: 5, title: 'Island Hop', description: 'Ferries, beaches and very slow lunches.' }
+  ];
+</script>
+
+<InfiniteCardSlider items={cards} cardWidth={280} gap={24} ariaLabel="Trips" />`,
+				agentHint:
+					'Loop maths is wrappedOffset (exported); GSAP only tweens and is skipped under reduced motion. Give items a stable id so keyed cards keep their DOM nodes.'
 			})
 		]
 	},
@@ -1165,7 +1289,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🎞️',
 				'Reusable GSAP primitives for Svelte sequencing, text, canvas, deck, and grid motion.',
 				{
-					screenshotFile: 'GsapSuiteShot.svg',
+					screenshotFile: 'GsapSuiteShot.webp',
 					themeSupport: 'dual',
 					source: 'src/lib/components/GsapSplitTextHero.svelte',
 					docs: 'src/lib/components/GsapSplitTextHero.md',
@@ -1178,8 +1302,19 @@ export const componentCategories: ComponentCatalogCategory[] = [
 						'src/lib/components/VariableShockText.svelte',
 						'src/lib/gsapMotion.ts'
 					],
-					usage: '<GsapSplitTextHero title="Launch faster" />',
-					agentHint: 'Use the route as the suite demo and copy only the GSAP primitive your target UI needs.'
+					usage: `<script lang="ts">
+  import GsapSplitTextHero from '$lib/components/GsapSplitTextHero.svelte';
+</script>
+
+<GsapSplitTextHero
+  headline="Launch faster"
+  eyebrow="GSAP suite"
+  copy="SplitText, scoped timelines, canvas motion, and deck choreography packaged as reusable Svelte components."
+  initialMode="words"
+  theme="dark"
+/>`,
+					agentHint:
+						'Use the route as the suite demo and copy only the GSAP primitive your target UI needs. GsapSplitTextHero takes headline/eyebrow/copy/initialMode/theme (not title); omit theme to follow prefers-color-scheme.'
 				}
 			),
 			component('EqualizerBars', '/equalizerbars', '🎵', 'CSS equalizer indicator with phased bars.', {
@@ -1238,6 +1373,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <AuroraBackdrop palette="classic" speed={0.6} />`
 			}),
 			component('MeshGradient', '/meshgradient', '🎨', 'Animated mesh-gradient backdrop.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import MeshGradient from '$lib/components/MeshGradient.svelte';
 </script>
@@ -1286,6 +1422,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </CRTScreen>`
 			}),
 			component('HoloCard', '/holocard', '🪩', 'Holographic foil shimmer wrapper.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import HoloCard from '$lib/components/HoloCard.svelte';
 </script>
@@ -1309,10 +1446,26 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				'🧬',
 				'Three.js and GSAP colour topology scene with hover extrusion.',
 				{
-					screenshotFile: 'TopologyColorGridShot.svg',
+					screenshotFile: 'TopologyColorGridShot.webp',
 					themeSupport: 'dual',
 					dependencies: ['three', 'gsap'],
-					agentHint: 'Mount this client-side; the component owns its Three.js renderer and GSAP cleanup.'
+					usage: `<script lang="ts">
+  import TopologyColorGrid, {
+    defaultTopologySwatches
+  } from '$lib/components/TopologyColorGrid.svelte';
+</script>
+
+<TopologyColorGrid
+  swatches={defaultTopologySwatches}
+  title="Chromatic Substrate Topology"
+  subtitle="Spatial Z-Index Mapping"
+  extruded
+  interactive
+  theme="dark"
+  showThemeToggle
+/>`,
+					agentHint:
+						'Mount this client-side; the component owns its Three.js renderer and GSAP cleanup. Props: swatches, title, subtitle, extruded, interactive, theme, showThemeToggle.'
 				}
 			)
 		]
@@ -1377,12 +1530,14 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <DonutChart {data} centreLabel="100" centreSub="visits" />`
 			}),
 			component('DataGrid', '/datagrid', '📊', 'Two grid implementations for tabular data.', {
+				themeSupport: 'dual',
 				source: 'src/lib/components/DataGridBasic.svelte',
 				docs: 'src/lib/components/DataGrid.md',
 				dependencies: ['@svar-ui/svelte-grid'],
 				relatedFiles: [
 					'src/lib/components/DataGridAdvanced.svelte',
 					'src/lib/components/DataGridFilters.svelte',
+					'src/lib/components/DataGridBasic.md',
 					'src/lib/components/DataGridAdvanced.md',
 					'src/lib/components/DataGridFilters.md'
 				],
@@ -1404,7 +1559,8 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </script>
 
 <DataGridBasic {data} {columns} pageSize={10} />`,
-				agentHint: 'Use DataGridBasic for copy-paste portability; include DataGridAdvanced only when SVAR Grid is acceptable.'
+				agentHint:
+					'Use DataGridBasic for copy-paste portability; include DataGridAdvanced only when SVAR Grid is acceptable. DataGridAdvanced never fetches — wire persistence through onCellEdit / onDelete (throw to roll back).'
 			}),
 			component('CalendarHeatmap', '/calendarheatmap', '📅', 'GitHub-style contribution calendar.', {
 				usage: `<script lang="ts">
@@ -1419,6 +1575,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <CalendarHeatmap {data} />`
 			}),
 			component('Gantt', '/gantt', '📊', 'Native SVG Gantt with deps, milestones, today, weekends, % complete.', {
+				screenshotFile: 'GanttShot.webp',
 				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Gantt from '$lib/components/Gantt.svelte';
@@ -1630,6 +1787,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 					'Pair the component with editorData server helpers and API routes; create/update/delete require DATABASE_URL.'
 			}),
 			component('FolderFiles', '/folderfiles', '🗂️', '3D filing cabinet with database-ready folders and files.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import FolderFiles from '$lib/components/FolderFiles.svelte';
   import type { Folder, File } from '$lib/types';
@@ -1653,6 +1811,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 		summary: 'Geographic interfaces, routing demos, and location-aware visualisations.',
 		components: [
 			component('Maps', '/maps', '🗺️', 'Interactive Leaflet maps with markers and search.', {
+				themeSupport: 'dual',
 				source: 'src/lib/components/MapBasic.svelte',
 				docs: 'src/lib/components/Maps.md',
 				dependencies: ['leaflet', '@types/leaflet'],
@@ -1663,16 +1822,27 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				],
 				usage: `<script lang="ts">
   import MapLive from '$lib/components/MapLive.svelte';
+  import type { MapMarker } from '$lib/types';
+
+  let markers = $state<MapMarker[]>([
+    { id: 1, title: 'Trafalgar Square', position: { lat: 51.508, lng: -0.128 } }
+  ]);
 </script>
 
 <MapLive
-  centre={[51.5074, -0.1278]}
-  zoom={10}
-  markers={[{ id: 1, lat: 51.5074, lng: -0.1278, title: 'London' }]}
-/>`,
+  bind:markers
+  center={{ lat: 51.5074, lng: -0.1278 }}
+  zoom={13}
+  height={480}
+  maxMarkers={10}
+  onMarkerAdd={(marker) => console.log('Added', marker.title)}
+/>
+
+<p>{markers.length} saved places</p>`,
 				agentHint: 'Include Leaflet CSS in app.html before using these components.'
 			}),
 			component('Location', '/location', '📍', 'Locate-me, delivery, and routing demos.', {
+				themeSupport: 'dual',
 				source: 'src/lib/components/MapLocateMe.svelte',
 				docs: 'src/lib/components/Location.md',
 				dependencies: ['leaflet', '@types/leaflet'],
@@ -1697,21 +1867,44 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <GlobePresence {dots} autoRotate />`
 			}),
 			component('GeoViz', '/geo', '🌍', 'Choropleth and spike-map visualisations.', {
-				screenshotFile: 'GeoVizShot.png',
+				themeSupport: 'dual',
+				screenshotFile: 'GeoVizShot.webp',
 				source: 'src/lib/components/GeoChoropleth.svelte',
 				docs: 'src/lib/components/GeoViz.md',
+				dependencies: ['layerchart', 'd3-geo', 'd3-scale', 'd3-scale-chromatic'],
 				relatedFiles: [
 					'src/lib/components/GeoSpikeMap.svelte',
 					'src/lib/components/GeoBubbleMap.svelte'
 				],
 				usage: `<script lang="ts">
   import GeoChoropleth from '$lib/components/GeoChoropleth.svelte';
+  import type { GeoRegionData } from '$lib/types';
+  import type { FeatureCollection } from 'geojson';
 
-  const features = []; // GeoJSON FeatureCollection.features
-  const values = { 'GB': 42, 'FR': 28, 'DE': 19 };
+  // Any FeatureCollection works; each feature needs an id (or RGN24CD etc.)
+  const geojson: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', id: 'north', properties: { name: 'North' },
+        geometry: { type: 'Polygon', coordinates: [[[-3, 54], [0, 54], [0, 56], [-3, 56], [-3, 54]]] } },
+      { type: 'Feature', id: 'south', properties: { name: 'South' },
+        geometry: { type: 'Polygon', coordinates: [[[-3, 51], [0, 51], [0, 54], [-3, 54], [-3, 51]]] } }
+    ]
+  };
+
+  const data: GeoRegionData[] = [
+    { regionId: 'north', value: 42 },
+    { regionId: 'south', value: 78, label: '78 per 1,000' }
+  ];
 </script>
 
-<GeoChoropleth {features} {values} />`,})
+<GeoChoropleth
+  {geojson}
+  {data}
+  height={420}
+  onRegionClick={(region) => console.log(region.name, region.value)}
+/>`
+			})
 			]
 		},
 		{
@@ -1815,7 +2008,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
     {
       name: 'EvidenceCard',
       href: '/evidencecard',
-      screenshot: '/ComponentScreenshots/EvidenceCardShot.png',
+      screenshot: '/ComponentScreenshots/EvidenceCardShot.webp',
       description: 'Compact delivery proof card.',
       status: 'ready'
     }
@@ -1876,7 +2069,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 			summary: 'Better Auth flows and protected-route examples for public demos.',
 		components: [
 			component('Auth Demo', '/auth', '🔐', 'Better Auth sign-in, sign-up, and demo-account entry.', {
-				screenshotFile: 'AuthShot.png',
+				screenshotFile: 'AuthShot.webp',
 				source: 'src/routes/auth/+page.svelte',
 				docs: 'src/lib/components/AuthStatus.md',
 				dependencies: ['better-auth'],
@@ -2054,8 +2247,13 @@ export interface CatalogShellProps {
 	install: string;
 	resources: { label: string; href: string }[];
 	codeFileName: string;
-	/** Pre-rendered HTML from the sibling .md, sanitised by `renderMarkdown`. */
-	docsHtml?: string;
+	/**
+	 * Repo-relative path of the sibling .md doc. The HTML itself is rendered
+	 * on the server (see `src/routes/+layout.server.ts`) and handed to
+	 * ComponentPageShell through page data, so the catalog stays free of the
+	 * markdown pipeline and every page ships only its own doc.
+	 */
+	docsPath?: string;
 	/** Previous/next component links within the same catalog shelf. */
 	shelfNavigation?: ShelfNavigation;
 }
@@ -2092,7 +2290,7 @@ export function shellPropsFromCatalog(
 		install: `cp ${item.source} ./src/lib/components/`,
 		resources,
 		codeFileName: sourceFile,
-		docsHtml: getDocsHtmlForPath(item.docs),
+		docsPath: item.docs,
 		shelfNavigation: getShelfNavigation(item.href)
 	};
 }

@@ -4,6 +4,7 @@
 
 	let {
 		name,
+		id,
 		label,
 		value = $bindable(0),
 		helpText = '',
@@ -21,12 +22,18 @@
 		oninput
 	}: RangeFieldProps = $props();
 
+	// Every instance gets its own id prefix from Svelte, so two forms with the
+	// same field names on one page never share ids. `name` stays the form
+	// submission key; pass `id` only when something outside needs to target
+	// the control (e.g. a skip link or an external <label for>).
+	const uid = $props.id();
+
 	/**
 	 * Generate IDs for aria associations
 	 */
-	let fieldId = $derived(`field-${name}`);
-	let helpId = $derived(`${name}-help`);
-	let errorId = $derived(`${name}-error`);
+	let fieldId = $derived(id ?? `field-${uid}`);
+	let helpId = $derived(`${fieldId}-help`);
+	let errorId = $derived(`${fieldId}-error`);
 
 	/**
 	 * Determine if field has error state for styling
@@ -57,7 +64,7 @@
 	}
 </script>
 
-<FormField {name} {label} {required} {error} {touched} {helpText}>
+<FormField id={fieldId} {label} {required} {error} {touched} {helpText}>
 	<div class="range-field-container">
 		<!-- Min/Max Labels -->
 		{#if showMinMax}
@@ -290,6 +297,19 @@
 			font-size: 0.8125rem;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	/* Vendor pseudo-elements get their own rules: one unknown selector in a
+	   shared list would make the other engine drop the whole rule. */
+	@media (prefers-reduced-motion: reduce) {
+		.range-input::-webkit-slider-runnable-track {
+			transition: none;
+		}
+		.range-input::-webkit-slider-thumb {
+			transition: none;
+		}
+		.range-input::-moz-range-thumb {
+			transition: none;
+		}
+	}
+</style>

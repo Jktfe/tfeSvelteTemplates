@@ -18,7 +18,8 @@ state:
   isGeolocationSupported = $derived(isBrowser && 'geolocation' in navigator)
 
 mount ($effect):
-  1. Dynamic-import 'leaflet' (SSR-safe)
+  1. await loadLeaflet() — one shared import('leaflet') per page (SSR-safe)
+     bail out if the component unmounted while it loaded
   2. Read prefers-reduced-motion to gate Leaflet animations
   3. Create map, attach OSM tiles, add zoom control bottom-right
 
@@ -42,7 +43,7 @@ handlePositionSuccess(position):
   3. if showAccuracyCircle:
        create or move L.circle(latLng, radius=accuracy)
   4. create or move L.marker with custom divIcon { pulse-ring, pulse-core }
-  5. map.setView(latLng, locateZoom)
+  5. map.setView(latLng, locateZoom, { animate: !prefersReducedMotion() })
   6. onLocate?.(result)
 
 handlePositionError(error):
@@ -53,6 +54,15 @@ handlePositionError(error):
 
 clearLocation() (exported):
   remove marker + circle; hasLocation = false; stopWatching()
+
+MapRouting (sibling, same file family):
+  click 1 → origin (A); click 2 → destination (B); drag either pin to adjust
+  $effect reads origin, destination AND profile synchronously → any change re-routes
+  calculateRoute():
+    abort the previous fetch (AbortController)
+    GET {osrmApiUrl}/route/v1/{car|bike|foot}/{A.lng},{A.lat};{B.lng},{B.lat}?geometries=geojson&steps=true
+    draw / update L.polyline; map.fitBounds(line, { animate: !prefersReducedMotion() })
+    onRouteCalculated?.(result) | routeError + onRouteError?.(message)
 ```
 
 ## The Core Concept: Accuracy Circles and Confidence
@@ -158,6 +168,80 @@ The one thing the component cannot do is detect whether the user has previously 
 
 The component also exports `locateMe()`, `stopWatching()`, and `clearLocation()` so a parent can drive it imperatively via `bind:this`.
 
+### MapRouting
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `origin` | `LatLng` | `undefined` | Start point (A). Bindable — updates on map click or pin drag. |
+| `destination` | `LatLng` | `undefined` | End point (B). Bindable. |
+| `center` | `LatLng` | `DEFAULT_MAP_CENTER` | Initial centre when neither point is set (otherwise the midpoint is used). |
+| `zoom` | `number` | `13` | Initial zoom level. |
+| `height` | `number` | `500` | Container height in pixels. |
+| `profile` | `'driving' \| 'cycling' \| 'walking'` | `'driving'` | Travel mode; the in-map buttons change it and re-route. |
+| `osrmApiUrl` | `string` | `'https://router.project-osrm.org'` | OSRM server. The public demo server is rate-limited — self-host for production. |
+| `showInstructions` | `boolean` | `true` | Collapsible turn-by-turn panel. |
+| `showDistance` / `showDuration` | `boolean` | `true` | Route summary badge contents. |
+| `routeColor` | `string` | `'#146ef5'` | Polyline colour (brand — deliberately a prop, not a flipping token). |
+| `routeWeight` | `number` | `5` | Polyline width in pixels. |
+| `draggableWaypoints` | `boolean` | `true` | Let users drag A/B pins. |
+| `enableClickToSet` | `boolean` | `true` | Map clicks set A then B. |
+| `onRouteCalculated` | `(route: RouteResult) => void` | `undefined` | Fires after each successful route. |
+| `onRouteError` | `(error: string) => void` | `undefined` | Fires when OSRM fails or finds no route. |
+
+## Theming
+
+Both components follow the project theming convention (`docs/THEMING.md`): chrome tokens flip under `prefers-color-scheme: dark`, semantic tokens stay put.
+
+### MapLocateMe (`--mlm-*`)
+
+`MapLocateMe` declares `--mlm-*` tokens on `.map-locate-container` with light defaults inline and a `@media (prefers-color-scheme: dark)` flip. The button, info strip, error banner, accuracy badge, Leaflet popup, attribution strip, and tile-gap canvas all follow it.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--mlm-canvas` | `#f0f0f0` | `#1a1a1a` | Container + tile-gap background |
+| `--mlm-surface` / `--mlm-surface-hover` | `#ffffff` / `#f5f5f5` | `#2a2a2a` / `#3a3a3a` | Locate button, zoom buttons, popup |
+| `--mlm-info-bg` / `--mlm-attribution-bg` | translucent white | translucent charcoal | Coordinates strip, attribution |
+| `--mlm-text` / `--mlm-text-muted` | `#333` / `#666` | `#e5e5e5` / `#9ca3af` | Text tiers |
+| `--mlm-accent` | `#146ef5` | `#3b82f6` | Locate icon, pulse marker |
+| `--mlm-accuracy-circle` | `var(--mlm-accent)` | `var(--mlm-accent)` | Leaflet accuracy circle (read from script) |
+| `--mlm-error-*` | red tints | deep red tints | Error banner |
+| `--mlm-accuracy-bg` / `--mlm-accuracy-text` | `#dbeafe` / `#1d4ed8` | `#1e3a8a` / `#bfdbfe` | Accuracy badge |
+
+**The accuracy circle is drawn by Leaflet from JavaScript**, so CSS can't reach it directly. The component exports `readAccuracyCircleColour(el, fallback?)`, which reads `--mlm-accuracy-circle` via `getComputedStyle` on the map element when the circle is created, and re-applies it with `circle.setStyle()` whenever the OS colour scheme changes. It falls back to `#146ef5` during SSR or when the token is empty.
+
+```css
+/* Brand the accuracy circle without touching the rest of the accent */
+body .map-locate-container.map-locate-container {
+  --mlm-accuracy-circle: #16a34a;
+}
+```
+
+### MapRouting (`--mr-*`)
+
+| Token | Light | Dark | Used by |
+|-------|-------|------|---------|
+| `--mr-canvas` | `#f0f0f0` | `#1a1a1a` | Container background, profile track, clear button |
+| `--mr-surface` / `--mr-surface-hover` | `#ffffff` / `#f5f5f5` | `#2a2a2a` / `#3a3a3a` | Swap button, active profile, zoom controls |
+| `--mr-panel-bg` | `rgba(255,255,255,.95)` | `rgba(31,31,31,.95)` | Control panel, route badge, directions panel |
+| `--mr-overlay-bg` | `rgba(255,255,255,.8)` | `rgba(17,17,17,.75)` | "Calculating route…" overlay |
+| `--mr-text` / `--mr-text-muted` | `#333333` / `#666666` | `#e5e5e5` / `#a3a3a3` | Headings, coordinates, step distances |
+| `--mr-accent` | `#146ef5` | `#60a5fa` | Active profile icon, links, step numbers, spinner |
+| `--mr-accent-soft` | `rgba(20,110,245,.9)` | `rgba(37,99,235,.9)` | Click-mode hint pill |
+| `--mr-border-soft`, `--mr-divider`, `--mr-divider-strong` | `#ddd`, `#f0f0f0`, `#eee` | `#4b5563`, `#333`, `#3f3f3f` | Swap button border, list dividers |
+| `--mr-error-*` | red tints | dark red tints | Route error banner, clear-button hover |
+| `--mr-shadow-*`, `--mr-marker-shadow` | 10–30% black | 40–60% black | Panel and pin shadows |
+| `--mr-origin` | `#22c55e` | *(unchanged)* | "A" badge and start pin — semantic green |
+| `--mr-destination` | `#ef4444` | *(unchanged)* | "B" badge and end pin — semantic red |
+
+Override on the element itself with a doubled class so you beat Svelte's scoped specificity:
+
+```css
+.brand-area :global(.map-routing-container.map-routing-container) {
+  --mr-accent: #6366f1;
+  --mr-accent-soft: rgba(99, 102, 241, 0.9);
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |
@@ -171,7 +255,10 @@ The component also exports `locateMe()`, `stopWatching()`, and `clearLocation()`
 | User scrolls / pans away after location is acquired | The marker stays at its real position; the map view does not auto-recentre on subsequent updates unless `watchPosition` is true. |
 | Multiple rapid clicks on the button | The button is `disabled` while `isLocating`; redundant clicks do nothing. |
 | Position update arrives after `clearLocation()` | The watcher was cleared in `stopWatching()`, so no stale callback fires. |
-| `prefers-reduced-motion: reduce` | The pulsing-dot animation is disabled via CSS `@media`; Leaflet's pan-to animation is disabled at map construction. |
+| `prefers-reduced-motion: reduce` | The pulsing-dot and spinner animations are disabled via CSS `@media`; Leaflet's zoom/fade animations are disabled at construction, and every `setView` / `fitBounds` passes `{ animate: false }` so watch-mode re-centring and route fitting jump instead of glide. |
+| Component unmounts while Leaflet is still loading | The mount effect notices it was cancelled and never builds the map, so no orphaned Leaflet instance is left behind. |
+| MapRouting: travel mode changed with A and B set | The route recalculates with the new OSRM profile; any in-flight request is aborted first. |
+| MapRouting: OSRM returns `NoRoute` or a non-200 | An alert banner shows the message and `onRouteError` fires; the previous polyline (if any) stays visible. |
 
 ## Dependencies
 
@@ -186,6 +273,9 @@ The component also exports `locateMe()`, `stopWatching()`, and `clearLocation()`
 src/lib/components/MapLocateMe.svelte     # locate-me + accuracy circle implementation
 src/lib/components/MapRouting.svelte      # related: OSRM-driven route planning
 src/lib/components/Location.md            # this file (rendered inside ComponentPageShell)
+src/lib/components/MapLocateMe.test.ts    # behaviour tests (Leaflet + Geolocation mocked)
+src/lib/components/MapRouting.test.ts     # behaviour tests (Leaflet + OSRM fetch mocked)
+src/lib/testing/leafletMock.ts            # lightweight Leaflet test double
 src/routes/location/+page.svelte          # demo page (locate-me + delivery + routing)
 src/lib/types.ts                          # MapLocateMeProps, GeolocationResult,
                                           # GeolocationErrorType, RouteResult, RouteWaypoint

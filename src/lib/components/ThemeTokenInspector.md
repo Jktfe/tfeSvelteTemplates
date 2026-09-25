@@ -36,13 +36,14 @@ defaultThemeTokenRows
 | --- | --- | --- | --- |
 | `rows` | `ThemeTokenRow[]` | `defaultThemeTokenRows` | Token metadata to inspect. |
 | `title` | `string` | `"Theme token inspector"` | Heading shown in the panel. |
-| `initialMode` | `"light" \| "dark"` | `"light"` | Starting preview mode. |
+| `initialMode` | `"auto" \| "light" \| "dark"` | `"auto"` | Starting preview mode. `auto` mirrors the viewer's OS colour scheme until they press Light or Dark. |
 
 ## Helper Exports
 
 | Export | Description |
 | --- | --- |
 | `groupTokenRows(rows)` | Returns chrome, brand, and semantic row arrays. |
+| `resolvePreviewMode(chosen, systemPrefersDark)` | Returns the live preview mode: an explicit Light/Dark pick wins, otherwise the OS colour scheme. |
 | `tokenValueForMode(row, mode)` | Resolves the active token value, falling back to light when dark is intentionally stable. |
 | `flipsInDark(row)` | Reports whether a token changes in dark mode. |
 | `hexToRgb(value)` | Parses `#rrggbb` colors for testable color math. |
@@ -53,7 +54,19 @@ defaultThemeTokenRows
 
 ## Theming
 
-This component is itself theme-aware, but it exists to explain the repository-wide token rule:
+The panel's own chrome uses `--tti-*` tokens on `.tti`. With `initialMode="auto"` (the default) the `.tti-auto` class lets `@media (prefers-color-scheme: dark)` flip those tokens from the very first paint, so the inspector matches the page with no flash of light chrome. Pressing **Light** or **Dark** pins the preview: **Dark** adds `.tti-dark`, **Light** removes both classes and keeps the inline light defaults, whatever the OS says. The swatch preview, contrast labels, and copyable snippets follow the same resolved mode (`resolvePreviewMode(chosen, systemPrefersDark)`).
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--tti-bg` / `--tti-panel` / `--tti-panel-strong` | `#ffffff` / `#f8fafc` / `#f1f5f9` | `#111827` / `#172033` / `#1f2937` | Surfaces |
+| `--tti-fg` / `--tti-muted` / `--tti-code` | `#111827` / `#64748b` / `#0f172a` | `#f9fafb` / `#a7b3c6` / `#eef2ff` | Text |
+| `--tti-border` / `--tti-accent` | `#dbe3ef` / `#315f9f` | `#334155` / `#8bb8ff` | Borders, active state |
+| `--tti-swatch-border` / `--tti-swatch-stripe` / `--tti-shadow` | slate alphas | light alphas | Swatch outlines, "stable" stripe, panel shadow |
+| `--tti-kind-*` / `--tti-tone-*` | `#315f9f`, `#9a3412`, `#047857`, `#b91c1c` | lighter tints of the same hues | Kind badges and contrast labels |
+
+The kind and tone labels are semantic: they keep their hue family on both schemes and only lighten for legibility on dark panels.
+
+This component exists to explain the repository-wide token rule:
 
 | Kind | Dark behavior | Examples |
 | --- | --- | --- |

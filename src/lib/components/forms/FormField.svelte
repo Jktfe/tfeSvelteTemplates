@@ -17,7 +17,8 @@
 	 * ============================================================
 	 *
 	 * [CR] FEATURES
-	 * - Automatic ID generation for label association
+	 * - Per-instance ID generation ($props.id()) for label association,
+ *   so two forms with the same field names never collide
 	 * - Required field indicator (*)
 	 * - Help text with aria-describedby
 	 * - Error display with role="alert"
@@ -26,8 +27,8 @@
 	 *
 	 * [CR] USAGE
 	 * ```svelte
-	 * <FormField name="email" label="Email" required={true} error={err}>
-	 *   <input type="email" ... />
+	 * <FormField id="signup-email" label="Email" required={true} error={err}>
+	 *   <input id="signup-email" type="email" aria-describedby="signup-email-help" ... />
 	 * </FormField>
 	 * ```
 	 *
@@ -41,8 +42,20 @@
 	// [CR] COMPONENT PROPS
 	// [NTL] These settings control how the form field looks and behaves!
 	interface Props {
-		/** [CR] Field name - used for ID generation and form submission */
-		name: string;
+		/**
+		 * [CR] Id of the control this label points at. Field components pass
+		 * their own per-instance id; if omitted, one is generated from
+		 * `$props.id()`. Help and error ids are derived from it
+		 * (`${id}-help`, `${id}-error`, `${id}-label`).
+		 */
+		id?: string;
+
+		/**
+		 * [CR] Set when the child is a group (radio/checkbox group) rather than
+		 * one labelable control. The label then drops `for` and the group
+		 * points back at it via `aria-labelledby="${id}-label"` instead.
+		 */
+		group?: boolean;
 
 		/** [CR] Label text displayed above field */
 		label: string;
@@ -67,7 +80,8 @@
 	}
 
 	let {
-		name,
+		id,
+		group = false,
 		label,
 		required = false,
 		error = '',
@@ -75,6 +89,9 @@
 		helpText = '',
 		children
 	}: Props = $props();
+
+	// Fallback id for when FormField is used directly around a custom input.
+	const uid = $props.id();
 
 	// [CR] DERIVED VALUES
 	// [NTL] These are calculated automatically whenever their dependencies change!
@@ -90,14 +107,15 @@
 	 * [NTL] These IDs link the label, help text, and error to the input
 	 * so screen readers can announce them together
 	 */
-	let fieldId = $derived(`field-${name}`);
-	let helpId = $derived(`${name}-help`);
-	let errorId = $derived(`${name}-error`);
+	let fieldId = $derived(id ?? `field-${uid}`);
+	let labelId = $derived(`${fieldId}-label`);
+	let helpId = $derived(`${fieldId}-help`);
+	let errorId = $derived(`${fieldId}-error`);
 </script>
 
 <div class="form-field" class:has-error={visibleError}>
 	<!-- Label -->
-	<label for={fieldId} class="field-label">
+	<label id={labelId} for={group ? undefined : fieldId} class="field-label">
 		{label}
 		{#if required}
 			<span class="required" aria-label="required">*</span>
@@ -195,5 +213,3 @@
 		}
 	}
 </style>
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

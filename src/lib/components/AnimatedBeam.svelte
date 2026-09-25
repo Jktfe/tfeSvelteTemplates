@@ -69,6 +69,11 @@
 		connections = DEFAULT_BEAM_CONNECTIONS_UNI  // [NTL] Which nodes connect to which
 	}: AnimatedBeamProps = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const gradientId = `beam-gradient-${uid}`;
+
 	// [CR] ============================================================
 	// [CR] COMPUTED BEAM PATHS
 	// [NTL] Svelte automatically recalculates this when nodes/connections change
@@ -113,7 +118,7 @@
 		<!-- Gradient definition for flowing particle effect -->
 		{#if gradient}
 			<defs>
-				<linearGradient id="beam-gradient" gradientUnits="userSpaceOnUse">
+				<linearGradient id={gradientId} gradientUnits="userSpaceOnUse">
 					<stop offset="0%" stop-color="transparent" />
 					<stop offset="50%" stop-color={beamColor} />
 					<stop offset="100%" stop-color="transparent" />
@@ -129,7 +134,7 @@
 					y1={path.y1}
 					x2={path.x2}
 					y2={path.y2}
-					stroke={gradient ? 'url(#beam-gradient)' : beamColor}
+					stroke={gradient ? `url(#${gradientId})` : beamColor}
 					stroke-width={beamWidth}
 					class="beam beam--forward"
 					style="--beam-duration: {beamSpeed}s"
@@ -143,7 +148,7 @@
 						y1={path.y1}
 						x2={path.x2}
 						y2={path.y2}
-						stroke={gradient ? 'url(#beam-gradient)' : beamColor}
+						stroke={gradient ? `url(#${gradientId})` : beamColor}
 						stroke-width={beamWidth}
 						class="beam beam--reverse"
 						style="--beam-duration: {beamSpeed}s"
@@ -277,8 +282,3 @@
 		}
 	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

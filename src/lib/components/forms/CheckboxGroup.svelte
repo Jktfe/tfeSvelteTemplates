@@ -4,6 +4,7 @@
 
 	let {
 		name,
+		id,
 		label,
 		values = $bindable<string[]>([]),
 		options,
@@ -20,14 +21,21 @@
 		oninput
 	}: CheckboxGroupProps = $props();
 
+	// Every instance gets its own id prefix from Svelte, so two forms with the
+	// same field names on one page never share ids. `name` stays the form
+	// submission key; pass `id` only when something outside needs to target
+	// the control (e.g. a skip link or an external <label for>).
+	const uid = $props.id();
+
 	/**
 	 * Generate IDs for aria associations
 	 */
-	let groupId = $derived(`checkbox-group-${name}`);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	let helpId = $derived(`${name}-help`);
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	let errorId = $derived(`${name}-error`);
+	let groupId = $derived(id ?? `checkbox-group-${uid}`);
+	let helpId = $derived(`${groupId}-help`);
+	let errorId = $derived(`${groupId}-error`);
+	let labelId = $derived(`${groupId}-label`);
+	// role="group" doesn't support aria-invalid / aria-errormessage, so the
+	// visible error joins the help text in aria-describedby instead.
 
 	/**
 	 * Determine if field has error state for styling
@@ -78,7 +86,7 @@
 	}
 </script>
 
-<FormField {name} {label} {required} {error} {touched} {helpText}>
+<FormField id={groupId} group {label} {required} {error} {touched} {helpText}>
 	<div
 		role="group"
 		id={groupId}
@@ -86,10 +94,14 @@
 		class:horizontal={orientation === 'horizontal'}
 		class:vertical={orientation === 'vertical'}
 		class:error={hasError}
+		aria-labelledby={labelId}
+		aria-describedby={[helpText ? helpId : undefined, hasError ? errorId : undefined]
+			.filter(Boolean)
+			.join(' ') || undefined}
 		onblur={handleBlur}
 	>
 		{#each options as option, index (option.value)}
-			{@const optionId = `${name}-${index}`}
+			{@const optionId = `${groupId}-${index}`}
 			{@const isDisabled = disabled || option.disabled || (isMaxReached && !isChecked(option.value))}
 			{@const checked = isChecked(option.value)}
 
@@ -288,6 +300,11 @@
 			flex-direction: column;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	@media (prefers-reduced-motion: reduce) {
+		.checkbox-custom {
+			transition: none;
+		}
+	}
+</style>

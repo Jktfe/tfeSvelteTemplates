@@ -65,9 +65,9 @@ CLIENT (FolderFiles.svelte) ─────────────────�
 
 PARENT / PAGE (+page.server.ts) ─────────────────────────────────
   load:
-    folders = loadFoldersFromDatabase('folderfiles-demo')
-    files   = loadFilesFromDatabase()
-    return { folders, files, usingDatabase: !!DATABASE_URL }
+    foldersResult = loadFoldersWithSource('folderfiles-demo')
+    filesResult   = loadFilesWithSource()
+    return { folders, files, ...combineDataSources(foldersResult, filesResult) }
 
 SERVER UTILITY (folderFiles.ts) ─────────────────────────────────
   loadFoldersFromDatabase(category?):
@@ -122,7 +122,7 @@ JSON columns (`pages` and `metadata`) are stored as `TEXT` and `JSON.parse`d on 
 
 The flow from URL to DOM:
 
-1. **Page load** → `src/routes/folderfiles/+page.server.ts` runs server-side. Calls `loadFoldersFromDatabase('folderfiles-demo')` and `loadFilesFromDatabase()` in series. Returns `{ folders, files, usingDatabase }` to the page component.
+1. **Page load** → `src/routes/folderfiles/+page.server.ts` runs server-side. Calls `loadFoldersWithSource('folderfiles-demo')` and `loadFilesWithSource()` in parallel, then merges their statuses with `combineDataSources`. Returns `{ folders, files, usingDatabase, dataSource, dataSourceMessage }` to the page component.
 2. **Component receives** `data` via `let { data } = $props()`. Folders and files are passed as props to `<FolderFiles>`.
 3. **User opens a folder** — entirely client-side. The component already has every file in memory; it filters by `folderId`. No round-trip.
 4. **User drags between panels** — also client-side. Mutating `leftPanelItems` and `rightPanelItems` arrays. Nothing persists. (This is intentional: the demo treats the modal as a scratchpad.)
@@ -140,7 +140,7 @@ Write failures distinguish two cases:
 - **No `DATABASE_URL`**: throw a specific error so callers can route the user to a 503 or a "configure your database" message. Writes deliberately do *not* fall back to a "pretend it worked" mode — silent data loss is worse than a clear failure.
 - **DB error during write**: log, return `null` (or `false` for delete). Caller treats this as a transient failure, can retry or surface to the user.
 
-The `dataSource.ts` helpers (`fromDatabase`, `fromFallback`, `fromDatabaseError`, `combineDataSources`) wrap these states into a typed `DataSourceResult<T>` for pages that want to render a `DatabaseStatus` indicator with the precise reason. FolderFiles' page currently uses the simpler `!!process.env.DATABASE_URL` flag, but `combineDataSources` is the right tool when both folders *and* files might independently fall back.
+The `dataSource.ts` helpers (`fromDatabase`, `fromFallback`, `fromDatabaseError`, `combineDataSources`) wrap these states into a typed `DataSourceResult<T>` for pages that want to render a `DatabaseStatus` indicator with the precise reason. FolderFiles' page uses `combineDataSources` because folders *and* files can independently fall back — if either query fails, the badge says so.
 
 ## Mobile Detection and the Two-Tap Pattern
 
@@ -272,6 +272,46 @@ interface FileItem {
 | `Enter` on a tab | Open the folder. |
 | `Enter` on a file (mobile) | Toggle selection. |
 | `Escape` | Close the modal. |
+
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The cabinet and the modal are sibling roots, so both `.filing-cabinet-container` and `.folder-modal` declare the tokens. Folder colours come from your data and are brand; the accent blue and green item border are brand too.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--ff-cabinet-bg-top` | `#f5f5f5` | `#1a1d21` | `.filing-cabinet-container` |
+| `--ff-cabinet-bg-bottom` | `#e8e8e8` | `#111316` | `.filing-cabinet-container` |
+| `--ff-surface` | `#ffffff` | `#1e2126` | `.modal-content`, `.close-btn` |
+| `--ff-surface-hover` | `#f7fafc` | `#2a2e35` | `.close-btn:hover` |
+| `--ff-border` | `#e2e8f0` | `#334155` | `.close-btn`, `.folder-panels` |
+| `--ff-border-strong` | `#cbd5e0` | `#475569` | `.close-btn:hover`, `.selection-indicator` |
+| `--ff-icon-fg` | `#4a5568` | `#cbd5e1` | `.close-btn` |
+| `--ff-icon-fg-hover` | `#2d3748` | `#f8fafc` | `.close-btn:hover` |
+| `--ff-title-fg` | `#1a202c` | `#f1f5f9` | `.content-item-title` |
+| `--ff-muted-fg` | `#718096` | `#94a3b8` | `.content-item-subtitle` |
+| `--ff-body-fg` | `#4a5568` | `#cbd5e1` | `.content-item-preview`, `.selection-count` |
+| `--ff-selected-bg` | `#ebf5ff` | `#172554` | `.content-item.selected` |
+| `--ff-clear-bg` | `#f1f5f9` | `#2a2e35` | `.clear-btn` |
+| `--ff-clear-fg` | `#64748b` | `#94a3b8` | `.clear-btn` |
+| `--ff-clear-bg-hover` | `#e2e8f0` | `#334155` | `.clear-btn:hover` |
+| `--ff-clear-fg-hover` | `#475569` | `#e2e8f0` | `.clear-btn:hover` |
+| `--ff-action-bar-shadow` | `0 -2px 8px rgba(0, 0, 0, 0.08)` | `0 -2px 8px rgba(0, 0, 0, 0.4)` | `.mobile-action-bar` |
+| `--ff-item-shadow-hover` | `0 4px 12px rgba(0, 0, 0, 0.1)` | `0 4px 12px rgba(0, 0, 0, 0.45)` | `.content-item:hover` |
+| `--ff-focus-ring` | `#146ef5` | *(unchanged — brand / semantic)* | `.folder-container:focus-visible`, `.close-btn:focus-visible` |
+| `--ff-accent` | `#3b82f6` | *(unchanged — brand / semantic)* | `.content-item.selected`, `.content-item.selected .selection-indicator` |
+| `--ff-accent-hover` | `#2563eb` | *(unchanged — brand / semantic)* | `.move-btn:hover` |
+| `--ff-item-border` | `#4ade80` | *(unchanged — brand / semantic)* | `.content-item` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .folder-modal.folder-modal {
+  --ff-surface: #fdf6e3;
+  --ff-title-fg: #3b2f1e;
+}
+```
 
 ## Edge Cases
 

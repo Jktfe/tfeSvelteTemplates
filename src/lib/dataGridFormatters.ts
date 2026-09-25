@@ -739,5 +739,3 @@ export function createFormatterWithIcon(
 		return `${escapedIcon} ${formatted}`;
 	};
 }
-
-// Claude is happy that this file is mint. Signed off 19.11.25.

@@ -102,6 +102,11 @@ Helpers:
 | `getConfiguredDatabaseUrl()` | Returns the real `DATABASE_URL`, or `undefined` if missing/placeholder |
 | `isDatabaseConfigured()` | Boolean shortcut |
 | `fromDatabase(data)` / `fromFallback(data, msg?)` / `fromDatabaseError(data, err)` | Build a `DataSourceResult<T>` with the right status |
+| `loadWithFallback(fallback, query, { label, schemaFile? })` | The whole read path in one call: fallback when unconfigured, `fromMissingTable` hint when the schema isn't provisioned, `error` on failure |
+| `requireDatabaseUrl(action)` | For write paths: returns the URL or throws `Cannot <action>: DATABASE_URL not configured` (API routes map it to 503) |
+| `combineDataSources(...results)` | Merge several results into one page-level status |
+
+Page loads pass `usingDatabase` / `dataSource` / `dataSourceMessage` straight from the result — never recompute them from `process.env.DATABASE_URL`.
 
 Server utilities under `src/lib/server/` follow this shape:
 
@@ -145,7 +150,7 @@ Auth replaced an earlier Clerk integration. **Do not reintroduce `svelte-clerk` 
 | `src/lib/auth-client.ts` | Browser client — exports `authClient` from `better-auth/svelte` |
 | `src/hooks.server.ts` | Populates `event.locals.session` / `event.locals.user`, calls `svelteKitHandler` |
 | `src/app.d.ts` | `App.Locals` declares `session: Session \| null`, `user: User \| null` from `better-auth` |
-| `src/routes/+layout.server.ts` | Returns `{ isAuthConfigured, authUser }` to every page |
+| `src/routes/+layout.server.ts` | Returns `{ isAuthConfigured, authUser, componentDocs }` to every page |
 | `src/routes/(protected)/+layout.server.ts` | Calls `requireAuth` to gate the route group |
 | `database/schema_better_auth.sql` | Auth tables (regen via `bunx @better-auth/cli@latest generate --config src/lib/server/betterAuth.ts --output database/schema_better_auth.sql -y`) |
 
@@ -198,7 +203,7 @@ src/
 │   ├── server/             # auth, betterAuth, dataSource, cards, dataGrid, editorData,
 │   │                       # expandingCards, linkPreviews, testimonials, sankeyData,
 │   │                       # calendarData, folderFiles, maps
-│   ├── data/storyboards/   # ExplainerCanvas data per component
+│   ├── data/storyboards/   # Optional ExplainerCanvas data (currently shineborder, timeline)
 │   ├── registry/           # Editorial registries (gsap-suite, ...)
 │   ├── gsap/               # GSAP utilities
 │   ├── styles/             # Shared tokens / theme CSS
@@ -220,7 +225,7 @@ src/
 │   ├── (protected)/        # Auth-required (dashboard, profile)
 │   ├── auth/               # sign-in, sign-up, account
 │   ├── api/                # REST endpoints
-│   ├── storyboard/[component]/  # Dynamic ExplainerCanvas per component
+│   ├── storyboard/[component]/  # Dynamic ExplainerCanvas for components with storyboard data
 │   ├── navbar/sandbox/     # Iframe sandbox for embedded preview (root layout suppresses chrome)
 │   └── <component>/        # Per-component demo (uses ComponentPageShell)
 ├── hooks.server.ts         # Better Auth middleware
@@ -249,7 +254,7 @@ docs/                       # THEMING.md, DATAGRID_FORMATTING.md,
 8. Create demo at `src/routes/componentname/+page.svelte`, wrapping content in `<ComponentPageShell>` snippets, with a real Live Demo block (see "Demo conventions")
 9. Register in `src/lib/componentCatalog.ts` — **the `usage:` field must be real copy-pasteable Svelte 5 code** (script + sample data + the actual mount), not the `<Foo />` placeholder. Multi-line is fine; consumers paste this verbatim into a `+page.svelte`.
 10. Add the doc path to `GOLD_STANDARD_DOCS` in `src/lib/componentDocs.test.ts` so the structural test pins it (902 assertions enforce the 7 required H2 sections + no YAML)
-11. Add storyboard data at `src/lib/data/storyboards/componentname.ts` (used by `/storyboard/[component]`)
+11. *(Optional)* Add storyboard data at `src/lib/data/storyboards/componentname.ts` and register it in `src/lib/data/storyboards/index.ts` (used by `/storyboard/[component]`)
 12. Verify the API table in the demo page matches the actual `$props()` block — every documented prop must exist on the component, every common config prop should have a row (omit the universal `class` forwarding prop unless it does something special)
 
 ## Conventions
@@ -343,12 +348,14 @@ Every component has a sibling `<Name>.md` that is **rendered live** inside `Comp
 
 ```
 src/lib/components/<Name>.md
-   ↓ import.meta.glob('?raw', eager)   src/lib/componentDocs.ts
-   ↓ getDocsHtmlForPath(item.docs)     src/lib/componentCatalog.ts → shellPropsFromCatalog
-   ↓ renderMarkdown(raw, { stripFirstH1: true })   src/lib/utils/markdown.ts
-   ↓ docsHtml prop                     ComponentPageShell.svelte
-   ↓ {@html} inside .cp-explainer
+   ↓ import.meta.glob('?raw', eager)   src/lib/server/componentDocs.ts (server-only)
+   ↓ getComponentDocsForRoute(route.id) src/routes/+layout.server.ts → page.data.componentDocs
+   ↓ renderMarkdown(raw, { stripFirstH1: true })   src/lib/utils/markdown.ts (highlight.js core + registered subset)
+   ↓ docsPath prop (from shellPropsFromCatalog) matched against page.data.componentDocs.path
+   ↓ {@html} inside .cp-explainer      ComponentPageShell.svelte
 ```
+
+Docs render on the server so the browser never downloads the doc corpus or the markdown pipeline — each page receives only its own HTML. **Do not import `$lib/server/componentDocs` or call `renderMarkdown` for docs from client code.** A new code-fence language needs registering in `src/lib/utils/markdown.ts` (unregistered languages fall back to auto-detection).
 
 Authoring a doc:
 
@@ -416,7 +423,7 @@ A small set of tests time out only when run as part of the full `vitest` paralle
 
 ## Storyboards
 
-Each component has an interactive storyboard at `/storyboard/[component]`. Data lives in `src/lib/data/storyboards/[component].ts` and is loaded dynamically by the route. The standard sections (Overview / Visual Guide / Props / Code Examples / Accessibility / Tips) are followed across storyboards — copy an existing file when adding a new one.
+Storyboards are optional. Components with storyboard data (currently `shineborder` and `timeline`) get an interactive storyboard at `/storyboard/[component]`. Data lives in `src/lib/data/storyboards/[component].ts`, is registered in the `storyboards` map in `src/lib/data/storyboards/index.ts`, and is loaded dynamically by the route. The standard sections (Overview / Visual Guide / Props / Code Examples / Accessibility / Tips) are followed across storyboards — copy an existing file when adding a new one.
 
 ## Troubleshooting
 

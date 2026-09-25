@@ -30,12 +30,14 @@ events:
   on blur trigger:
     visible = false (immediate)
 
-  on keydown Escape (anywhere on trigger or tooltip):
+  on keydown Escape (window-level — works even when focus is elsewhere):
     visible = false
     cancel both timers
 
 derived markup:
   trigger gets   aria-describedby = tooltipId   (only when visible)
+  first focusable element inside the trigger gets the same id appended
+  to its own aria-describedby (existing ids are preserved)
   tooltip body   role="tooltip" id=tooltipId    (only mounted when visible)
                                                  positioned by placement prop
 ```
@@ -65,7 +67,9 @@ Three architectural choices make this work for screen-reader and keyboard users:
 
 2. **Focus triggers, not just hover.** The same handlers that fire on `pointerenter` / `pointerleave` also fire on `focus` / `blur`. A keyboard user tabbing to the trigger sees the tooltip; a mouse user hovering sees the same thing.
 
-3. **Escape closes everywhere.** Even if focus is *inside* the tooltip body (rich `tip` snippet with a link), Escape clears `visible` immediately and cancels any pending show timer. Matches modal-dismissal expectations.
+3. **Escape closes everywhere.** The listener lives on `window`, so Escape dismisses the tooltip whether focus is on the trigger, inside the tooltip body (rich `tip` snippet with a link), or somewhere else entirely — for example a tooltip opened by mouse hover while the keyboard focus sits in a form field. That is the "dismissible" requirement of WCAG 1.4.13. It also cancels any pending show timer.
+
+4. **The description lands on the focused element.** Screen readers announce `aria-describedby` on whatever receives focus, and the wrapper span never does. The component therefore mirrors the tooltip id onto the first focusable descendant of the trigger (a button, link, input, or anything with `tabindex >= 0`), appending to rather than replacing any `aria-describedby` the consumer already set, and removing only its own id on hide.
 
 The tooltip element is **only mounted** when `visible === true` — it doesn't sit in the DOM with `display: none`. That keeps the screen-reader tree small and avoids stale `aria-describedby` references when the tooltip isn't being shown.
 
@@ -139,6 +143,8 @@ A short `transform` + `opacity` fade frames the appearance. Pure CSS — no JS a
 | User hovers the trigger and quickly tabs away | Hover handler cleared on blur; tooltip never appears. No flash. |
 | User focuses the trigger and immediately presses Escape | `visible` flips to `false`, both timers cancelled. Trigger keeps focus. |
 | Tooltip body itself contains a focusable element (rich `tip`) | Tab moves into the body. Blur on the trigger doesn't fire while focus is inside, so `hideDelay > 0` is required to let the user move there. |
+| Hover-opened tooltip while focus is in another field | Escape still closes it — the key listener is on `window`. |
+| Trigger already has its own `aria-describedby` | The tooltip id is appended while visible and removed on hide; the consumer's ids are left intact. |
 | Multiple Tooltips on one page | Each gets its own auto-generated `id`. `aria-describedby` references are unique. |
 | Trigger removed from DOM while tooltip is visible | Tooltip unmounts with the wrapper; no orphaned panel. |
 | Page navigates while a tooltip is open | SvelteKit unmounts the route; the tooltip goes with it. |

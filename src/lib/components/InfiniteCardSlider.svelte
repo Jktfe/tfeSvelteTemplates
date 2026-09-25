@@ -1,50 +1,61 @@
 <!--
-  ============================================================
-  InfiniteCardSlider — GSAP-powered infinite horizontal card slider
-  ============================================================
-
-  WHAT IT DOES
-  Renders a row of cards that loop infinitely. The middle card is
-  the focal "selected" card, scaled larger and fully opaque; the
-  cards either side peek out, smaller and dimmer. Drag, swipe, click
-  arrows, or use the arrow keys to advance. Inspired by
-  https://demos.gsap.com/demo/infinite-card-slider/.
+  ===========================================================
+  InfiniteCardSlider
+  ===========================================================
+  WHAT — A horizontal card carousel that loops forever, with a
+         larger focal card in the middle and dimmer cards peeking
+         out either side.
+  WHY  — Reach for it for shelves of browseable content (products,
+         articles, templates) where "there is always another card"
+         matters more than showing everything at once. Inspired by
+         https://demos.gsap.com/demo/infinite-card-slider/.
 
   FEATURES
-  • Pure modular-arithmetic loop — no DOM duplication
+  • Pure modular-arithmetic loop — no DOM duplication or clones
   • Pointer drag (mouse + touch) with snap-to-nearest on release
-  • Click arrows, keyboard left/right, or click any card to focus it
-  • Default card chrome ships out-of-the-box; override via the
-    children snippet for custom layouts
-  • Honours prefers-reduced-motion (skips GSAP tweens, sets
-    transforms instantly)
+  • Prev / next buttons and ArrowLeft / ArrowRight / Home / End keys
+  • Default card chrome (screenshot, title, blurb, optional link);
+    override the whole card with the children snippet
+  • Exported wrappedOffset() helper for reuse / testing
+  • Reacts to items being added or removed after mount
 
   ACCESSIBILITY
-  • role="region" with aria-roledescription="carousel"
-  • Cards are real <button>s (or <a>s when href is supplied)
-  • Active card has aria-current="true"
-  • Keyboard: ArrowLeft/ArrowRight navigate, Tab/Enter selects
-  • Off-stage cards get aria-hidden + tabindex=-1
+  • <section> with aria-roledescription="carousel" + aria-label
+  • Live "01 / 05" meter announces position politely
+  • Current card carries aria-current="true"
+  • Off-stage cards are aria-hidden AND inert, so hidden links
+    drop out of the Tab order as well as the accessibility tree
+  • Taps on inner links still navigate — pointer capture only
+    starts once a drag passes a 6px threshold
+  • prefers-reduced-motion: GSAP tweens are skipped and transforms
+    are applied instantly
 
   DEPENDENCIES
-  • GSAP (loaded lazily via $lib/gsapMotion)
+  • GSAP — loaded lazily via $lib/gsapMotion for the easing tweens.
+    Without it (or before it loads) cards snap into place.
+
+  PERFORMANCE
+  Every card is absolutely positioned and moved with transform +
+  opacity only. Dragging writes styles directly (no tweens) and
+  cards beyond maxVisible fade to opacity 0, so 50+ items stay
+  smooth. Only visible cards are interactive.
 
   USAGE
-  <InfiniteCardSlider items={cards} />
+  <InfiniteCardSlider items={cards} cardWidth={280} ariaLabel="Trips" />
 
   PROPS
-  | Prop          | Type           | Default     | Description |
-  |---------------|----------------|-------------|-------------|
-  | items         | T[]            | required    | Slide data |
-  | cardWidth     | number         | 280         | Card width in px |
-  | gap           | number         | 24          | Gap between cards |
-  | initialIndex  | number         | 0           | Starting card |
-  | maxVisible    | number         | 4           | Cards each side of center |
-  | ariaLabel     | string         | 'Carousel'  | Region label |
-  | children      | snippet        | -           | Custom card body |
-  | class         | string         | ''          | Extra wrapper classes |
-
-  ============================================================
+  | Prop          | Type                       | Default     | Description                          |
+  |---------------|----------------------------|-------------|--------------------------------------|
+  | items         | T[] (T extends SliderItem) | required    | Slide data                           |
+  | cardWidth     | number                     | 280         | Card width in px                     |
+  | gap           | number                     | 24          | Gap between cards in px              |
+  | initialIndex  | number                     | 0           | Starting card (wrapped into range)   |
+  | maxVisible    | number                     | 4           | Cards shown each side of the centre  |
+  | ariaLabel     | string                     | 'Carousel'  | Accessible name of the region        |
+  | children      | Snippet<[T, number]>       | -           | Custom card body (item, index)       |
+  | onchange      | (index, item) => void      | -           | Fires when the focal card changes    |
+  | class         | string                     | ''          | Extra wrapper classes                |
+  ===========================================================
 -->
 <script lang="ts" module>
 	export interface SliderItem {
@@ -72,7 +83,7 @@
 </script>
 
 <script lang="ts" generics="T extends SliderItem">
-	import { onMount } from 'svelte';
+	import { onMount, untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
 	import { loadGsap, prefersReducedMotion, type Gsap } from '$lib/gsapMotion';
 
@@ -84,6 +95,7 @@
 		maxVisible?: number;
 		ariaLabel?: string;
 		children?: Snippet<[T, number]>;
+		onchange?: (index: number, item: T) => void;
 		class?: string;
 	}
 
@@ -95,6 +107,7 @@
 		maxVisible = 4,
 		ariaLabel = 'Carousel',
 		children,
+		onchange,
 		class: className = ''
 	}: Props = $props();
 
@@ -148,9 +161,15 @@
 				card.style.opacity = String(t.opacity);
 				card.style.zIndex = String(t.zIndex);
 			}
-			card.setAttribute('aria-hidden', t.visible ? 'false' : 'true');
-			card.tabIndex = t.visible ? 0 : -1;
+			setVisibility(card, t.visible);
 		}
+	}
+
+	// aria-hidden alone would leave hidden links reachable by Tab, so off-stage
+	// cards are also made inert — out of the accessibility tree *and* focus order.
+	function setVisibility(card: HTMLElement, visible: boolean) {
+		card.setAttribute('aria-hidden', visible ? 'false' : 'true');
+		card.inert = !visible;
 	}
 
 	function normaliseIndex(index: number): number {
@@ -160,9 +179,12 @@
 
 	function select(index: number) {
 		if (N === 0) return;
-		selectedIndex = normaliseIndex(index);
+		const next = normaliseIndex(index);
+		const changed = next !== selectedIndex;
+		selectedIndex = next;
 		dragOffsetPx = 0;
 		applyTransforms(true);
+		if (changed) onchange?.(next, items[next]);
 	}
 
 	function next() {
@@ -223,20 +245,44 @@
 		}
 	}
 
-	function cardRef(node: HTMLElement, index: number) {
-		cards[index] = node;
+	function placeCard(node: HTMLElement, index: number) {
 		const t = transformFor(index);
 		node.style.transform = `translate3d(${t.x}px, 0, 0) scale(${t.scale})`;
 		node.style.opacity = String(t.opacity);
 		node.style.zIndex = String(t.zIndex);
-		node.setAttribute('aria-hidden', t.visible ? 'false' : 'true');
-		node.tabIndex = t.visible ? 0 : -1;
+		setVisibility(node, t.visible);
+	}
+
+	// Keyed cards can move to a new index when items are inserted or removed,
+	// so the action tracks its current slot and re-registers on update.
+	function cardRef(node: HTMLElement, index: number) {
+		let slot = index;
+		cards[slot] = node;
+		placeCard(node, slot);
 		return {
+			update(nextIndex: number) {
+				if (cards[slot] === node) cards[slot] = undefined;
+				slot = nextIndex;
+				cards[slot] = node;
+				placeCard(node, slot);
+			},
 			destroy() {
-				cards[index] = undefined;
+				if (cards[slot] === node) cards[slot] = undefined;
 			}
 		};
 	}
+
+	// When the item count or geometry changes (filtering, async data, a resized
+	// card) keep the selection in range and re-lay every card from scratch.
+	$effect(() => {
+		const total = N;
+		void stride;
+		void maxVisible;
+		untrack(() => {
+			if (total > 0 && selectedIndex >= total) selectedIndex = total - 1;
+			applyTransforms(false);
+		});
+	});
 
 	onMount(() => {
 		selectedIndex = normaliseIndex(initialIndex);

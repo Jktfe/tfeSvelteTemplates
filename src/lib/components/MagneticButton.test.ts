@@ -18,7 +18,7 @@
 import { render, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { tick } from 'svelte';
-import MagneticButtonTest from './MagneticButtonTest.svelte';
+import MagneticButtonTestHarness from './MagneticButtonTestHarness.test.svelte';
 
 const originalMatchMedia = window.matchMedia;
 
@@ -41,25 +41,25 @@ function mockMatchMedia(matches: (query: string) => boolean) {
 
 describe('MagneticButton', () => {
 	it('renders the wrapped child element', () => {
-		const { getByTestId } = render(MagneticButtonTest);
+		const { getByTestId } = render(MagneticButtonTestHarness);
 		expect(getByTestId('magnetic-target')).toBeInTheDocument();
 	});
 
 	it('writes the radius prop to the --radius custom property', () => {
-		const { container } = render(MagneticButtonTest, { radius: 150 });
+		const { container } = render(MagneticButtonTestHarness, { radius: 150 });
 		const wrapper = container.querySelector('.magnetic-wrapper') as HTMLElement;
 		expect(wrapper.style.getPropertyValue('--radius')).toBe('150px');
 	});
 
 	it('renders an inner content layer that carries the transform', () => {
-		const { container } = render(MagneticButtonTest);
+		const { container } = render(MagneticButtonTestHarness);
 		const content = container.querySelector('.magnetic-content') as HTMLElement;
 		expect(content).toBeTruthy();
 		expect(content.style.transform).toContain('translate(0px, 0px)');
 	});
 
 	it('moves the content layer when the cursor approaches the centre', async () => {
-		const { container } = render(MagneticButtonTest, { radius: 100, strength: 0.5 });
+		const { container } = render(MagneticButtonTestHarness, { radius: 100, strength: 0.5 });
 		const wrapper = container.querySelector('.magnetic-wrapper') as HTMLElement;
 		const content = container.querySelector('.magnetic-content') as HTMLElement;
 
@@ -83,7 +83,7 @@ describe('MagneticButton', () => {
 	});
 
 	it('resets when the pointer leaves', async () => {
-		const { container } = render(MagneticButtonTest);
+		const { container } = render(MagneticButtonTestHarness);
 		const wrapper = container.querySelector('.magnetic-wrapper') as HTMLElement;
 		const content = container.querySelector('.magnetic-content') as HTMLElement;
 
@@ -108,7 +108,7 @@ describe('MagneticButton', () => {
 
 	it('respects prefers-reduced-motion by skipping the transform', async () => {
 		mockMatchMedia((q) => q.includes('reduced-motion'));
-		const { container } = render(MagneticButtonTest);
+		const { container } = render(MagneticButtonTestHarness);
 		const wrapper = container.querySelector('.magnetic-wrapper') as HTMLElement;
 		const content = container.querySelector('.magnetic-content') as HTMLElement;
 
@@ -132,7 +132,7 @@ describe('MagneticButton', () => {
 
 	it('no-ops on coarse pointer devices (touch)', async () => {
 		mockMatchMedia((q) => q.includes('pointer: coarse'));
-		const { container } = render(MagneticButtonTest);
+		const { container } = render(MagneticButtonTestHarness);
 		const wrapper = container.querySelector('.magnetic-wrapper') as HTMLElement;
 		const content = container.querySelector('.magnetic-content') as HTMLElement;
 
