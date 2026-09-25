@@ -148,6 +148,16 @@
 			padding: 0.5rem 0.75rem;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	/* Vendor pseudo-elements get their own rules: one unknown selector in a
+	   shared list would make the other engine drop the whole rule. */
+	@media (prefers-reduced-motion: reduce) {
+		.time-field-input {
+			transition: none;
+		}
+		.time-field-input::-webkit-calendar-picker-indicator {
+			transition: none;
+		}
+	}
+</style>

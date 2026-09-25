@@ -290,6 +290,19 @@
 			font-size: 0.8125rem;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	/* Vendor pseudo-elements get their own rules: one unknown selector in a
+	   shared list would make the other engine drop the whole rule. */
+	@media (prefers-reduced-motion: reduce) {
+		.range-input::-webkit-slider-runnable-track {
+			transition: none;
+		}
+		.range-input::-webkit-slider-thumb {
+			transition: none;
+		}
+		.range-input::-moz-range-thumb {
+			transition: none;
+		}
+	}
+</style>

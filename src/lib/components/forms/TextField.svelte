@@ -162,6 +162,11 @@
 			padding: 0.5rem 0.75rem;
 		}
 	}
-</style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
+	/* Reduced motion: focus, hover and checked states land instantly. */
+	@media (prefers-reduced-motion: reduce) {
+		.text-field-input {
+			transition: none;
+		}
+	}
+</style>

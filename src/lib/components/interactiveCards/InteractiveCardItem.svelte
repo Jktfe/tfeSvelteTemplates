@@ -208,4 +208,13 @@
 		outline: 2px solid var(--foreground, #111);
 		outline-offset: 4px;
 	}
+
+	/* Reduced motion: the badge and frame simply appear/disappear rather than
+	   fading, so nothing drifts on screen for readers who asked for stillness. */
+	@media (prefers-reduced-motion: reduce) {
+		.badge,
+		.frame {
+			transition: none;
+		}
+	}
 </style>

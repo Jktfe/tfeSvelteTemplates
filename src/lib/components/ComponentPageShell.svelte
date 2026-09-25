@@ -33,6 +33,7 @@
 	• Each section is a real <section> with an aria-labelledby
 	• Headings step h1 → h2 → h3 in document order
 	• Code blocks have role="region" + aria-label
+	• Hover transitions are disabled under prefers-reduced-motion
 
 	USAGE
 	<ComponentPageShell
@@ -953,6 +954,18 @@
 		}
 		.cp-shelf-nav__link--next {
 			text-align: left;
+		}
+	}
+
+	/* Reduced motion: shelf links and breadcrumbs change colour instantly and
+	   the 1px hover lift is dropped so nothing nudges under the pointer. */
+	@media (prefers-reduced-motion: reduce) {
+		.cp-crumb a,
+		.cp-shelf-nav__link {
+			transition: none;
+		}
+		.cp-shelf-nav__link:hover {
+			transform: none;
 		}
 	}
 </style>

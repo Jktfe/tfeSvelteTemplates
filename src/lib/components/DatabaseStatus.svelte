@@ -21,7 +21,7 @@
  * Technical Implementation:
  * - Svelte 5 $derived rune for reactive status computation
  * - ARIA live region (role="status") for accessibility
- * - CSS transitions for smooth state changes
+ * - CSS transitions for smooth state changes (disabled under prefers-reduced-motion)
  * - Responsive design with mobile-optimised sizing
  * - Scoped CSS with no external dependencies
  *
@@ -138,6 +138,13 @@
 
 		.status-icon {
 			font-size: 0.875rem;
+		}
+	}
+
+	/* Reduced motion: state changes swap colours instantly instead of fading. */
+	@media (prefers-reduced-motion: reduce) {
+		.database-status {
+			transition: none;
 		}
 	}
 
