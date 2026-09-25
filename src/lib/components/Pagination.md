@@ -164,6 +164,35 @@ The wrapper is a real `<nav aria-label="Pagination">`, making it a landmark that
 | `onChange` | `(page: number) => void` | — | Fires after a navigation that actually changes the page. Useful for analytics, URL syncing, or data refetches. |
 | `class` | `string` | `''` | Extra classes appended to the `<nav>`. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The active page and focus ring are brand, so the current page reads the same on both schemes.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--pagination-fg` | `#1f2937` | `#e5e7eb` | `.page-btn` |
+| `--pagination-bg` | `#ffffff` | `#111827` | `.page-btn` |
+| `--pagination-border` | `#d1d5db` | `#374151` | `.page-btn` |
+| `--pagination-hover-bg` | `#f3f4f6` | `#1f2937` | `.page-btn:hover:not(:disabled)` |
+| `--pagination-muted` | `#9ca3af` | `#6b7280` | `.page-btn:hover:not(:disabled)`, `.page-btn:disabled` |
+| `--pagination-disabled-bg` | `#f9fafb` | `#0b1220` | `.page-btn:disabled` |
+| `--pagination-focus-ring` | `#3b82f6` | *(unchanged — brand / semantic)* | `.page-btn:focus-visible` |
+| `--pagination-active-bg` | `#2563eb` | *(unchanged — brand / semantic)* | `.page-btn.active` |
+| `--pagination-active-bg-hover` | `#1d4ed8` | *(unchanged — brand / semantic)* | `.page-btn.active:hover` |
+| `--pagination-ellipsis` | `#6b7280` | `#9ca3af` | `.page-ellipsis` |
+| `--pagination-active-fg` | `#ffffff` | *(unchanged — brand / semantic)* | `.page-btn.active` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .pagination.pagination {
+  --pagination-active-bg: #0f766e;
+  --pagination-active-bg-hover: #115e59;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

@@ -148,8 +148,40 @@ CodeBlock has very little animation. The copy-button feedback is a brief opacity
 | `highlight` | `string` | `undefined` | Comma-separated 1-based line ranges (`"1,3-5,8"`). |
 | `wrap` | `boolean` | `false` | Soft-wrap long lines instead of horizontal scroll. |
 | `copyable` | `boolean` | `true` | Show the copy button when the Clipboard API is supported. |
-| `theme` | `'light' \| 'dark'` | `'dark'` | Colour palette. `terminal` variant ignores this. |
+| `theme` | `'light' \| 'dark' \| 'auto'` | `'dark'` | Colour palette. `auto` starts light and flips under `prefers-color-scheme: dark`. `terminal` variant ignores this. |
 | `aria-label` | `string` | `'Code'` | Region label for screen readers. |
+
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`. Every colour is a `--cb-*` custom property on `.codeblock`; the `theme` prop picks which palette those tokens hold.
+
+| `theme` | Behaviour |
+|---|---|
+| `'dark'` (default) | Pins the dark palette on both page schemes — a dark code panel reads fine on a light page. |
+| `'light'` | Pins the light palette. |
+| `'auto'` | Starts on the light palette and flips to the dark palette under `prefers-color-scheme: dark`. |
+
+The `terminal` variant ignores `theme` — its green-on-black look is fixed by design. Diff add / delete tints and marks are semantic and the same in every palette.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--cb-fg` | `#2d2d2d` | `#d4d4d4` | `.codeblock`, `.file-name` |
+| `--cb-bg` | `#f8f8f8` | `#1e1e1e` | `.codeblock`, `.copy-btn` |
+| `--cb-bg-header` | `#efefef` | `#2d2d2d` | `.header` |
+| `--cb-fg-muted` | `#6f6f6f` | `#858585` | `.header`, `.gutter` |
+| `--cb-border` | `#e0e0e0` | `#3c3c3c` | `.header`, `.copy-btn` |
+| `--cb-highlight` | `rgba(255, 215, 0, 0.18)` | `rgba(255, 255, 255, 0.06)` | `.line.highlighted` |
+| `--cb-keyword` | `#af00db` | `#c586c0` | `.t-keyword`, `.prompt` |
+| `--cb-string` | `#a31515` | `#ce9178` | `.t-string` |
+| `--cb-comment` | `#008000` | `#6a9955` | `.t-comment` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .codeblock.codeblock {
+  --cb-keyword: #ff79c6;
+}
+```
 
 ## Edge Cases
 

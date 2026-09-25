@@ -169,6 +169,53 @@ The `onDestroy` cleanup is the safety net: if the parent unmounts the component 
 | `onRemove` | `(item) => void` | `undefined` | Fires when a row's × is clicked. |
 | `onRetry` | `(item) => void` | `undefined` | Fires when retry is clicked on an errored row. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+`--upload-accent` (brand), `--upload-success` and `--upload-danger` (semantic) never flip, so the progress gradient and hover accents keep their meaning. Everything else is chrome.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--upload-accent` | `#2563eb` | *(unchanged — brand / semantic)* | `.surface-icon`, `.progress-track span` |
+| `--upload-success` | `#059669` | *(unchanged — brand / semantic)* | `.progress-track span` |
+| `--upload-danger` | `#dc2626` | *(unchanged — brand / semantic)* | `.icon-button.danger:hover:not(:disabled)` |
+| `--upload-fg` | `#172033` | `#e2e8f0` | `.upload-dropzone` |
+| `--upload-title-fg` | `#0f172a` | `#f8fafc` | `.surface-title`, `.file-name` |
+| `--upload-muted-fg` | `#64748b` | `#94a3b8` | `.surface-description`, `.empty-state` |
+| `--upload-surface-bg` | `#fbfdff` | `#0f172a` | `.upload-surface` |
+| `--upload-surface-bg-dragging` | `#f7fffb` | `#052e1f` | `.upload-surface.is-dragging` |
+| `--upload-surface-bg-limit` | `#f8fafc` | `#111827` | `.upload-surface.is-at-limit` |
+| `--upload-surface-shadow` | `0 18px 45px rgba(23, 32, 51, 0.08)` | `0 18px 45px rgba(0, 0, 0, 0.35)` | `.upload-surface` |
+| `--upload-card-bg` | `#ffffff` | `#1e293b` | `.surface-icon`, `.empty-state` |
+| `--upload-row-bg` | `rgba(255, 255, 255, 0.94)` | `rgba(15, 23, 42, 0.94)` | `.file-row` |
+| `--upload-row-bg-error` | `#fffafa` | `#2a0f12` | `.file-row.is-error` |
+| `--upload-row-shadow` | `0 10px 28px rgba(15, 23, 42, 0.06)` | `0 10px 28px rgba(0, 0, 0, 0.3)` | `.file-row` |
+| `--upload-action-bg` | `#0f172a` | `#f8fafc` | `.surface-action` |
+| `--upload-action-fg` | `#ffffff` | `#0f172a` | `.surface-action` |
+| `--upload-preview-bg` | `#eef2ff` | `#1e1b4b` | `.file-preview` |
+| `--upload-preview-fg` | `#334155` | `#cbd5e1` | `.file-preview` |
+| `--upload-track-bg` | `#e2e8f0` | `#334155` | `.progress-track` |
+| `--upload-button-bg` | `#f1f5f9` | `#1e293b` | `.icon-button` |
+| `--upload-button-fg` | `#334155` | `#cbd5e1` | `.icon-button` |
+| `--upload-button-hover-bg` | `#dbeafe` | `#172554` | `.icon-button:hover:not(:disabled)` |
+| `--upload-button-danger-hover-bg` | `#fee2e2` | `#450a0a` | `.icon-button.danger:hover:not(:disabled)` |
+| `--upload-pill-bg` | `#e0f2fe` | `#0c4a6e` | `.status-pill` |
+| `--upload-pill-fg` | `#075985` | `#bae6fd` | `.status-pill` |
+| `--upload-pill-success-bg` | `#dcfce7` | `#052e16` | `.status-pill.success` |
+| `--upload-pill-success-fg` | `#166534` | `#86efac` | `.status-pill.success` |
+| `--upload-pill-error-bg` | `#fee2e2` | `#450a0a` | `.status-pill.error` |
+| `--upload-pill-error-fg` | `#991b1b` | `#fca5a5` | `.status-pill.error` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .upload-dropzone.upload-dropzone {
+  --upload-accent: #7c3aed;
+  --upload-surface-bg: #faf5ff;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

@@ -123,6 +123,28 @@ A useful test: if the user might want to *re-read* the message thirty seconds la
 | `children` | `Snippet` | `undefined` | Optional snippet for action elements (links, buttons) under the message. |
 | `class` | `string` | `''` | Extra classes appended to the banner. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+Each `.alert-<variant>` class sets `--alert-bg`, `--alert-border` and `--alert-fg`; the values below are the `info` variant (success, warning and error follow the same pattern). The hue is semantic and kept on both schemes — only the tint's lightness flips.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--alert-dismiss-hover-bg` | `rgba(0, 0, 0, 0.06)` | `rgba(255, 255, 255, 0.1)` | `.alert-dismiss:hover` |
+| `--alert-bg` | `#eff6ff` | `#172554` | `.alert-banner` |
+| `--alert-border` | `#bfdbfe` | `#1e3a8a` | `.alert-banner` |
+| `--alert-fg` | `#1e40af` | `#bfdbfe` | `.alert-banner` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .alert-info.alert-info {
+  --alert-bg: #e0f2fe;
+  --alert-border: #7dd3fc;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

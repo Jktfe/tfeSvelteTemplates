@@ -160,6 +160,34 @@ Pause-on-hover is `animation-play-state: paused` — no JS, no event listener. R
 | `trend` | `'up' \| 'down' \| 'flat'` (optional) | Explicit override; otherwise inferred from `delta` sign. |
 | `href` | `string` (optional) | Wraps the item in an `<a>` with focus-visible styles. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The default, finance and sports variants paint their own dark strip, so they look the same on either page scheme. Only the transparent `minimal` variant flips its chrome; its up / down deltas lift a step in lightness but keep their hue.
+
+| Property (minimal variant) | Light | Dark | Used by |
+|---|---|---|---|
+| `--tickertape-fg` | `#1e293b` | `#e2e8f0` | `.tickertape` |
+| `--tickertape-label` | `#94a3b8` | `#94a3b8` | `.tickertape__label` |
+| `--tickertape-value` | `#0f172a` | `#f8fafc` | `.tickertape__value` |
+| `--tickertape-up` | `#059669` | `#34d399` | `.tickertape__delta--up` |
+| `--tickertape-down` | `#dc2626` | `#f87171` | `.tickertape__delta--down` |
+| `--tickertape-flat` | `#64748b` | `#94a3b8` | `.tickertape__delta--flat` |
+| `--tickertape-sep` | `#cbd5e1` | `#475569` | `.tickertape__sep` |
+| `--tickertape-rule` | `#e2e8f0` | `#334155` | `.tickertape--minimal` hairlines |
+
+The default, finance and sports variants keep their own `--tickertape-bg` / `--tickertape-fg` / `--tickertape-value` on both schemes.
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .tickertape.tickertape {
+  --tickertape-bg: #111827;
+  --tickertape-value: #fde68a;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |
