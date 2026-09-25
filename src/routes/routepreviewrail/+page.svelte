@@ -3,16 +3,12 @@
 	import RoutePreviewRail from '$lib/components/RoutePreviewRail.svelte';
 	import type { RoutePreviewItem } from '$lib/components/RoutePreviewRail.svelte';
 	import { catalogShellPropsForSlug, componentCatalogEntries } from '$lib/componentCatalog';
+	import { screenshotFiles } from 'virtual:file-manifest';
 
 	const shell = catalogShellPropsForSlug('/routepreviewrail')!;
+	// The manifest lists paths only, so screenshots are never pulled into the bundle.
 	const availableScreenshots = new Set(
-		Object.keys(
-			import.meta.glob('/static/ComponentScreenshots/*', {
-				eager: true,
-				query: '?url',
-				import: 'default'
-			})
-		).map((path) => path.replace('/static', ''))
+		screenshotFiles.map((path) => path.replace('/static', ''))
 	);
 
 	const operationPreviews: RoutePreviewItem[] = componentCatalogEntries
@@ -35,7 +31,7 @@ const usageSnippet = `<script lang="ts">
     {
       name: 'EvidenceCard',
       href: '/evidencecard',
-      screenshot: '/ComponentScreenshots/EvidenceCardShot.png',
+      screenshot: '/ComponentScreenshots/EvidenceCardShot.webp',
       description: 'Compact delivery proof card.',
       status: 'ready'
     }
@@ -52,7 +48,7 @@ const usageSnippet = `<script lang="ts">
 	{...shell.props}
 	{usageSnippet}
 	tags={['Svelte 5', 'Visual QA', 'Routes', 'Screenshots']}
-	codeExplanation="RoutePreviewRail is intentionally metadata-driven. The route converts catalogue entries into preview items and marks screenshots as ready or missing using Vite URL globs, while the component itself only handles filtering and presentation."
+	codeExplanation="RoutePreviewRail is intentionally metadata-driven. The route converts catalogue entries into preview items and marks screenshots as ready or missing using a build-time file manifest, while the component itself only handles filtering and presentation."
 >
 	{#snippet demo()}
 		<RoutePreviewRail

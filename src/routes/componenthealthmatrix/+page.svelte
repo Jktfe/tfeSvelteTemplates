@@ -8,32 +8,19 @@
 	} from '$lib/components/ComponentHealthMatrix.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
 	import { catalogShellPropsForSlug, componentCatalogEntries } from '$lib/componentCatalog';
+	import {
+		componentDocFiles,
+		componentSourceFiles,
+		demoPageFiles,
+		screenshotFiles
+	} from 'virtual:file-manifest';
 
 	const shell = catalogShellPropsForSlug('/componenthealthmatrix')!;
 
-	const sourceFiles = import.meta.glob('/src/lib/components/**/*.svelte', {
-		eager: true,
-		query: '?url',
-		import: 'default'
-	});
-	const docsFiles = import.meta.glob('/src/lib/components/**/*.md', {
-		eager: true,
-		query: '?url',
-		import: 'default'
-	});
-	const demoFiles = import.meta.glob('/src/routes/**/+page.svelte', {
-		eager: true,
-		query: '?url',
-		import: 'default'
-	});
-	const screenshotFiles = import.meta.glob('/static/ComponentScreenshots/*', {
-		eager: true,
-		query: '?url',
-		import: 'default'
-	});
-
-	function pathSet(modules: Record<string, unknown>): Set<string> {
-		return new SvelteSet(Object.keys(modules).map(normalisePath));
+	// Paths come from a build-time manifest rather than `import.meta.glob`, so
+	// checking existence never copies sources or screenshots into the bundle.
+	function pathSet(paths: string[]): Set<string> {
+		return new SvelteSet(paths.map(normalisePath));
 	}
 
 	function declaredTestPathSet(): Set<string> {
@@ -47,9 +34,9 @@
 	}
 
 	const availableFiles: ComponentHealthFiles = {
-		source: pathSet(sourceFiles),
-		docs: pathSet(docsFiles),
-		demo: pathSet(demoFiles),
+		source: pathSet(componentSourceFiles),
+		docs: pathSet(componentDocFiles),
+		demo: pathSet(demoPageFiles),
 		screenshot: pathSet(screenshotFiles),
 		test: declaredTestPathSet()
 	};
@@ -87,7 +74,7 @@
 	{...shell.props}
 	{usageSnippet}
 	tags={['Svelte 5', 'Catalogue QA', 'Dashboard', 'Metadata']}
-	codeExplanation="ComponentHealthMatrix reads the same registry that powers the homepage and component shell. The route supplies browser-safe file availability through Vite glob sets and declared test metadata, then the component renders a searchable QA table without duplicating catalogue data."
+	codeExplanation="ComponentHealthMatrix reads the same registry that powers the homepage and component shell. The route supplies browser-safe file availability through a build-time file manifest (virtual:file-manifest) and declared test metadata, then the component renders a searchable QA table without duplicating catalogue data."
 >
 	{#snippet demo()}
 		<ComponentHealthMatrix {rows} />
