@@ -44,8 +44,12 @@ events:
       phase = 'morphing-close'
       setTimeout(() => { phase = 'idle'; open = false; cleanup() }, duration)
 
-  on Tab / Shift+Tab while phase === 'open':
-    cycle focus inside the dialog (focus trap)
+  on Tab / Shift+Tab while the dialog is rendered:
+    cycle focus inside the dialog (focus trap; pulls stray focus back in)
+
+  on parent changing bind:open:
+    open === true  AND phase === 'idle' → openDialog()
+    open === false AND phase === 'open' → closeDialog()
 
   on Escape (if closeOnEscape):
     request close
@@ -55,7 +59,10 @@ events:
 
 cleanup():
   unlockScroll?.()
-  previousFocus?.focus()
+  previousFocus?.focus()   // only if it is still in the document
+
+on unmount:
+  clear any pending morph timer, release the scroll lock
 ```
 
 The dialog renders only while `phase !== 'idle'`. Each phase corresponds to a different CSS class on the dialog element (`--at-trigger`, `--at-center`, `--closing`), and CSS transitions handle the actual morph between sizes and positions.
@@ -159,12 +166,13 @@ When the dialog opens, focus moves to the first focusable element inside. While 
 The focus trap is implemented inline in the global `keydown` handler:
 
 ```
-on keydown Tab AND phase === 'open':
-  focusables = dialogEl.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')
-  if focusables empty: return
+on keydown Tab while the dialog is rendered (including mid-morph):
+  focusables = dialogEl.querySelectorAll(TABBABLE_SELECTOR)   // disabled controls skipped
+  if focusables empty: preventDefault; dialogEl.focus(); return
   first = focusables[0]; last = focusables[last index]
-  if Shift+Tab AND active === first: preventDefault; last.focus()
-  if Tab       AND active === last:  preventDefault; first.focus()
+  outside = focus is not inside dialogEl
+  if Shift+Tab AND (outside OR active === first): preventDefault; last.focus()
+  if Tab       AND (outside OR active === last):  preventDefault; first.focus()
 ```
 
 The dialog itself carries `tabindex="-1"` so it can receive programmatic focus when there's no focusable content inside (e.g. a read-only confirmation message).
@@ -284,6 +292,8 @@ If you want to "expand a card into a detail view that visually grew out of the c
 | `borderRadius` | `string` | `'16px'` | Border radius of the centred dialog. The morph interpolates from 8 px (trigger) to this value. |
 | `closeOnOverlay` | `boolean` | `true` | When false, clicking the backdrop does not close the dialog. |
 | `closeOnEscape` | `boolean` | `true` | When false, Escape does not close the dialog. |
+| `ariaLabel` | `string` | `'Dialog'` | Accessible name for the dialog. Ignored when `ariaLabelledBy` is set. |
+| `ariaLabelledBy` | `string` | `undefined` | `id` of an element inside the dialog (usually its heading) that names it. Preferred over `ariaLabel`. |
 | `class` | `string` | `''` | Extra classes appended to the dialog. |
 | `trigger` | `Snippet<[{ onclick, 'aria-expanded', 'aria-haspopup' }]>` | required | The trigger element. The snippet receives props that must be spread onto whatever you render. |
 | `children` | `Snippet` | required | Dialog content. |
@@ -300,6 +310,8 @@ If you want to "expand a card into a detail view that visually grew out of the c
 | `dialogWidth` larger than the viewport | Width clamps via `min(var(--dialog-width), calc(100vw - 2rem))`. The dialog never exceeds the viewport. |
 | `closeOnOverlay={false}` and `closeOnEscape={false}` | The only way to close is for the parent to flip `bind:open` to false, or for the user to click the rendered close button (always present). |
 | Multiple MorphingDialogs stacked | Each has its own `phase` state. The most-recently-opened dialog's overlay sits at `z-index: 9999`; older dialogs underneath stay at the same z-index. Stacked is supported but visually confusing — design accordingly. |
+| Parent flips `bind:open` to false mid-open-morph | The morph finishes, then the close morph starts immediately — the dialog never gets stuck open. |
+| Component unmounts while open or mid-morph | The pending timer is cleared and the scroll lock is released, so the host page is never left frozen. |
 | Server-side render | `phase` starts at `'idle'` and the conditional `{#if showDialog}` block renders nothing. No focus, no scroll lock, no reduced-motion check during SSR. |
 
 ## Dependencies
