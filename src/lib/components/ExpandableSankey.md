@@ -226,7 +226,38 @@ On mobile, the diagram has a minimum width of 800px and the container scrolls ho
 
 ---
 
-## Edge Cases Handled
+## State Flow Diagram
+
+Each expandable node flips between two states. The diagram-wide state is simply the set of nodes that are currently expanded.
+
+```
+   ┌────────────────────────┐        click node        ┌────────────────────────┐
+   │  COLLAPSED             │ ───────────────────────▶ │  EXPANDED              │
+   │  expanded = false      │                          │  expanded = true       │
+   │  aggregate links shown │ ◀─────────────────────── │  children + detail     │
+   │  children hidden       │        click node        │  links shown           │
+   └────────────────────────┘                          └───────────┬────────────┘
+                                                                   │
+                                  collapse parent                  │
+             (all expanded descendants collapse recursively) ◀─────┘
+
+   Non-expandable node clicked ──▶ no state change
+   After every toggle: data = sankeyData  ──▶ Svelte re-renders ──▶ Unovis animates
+```
+
+---
+
+## Props Reference
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `nodes` | `SankeyNode[]` | — (required) | Every node, including hidden children; children point to their parent via `parent`, and parents set `expandable: true`. |
+| `links` | `SankeyLink[]` | — (required) | Every link, including both aggregate (parent → destination) and detail (child → destination) flows. |
+| `height` | `number` | `600` | Height of the chart container in pixels. |
+
+---
+
+## Edge Cases
 
 | Situation | Behaviour |
 |-----------|-----------|
@@ -263,6 +294,3 @@ ExpandableSankey.test.ts     # Unit tests (26 tests)
 ExpandableSankey.md          # This explainer
 ```
 
----
-
-*Last updated: 26 December 2025*

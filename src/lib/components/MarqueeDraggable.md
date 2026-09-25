@@ -115,6 +115,32 @@ Benefits:
 
 ---
 
+## State Flow Diagram
+
+```
+                    ┌──────────────────────────┐
+     mount + rAF ──▶│  AUTO-SCROLLING          │◀───────────────────────┐
+     measure        │  rAF loop moves offset   │                        │
+                    │  at contentWidth/duration│                        │
+                    └────┬──────────────┬──────┘                        │
+       pointerdown       │              │ scrolled off-screen            │
+       (dragEnabled)     │              ▼                               │
+                         │     ┌──────────────────────┐   back on screen│
+                         │     │  PAUSED (hidden)     │─────────────────┤
+                         │     │  rAF cancelled       │                 │
+                         │     └──────────────────────┘                 │
+                         ▼                                              │
+                    ┌──────────────────────────┐                        │
+                    │  DRAGGING                │   pointerup /          │
+                    │  rAF stopped             │   pointercancel        │
+                    │  offset = start + delta  │────────────────────────┘
+                    │  lastVelocity = movement │   |velocity| > 5 and
+                    └──────────────────────────┘   dragMomentum → adopt
+                                                   drag direction
+```
+
+---
+
 ## Props Reference
 
 | Prop | Type | Default | Description |
@@ -124,6 +150,7 @@ Benefits:
 | `reverse` | `boolean` | `false` | Start scrolling in opposite direction |
 | `dragEnabled` | `boolean` | `true` | Allow drag interaction |
 | `dragMomentum` | `boolean` | `true` | Continue in drag direction after release |
+| `repeat` | `number` | `4` | Minimum number of content copies; raised automatically when the container is wide enough to need more |
 | `class` | `string` | `''` | Additional CSS classes |
 | `children` | `Snippet` | - | Content to scroll |
 
@@ -189,7 +216,7 @@ This feels natural - like pushing a physical object!
 - **RAF animation** - ~60fps JavaScript updates (more CPU than CSS)
 - **Pointer capture** - Ensures smooth drag even outside element
 - **Visibility observer** - Pauses when off-screen to save battery
-- **Two copies** - Fewer DOM nodes than Marquee (4 copies)
+- **Auto-sized copies** - At least `repeat` (4) copies, raised to `ceil(container × 3 / content) + 1` so the loop never shows a gap
 - **will-change: transform** - Hints GPU acceleration
 
 ---
@@ -216,6 +243,22 @@ This feels natural - like pushing a physical object!
 
 ---
 
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Content narrower than the container | More copies are rendered (`ceil(container × 3 / content) + 1`, minimum 4) so there is never a visible gap. |
+| Window resized | Widths are re-measured on `resize` and the copy count recalculated. |
+| Marquee scrolled out of view | `IntersectionObserver` cancels the rAF loop; it resumes when visible again. |
+| Slow drag then release | Velocity under the 5px threshold keeps the previous direction. |
+| `dragMomentum={false}` | Release always resumes the original direction. |
+| `dragEnabled={false}` | Pointer events are ignored and the cursor is the default arrow. |
+| Pointer leaves the element mid-drag | Pointer capture keeps the drag alive until release or `pointercancel`. |
+| `prefers-reduced-motion: reduce` | Not yet honoured by the rAF loop — auto-scroll still runs. Gate the mount behind a `matchMedia('(prefers-reduced-motion: reduce)')` check in the host page if your audience needs it. |
+| `duration` or direction changes | An `$effect` restarts the loop so the new speed applies immediately. |
+
+---
+
 ## Dependencies
 
 - **$lib/utils** (cn helper for class merging)
@@ -231,6 +274,3 @@ MarqueeDraggable.test.ts # Unit tests
 MarqueeDraggable.md      # This explainer
 ```
 
----
-
-*Last updated: 26 December 2025*
