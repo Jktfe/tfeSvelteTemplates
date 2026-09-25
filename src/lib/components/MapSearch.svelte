@@ -45,6 +45,11 @@
   • Leaflet CSS (add to app.html or import globally)
   • Nominatim API (free, no key required, rate-limited)
 
+  THEMING (see docs/THEMING.md)
+  --map-* chrome tokens on .map-search-container flip under
+  prefers-color-scheme: dark (search box, results, popups,
+  attribution). --map-accent is brand and deliberately not flipped.
+
   ============================================================
   @component
 -->
@@ -494,6 +499,48 @@
 
 <style>
 	/* ==================================================
+     Theming Tokens — see docs/THEMING.md
+     Chrome flips under prefers-color-scheme: dark. The accent
+     (--map-accent) is brand and stays put on both schemes; the
+     danger tints lighten within the same red hue so the meaning
+     survives while staying readable on dark surfaces.
+     ================================================== */
+	.map-search-container {
+		--map-canvas: #f0f0f0;
+		--map-surface: #ffffff;
+		--map-surface-hover: #f5f5f5;
+		--map-fg: #333333;
+		--map-fg-muted: #666666;
+		--map-fg-subtle: #999999;
+		--map-pill-bg: #f0f0f0;
+		--map-pill-hover: #e0e0e0;
+		--map-divider: #f0f0f0;
+		--map-link: #146ef5;
+		--map-accent: #146ef5;
+		--map-shadow: rgba(0, 0, 0, 0.15);
+		--map-attribution-bg: rgba(255, 255, 255, 0.85);
+		--map-attribution-fg: #333333;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.map-search-container {
+			--map-canvas: #111827;
+			--map-surface: #1f2937;
+			--map-surface-hover: #374151;
+			--map-fg: #f3f4f6;
+			--map-fg-muted: #9ca3af;
+			--map-fg-subtle: #9ca3af;
+			--map-pill-bg: #374151;
+			--map-pill-hover: #4b5563;
+			--map-divider: #374151;
+			--map-link: #60a5fa;
+			--map-shadow: rgba(0, 0, 0, 0.5);
+			--map-attribution-bg: rgba(17, 24, 39, 0.85);
+			--map-attribution-fg: #d1d5db;
+		}
+	}
+
+	/* ==================================================
      Container Styles
      ================================================== */
 	.map-search-container {
@@ -502,7 +549,7 @@
 		height: var(--map-height, 400px);
 		border-radius: 8px;
 		overflow: hidden;
-		background-color: #f0f0f0;
+		background-color: var(--map-canvas);
 	}
 
 	.map-element {
@@ -526,9 +573,9 @@
 		position: relative;
 		display: flex;
 		align-items: center;
-		background: white;
+		background: var(--map-surface);
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		overflow: hidden;
 	}
 
@@ -537,7 +584,7 @@
 		left: 12px;
 		width: 18px;
 		height: 18px;
-		color: #666;
+		color: var(--map-fg-muted);
 		pointer-events: none;
 	}
 
@@ -546,16 +593,17 @@
 		padding: 12px 40px 12px 40px;
 		border: none;
 		font-size: 14px;
+		color: var(--map-fg);
 		background: transparent;
 		outline: none;
 	}
 
 	.search-input::placeholder {
-		color: #999;
+		color: var(--map-fg-subtle);
 	}
 
 	.search-input:focus {
-		box-shadow: inset 0 0 0 2px #146ef5;
+		box-shadow: inset 0 0 0 2px var(--map-accent);
 		border-radius: 8px;
 	}
 
@@ -569,15 +617,15 @@
 		height: 24px;
 		padding: 0;
 		border: none;
-		background: #f0f0f0;
+		background: var(--map-pill-bg);
 		border-radius: 50%;
 		cursor: pointer;
-		color: #666;
+		color: var(--map-fg-muted);
 		transition: background-color 0.15s ease;
 	}
 
 	.clear-button:hover {
-		background: #e0e0e0;
+		background: var(--map-pill-hover);
 	}
 
 	.clear-button svg {
@@ -591,8 +639,8 @@
 		right: 12px;
 		width: 18px;
 		height: 18px;
-		border: 2px solid #f0f0f0;
-		border-top-color: #146ef5;
+		border: 2px solid var(--map-pill-bg);
+		border-top-color: var(--map-accent);
 		border-radius: 50%;
 		animation: spin 0.8s linear infinite;
 	}
@@ -614,9 +662,9 @@
 		margin: 4px 0 0 0;
 		padding: 0;
 		list-style: none;
-		background: white;
+		background: var(--map-surface);
 		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 4px 12px var(--map-shadow);
 		max-height: 300px;
 		overflow-y: auto;
 	}
@@ -628,7 +676,7 @@
 		padding: 10px 12px;
 		cursor: pointer;
 		transition: background-color 0.1s ease;
-		border-bottom: 1px solid #f0f0f0;
+		border-bottom: 1px solid var(--map-divider);
 	}
 
 	.search-result-item:last-child {
@@ -637,14 +685,14 @@
 
 	.search-result-item:hover,
 	.search-result-item.highlighted {
-		background-color: #f5f5f5;
+		background-color: var(--map-surface-hover);
 	}
 
 	.result-icon {
 		flex-shrink: 0;
 		width: 20px;
 		height: 20px;
-		color: #146ef5;
+		color: var(--map-link);
 	}
 
 	.result-text {
@@ -656,7 +704,7 @@
 
 	.result-name {
 		font-weight: 500;
-		color: #333;
+		color: var(--map-fg);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -664,7 +712,7 @@
 
 	.result-address {
 		font-size: 12px;
-		color: #666;
+		color: var(--map-fg-muted);
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -674,9 +722,9 @@
 		flex-shrink: 0;
 		font-size: 10px;
 		padding: 2px 6px;
-		background: #f0f0f0;
+		background: var(--map-pill-bg);
 		border-radius: 4px;
-		color: #666;
+		color: var(--map-fg-muted);
 		text-transform: capitalize;
 	}
 
@@ -685,7 +733,7 @@
      ================================================== */
 	.map-search-container :global(.leaflet-control-zoom) {
 		border: none !important;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 8px var(--map-shadow);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -695,18 +743,18 @@
 		height: 36px !important;
 		line-height: 36px !important;
 		font-size: 18px;
-		color: #333;
-		background: white;
+		color: var(--map-fg);
+		background: var(--map-surface);
 		border: none !important;
 	}
 
 	.map-search-container :global(.leaflet-control-zoom a:hover) {
-		background: #f5f5f5;
+		background: var(--map-surface-hover);
 	}
 
 	.map-search-container :global(.leaflet-popup-content-wrapper) {
 		border-radius: 8px;
-		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+		box-shadow: 0 2px 12px var(--map-shadow);
 	}
 
 	.map-search-container :global(.leaflet-popup-content) {
@@ -719,6 +767,46 @@
 	@media (prefers-reduced-motion: reduce) {
 		.search-spinner {
 			animation: none;
+			opacity: 0.5;
+		}
+	}
+
+	/* ==================================================
+     Theme-aware Leaflet chrome
+     Leaflet's own stylesheet paints popups and attribution white;
+     these rules route them through the tokens so they flip too.
+     ================================================== */
+	.map-search-container :global(.leaflet-popup-content-wrapper),
+	.map-search-container :global(.leaflet-popup-tip) {
+		background: var(--map-surface);
+		color: var(--map-fg);
+	}
+
+	.map-search-container :global(.leaflet-control-attribution) {
+		background: var(--map-attribution-bg);
+		color: var(--map-attribution-fg);
+	}
+
+	/* Leaflet's own link (#0078a8) and close-button (#757575) colours are
+	   too dim on dark chrome, so only the dark scheme swaps them. */
+	@media (prefers-color-scheme: dark) {
+		.map-search-container :global(.leaflet-control-attribution a) {
+			color: var(--map-link);
+		}
+
+		.map-search-container :global(.leaflet-container a.leaflet-popup-close-button) {
+			color: var(--map-fg-muted);
+		}
+
+		/* Leaflet paints not-yet-loaded tile gaps #ddd; match the dark canvas. */
+		.map-search-container :global(.leaflet-container) {
+			background: var(--map-canvas);
+		}
+
+		/* Leaflet greys out a zoom button at min/max zoom with a light fill. */
+		.map-search-container :global(.leaflet-bar a.leaflet-disabled) {
+			background: var(--map-surface);
+			color: var(--map-fg-muted);
 			opacity: 0.5;
 		}
 	}

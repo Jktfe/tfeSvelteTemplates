@@ -39,6 +39,11 @@
   • d3-scale - Sequential and linear color scales
   • d3-scale-chromatic - Built-in color interpolators
 
+  THEMING (see docs/THEMING.md)
+  Chrome flips under prefers-color-scheme: dark via --geo-* tokens on
+  .geo-choropleth (surface, no-data regions, legend, tooltip). The
+  colour scale and strokeColor are data, so they never flip.
+
   ============================================================
 -->
 <script lang="ts">
@@ -149,7 +154,20 @@
 		if (regionData) {
 			return getColor()(regionData.value) as string;
 		}
-		return '#e5e7eb'; // Default gray for regions without data
+		// Grey fallback for the (rare) renderer that ignores CSS; the
+		// .region--no-data class below swaps in the theme-aware token.
+		return '#e5e7eb';
+	}
+
+	/**
+	 * True when a feature has a matching data row. Regions without data get
+	 * a chrome-coloured fill (via CSS) so they flip with light/dark mode,
+	 * while data-bearing regions keep their scale colour on both schemes.
+	 */
+	function featureHasData(feature: GeoJSON.Feature): boolean {
+		const props = feature.properties as Record<string, unknown>;
+		const regionId = (props?.RGN24CD || props?.RGN23CD || props?.RGN22CD || props?.CTRY22CD || props?.id || feature.id) as string;
+		return dataLookup().has(regionId);
 	}
 
 	/**
@@ -256,7 +274,7 @@
 						fill={getFeatureColor(feature)}
 						stroke={strokeColor}
 						strokeWidth={strokeWidth}
-						class="region"
+						class={featureHasData(feature) ? 'region' : 'region region--no-data'}
 						tabindex={0}
 						role="button"
 						aria-label={getRegionLabel(feature)}
@@ -308,10 +326,40 @@
 </div>
 
 <style>
+	/*
+	 * THEMING — chrome flips, brand stays (see docs/THEMING.md).
+	 * Surface, no-data regions, legend and tooltip chrome are tokens with light
+	 * defaults inline; the dark block below flips only those. The data
+	 * colour props stay scheme-independent because they carry meaning.
+	 */
+	.geo-choropleth {
+		--geo-surface: #f9fafb;
+		--geo-legend-bg: #ffffff;
+		--geo-legend-muted: #6b7280;
+		--geo-legend-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		--geo-tooltip-bg: rgba(0, 0, 0, 0.85);
+		--geo-tooltip-fg: #ffffff;
+		--geo-tooltip-muted: #9ca3af;
+		--geo-tooltip-border: transparent;
+		--geo-no-data: #e5e7eb;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.geo-choropleth {
+			--geo-surface: #111827;
+			--geo-legend-bg: #1f2937;
+			--geo-legend-muted: #9ca3af;
+			--geo-legend-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+			--geo-tooltip-bg: rgba(3, 7, 18, 0.92);
+			--geo-tooltip-border: rgba(255, 255, 255, 0.14);
+			--geo-no-data: #374151;
+		}
+	}
+
 	.geo-choropleth {
 		position: relative;
 		width: 100%;
-		background: #f9fafb;
+		background: var(--geo-surface);
 		border-radius: 8px;
 		overflow: hidden;
 	}
@@ -335,12 +383,17 @@
 		outline-offset: -2px;
 	}
 
+	.geo-choropleth :global(.region--no-data) {
+		fill: var(--geo-no-data);
+	}
+
 	.tooltip {
 		position: fixed;
 		z-index: 1000;
 		pointer-events: none;
-		background: rgba(0, 0, 0, 0.85);
-		color: white;
+		background: var(--geo-tooltip-bg);
+		color: var(--geo-tooltip-fg);
+		border: 1px solid var(--geo-tooltip-border);
 		padding: 8px 12px;
 		border-radius: 6px;
 		font-size: 0.875rem;
@@ -354,7 +407,7 @@
 	}
 
 	.tooltip-value {
-		color: #9ca3af;
+		color: var(--geo-tooltip-muted);
 		font-size: 0.8125rem;
 	}
 
@@ -362,10 +415,12 @@
 		position: absolute;
 		bottom: 16px;
 		right: 16px;
-		background: white;
+		/* Wide enough that the min / max labels never run together. */
+		min-width: 120px;
+		background: var(--geo-legend-bg);
 		padding: 8px 12px;
 		border-radius: 6px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--geo-legend-shadow);
 	}
 
 	.legend-gradient {
@@ -384,7 +439,7 @@
 		display: flex;
 		justify-content: space-between;
 		font-size: 0.75rem;
-		color: #6b7280;
+		color: var(--geo-legend-muted);
 	}
 
 	/* Hover feedback is instant for users who have asked for reduced motion */

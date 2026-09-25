@@ -45,6 +45,8 @@
 
 	export type ThemeTokenKind = 'chrome' | 'brand' | 'semantic';
 	export type ThemePreviewMode = 'light' | 'dark';
+	/** `auto` follows the viewer's OS colour scheme until they pick a mode. */
+	export type ThemeInitialMode = ThemePreviewMode | 'auto';
 	export type ContrastTone = 'high' | 'ok' | 'low' | 'n/a';
 
 	export interface ThemeTokenRow {
@@ -214,6 +216,17 @@
 		};
 	}
 
+	/**
+	 * Resolve which preview mode is live. An explicit pick always wins; with
+	 * no pick (`auto`) we mirror the OS scheme so the panel matches the page.
+	 */
+	export function resolvePreviewMode(
+		chosen: ThemePreviewMode | null,
+		systemPrefersDark: boolean
+	): ThemePreviewMode {
+		return chosen ?? (systemPrefersDark ? 'dark' : 'light');
+	}
+
 	export function tokenValueForMode(row: Pick<ThemeTokenRow, 'light' | 'dark'>, mode: ThemePreviewMode): string {
 		return mode === 'dark' ? row.dark ?? row.light : row.light;
 	}
@@ -289,16 +302,31 @@
 	interface Props {
 		rows?: ThemeTokenRow[];
 		title?: string;
-		initialMode?: ThemePreviewMode;
+		initialMode?: ThemeInitialMode;
 	}
 
 	let {
 		rows = defaultThemeTokenRows,
 		title = 'Theme token inspector',
-		initialMode = 'light'
+		initialMode = 'auto'
 	}: Props = $props();
 
-	let mode = $derived(initialMode);
+	// null = "no explicit pick yet", which lets CSS follow prefers-color-scheme
+	// from the very first paint (no flash of light chrome on dark pages).
+	let chosenMode = $derived<ThemePreviewMode | null>(initialMode === 'auto' ? null : initialMode);
+	let systemPrefersDark = $state(false);
+	const mode = $derived(resolvePreviewMode(chosenMode, systemPrefersDark));
+
+	$effect(() => {
+		if (typeof window === 'undefined' || !window.matchMedia) return;
+		const query = window.matchMedia('(prefers-color-scheme: dark)');
+		systemPrefersDark = query.matches;
+		const handleChange = (event: MediaQueryListEvent) => {
+			systemPrefersDark = event.matches;
+		};
+		query.addEventListener?.('change', handleChange);
+		return () => query.removeEventListener?.('change', handleChange);
+	});
 	let activeKind = $state<ThemeTokenKind>('chrome');
 	let copiedKey = $state<string | null>(null);
 	let clearCopiedTimer: ReturnType<typeof setTimeout> | undefined;
@@ -326,7 +354,12 @@
 	}
 </script>
 
-<section class="tti" class:tti-dark={mode === 'dark'} aria-labelledby="tti-title">
+<section
+	class="tti"
+	class:tti-dark={chosenMode === 'dark'}
+	class:tti-auto={chosenMode === null}
+	aria-labelledby="tti-title"
+>
 	<header class="tti-head">
 		<div>
 			<p class="tti-kicker">Theming convention</p>
@@ -338,7 +371,7 @@
 				type="button"
 				class:active={mode === 'light'}
 				aria-pressed={mode === 'light'}
-				onclick={() => (mode = 'light')}
+				onclick={() => (chosenMode = 'light')}
 			>
 				Light
 			</button>
@@ -346,7 +379,7 @@
 				type="button"
 				class:active={mode === 'dark'}
 				aria-pressed={mode === 'dark'}
-				onclick={() => (mode = 'dark')}
+				onclick={() => (chosenMode = 'dark')}
 			>
 				Dark
 			</button>
@@ -482,11 +515,24 @@
 		--tti-border: #dbe3ef;
 		--tti-accent: #315f9f;
 		--tti-code: #0f172a;
+		--tti-shadow: rgba(15, 23, 42, 0.08);
+		--tti-swatch-border: rgba(15, 23, 42, 0.22);
+		--tti-swatch-stripe: rgba(15, 23, 42, 0.28);
+		/* Label tints: same hue family on both schemes, lightened in dark
+		   so the chrome / brand / semantic cue stays readable. */
+		--tti-kind-chrome: #315f9f;
+		--tti-kind-brand: #9a3412;
+		--tti-kind-semantic: #047857;
+		--tti-tone-high: #047857;
+		--tti-tone-ok: #9a3412;
+		--tti-tone-low: #b91c1c;
 		display: grid;
 		gap: 18px;
 		color: var(--tti-fg);
 	}
 
+	/* Explicit Dark pick, or no pick while the OS prefers dark. An explicit
+	   Light pick (neither class) keeps the light defaults above. */
 	.tti-dark {
 		--tti-bg: #111827;
 		--tti-panel: #172033;
@@ -496,6 +542,37 @@
 		--tti-border: #334155;
 		--tti-accent: #8bb8ff;
 		--tti-code: #eef2ff;
+		--tti-shadow: rgba(0, 0, 0, 0.35);
+		--tti-swatch-border: rgba(226, 232, 240, 0.35);
+		--tti-swatch-stripe: rgba(226, 232, 240, 0.4);
+		--tti-kind-chrome: #8bb8ff;
+		--tti-kind-brand: #fdba74;
+		--tti-kind-semantic: #6ee7b7;
+		--tti-tone-high: #6ee7b7;
+		--tti-tone-ok: #fdba74;
+		--tti-tone-low: #fca5a5;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.tti-auto {
+			--tti-bg: #111827;
+			--tti-panel: #172033;
+			--tti-panel-strong: #1f2937;
+			--tti-fg: #f9fafb;
+			--tti-muted: #a7b3c6;
+			--tti-border: #334155;
+			--tti-accent: #8bb8ff;
+			--tti-code: #eef2ff;
+			--tti-shadow: rgba(0, 0, 0, 0.35);
+			--tti-swatch-border: rgba(226, 232, 240, 0.35);
+			--tti-swatch-stripe: rgba(226, 232, 240, 0.4);
+			--tti-kind-chrome: #8bb8ff;
+			--tti-kind-brand: #fdba74;
+			--tti-kind-semantic: #6ee7b7;
+			--tti-tone-high: #6ee7b7;
+			--tti-tone-ok: #fdba74;
+			--tti-tone-low: #fca5a5;
+		}
 	}
 
 	.tti-head {
@@ -602,7 +679,7 @@
 		border: 1px solid var(--tti-border);
 		border-radius: 8px;
 		background: var(--tti-bg);
-		box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+		box-shadow: 0 18px 44px var(--tti-shadow);
 		overflow: hidden;
 	}
 
@@ -674,7 +751,7 @@
 	.tti-cloud-dot {
 		width: 16px;
 		height: 16px;
-		border: 1px solid rgba(15, 23, 42, 0.2);
+		border: 1px solid var(--tti-swatch-border);
 		border-radius: 999px;
 		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 	}
@@ -732,15 +809,15 @@
 	}
 
 	.tti-kind-chrome {
-		color: #315f9f;
+		color: var(--tti-kind-chrome);
 	}
 
 	.tti-kind-brand {
-		color: #9a3412;
+		color: var(--tti-kind-brand);
 	}
 
 	.tti-kind-semantic {
-		color: #047857;
+		color: var(--tti-kind-semantic);
 	}
 
 	.tti-swatch-line {
@@ -754,7 +831,7 @@
 		width: 22px;
 		height: 22px;
 		flex: 0 0 auto;
-		border: 1px solid rgba(15, 23, 42, 0.22);
+		border: 1px solid var(--tti-swatch-border);
 		border-radius: 6px;
 		box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.42);
 	}
@@ -765,19 +842,19 @@
 	}
 
 	.tti-swatch.stable {
-		background-image: linear-gradient(135deg, transparent 0 44%, rgba(15, 23, 42, 0.28) 45% 55%, transparent 56%);
+		background-image: linear-gradient(135deg, transparent 0 44%, var(--tti-swatch-stripe) 45% 55%, transparent 56%);
 	}
 
 	.tti-contrast-high {
-		color: #047857;
+		color: var(--tti-tone-high);
 	}
 
 	.tti-contrast-ok {
-		color: #9a3412;
+		color: var(--tti-tone-ok);
 	}
 
 	.tti-contrast-low {
-		color: #b91c1c;
+		color: var(--tti-tone-low);
 	}
 
 	.tti-copy-mini {

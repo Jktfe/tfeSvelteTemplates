@@ -167,10 +167,57 @@
 </section>
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md. Chrome tokens read the host's shared
+	 * tokens (--fg-1, --surface, --border, ...) first and fall back to
+	 * built-in light/dark values, so the component works standalone too.
+	 * Status tones are semantic: each keeps its hue on both schemes and only
+	 * lightens its text / deepens its tint in dark mode for legibility.
+	 */
+	.route-rail {
+		--rpr-fg-1: var(--fg-1, #111827);
+		--rpr-fg-2: var(--fg-2, #4b5563);
+		--rpr-fg-3: var(--fg-3, #6b7280);
+		--rpr-border: var(--border, #d9dde5);
+		--rpr-surface: var(--surface, #fff);
+		--rpr-ready-accent: #15803d;
+		--rpr-ready-bg: #dcfce7;
+		--rpr-ready-border: #86efac;
+		--rpr-review-accent: #92400e;
+		--rpr-review-bg: #fef3c7;
+		--rpr-review-border: #fcd34d;
+		--rpr-missing-accent: #b91c1c;
+		--rpr-missing-bg: #fee2e2;
+		--rpr-missing-border: #fca5a5;
+		--rpr-kicker: #9f1239;
+		--rpr-frame-bg: #f1f5f9;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.route-rail {
+			--rpr-fg-1: var(--fg-1, #f3f4f6);
+			--rpr-fg-2: var(--fg-2, #cbd5e1);
+			--rpr-fg-3: var(--fg-3, #94a3b8);
+			--rpr-border: var(--border, #334155);
+			--rpr-surface: var(--surface, #111827);
+			--rpr-ready-accent: #86efac;
+			--rpr-ready-bg: rgba(22, 163, 74, 0.2);
+			--rpr-ready-border: #166534;
+			--rpr-review-accent: #fcd34d;
+			--rpr-review-bg: rgba(245, 158, 11, 0.18);
+			--rpr-review-border: #92400e;
+			--rpr-missing-accent: #fca5a5;
+			--rpr-missing-bg: rgba(220, 38, 38, 0.2);
+			--rpr-missing-border: #991b1b;
+			--rpr-kicker: #fda4af;
+			--rpr-frame-bg: #1f2937;
+		}
+	}
+
 	.route-rail {
 		display: grid;
 		gap: 18px;
-		color: var(--fg-1, #111827);
+		color: var(--rpr-fg-1);
 	}
 
 	.rr-head {
@@ -182,7 +229,7 @@
 
 	.rr-kicker {
 		margin: 0 0 6px;
-		color: #9f1239;
+		color: var(--rpr-kicker);
 		font: 900 11px/1 var(--font-mono, ui-monospace, monospace);
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
@@ -196,7 +243,7 @@
 	.rr-head p {
 		max-width: 68ch;
 		margin: 8px 0 0;
-		color: var(--fg-2, #4b5563);
+		color: var(--rpr-fg-2);
 	}
 
 	.rr-stats {
@@ -208,14 +255,14 @@
 
 	.rr-stats div {
 		padding: 11px;
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--rpr-border);
 		border-radius: 6px;
-		background: var(--surface, #fff);
+		background: var(--rpr-surface);
 		text-align: center;
 	}
 
 	.rr-stats dt {
-		color: var(--fg-3, #6b7280);
+		color: var(--rpr-fg-3);
 		font: 900 10px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
 	}
@@ -237,7 +284,7 @@
 	}
 
 	.rr-controls span {
-		color: var(--fg-3, #6b7280);
+		color: var(--rpr-fg-3);
 		font: 900 10px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
 	}
@@ -245,9 +292,9 @@
 	.rr-controls input,
 	.rr-controls select {
 		min-height: 42px;
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--rpr-border);
 		border-radius: 6px;
-		background: var(--surface, #fff);
+		background: var(--rpr-surface);
 		color: inherit;
 		padding: 0 12px;
 		font: inherit;
@@ -270,25 +317,25 @@
 		gap: 10px;
 		min-height: 100%;
 		padding: 12px;
-		border: 1px solid var(--rr-border, #d9dde5);
+		border: 1px solid var(--rr-border, var(--rpr-border));
 		border-radius: 6px;
-		background: var(--surface, #fff);
+		background: var(--rpr-surface);
 		color: inherit;
 		text-decoration: none;
 		scroll-snap-align: start;
 	}
 
-	.rr-card--ready { --rr-accent: #15803d; --rr-bg: #dcfce7; --rr-border: #86efac; }
-	.rr-card--review { --rr-accent: #92400e; --rr-bg: #fef3c7; --rr-border: #fcd34d; }
-	.rr-card--missing { --rr-accent: #b91c1c; --rr-bg: #fee2e2; --rr-border: #fca5a5; }
+	.rr-card--ready { --rr-accent: var(--rpr-ready-accent); --rr-bg: var(--rpr-ready-bg); --rr-border: var(--rpr-ready-border); }
+	.rr-card--review { --rr-accent: var(--rpr-review-accent); --rr-bg: var(--rpr-review-bg); --rr-border: var(--rpr-review-border); }
+	.rr-card--missing { --rr-accent: var(--rpr-missing-accent); --rr-bg: var(--rpr-missing-bg); --rr-border: var(--rpr-missing-border); }
 
 	.rr-card figure {
 		aspect-ratio: 16 / 10;
 		margin: 0;
 		overflow: hidden;
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--rpr-border);
 		border-radius: 4px;
-		background: #f1f5f9;
+		background: var(--rpr-frame-bg);
 	}
 
 	.rr-card img {
@@ -316,11 +363,11 @@
 
 	.rr-card p {
 		margin: 0;
-		color: var(--fg-2, #4b5563);
+		color: var(--rpr-fg-2);
 	}
 
 	.rr-card em {
-		color: var(--fg-3, #6b7280);
+		color: var(--rpr-fg-3);
 		font: 800 11px/1.2 var(--font-mono, ui-monospace, monospace);
 		font-style: normal;
 		text-transform: uppercase;
@@ -329,9 +376,9 @@
 	.rr-empty {
 		margin: 0;
 		padding: 16px;
-		border: 1px dashed var(--border, #d9dde5);
+		border: 1px dashed var(--rpr-border);
 		border-radius: 6px;
-		color: var(--fg-2, #4b5563);
+		color: var(--rpr-fg-2);
 		text-align: center;
 	}
 

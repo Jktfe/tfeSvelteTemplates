@@ -190,7 +190,33 @@ The component also exports `locateMe()`, `stopWatching()`, and `clearLocation()`
 
 ## Theming
 
-Both components follow the project theming convention (`docs/THEMING.md`): chrome tokens flip under `prefers-color-scheme: dark`, semantic tokens stay put. `MapLocateMe` uses `--mlm-*` tokens (all chrome); `MapRouting` uses `--mr-*`:
+Both components follow the project theming convention (`docs/THEMING.md`): chrome tokens flip under `prefers-color-scheme: dark`, semantic tokens stay put.
+
+### MapLocateMe (`--mlm-*`)
+
+`MapLocateMe` declares `--mlm-*` tokens on `.map-locate-container` with light defaults inline and a `@media (prefers-color-scheme: dark)` flip. The button, info strip, error banner, accuracy badge, Leaflet popup, attribution strip, and tile-gap canvas all follow it.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--mlm-canvas` | `#f0f0f0` | `#1a1a1a` | Container + tile-gap background |
+| `--mlm-surface` / `--mlm-surface-hover` | `#ffffff` / `#f5f5f5` | `#2a2a2a` / `#3a3a3a` | Locate button, zoom buttons, popup |
+| `--mlm-info-bg` / `--mlm-attribution-bg` | translucent white | translucent charcoal | Coordinates strip, attribution |
+| `--mlm-text` / `--mlm-text-muted` | `#333` / `#666` | `#e5e5e5` / `#9ca3af` | Text tiers |
+| `--mlm-accent` | `#146ef5` | `#3b82f6` | Locate icon, pulse marker |
+| `--mlm-accuracy-circle` | `var(--mlm-accent)` | `var(--mlm-accent)` | Leaflet accuracy circle (read from script) |
+| `--mlm-error-*` | red tints | deep red tints | Error banner |
+| `--mlm-accuracy-bg` / `--mlm-accuracy-text` | `#dbeafe` / `#1d4ed8` | `#1e3a8a` / `#bfdbfe` | Accuracy badge |
+
+**The accuracy circle is drawn by Leaflet from JavaScript**, so CSS can't reach it directly. The component exports `readAccuracyCircleColour(el, fallback?)`, which reads `--mlm-accuracy-circle` via `getComputedStyle` on the map element when the circle is created, and re-applies it with `circle.setStyle()` whenever the OS colour scheme changes. It falls back to `#146ef5` during SSR or when the token is empty.
+
+```css
+/* Brand the accuracy circle without touching the rest of the accent */
+body .map-locate-container.map-locate-container {
+  --mlm-accuracy-circle: #16a34a;
+}
+```
+
+### MapRouting (`--mr-*`)
 
 | Token | Light | Dark | Used by |
 |-------|-------|------|---------|

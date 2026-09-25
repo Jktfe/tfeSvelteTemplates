@@ -193,6 +193,33 @@ For motion-sensitive users, the components have no auto-animations — the only 
 | `onSpikeClick` | `(point: GeoDataPoint) => void` | `undefined` | Fires on spike click. |
 | `class` | `string` | `''` | Extra classes. |
 
+## Theming
+
+All three components follow `docs/THEMING.md`: **chrome flips, data stays**. Chrome tokens are declared on each root (`.geo-choropleth`, `.geo-bubble-map`, `.geo-spike-map`) with light defaults inline and a `@media (prefers-color-scheme: dark)` override. The data colours — `colorScale`, `bubbleColor`, `spikeColor`, `strokeColor`, and per-point `color` — are props and never flip, because the colour *is* the value.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--geo-surface` | `#f9fafb` | `#111827` | Map background |
+| `--geo-land-fill` | `#e5e7eb` | `#374151` | Background geography (bubble / spike) |
+| `--geo-land-stroke` | `#d1d5db` | `#4b5563` | Background geography outline |
+| `--geo-no-data` | `#e5e7eb` | `#374151` | Choropleth regions with no matching data row |
+| `--geo-legend-bg` | `#ffffff` | `#1f2937` | Legend card |
+| `--geo-legend-fg` | `#374151` | `#e5e7eb` | Legend title (bubble / spike) |
+| `--geo-legend-muted` | `#6b7280` | `#9ca3af` | Legend labels |
+| `--geo-legend-shadow` | soft grey | deeper black | Legend card shadow |
+| `--geo-tooltip-bg` | `rgba(0,0,0,0.85)` | `rgba(3,7,18,0.92)` | Hover tooltip |
+| `--geo-tooltip-border` | `transparent` | `rgba(255,255,255,0.14)` | Tooltip edge so it separates from a dark map |
+
+The SVG land paths still carry `fill` / `stroke` presentation attributes as a fallback, but the scoped CSS (`fill: var(--geo-land-fill)`) beats them, which is how the geography flips without a prop. Choropleth regions without data get a `region--no-data` class for the same reason.
+
+```css
+/* Warmer land on a dashboard with its own palette */
+body .geo-bubble-map.geo-bubble-map {
+  --geo-surface: #fffbeb;
+  --geo-land-fill: #fde68a;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

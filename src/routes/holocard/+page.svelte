@@ -267,4 +267,12 @@
 		justify-content: space-between;
 		font-size: 0.8rem;
 	}
+	/* The product tiles are demo chrome: flip them so captions stay legible. */
+	@media (prefers-color-scheme: dark) {
+		.hc-product {
+			background: var(--surface-2, #1f2125);
+			color: var(--fg-1, #f6f5f1);
+			box-shadow: 0 0 0 1px var(--border, #2a2d31);
+		}
+	}
 </style>

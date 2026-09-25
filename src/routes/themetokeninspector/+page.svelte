@@ -76,8 +76,8 @@
 				</tr>
 				<tr>
 					<td><code>initialMode</code></td>
-					<td><code>"light" | "dark"</code></td>
-					<td>Sets the first preview mode before the user toggles it.</td>
+					<td><code>"auto" | "light" | "dark"</code></td>
+					<td>Sets the first preview mode before the user toggles it. Defaults to <code>"auto"</code>, which follows the viewer's OS colour scheme.</td>
 				</tr>
 				<tr>
 					<td><code>groupTokenRows</code></td>

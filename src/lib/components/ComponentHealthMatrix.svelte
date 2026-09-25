@@ -285,10 +285,57 @@
 </section>
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md. Chrome tokens read the host's shared
+	 * tokens (--fg-1, --surface, --border, ...) first and fall back to
+	 * built-in light/dark values, so the component works standalone too.
+	 * Status tones are semantic: each keeps its hue on both schemes and only
+	 * lightens its text / deepens its tint in dark mode for legibility.
+	 */
+	.health-matrix {
+		--hm-fg-1: var(--fg-1, #111827);
+		--hm-fg-2: var(--fg-2, #4b5563);
+		--hm-fg-3: var(--fg-3, #6b7280);
+		--hm-border: var(--border, #d9dde5);
+		--hm-surface: var(--surface, #fff);
+		--hm-surface-2: var(--surface-2, #f8fafc);
+		--hm-accent: var(--accent, #315f9f);
+		--hm-ready-bg: #dcfce7;
+		--hm-ready-fg: #166534;
+		--hm-partial-bg: #fef3c7;
+		--hm-partial-fg: #92400e;
+		--hm-missing-bg: #fee2e2;
+		--hm-missing-fg: #991b1b;
+		--hm-ready-dot-ring: #15803d;
+		--hm-partial-dot-ring: #b45309;
+		--hm-missing-dot-ring: #b91c1c;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.health-matrix {
+			--hm-fg-1: var(--fg-1, #f3f4f6);
+			--hm-fg-2: var(--fg-2, #cbd5e1);
+			--hm-fg-3: var(--fg-3, #94a3b8);
+			--hm-border: var(--border, #334155);
+			--hm-surface: var(--surface, #111827);
+			--hm-surface-2: var(--surface-2, #1f2937);
+			--hm-accent: var(--accent, #8bb8ff);
+			--hm-ready-bg: rgba(22, 163, 74, 0.2);
+			--hm-ready-fg: #86efac;
+			--hm-partial-bg: rgba(245, 158, 11, 0.18);
+			--hm-partial-fg: #fcd34d;
+			--hm-missing-bg: rgba(220, 38, 38, 0.2);
+			--hm-missing-fg: #fca5a5;
+			--hm-ready-dot-ring: #86efac;
+			--hm-partial-dot-ring: #fcd34d;
+			--hm-missing-dot-ring: #fca5a5;
+		}
+	}
+
 	.health-matrix {
 		display: grid;
 		gap: 18px;
-		color: var(--fg-1, #111827);
+		color: var(--hm-fg-1);
 	}
 
 	.hm-head {
@@ -303,7 +350,7 @@
 		font: 700 11px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
 		letter-spacing: 0.12em;
-		color: var(--accent, #315f9f);
+		color: var(--hm-accent);
 	}
 
 	.hm-head h2 {
@@ -314,14 +361,14 @@
 	.hm-head p {
 		margin: 8px 0 0;
 		max-width: 58ch;
-		color: var(--fg-2, #4b5563);
+		color: var(--hm-fg-2);
 	}
 
 	.hm-score,
 	.hm-summary,
 	.hm-controls {
-		border: 1px solid var(--border, #d9dde5);
-		background: var(--surface, #fff);
+		border: 1px solid var(--hm-border);
+		background: var(--hm-surface);
 	}
 
 	.hm-score {
@@ -334,7 +381,7 @@
 		justify-content: space-between;
 		gap: 14px;
 		padding: 10px 12px;
-		border-bottom: 1px solid var(--border, #d9dde5);
+		border-bottom: 1px solid var(--hm-border);
 		font: 600 12px/1.2 var(--font-sans, system-ui, sans-serif);
 	}
 
@@ -352,17 +399,17 @@
 		gap: 5px;
 		font: 700 11px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
-		color: var(--fg-3, #6b7280);
+		color: var(--hm-fg-3);
 	}
 
 	.hm-controls input,
 	.hm-controls select {
 		width: 100%;
 		min-height: 38px;
-		border: 1px solid var(--border, #d9dde5);
+		border: 1px solid var(--hm-border);
 		border-radius: 4px;
-		background: var(--surface-2, #f8fafc);
-		color: var(--fg-1, #111827);
+		background: var(--hm-surface-2);
+		color: var(--hm-fg-1);
 		font: 500 14px/1.2 var(--font-sans, system-ui, sans-serif);
 	}
 
@@ -379,16 +426,16 @@
 		justify-content: space-between;
 		gap: 12px;
 		padding: 12px;
-		border-right: 1px solid var(--border, #d9dde5);
+		border-right: 1px solid var(--hm-border);
 	}
 
 	.hm-summary div:last-child { border-right: 0; }
-	.hm-summary span { color: var(--fg-2, #4b5563); }
+	.hm-summary span { color: var(--hm-fg-2); }
 
 	.hm-table-wrap {
 		overflow-x: auto;
-		border: 1px solid var(--border, #d9dde5);
-		background: var(--surface, #fff);
+		border: 1px solid var(--hm-border);
+		background: var(--hm-surface);
 	}
 
 	.hm-table {
@@ -401,7 +448,7 @@
 	.hm-table th,
 	.hm-table td {
 		padding: 10px 12px;
-		border-bottom: 1px solid var(--border, #d9dde5);
+		border-bottom: 1px solid var(--hm-border);
 		text-align: left;
 		vertical-align: top;
 	}
@@ -410,17 +457,17 @@
 		position: sticky;
 		top: 0;
 		z-index: 1;
-		background: var(--surface-2, #f8fafc);
+		background: var(--hm-surface-2);
 		font: 700 11px/1 var(--font-mono, ui-monospace, monospace);
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: var(--fg-3, #6b7280);
+		color: var(--hm-fg-3);
 	}
 
-	.hm-table tbody tr:hover { background: color-mix(in srgb, var(--accent, #315f9f) 6%, transparent); }
+	.hm-table tbody tr:hover { background: color-mix(in srgb, var(--hm-accent) 6%, transparent); }
 
 	.hm-table a {
-		color: var(--fg-1, #111827);
+		color: var(--hm-fg-1);
 		font-weight: 800;
 		text-decoration: none;
 	}
@@ -430,7 +477,7 @@
 	.hm-table small {
 		display: block;
 		margin-top: 3px;
-		color: var(--fg-3, #6b7280);
+		color: var(--hm-fg-3);
 		font: 500 11px/1.2 var(--font-mono, ui-monospace, monospace);
 	}
 
@@ -445,9 +492,9 @@
 		text-transform: uppercase;
 	}
 
-	.hm-badge--ready { background: #dcfce7; color: #166534; }
-	.hm-badge--partial { background: #fef3c7; color: #92400e; }
-	.hm-badge--missing { background: #fee2e2; color: #991b1b; }
+	.hm-badge--ready { background: var(--hm-ready-bg); color: var(--hm-ready-fg); }
+	.hm-badge--partial { background: var(--hm-partial-bg); color: var(--hm-partial-fg); }
+	.hm-badge--missing { background: var(--hm-missing-bg); color: var(--hm-missing-fg); }
 
 	.hm-dot {
 		display: inline-block;
@@ -457,19 +504,19 @@
 		border: 1px solid currentColor;
 	}
 
-	.hm-dot--ready { background: #22c55e; color: #15803d; }
-	.hm-dot--partial { background: #f59e0b; color: #b45309; }
-	.hm-dot--missing { background: #ef4444; color: #b91c1c; }
+	.hm-dot--ready { background: #22c55e; color: var(--hm-ready-dot-ring); }
+	.hm-dot--partial { background: #f59e0b; color: var(--hm-partial-dot-ring); }
+	.hm-dot--missing { background: #ef4444; color: var(--hm-missing-dot-ring); }
 
 	.hm-deps {
 		max-width: 220px;
-		color: var(--fg-2, #4b5563);
+		color: var(--hm-fg-2);
 	}
 
 	.hm-empty {
 		margin: 0;
 		padding: 24px;
-		color: var(--fg-2, #4b5563);
+		color: var(--hm-fg-2);
 	}
 
 	@media (max-width: 720px) {

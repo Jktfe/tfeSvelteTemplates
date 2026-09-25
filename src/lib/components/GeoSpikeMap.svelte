@@ -41,6 +41,11 @@
   • d3-geo - Geographic projections (Mercator)
   • d3-scale - Linear height scaling
 
+  THEMING (see docs/THEMING.md)
+  Chrome flips under prefers-color-scheme: dark via --geo-* tokens on
+  .geo-spike-map (surface, land fill/stroke, legend, tooltip). The
+  spikeColor prop and per-point colours are data, so they stay put.
+
   ============================================================
 -->
 <script lang="ts">
@@ -316,15 +321,52 @@
 </div>
 
 <style>
+	/*
+	 * THEMING — chrome flips, brand stays (see docs/THEMING.md).
+	 * Surface, land, legend and tooltip chrome are tokens with light
+	 * defaults inline; the dark block below flips only those. The data
+	 * colour props stay scheme-independent because they carry meaning.
+	 */
+	.geo-spike-map {
+		--geo-surface: #f9fafb;
+		--geo-land-fill: #e5e7eb;
+		--geo-land-stroke: #d1d5db;
+		--geo-legend-bg: #ffffff;
+		--geo-legend-fg: #374151;
+		--geo-legend-muted: #6b7280;
+		--geo-legend-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		--geo-tooltip-bg: rgba(0, 0, 0, 0.85);
+		--geo-tooltip-fg: #ffffff;
+		--geo-tooltip-muted: #9ca3af;
+		--geo-tooltip-border: transparent;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.geo-spike-map {
+			--geo-surface: #111827;
+			--geo-land-fill: #374151;
+			--geo-land-stroke: #4b5563;
+			--geo-legend-bg: #1f2937;
+			--geo-legend-fg: #e5e7eb;
+			--geo-legend-muted: #9ca3af;
+			--geo-legend-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+			--geo-tooltip-bg: rgba(3, 7, 18, 0.92);
+			--geo-tooltip-border: rgba(255, 255, 255, 0.14);
+		}
+	}
+
 	.geo-spike-map {
 		position: relative;
 		width: 100%;
-		background: #f9fafb;
+		background: var(--geo-surface);
 		border-radius: 8px;
 		overflow: hidden;
 	}
 
 	.geo-spike-map :global(.background) {
+		/* CSS beats the SVG presentation attributes, so the land flips with the scheme. */
+		fill: var(--geo-land-fill);
+		stroke: var(--geo-land-stroke);
 		pointer-events: none;
 	}
 
@@ -349,8 +391,9 @@
 		position: fixed;
 		z-index: 1000;
 		pointer-events: none;
-		background: rgba(0, 0, 0, 0.85);
-		color: white;
+		background: var(--geo-tooltip-bg);
+		color: var(--geo-tooltip-fg);
+		border: 1px solid var(--geo-tooltip-border);
 		padding: 8px 12px;
 		border-radius: 6px;
 		font-size: 0.875rem;
@@ -364,7 +407,7 @@
 	}
 
 	.tooltip-value {
-		color: #9ca3af;
+		color: var(--geo-tooltip-muted);
 		font-size: 0.8125rem;
 	}
 
@@ -379,16 +422,16 @@
 		position: absolute;
 		bottom: 16px;
 		left: 16px;
-		background: white;
+		background: var(--geo-legend-bg);
 		padding: 10px 14px;
 		border-radius: 6px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--geo-legend-shadow);
 	}
 
 	.legend-title {
 		font-size: 0.75rem;
 		font-weight: 600;
-		color: #374151;
+		color: var(--geo-legend-fg);
 		margin-bottom: 8px;
 	}
 
@@ -407,7 +450,7 @@
 
 	.legend-item span {
 		font-size: 0.6875rem;
-		color: #6b7280;
+		color: var(--geo-legend-muted);
 	}
 
 	/* Keyboard users get a visible ring on the focused marker group */

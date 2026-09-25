@@ -72,8 +72,12 @@
   }
   ```
 
-  Tokens (17): canvas, surface, surface-hover, info-bg, text, text-muted,
-  accent, accent-soft, pulse-border, error-bg, error-border, error-text,
+  The Leaflet accuracy circle is drawn from script, so it reads the
+  `--mlm-accuracy-circle` token (defaults to `--mlm-accent`) via
+  getComputedStyle and re-reads it when the OS colour scheme changes.
+
+  Tokens (20): canvas, surface, surface-hover, info-bg, attribution-bg, text, text-muted,
+  accent, accent-soft, accuracy-circle, pulse-border, error-bg, error-border, error-text,
   error-dismiss-hover, accuracy-bg, accuracy-text, shadow-soft,
   shadow-medium, shadow-strong.
 
@@ -91,6 +95,25 @@
 
 	function loadLeaflet(): Promise<typeof import('leaflet')> {
 		return (leafletLoader ??= import('leaflet'));
+	}
+
+	/** Light-mode accuracy-circle colour, used when no CSS token resolves (SSR, tests, old browsers). */
+	export const ACCURACY_CIRCLE_FALLBACK = '#146ef5';
+
+	/**
+	 * Leaflet paints the accuracy circle as an SVG path with colours passed in
+	 * from JavaScript, so it can't see our CSS tokens on its own. This reads the
+	 * `--mlm-accuracy-circle` custom property off an element inside the
+	 * container, which means the circle follows light/dark mode and any
+	 * consumer override just like the rest of the chrome.
+	 */
+	export function readAccuracyCircleColour(
+		el: Element | null | undefined,
+		fallback: string = ACCURACY_CIRCLE_FALLBACK
+	): string {
+		if (!el || typeof getComputedStyle !== 'function') return fallback;
+		const value = getComputedStyle(el).getPropertyValue('--mlm-accuracy-circle').trim();
+		return value || fallback;
 	}
 </script>
 
@@ -222,8 +245,19 @@
 			map = mapInstance;
 		})();
 
+		// The accuracy circle's colour lives in JS-land (Leaflet path options),
+		// so re-read the token whenever the OS colour scheme flips.
+		const schemeQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+		const handleSchemeChange = () => {
+			const colour = readAccuracyCircleColour(container);
+			accuracyCircle?.setStyle({ color: colour, fillColor: colour });
+		};
+		schemeQuery?.addEventListener?.('change', handleSchemeChange);
+
 		return () => {
 			cancelled = true;
+			schemeQuery?.removeEventListener?.('change', handleSchemeChange);
+
 			// Clean up watch position
 			if (watchId !== undefined) {
 				navigator.geolocation.clearWatch(watchId);
@@ -310,10 +344,11 @@
 				accuracyCircle.setLatLng(latLng);
 				accuracyCircle.setRadius(result.accuracy);
 			} else {
+				const circleColour = readAccuracyCircleColour(mapContainer);
 				accuracyCircle = L.circle(latLng, {
 					radius: result.accuracy,
-					color: '#146ef5',
-					fillColor: '#146ef5',
+					color: circleColour,
+					fillColor: circleColour,
 					fillOpacity: 0.15,
 					weight: 2
 				}).addTo(map);
@@ -525,6 +560,7 @@
 		--mlm-surface: #ffffff;
 		--mlm-surface-hover: #f5f5f5;
 		--mlm-info-bg: rgba(255, 255, 255, 0.95);
+		--mlm-attribution-bg: rgba(255, 255, 255, 0.8);
 
 		/* Text */
 		--mlm-text: #333333;
@@ -533,6 +569,8 @@
 		/* Accent (geolocation indicator — no brand variant API, treated as chrome) */
 		--mlm-accent: #146ef5;
 		--mlm-accent-soft: rgba(20, 110, 245, 0.3);
+		/* Read from script by readAccuracyCircleColour() for the Leaflet circle */
+		--mlm-accuracy-circle: var(--mlm-accent);
 
 		/* Pulse marker border (kept light to read on dark map tiles) */
 		--mlm-pulse-border: #ffffff;
@@ -567,6 +605,7 @@
 			--mlm-surface: #2a2a2a;
 			--mlm-surface-hover: #3a3a3a;
 			--mlm-info-bg: rgba(42, 42, 42, 0.95);
+			--mlm-attribution-bg: rgba(26, 26, 26, 0.8);
 			--mlm-text: #e5e5e5;
 			--mlm-text-muted: #9ca3af;
 			--mlm-accent: #3b82f6;
@@ -834,9 +873,44 @@
 		background: var(--mlm-surface-hover);
 	}
 
+	.map-locate-container :global(.leaflet-popup-content-wrapper),
+	.map-locate-container :global(.leaflet-popup-tip) {
+		background: var(--mlm-surface);
+		color: var(--mlm-text);
+	}
+
 	.map-locate-container :global(.leaflet-popup-content-wrapper) {
 		border-radius: 8px;
 		box-shadow: 0 2px 12px var(--mlm-shadow-medium);
+	}
+
+	.map-locate-container :global(.leaflet-control-attribution) {
+		background: var(--mlm-attribution-bg);
+		color: var(--mlm-text);
+	}
+
+	/* Leaflet's own link (#0078a8) and close-button (#757575) colours are
+	   too dim on dark chrome, so only the dark scheme swaps them. */
+	@media (prefers-color-scheme: dark) {
+		.map-locate-container :global(.leaflet-control-attribution a) {
+			color: var(--mlm-accent);
+		}
+
+		.map-locate-container :global(.leaflet-container a.leaflet-popup-close-button) {
+			color: var(--mlm-text-muted);
+		}
+
+		/* Leaflet paints not-yet-loaded tile gaps #ddd; match the dark canvas. */
+		.map-locate-container :global(.leaflet-container) {
+			background: var(--mlm-canvas);
+		}
+
+		/* Leaflet greys out a zoom button at min/max zoom with a light fill. */
+		.map-locate-container :global(.leaflet-bar a.leaflet-disabled) {
+			background: var(--mlm-surface);
+			color: var(--mlm-text-muted);
+			opacity: 0.5;
+		}
 	}
 
 	/* ==================================================
