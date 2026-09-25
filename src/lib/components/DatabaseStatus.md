@@ -2,9 +2,9 @@
 
 ## What It Does
 
-DatabaseStatus displays a visual badge showing whether the application is connected to a Neon database or using fallback data from constants. Perfect for demo applications showing graceful degradation patterns.
+DatabaseStatus displays a visual badge showing where a page's data came from: a live Neon database, demo fixture constants, a failed database query (with fixtures served instead), or intentionally static demo data. Perfect for demo applications showing graceful degradation patterns.
 
-**Think of it like:** A traffic light indicator -  green means "database connected", yellow means "using offline data".
+**Think of it like:** A traffic light indicator - green means "database connected", yellow means "using demo fixtures", red means "the database was configured but the query failed", and grey means "this page never uses a database".
 
 ---
 
@@ -24,7 +24,9 @@ DatabaseStatus displays a visual badge showing whether the application is connec
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `usingDatabase` | `boolean` | required | Whether DATABASE_URL is configured and active |
+| `usingDatabase` | `boolean` | required | Whether DATABASE_URL is configured and active. Used to pick `database` vs `fallback` when `source` is omitted. |
+| `source` | `'database' \| 'fallback' \| 'error' \| 'static'` | derived from `usingDatabase` | Explicit state, normally `DataSourceResult.source`. Takes precedence over `usingDatabase`. |
+| `message` | `string` | `''` | Optional detail (e.g. the error message) shown as the badge's `title` tooltip. |
 | `class` | `string` | `''` | Additional CSS classes for styling |
 
 ---
@@ -46,16 +48,30 @@ DatabaseStatus displays a visual badge showing whether the application is connec
 
 ### Server-Side Connection Check
 
+Server utilities return a `DataSourceResult<T>` (see `src/lib/server/dataSource.ts`), which already carries everything the badge needs:
+
 ```typescript
 // src/routes/cardstack/+page.server.ts
 import { loadCardsFromDatabase } from '$lib/server/cards';
 
 export const load: PageServerLoad = async () => {
-  const cards = await loadCardsFromDatabase();
-  const usingDatabase = !!process.env.DATABASE_URL;
+  const result = await loadCardsFromDatabase();
 
-  return { cards, usingDatabase };
+  return {
+    cards: result.data,
+    usingDatabase: result.usingDatabase,
+    source: result.source,
+    message: result.message
+  };
 };
+```
+
+```svelte
+<DatabaseStatus
+  usingDatabase={data.usingDatabase}
+  source={data.source}
+  message={data.message}
+/>
 ```
 
 ### In a Page Header
@@ -96,7 +112,19 @@ export const load: PageServerLoad = async () => {
 ### Fallback (Using Constants)
 - **Icon**: 🟡 (yellow circle)
 - **Colour**: Yellow background with amber text
-- **Label**: "Using Fallback Data"
+- **Label**: "Demo Fixture Data"
+
+### Error (Query Failed, Fixtures Served)
+- **Icon**: 🔴 (red circle)
+- **Colour**: Red background with dark red text
+- **Label**: "Database Error - Demo Fixtures"
+
+### Static (No Database By Design)
+- **Icon**: ⚪ (white circle)
+- **Colour**: Slate background with grey text
+- **Label**: "Static Demo Data"
+
+In dark mode (`prefers-color-scheme: dark`) each state keeps its hue but switches to translucent tints so the pill does not glare on dark chrome.
 
 ---
 
@@ -108,6 +136,7 @@ export const load: PageServerLoad = async () => {
 | **Screen readers** | Icon hidden with `aria-hidden="true"`, meaningful label text |
 | **Keyboard** | Not focusable (informational display only) |
 | **State changes** | Announced automatically by screen readers via live region |
+| **Reduced motion** | Colour transitions are switched off under `prefers-reduced-motion: reduce` |
 
 ---
 
@@ -129,6 +158,22 @@ border-color: #fde047;    /* Yellow border */
 color: #854d0e;           /* Amber text */
 ```
 
+### Transitions
+Only the properties that actually change between states are animated:
+
+```css
+transition:
+  background-color 0.3s ease,
+  border-color 0.3s ease,
+  color 0.3s ease;
+
+@media (prefers-reduced-motion: reduce) {
+  .database-status { transition: none; }
+}
+```
+
+Listing the properties (rather than `transition: all`) stops the padding and font-size from animating when the mobile breakpoint kicks in.
+
 ---
 
 ## Integration Pattern
@@ -136,21 +181,9 @@ color: #854d0e;           /* Amber text */
 DatabaseStatus works with the graceful fallback pattern used throughout the TFE Svelte Templates library:
 
 ```svelte
-<!-- 1. Server utility checks DATABASE_URL -->
-<!-- 2. Returns database data OR fallback constants -->
-<!-- 3. Pass connection status to client -->
-
-<!-- Server-side (+page.server.ts) -->
-<script lang="ts">
-  import { loadCardsFromDatabase } from '$lib/server/cards';
-
-  export const load = async () => {
-    const cards = await loadCardsFromDatabase();
-    const usingDatabase = !!process.env.DATABASE_URL;
-
-    return { cards, usingDatabase };
-  };
-</script>
+<!-- 1. Server utility checks DATABASE_URL (getConfiguredDatabaseUrl) -->
+<!-- 2. Returns a DataSourceResult: database rows OR fallback constants -->
+<!-- 3. The page load passes result.source / usingDatabase / message to the client -->
 
 <!-- Client-side (+page.svelte) -->
 <script>
@@ -158,7 +191,7 @@ DatabaseStatus works with the graceful fallback pattern used throughout the TFE 
   let { data } = $props();
 </script>
 
-<DatabaseStatus usingDatabase={data.usingDatabase} />
+<DatabaseStatus usingDatabase={data.usingDatabase} source={data.source} message={data.message} />
 ```
 
 ---
@@ -203,6 +236,3 @@ Uses only:
 - **Server utilities**: `loadCardsFromDatabase()`, `loadTestimonialsFromDatabase()`, etc.
 - **FALLBACK_* constants**: Data sources when database unavailable
 
----
-
-*Documentation created: 3 January 2026*
