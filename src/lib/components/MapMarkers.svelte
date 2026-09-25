@@ -45,6 +45,20 @@
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { MapMarkersProps, MapMarker, LatLng } from '$lib/types';
@@ -99,6 +113,14 @@
 
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
+
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
 
 	/** Get unique categories from markers */
 	let categories = $derived(() => {
@@ -155,26 +177,34 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
 			// Use provided center/zoom or calculate from markers
 			const initialBounds = markerBounds();
 			const initialCenter = center ?? initialBounds.center;
 			const initialZoom = zoom ?? initialBounds.zoom;
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [initialCenter.lat, initialCenter.lng],
 				zoom: initialZoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right to avoid overlapping UI elements
@@ -196,6 +226,7 @@
 		})();
 
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -225,7 +256,7 @@
 	async function addMarkersToMap(markersToAdd: MapMarker[]): Promise<void> {
 		if (!map || !markerLayer) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		// Clear existing markers
 		markerLayer.clearLayers();
@@ -258,7 +289,7 @@
 		// Fit bounds to show all markers
 		if (markersToAdd.length > 0) {
 			const bounds = L.latLngBounds(markersToAdd.map((m) => [m.position.lat, m.position.lng]));
-			map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+			map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15, animate: !prefersReducedMotion() });
 		}
 	}
 
@@ -294,7 +325,12 @@
 				content += `<div class="popup-meta-item"><strong>Phone:</strong> <a href="tel:${safePhone}">${safePhone}</a></div>`;
 			}
 			if (markerData.metadata.website) {
-				content += `<div class="popup-meta-item"><strong>Website:</strong> <a href="${escapeHtml(markerData.metadata.website)}" target="_blank" rel="noopener">Visit</a></div>`;
+				// escapeHtml stops attribute break-out but not `javascript:` URLs, so
+				// only http(s) links are rendered as clickable.
+				const website = markerData.metadata.website.trim();
+				if (/^https?:\/\//i.test(website)) {
+					content += `<div class="popup-meta-item"><strong>Website:</strong> <a href="${escapeHtml(website)}" target="_blank" rel="noopener noreferrer">Visit</a></div>`;
+				}
 			}
 			if (markerData.metadata.hours) {
 				content += `<div class="popup-meta-item"><strong>Hours:</strong> ${escapeHtml(markerData.metadata.hours)}</div>`;
@@ -573,4 +609,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

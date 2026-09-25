@@ -36,6 +36,20 @@
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import type { MapBasicProps, LatLng } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
@@ -86,6 +100,14 @@
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
 
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
+
 	// ==================================================
 	// EFFECTS - Lifecycle and reactive updates
 	// ==================================================
@@ -98,27 +120,34 @@
 		// Only run on client-side when container is available
 		if (!isBrowser || !mapContainer) return;
 
-		// Async initialization to dynamically import Leaflet
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
 			// Dynamically import Leaflet (SSR safe)
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
 			// Check for reduced motion preference
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
+
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
 
 			// Create the map instance
-			mapInstance = L.map(mapContainer, {
+			mapInstance = L.map(container, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: enableScrollZoom,
 				zoomControl: showZoomControl,
 				attributionControl: showAttribution,
 				// Disable animations if user prefers reduced motion
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion,
-				markerZoomAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion,
+				markerZoomAnimation: !reduceMotion
 			});
 
 			// Add OpenStreetMap tile layer
@@ -146,6 +175,7 @@
 
 		// Cleanup function - destroy map on unmount
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -159,7 +189,7 @@
 	 */
 	$effect(() => {
 		if (map) {
-			map.setView([center.lat, center.lng], zoom);
+			map.setView([center.lat, center.lng], zoom, { animate: !prefersReducedMotion() });
 		}
 	});
 
@@ -190,10 +220,11 @@
 	 */
 	export function panTo(position: LatLng, newZoom?: number): void {
 		if (map) {
+			const animate = !prefersReducedMotion();
 			if (newZoom !== undefined) {
-				map.setView([position.lat, position.lng], newZoom);
+				map.setView([position.lat, position.lng], newZoom, { animate });
 			} else {
-				map.panTo([position.lat, position.lng]);
+				map.panTo([position.lat, position.lng], { animate });
 			}
 		}
 	}
@@ -205,7 +236,7 @@
 	 */
 	export function setView(position: LatLng, newZoom: number): void {
 		if (map) {
-			map.setView([position.lat, position.lng], newZoom);
+			map.setView([position.lat, position.lng], newZoom, { animate: !prefersReducedMotion() });
 		}
 	}
 </script>
@@ -314,4 +345,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
