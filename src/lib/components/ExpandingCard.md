@@ -140,6 +140,29 @@ Crossfade does the heavy lifting; the rest is presentation. The card itself uses
 | `expandedText` | `string` | `'Yoo devs, How you doing?'` | Body text shown in expanded (horizontal) layout. Typically longer. |
 | `bgColor` | `string` | `'bg-lime-100'` | TailwindCSS background class applied to the card. |
 
+## Theming
+
+Follows `docs/THEMING.md`. The `bgColor` prop picks the card's variant colour (`--ec-bg`, set inline on the button); it identifies the card, so it is treated like brand and never swapped for another hue. Everything else is chrome on `.expanding-card-shell` with light defaults inline and a `@media (prefers-color-scheme: dark)` flip.
+
+| Property | Light | Dark | Used by |
+| --- | --- | --- | --- |
+| `--ec-surface` | *(unset → `--ec-bg`)* | `color-mix(in srgb, var(--ec-bg) 18%, #111827)` | Card background |
+| `--ec-border` | `color-mix(#111827 10%)` | `color-mix(var(--ec-bg) 28%)` | Card outline |
+| `--ec-fg` / `--ec-fg-muted` | `#111827` / 72% ink | `#f9fafb` / 78% white | Heading and body text |
+| `--ec-shadow` / `--ec-shadow-hover` | slate alphas | black alphas | Card elevation |
+| `--ec-highlight` / `--ec-highlight-hover` | white inset 65–70% | white inset 8–12% | Top-edge sheen |
+| `--ec-media-bg` / `--ec-media-shadow` | translucent white / slate | faint white / black | Image frame |
+| `--ec-focus-ring` | blue mixed with white | `#60a5fa` | Focus-visible outline |
+
+In dark mode the card becomes a deep tint of its own pastel, so a lime card still reads as "the lime one" while its text flips to light for contrast. `--ec-surface` and the dark `--ec-border` are declared on the button itself because `--ec-bg` is an inline style there — a `var(--ec-bg)` on the shell would resolve before it exists and fall back to lime.
+
+```css
+/* Keep the original pastel surface in dark mode too */
+@media (prefers-color-scheme: dark) {
+  body .layouta.layouta { --ec-surface: var(--ec-bg); --ec-fg: #111827; }
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

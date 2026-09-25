@@ -43,6 +43,11 @@
 	WARNINGS:
 	- None expected
 
+	THEMING (see docs/THEMING.md)
+	bgColor sets the variant colour (--ec-bg) and is never swapped for
+	another hue. Chrome (--ec-*) flips under prefers-color-scheme: dark,
+	where the surface becomes a deep tint of the same variant colour.
+
 	============================================================
 -->
 
@@ -103,6 +108,49 @@
 </div>
 
 <style>
+	/*
+	 * THEMING — see docs/THEMING.md.
+	 * --ec-bg is the variant colour picked by the bgColor prop (brand-like:
+	 * it identifies the card, so it is never swapped for another hue).
+	 * Chrome tokens below flip under prefers-color-scheme: dark; in dark
+	 * the card surface becomes a deep tint of the same variant hue so the
+	 * identity survives while the text flips to light for contrast.
+	 */
+	.expanding-card-shell {
+		--ec-fg: #111827;
+		--ec-fg-muted: rgba(17, 24, 39, 0.72);
+		--ec-border: color-mix(in srgb, #111827 10%, transparent);
+		--ec-shadow: rgba(15, 23, 42, 0.45);
+		--ec-shadow-hover: rgba(15, 23, 42, 0.5);
+		--ec-highlight: rgba(255, 255, 255, 0.65);
+		--ec-highlight-hover: rgba(255, 255, 255, 0.7);
+		--ec-media-bg: rgba(255, 255, 255, 0.35);
+		--ec-media-shadow: rgba(15, 23, 42, 0.6);
+		--ec-focus-ring: color-mix(in srgb, #146ef5 80%, white);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.expanding-card-shell {
+			--ec-fg: #f9fafb;
+			--ec-fg-muted: rgba(249, 250, 251, 0.78);
+			--ec-shadow: rgba(0, 0, 0, 0.6);
+			--ec-shadow-hover: rgba(0, 0, 0, 0.7);
+			--ec-highlight: rgba(255, 255, 255, 0.08);
+			--ec-highlight-hover: rgba(255, 255, 255, 0.12);
+			--ec-media-bg: rgba(255, 255, 255, 0.06);
+			--ec-media-shadow: rgba(0, 0, 0, 0.7);
+			--ec-focus-ring: #60a5fa;
+		}
+
+		/* --ec-bg is set inline on the button, so anything derived from it
+		   must be declared on that same element (a var() on the shell would
+		   resolve before --ec-bg exists and fall back to lime). */
+		.layouta {
+			--ec-surface: color-mix(in srgb, var(--ec-bg, #ecfccb) 18%, #111827);
+			--ec-border: color-mix(in srgb, var(--ec-bg, #ecfccb) 28%, transparent);
+		}
+	}
+
 	.expanding-card-shell {
 		display: grid;
 		place-items: center;
@@ -114,12 +162,12 @@
 
 	.layouta {
 		position: relative;
-		border: 1px solid color-mix(in srgb, #111827 10%, transparent);
-		background: var(--ec-bg, #ecfccb);
-		color: #111827;
+		border: 1px solid var(--ec-border);
+		background: var(--ec-surface, var(--ec-bg, #ecfccb));
+		color: var(--ec-fg);
 		box-shadow:
-			0 24px 50px -30px rgba(15, 23, 42, 0.45),
-			0 1px 0 rgba(255, 255, 255, 0.65) inset;
+			0 24px 50px -30px var(--ec-shadow),
+			0 1px 0 var(--ec-highlight) inset;
 		outline: none;
 		transition:
 			transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -130,12 +178,12 @@
 	.layouta:hover {
 		transform: translateY(-2px);
 		box-shadow:
-			0 34px 64px -32px rgba(15, 23, 42, 0.5),
-			0 1px 0 rgba(255, 255, 255, 0.7) inset;
+			0 34px 64px -32px var(--ec-shadow-hover),
+			0 1px 0 var(--ec-highlight-hover) inset;
 	}
 
 	.layouta:focus-visible {
-		outline: 3px solid color-mix(in srgb, #146ef5 80%, white);
+		outline: 3px solid var(--ec-focus-ring);
 		outline-offset: 4px;
 	}
 
@@ -170,10 +218,10 @@
 		border-radius: 1rem;
 		width: 100%;
 		height: 12rem;
-		background: rgba(255, 255, 255, 0.35);
+		background: var(--ec-media-bg);
 		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.65) inset,
-			0 18px 32px -26px rgba(15, 23, 42, 0.6);
+			0 1px 0 var(--ec-highlight) inset,
+			0 18px 32px -26px var(--ec-media-shadow);
 	}
 
 	.imgTag img {
@@ -197,13 +245,13 @@
 		line-height: 1.05;
 		letter-spacing: 0;
 		text-transform: uppercase;
-		color: #111827;
+		color: var(--ec-fg);
 	}
 
 	.para {
 		margin: 0;
 		max-width: 34rem;
-		color: rgba(17, 24, 39, 0.72);
+		color: var(--ec-fg-muted);
 		font-size: clamp(0.83rem, 1.8vw, 0.95rem);
 		line-height: 1.55;
 		overflow-wrap: break-word;
@@ -227,9 +275,15 @@
 			height: 10rem;
 		}
 	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.layouta,
+		.expanding-card {
+			transition: none;
+		}
+
+		.layouta:hover {
+			transform: none;
+		}
+	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->
