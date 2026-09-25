@@ -52,6 +52,20 @@
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import { SvelteMap } from 'svelte/reactivity';
 	import type { MapLiveProps, MapMarker, LatLng } from '$lib/types';
@@ -103,6 +117,15 @@
 	/** Map of marker IDs to Leaflet markers */
 	let markerMap: SvelteMap<number, LeafletMarker> = new SvelteMap();
 
+	/**
+	 * One AbortController per open popup. Aborting it detaches the save/delete
+	 * click listeners in a single call, so re-opening a popup never stacks a
+	 * second (or tenth) copy of the handlers onto the same buttons. Plain Map —
+	 * nothing in the template reads it, so it doesn't need to be reactive.
+	 */
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only, never rendered
+	const popupListeners = new Map<number, AbortController>();
+
 	/** Counter for generating unique marker IDs */
 	let nextMarkerId = $state(1);
 
@@ -123,6 +146,14 @@
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
 
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
+
 	/** Whether we can add more markers */
 	let canAddMore = $derived(maxMarkers === 0 || markers.length < maxMarkers);
 
@@ -136,21 +167,29 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right to avoid overlapping UI elements
@@ -187,6 +226,11 @@
 		})();
 
 		return () => {
+			cancelled = true;
+			// Detach any popup listeners still bound before Leaflet tears down the DOM
+			for (const controller of popupListeners.values()) controller.abort();
+			popupListeners.clear();
+
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -229,7 +273,7 @@
 	async function addLeafletMarker(markerData: MapMarker, animate: boolean): Promise<void> {
 		if (!map || !markerLayer) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		const leafletMarker = L.marker([markerData.position.lat, markerData.position.lng], {
 			draggable: true
@@ -244,9 +288,15 @@
 			autoPanPaddingBottomRight: L.point(50, 50)
 		});
 
-		// Handle popup open - set up form handlers
-		leafletMarker.on('popupopen', () => {
-			setupPopupHandlers(markerData);
+		// Handle popup open - wire the form buttons inside *this* popup's element.
+		// Leaflet has already rendered the content by the time popupopen fires.
+		leafletMarker.on('popupopen', (e) => {
+			setupPopupHandlers(markerData.id, e.popup.getElement());
+		});
+
+		// Handle popup close - drop the listeners we attached on open
+		leafletMarker.on('popupclose', () => {
+			teardownPopupHandlers(markerData.id);
 		});
 
 		// Handle drag end - update marker position
@@ -304,37 +354,57 @@
 	}
 
 	/**
-	 * Set up event handlers for popup form
+	 * Set up event handlers for popup form.
+	 *
+	 * Listeners are registered with an AbortSignal and torn down on popupclose,
+	 * marker removal and component unmount. We query inside the popup's own
+	 * element (not `document`) so two MapLive instances on one page can't grab
+	 * each other's buttons when their marker IDs collide.
 	 */
-	function setupPopupHandlers(markerData: MapMarker): void {
-		// Small delay to ensure popup is rendered
-		setTimeout(() => {
-			const popup = document.querySelector(`.live-popup[data-marker-id="${markerData.id}"]`);
-			if (!popup) return;
+	function setupPopupHandlers(id: number, popupEl: HTMLElement | undefined): void {
+		teardownPopupHandlers(id);
+		if (!popupEl) return;
 
-			const titleInput = popup.querySelector('.popup-title-input') as HTMLInputElement;
-			const descInput = popup.querySelector('.popup-description-input') as HTMLTextAreaElement;
-			const saveBtn = popup.querySelector('.popup-save-btn');
-			const deleteBtn = popup.querySelector('.popup-delete-btn');
+		const popup = popupEl.querySelector('.live-popup');
+		if (!popup) return;
 
-			// Save handler - stop propagation to prevent map click adding new marker
-			saveBtn?.addEventListener('click', (e) => {
+		const controller = new AbortController();
+		popupListeners.set(id, controller);
+		const { signal } = controller;
+
+		const titleInput = popup.querySelector<HTMLInputElement>('.popup-title-input');
+		const descInput = popup.querySelector<HTMLTextAreaElement>('.popup-description-input');
+		const saveBtn = popup.querySelector('.popup-save-btn');
+		const deleteBtn = popup.querySelector('.popup-delete-btn');
+
+		// Save handler - stop propagation to prevent map click adding new marker
+		saveBtn?.addEventListener(
+			'click',
+			(e) => {
 				e.stopPropagation();
 				const newTitle = titleInput?.value || 'Untitled';
 				const newDesc = descInput?.value || '';
-				updateMarkerDetails(markerData.id, newTitle, newDesc);
+				updateMarkerDetails(id, newTitle, newDesc);
+				markerMap.get(id)?.closePopup();
+			},
+			{ signal }
+		);
 
-				// Close popup
-				const leafletMarker = markerMap.get(markerData.id);
-				leafletMarker?.closePopup();
-			});
-
-			// Delete handler - stop propagation to prevent map click adding new marker
-			deleteBtn?.addEventListener('click', (e) => {
+		// Delete handler - stop propagation to prevent map click adding new marker
+		deleteBtn?.addEventListener(
+			'click',
+			(e) => {
 				e.stopPropagation();
-				removeMarker(markerData.id);
-			});
-		}, 50);
+				removeMarker(id);
+			},
+			{ signal }
+		);
+	}
+
+	/** Detach the popup listeners for one marker (safe to call when none exist) */
+	function teardownPopupHandlers(id: number): void {
+		popupListeners.get(id)?.abort();
+		popupListeners.delete(id);
 	}
 
 	/**
@@ -371,6 +441,7 @@
 
 		// Remove from array
 		markers = markers.filter((m) => m.id !== id);
+		teardownPopupHandlers(id);
 
 		// Remove Leaflet marker
 		const leafletMarker = markerMap.get(id);
@@ -391,6 +462,8 @@
 			onMarkerRemove?.(marker);
 		}
 		markers = [];
+		for (const controller of popupListeners.values()) controller.abort();
+		popupListeners.clear();
 		markerLayer?.clearLayers();
 		markerMap = new SvelteMap();
 	}
@@ -756,4 +829,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

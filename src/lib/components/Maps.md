@@ -1,4 +1,4 @@
-# MapLive — Technical Logic Explainer
+# Maps — Technical Logic Explainer
 
 ## What Does It Do? (Plain English)
 
@@ -6,18 +6,33 @@ A live, editable map. The user clicks anywhere on the tiles to drop a pin, drags
 
 Think of it as a digital corkboard pinned to a paper map: you place a thumbtack with a single tap, scribble a label on it, and slide it around with your finger. The map underneath is OpenStreetMap tiles served via Leaflet — battle-tested map plumbing the component delegates to rather than reimplementing.
 
+MapLive is the headline of a four-piece family that shares the same Leaflet bootstrapping, so this explainer covers all of them:
+
+| Component | Reach for it when… |
+|-----------|--------------------|
+| `MapBasic` | You just need a pannable, zoomable map with a programmatic `panTo` / `setView` API. |
+| `MapMarkers` | You have a list of places (often from the database) to show with rich popups and a category filter. |
+| `MapSearch` | Users should type an address or place name and jump to it (Nominatim geocoding). |
+| `MapLive` | Users should drop, drag, rename and delete their own pins, with the list bound back to the parent. |
+
 ## How It Works (Pseudo-Code)
 
 ```
+module (shared by every instance):
+  loadLeaflet() = memoised import('leaflet')   // one import per page, SSR-safe
+
 state:
   markers       = []                    // bindable, parent-controlled
   isAddMode     = true                  // toggleable from control bar
   markerMap     = SvelteMap<id, LeafletMarker>
+  popupListeners = Map<id, AbortController>  // one live listener set per open popup
   nextMarkerId  = max(existing IDs) + 1
   canAddMore    = maxMarkers === 0 || markers.length < maxMarkers
 
 mount ($effect):
-  1. Dynamic-import 'leaflet' (SSR-safe — module never loaded on server)
+  0. Capture the container element; set cancelled = false
+  1. await loadLeaflet() (SSR-safe — module never loaded on server)
+     if cancelled (unmounted while loading) → return, never build a map
   2. Read prefers-reduced-motion to gate Leaflet's zoom/fade animations
   3. Create map at center/zoom; attach OSM tile layer
   4. Add zoom control bottom-right (avoids overlapping our control bar)
@@ -28,6 +43,8 @@ mount ($effect):
   7. Replay any existing markers passed in via prop
 
 cleanup:
+  cancelled = true
+  abort every popupListeners controller
   mapInstance.remove(); reset markerMap
 
 addMarkerAtPosition(latlng):
@@ -39,10 +56,14 @@ addMarkerAtPosition(latlng):
 addLeafletMarker(data, animate):
   1. Create draggable L.marker at data.position
   2. bindPopup with edit form HTML; configure autoPan padding so popup is fully visible
-  3. on 'popupopen' → setupPopupHandlers() (rebinds save/delete)
-  4. on 'dragend' → updateMarkerPosition(id, newLatLng)
-  5. layerGroup.addLayer(marker); markerMap.set(id, marker)
-  6. if animate: add .marker-animate-in class, remove after 300ms
+  3. on 'popupopen' → setupPopupHandlers(id, popup.getElement())
+       abort any previous controller for this id
+       query buttons *inside this popup* (not document — safe with 2+ maps)
+       addEventListener('click', …, { signal })
+  4. on 'popupclose' → teardownPopupHandlers(id)   // controller.abort()
+  5. on 'dragend' → updateMarkerPosition(id, newLatLng)
+  6. layerGroup.addLayer(marker); markerMap.set(id, marker)
+  7. if animate: add .marker-animate-in class, remove after 300ms
 
 popup save handler:
   e.stopPropagation()                     // critical — otherwise map 'click' fires
@@ -51,7 +72,11 @@ popup save handler:
 
 popup delete handler:
   e.stopPropagation()
-  removeMarker(id)
+  removeMarker(id)                        // also tears down that popup's listeners
+
+programmatic moves (MapBasic.panTo/setView, MapMarkers fit, MapSearch select):
+  animate = !matchMedia('(prefers-reduced-motion: reduce)').matches   // read at call time
+  map.setView / panTo / fitBounds(…, { animate })
 ```
 
 ## The Core Concept: Tile Pyramids and Web Mercator
@@ -93,7 +118,9 @@ Maps are notoriously hard to make accessible — they are inherently visual, spa
 - **Popup forms are keyboard-reachable.** When a popup opens the input gets focus; `Tab` moves through title → description → save → delete; `Escape` closes the popup (Leaflet default).
 - **`aria-pressed`** on the add-mode toggle reflects the current mode for AT users.
 - **`aria-live="polite"`** announces marker count changes and the "Click anywhere on the map to add a marker" hint.
-- **All popup HTML is escaped** via `escapeHtml()` from `$lib/htmlUtils` — user-typed titles and descriptions cannot inject script tags through the popup template.
+- **All popup HTML is escaped** via `escapeHtml()` from `$lib/htmlUtils` — user-typed titles and descriptions cannot inject script tags through the popup template. `MapSearch` escapes geocoder place names the same way, and `MapMarkers` only renders `metadata.website` as a link when it is `http(s)://` (escaping alone does not stop `javascript:` URLs).
+- **Reduced motion is honoured twice.** Leaflet's zoom/fade animations are switched off at construction, *and* every programmatic move (`panTo`, `setView`, `fitBounds`) passes `{ animate: false }` when the preference is set — Leaflet's pan glide ignores `zoomAnimation`, so the second guard matters. The preference is read at call time, so flipping the OS setting mid-session takes effect on the next move.
+- **`MapSearch` is a proper combobox.** `aria-controls` and `aria-activedescendant` point at per-instance ids generated with `$props.id()`, so two search maps on one page never collide, and arrow keys move the highlighted option for screen-reader users.
 
 What the component cannot do is describe map content semantically — there is no list of "things on this map" exposed to screen readers. For applications where that matters, render an off-screen `<ul>` of marker titles in parallel; the GlobePresence component does exactly this with `.sr-only`.
 
@@ -146,6 +173,40 @@ What the component cannot do is describe map content semantically — there is n
 | `onMarkerAdd` | `(m: MapMarker) => void` | `undefined` | Fires after a marker is placed. |
 | `onMarkerRemove` | `(m: MapMarker) => void` | `undefined` | Fires after a marker is deleted (including via Clear all). |
 
+### MapBasic
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `center` | `LatLng` | `DEFAULT_MAP_CENTER` | Map centre. Changing it later re-centres the map. |
+| `zoom` | `number` | `13` | Zoom level (1–18). |
+| `height` | `number` | `400` | Container height in pixels. |
+| `enableScrollZoom` | `boolean` | `true` | Allow mouse-wheel zoom. Turn off for maps embedded in long pages. |
+| `showZoomControl` | `boolean` | `true` | Render Leaflet's +/− buttons. |
+| `showAttribution` | `boolean` | `true` | Render the OpenStreetMap credit (required by OSM's licence if you use their tiles). |
+
+Exposes `getMap()`, `getView()`, `panTo(position, zoom?)` and `setView(position, zoom)` via `bind:this`.
+
+### MapMarkers
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `markers` | `MapMarker[]` | `[]` | Places to plot. Popups render title, description, image and metadata. |
+| `center` / `zoom` | `LatLng` / `number` | auto | Initial view; computed from marker spread when omitted. |
+| `height` | `number` | `500` | Container height in pixels. |
+| `showCategories` | `boolean` | `true` | Show the category filter pills (only when 2+ categories exist). |
+| `onMarkerClick` | `(m: MapMarker) => void` | `undefined` | Fires when a marker is clicked. |
+
+### MapSearch
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `center` / `zoom` | `LatLng` / `number` | London / `13` | Initial view. |
+| `height` | `number` | `400` | Container height in pixels. |
+| `placeholder` | `string` | `'Search for a location...'` | Input placeholder. |
+| `debounceMs` | `number` | `300` | Wait after the last keystroke before querying Nominatim. |
+| `maxResults` | `number` | `5` | Result limit passed to Nominatim. |
+| `onLocationSelect` | `(r: GeoSearchResult) => void` | `undefined` | Fires after the map moves to the chosen result. |
+
 ## Edge Cases
 
 | Situation | Behaviour |
@@ -156,7 +217,11 @@ What the component cannot do is describe map content semantically — there is n
 | User drags a marker into the sea | Position is stored verbatim — there is no land/water validation. Add it in the parent if needed. |
 | Popup save without typing a title | Falls back to the placeholder string `'Untitled'`. Empty descriptions are stored as empty strings. |
 | Parent mutates `markers` directly | Existing Leaflet markers do not re-sync automatically — they were created on initial mount. Treat `markers` as bindable, not as a one-way prop. |
-| Clear all button click | Iterates markers, fires `onMarkerRemove` for each, then resets the array and the LayerGroup in one operation. |
+| Clear all button click | Iterates markers, fires `onMarkerRemove` for each, aborts any open popup's listeners, then resets the array and the LayerGroup in one operation. |
+| Popup opened and closed many times | Each open attaches one save/delete listener set bound to an `AbortSignal`; `popupclose`, marker removal and unmount all abort it, so handlers never stack or outlive the popup. |
+| Component unmounts before Leaflet finishes loading | The mount effect sees `cancelled` after the import resolves and returns without building a map, so nothing is left orphaned in the DOM. |
+| Two maps on the same page | Popup buttons are queried inside the popup's own element and `MapSearch` ARIA ids come from `$props.id()`, so instances never grab each other's DOM. |
+| `MapSearch` result selected | The chosen label is written into the input without triggering another search, so the dropdown doesn't pop back open over the map. |
 | Hundreds of markers | LayerGroup keeps render time linear, but click-to-add latency degrades past ~500 markers — switch to `leaflet.markercluster` for those scales. |
 | Offline / tile server unreachable | OSM tiles fail to load and show as grey squares; the map remains interactive (pan, zoom, marker placement still work). |
 
@@ -167,6 +232,7 @@ What the component cannot do is describe map content semantically — there is n
 - **OpenStreetMap tile servers** — Free public tiles. For production traffic use a proper tile provider (Mapbox, Stadia, MapTiler) — OSM's usage policy is intended for development and small-traffic hobbyist sites.
 - **Leaflet CSS** — Must be loaded globally (in `app.html` or via a stylesheet import). Without it tiles render but controls and popups are unstyled.
 - **`escapeHtml`** from `$lib/htmlUtils` — XSS protection for user-typed popup content.
+- **Nominatim** (`MapSearch` only) — OpenStreetMap's free geocoder. Its usage policy caps traffic at roughly one request per second, which the debounce keeps you well under for a single user.
 
 ## File Structure
 
@@ -176,6 +242,8 @@ src/lib/components/MapBasic.svelte        # static viewer with marker prop
 src/lib/components/MapMarkers.svelte      # markers-only layer for composition
 src/lib/components/MapSearch.svelte       # Nominatim geocoding search box
 src/lib/components/Maps.md                # this file (rendered inside ComponentPageShell)
+src/lib/components/Map{Basic,Live,Markers,Search}.test.ts   # behaviour tests (Leaflet mocked)
+src/lib/testing/leafletMock.ts            # lightweight Leaflet test double used by the tests
 src/routes/maps/+page.svelte              # demo page
 src/lib/types.ts                          # MapLiveProps, MapMarker, LatLng
 src/lib/constants.ts                      # DEFAULT_MAP_CENTER, FALLBACK_MARKERS

@@ -48,9 +48,24 @@
   ============================================================
   @component
 -->
+<script module lang="ts">
+	/**
+	 * Leaflet is loaded lazily (it touches `window`, so it can't run during SSR).
+	 * Every helper in this component needs it, so we share one promise across
+	 * all calls and instances: one import per page, and no concurrent import()
+	 * races for bundlers or test runners to trip over.
+	 */
+	let leafletLoader: Promise<typeof import('leaflet')> | undefined;
+
+	function loadLeaflet(): Promise<typeof import('leaflet')> {
+		return (leafletLoader ??= import('leaflet'));
+	}
+</script>
+
 <script lang="ts">
 	import type { MapSearchProps, GeoSearchResult } from '$lib/types';
 	import { DEFAULT_MAP_CENTER } from '$lib/constants';
+	import { escapeHtml } from '$lib/htmlUtils';
 	import type { Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 
 	// ==================================================
@@ -108,12 +123,31 @@
 	/** Debounce timer ID */
 	let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 
+	/**
+	 * The label we wrote into the input after a selection. Without this, the
+	 * debounced search would see the new text, re-query Nominatim and pop the
+	 * dropdown straight back open over the map the user just moved.
+	 */
+	let selectedLabel: string | null = null;
+
+	/** Unique per instance so two search maps on one page never share ARIA ids */
+	const uid = $props.id();
+	const listboxId = `${uid}-results`;
+
 	// ==================================================
 	// DERIVED STATE
 	// ==================================================
 
 	/** Check if we're in a browser environment (for SSR safety) */
 	const isBrowser = typeof window !== 'undefined';
+
+	/**
+	 * Read the reduced-motion preference at call time rather than once at mount,
+	 * so a user who flips the OS setting mid-session is honoured on the next move.
+	 */
+	function prefersReducedMotion(): boolean {
+		return isBrowser && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	}
 
 	// ==================================================
 	// EFFECTS - Lifecycle and reactive updates
@@ -125,21 +159,29 @@
 	$effect(() => {
 		if (!isBrowser || !mapContainer) return;
 
+		// Capture the element now: by the time the dynamic import resolves, an
+		// unmount may already have cleared the bind:this reference.
+		const container = mapContainer;
 		let mapInstance: LeafletMap | undefined;
+		let cancelled = false;
 
 		(async () => {
-			const L = await import('leaflet');
+			const L = await loadLeaflet();
 
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			const reduceMotion = prefersReducedMotion();
 
-			mapInstance = L.map(mapContainer, {
+			// The component may have unmounted while Leaflet was loading — bail out
+			// rather than build a map nobody will ever call .remove() on.
+			if (cancelled) return;
+
+			mapInstance = L.map(container, {
 				center: [center.lat, center.lng],
 				zoom: zoom,
 				scrollWheelZoom: true,
 				zoomControl: false,
 				attributionControl: true,
-				zoomAnimation: !prefersReducedMotion,
-				fadeAnimation: !prefersReducedMotion
+				zoomAnimation: !reduceMotion,
+				fadeAnimation: !reduceMotion
 			});
 
 			// Add zoom control to bottom-right to avoid overlapping UI elements
@@ -155,6 +197,7 @@
 		})();
 
 		return () => {
+			cancelled = true;
 			if (mapInstance) {
 				mapInstance.remove();
 				mapInstance = undefined;
@@ -178,6 +221,10 @@
 			isDropdownOpen = false;
 			return;
 		}
+
+		// The query is just the label of the place we already picked
+		if (searchQuery === selectedLabel) return;
+		selectedLabel = null;
 
 		// Debounce the search
 		debounceTimer = setTimeout(() => {
@@ -258,10 +305,11 @@
 	async function selectResult(result: GeoSearchResult): Promise<void> {
 		if (!map) return;
 
-		const L = await import('leaflet');
+		const L = await loadLeaflet();
 
 		// Update search query to selected location name
-		searchQuery = result.displayName.split(',')[0]; // Just the main name
+		selectedLabel = result.displayName.split(',')[0]; // Just the main name
+		searchQuery = selectedLabel;
 		isDropdownOpen = false;
 		searchResults = [];
 
@@ -272,7 +320,8 @@
 
 		// Add marker at selected location
 		marker = L.marker([result.position.lat, result.position.lng]).addTo(map);
-		marker.bindPopup(`<strong>${result.displayName.split(',')[0]}</strong>`, {
+		// Place names come from a third-party geocoder — escape before they hit innerHTML
+		marker.bindPopup(`<strong>${escapeHtml(result.displayName.split(',')[0])}</strong>`, {
 			autoPan: true,
 			autoPanPaddingTopLeft: L.point(50, 80),
 			autoPanPaddingBottomRight: L.point(50, 50)
@@ -281,12 +330,17 @@
 		// Pan to location
 		if (result.boundingBox) {
 			// Use bounding box for better fit
-			map.fitBounds([
-				[result.boundingBox[0], result.boundingBox[2]],
-				[result.boundingBox[1], result.boundingBox[3]]
-			]);
+			map.fitBounds(
+				[
+					[result.boundingBox[0], result.boundingBox[2]],
+					[result.boundingBox[1], result.boundingBox[3]]
+				],
+				{ animate: !prefersReducedMotion() }
+			);
 		} else {
-			map.setView([result.position.lat, result.position.lng], 15);
+			map.setView([result.position.lat, result.position.lng], 15, {
+				animate: !prefersReducedMotion()
+			});
 		}
 
 		// Call callback if provided
@@ -374,7 +428,11 @@
 				aria-label="Search for a location"
 				aria-expanded={isDropdownOpen}
 				aria-haspopup="listbox"
-				aria-controls="search-results"
+				aria-controls={listboxId}
+				aria-autocomplete="list"
+				aria-activedescendant={isDropdownOpen && highlightedIndex >= 0
+					? `${listboxId}-${highlightedIndex}`
+					: undefined}
 				autocomplete="off"
 			/>
 
@@ -396,9 +454,10 @@
 
 		<!-- Search Results Dropdown -->
 		{#if isDropdownOpen && searchResults.length > 0}
-			<ul id="search-results" class="search-results" role="listbox" aria-label="Search results">
+			<ul id={listboxId} class="search-results" role="listbox" aria-label="Search results">
 				{#each searchResults as result, index (result.displayName)}
 					<li
+						id={`${listboxId}-${index}`}
 						role="option"
 						class="search-result-item"
 						class:highlighted={index === highlightedIndex}
@@ -665,4 +724,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

@@ -1702,13 +1702,23 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				],
 				usage: `<script lang="ts">
   import MapLive from '$lib/components/MapLive.svelte';
+  import type { MapMarker } from '$lib/types';
+
+  let markers = $state<MapMarker[]>([
+    { id: 1, title: 'Trafalgar Square', position: { lat: 51.508, lng: -0.128 } }
+  ]);
 </script>
 
 <MapLive
-  centre={[51.5074, -0.1278]}
-  zoom={10}
-  markers={[{ id: 1, lat: 51.5074, lng: -0.1278, title: 'London' }]}
-/>`,
+  bind:markers
+  center={{ lat: 51.5074, lng: -0.1278 }}
+  zoom={13}
+  height={480}
+  maxMarkers={10}
+  onMarkerAdd={(marker) => console.log('Added', marker.title)}
+/>
+
+<p>{markers.length} saved places</p>`,
 				agentHint: 'Include Leaflet CSS in app.html before using these components.'
 			}),
 			component('Location', '/location', '📍', 'Locate-me, delivery, and routing demos.', {
@@ -1739,18 +1749,40 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				screenshotFile: 'GeoVizShot.webp',
 				source: 'src/lib/components/GeoChoropleth.svelte',
 				docs: 'src/lib/components/GeoViz.md',
+				dependencies: ['layerchart', 'd3-geo', 'd3-scale', 'd3-scale-chromatic'],
 				relatedFiles: [
 					'src/lib/components/GeoSpikeMap.svelte',
 					'src/lib/components/GeoBubbleMap.svelte'
 				],
 				usage: `<script lang="ts">
   import GeoChoropleth from '$lib/components/GeoChoropleth.svelte';
+  import type { GeoRegionData } from '$lib/types';
+  import type { FeatureCollection } from 'geojson';
 
-  const features = []; // GeoJSON FeatureCollection.features
-  const values = { 'GB': 42, 'FR': 28, 'DE': 19 };
+  // Any FeatureCollection works; each feature needs an id (or RGN24CD etc.)
+  const geojson: FeatureCollection = {
+    type: 'FeatureCollection',
+    features: [
+      { type: 'Feature', id: 'north', properties: { name: 'North' },
+        geometry: { type: 'Polygon', coordinates: [[[-3, 54], [0, 54], [0, 56], [-3, 56], [-3, 54]]] } },
+      { type: 'Feature', id: 'south', properties: { name: 'South' },
+        geometry: { type: 'Polygon', coordinates: [[[-3, 51], [0, 51], [0, 54], [-3, 54], [-3, 51]]] } }
+    ]
+  };
+
+  const data: GeoRegionData[] = [
+    { regionId: 'north', value: 42 },
+    { regionId: 'south', value: 78, label: '78 per 1,000' }
+  ];
 </script>
 
-<GeoChoropleth {features} {values} />`,})
+<GeoChoropleth
+  {geojson}
+  {data}
+  height={420}
+  onRegionClick={(region) => console.log(region.name, region.value)}
+/>`
+			})
 			]
 		},
 		{
