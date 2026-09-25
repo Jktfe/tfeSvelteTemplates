@@ -428,7 +428,24 @@ export const componentCategories: ComponentCatalogCategory[] = [
 
 <SegmentedControl {options} bind:value={view} ariaLabel="View mode" />`
 			}),
-			component('FilterChips', '/filterchips', '🎚️', 'Toggleable chips for search and filtering.'),
+			component('FilterChips', '/filterchips', '🎚️', 'Toggleable chips for search and filtering.', {
+				relatedFiles: ['src/lib/components/FilterChips.test.ts'],
+				usage: `<script lang="ts">
+  import FilterChips from '$lib/components/FilterChips.svelte';
+
+  const options = [
+    { value: 'design', label: 'Design', count: 12 },
+    { value: 'engineering', label: 'Engineering', count: 8 },
+    { value: 'marketing', label: 'Marketing', count: 5 }
+  ];
+  let selected = $state<string[]>(['design']);
+</script>
+
+<FilterChips {options} bind:selected showAll ariaLabel="Filter by team" />
+<p>Active: {selected.join(', ') || 'none'}</p>`,
+				agentHint:
+					'Bind selected (string[]) for the active values; use mode="single" for radio-style chips and removable with onRemove for applied-filter pills.'
+			}),
 			component('RatingStars', '/ratingstars', '⭐', 'Keyboard-friendly star rating control.', {
 				themeSupport: 'dual',
 				relatedFiles: ['src/lib/components/RatingStars.test.ts'],
