@@ -19,12 +19,12 @@
 	// Real component pages from this site, so the default chrome can show
 	// screenshots and genuine links.
 	const templates: SliderItem[] = [
-		{ id: 'speeddial', name: 'SpeedDial', href: '/speeddial', screenshot: '/ComponentScreenshots/SpeedDialShot.png', description: 'Floating action trigger with radial shortcuts.' },
-		{ id: 'drawer', name: 'Drawer', href: '/drawer', screenshot: '/ComponentScreenshots/DrawerShot.png', description: 'Slide-in modal panel from any edge.' },
-		{ id: 'magiccard', name: 'MagicCard', href: '/magiccard', screenshot: '/ComponentScreenshots/MagicCardShot.png', description: 'Card spotlight driven by pointer position.' },
-		{ id: 'marquee', name: 'Marquee', href: '/marquee', screenshot: '/ComponentScreenshots/MarqueeShot.png', description: 'Infinite horizontal scroll of testimonials or logos.' },
-		{ id: 'tabs', name: 'Tabs', href: '/tabs', screenshot: '/ComponentScreenshots/TabsShot.png', description: 'Accessible tablist with keyboard roving focus.' },
-		{ id: 'switch', name: 'Switch', href: '/switch', screenshot: '/ComponentScreenshots/SwitchShot.png', description: 'Toggle switch with sizes and colour variants.' }
+		{ id: 'speeddial', name: 'SpeedDial', href: '/speeddial', screenshot: '/ComponentScreenshots/SpeedDialShot.webp', description: 'Floating action trigger with radial shortcuts.' },
+		{ id: 'drawer', name: 'Drawer', href: '/drawer', screenshot: '/ComponentScreenshots/DrawerShot.webp', description: 'Slide-in modal panel from any edge.' },
+		{ id: 'magiccard', name: 'MagicCard', href: '/magiccard', screenshot: '/ComponentScreenshots/MagicCardShot.webp', description: 'Card spotlight driven by pointer position.' },
+		{ id: 'marquee', name: 'Marquee', href: '/marquee', screenshot: '/ComponentScreenshots/MarqueeShot.webp', description: 'Infinite horizontal scroll of testimonials or logos.' },
+		{ id: 'tabs', name: 'Tabs', href: '/tabs', screenshot: '/ComponentScreenshots/TabsShot.webp', description: 'Accessible tablist with keyboard roving focus.' },
+		{ id: 'switch', name: 'Switch', href: '/switch', screenshot: '/ComponentScreenshots/SwitchShot.webp', description: 'Toggle switch with sizes and colour variants.' }
 	];
 
 	interface Swatch extends SliderItem {

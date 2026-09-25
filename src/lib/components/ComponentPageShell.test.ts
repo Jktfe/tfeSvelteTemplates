@@ -14,8 +14,12 @@
  */
 
 import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import ComponentPageShellTestHarness from './ComponentPageShellTestHarness.test.svelte';
+
+// The shell reads server-rendered docs from page.data; outside SvelteKit
+// there is no $app runtime, so hand it an empty page instead.
+vi.mock('$app/state', () => ({ page: { data: {} } }));
 
 const minimal = {
 	name: 'MagicCard',
