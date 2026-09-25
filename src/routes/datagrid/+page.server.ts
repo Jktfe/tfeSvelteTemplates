@@ -7,7 +7,7 @@
  * - Pre-computing statistics for display
  */
 
-import { loadEmployeesFromDatabase, getEmployeeStatistics } from '$lib/server/dataGrid';
+import { loadEmployeesWithSource, computeEmployeeStatistics } from '$lib/server/dataGrid';
 import type { PageServerLoad } from './$types';
 
 /**
@@ -21,22 +21,18 @@ import type { PageServerLoad } from './$types';
  *
  * @returns Object containing:
  * - employees: Array of employee records
- * - usingDatabase: Boolean indicating if connected to database
+ * - usingDatabase / dataSource / dataSourceMessage: where the rows came from
  * - stats: Employee statistics (count, averages, etc.)
  */
 export const load: PageServerLoad = async () => {
-	// Load employee data (with automatic fallback)
-	const employees = await loadEmployeesFromDatabase();
-
-	// Check if DATABASE_URL is configured
-	const usingDatabase = !!process.env.DATABASE_URL;
-
-	// Load statistics for display
-	const stats = await getEmployeeStatistics();
+	const result = await loadEmployeesWithSource();
 
 	return {
-		employees,
-		usingDatabase,
-		stats
+		employees: result.data,
+		usingDatabase: result.usingDatabase,
+		dataSource: result.source,
+		dataSourceMessage: result.message,
+		// Derived from the rows we already have — no second query.
+		stats: computeEmployeeStatistics(result.data)
 	};
 };
