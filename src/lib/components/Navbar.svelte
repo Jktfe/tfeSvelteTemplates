@@ -28,6 +28,15 @@
   • Focus trap: Tab stays within panel when open
   • Motion: Respects prefers-reduced-motion
 
+  🌗 THEMING
+  Dual light / dark. Chrome tokens (--navbar-bg, --navbar-fg,
+  --navbar-panel-bg, --navbar-panel-link-fg, …) are declared on both
+  .navbar and .panel (sibling roots) and flip under
+  prefers-color-scheme: dark. The accent is brand: it reads the host's
+  --accent token and only its fallback changes on dark. Override with
+  doubled-class specificity (see docs/THEMING.md):
+      body .navbar.navbar, body .panel.panel { --navbar-bg: #fdf6e3; }
+
   📦 DEPENDENCIES
   Zero external dependencies
 
@@ -478,6 +487,82 @@
 
 <style>
 	/* ============================================
+	   Theme tokens
+	   ============================================
+	   The header bar and the slide-out panel are sibling roots, so both
+	   declare the same chrome tokens. Everything here is chrome and flips
+	   under prefers-color-scheme: dark (block below). The accent comes from
+	   the host's --accent token (brand) and is never flipped here — only its
+	   fallback lightens so a copy-pasted Navbar without a host token still
+	   has a readable accent on dark. See docs/THEMING.md. */
+
+	.navbar,
+	.panel {
+		--navbar-accent: var(--accent, #004695);
+		--navbar-bg: rgba(255, 255, 255, 0.95);
+		--navbar-border: rgba(0, 0, 0, 0.1);
+		--navbar-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+		--navbar-fg: #000000;
+		--navbar-github-fg: #24292f;
+		--navbar-github-fg-hover: #000000;
+		--navbar-hover-bg: rgba(0, 0, 0, 0.05);
+		--navbar-user-fg: #111827;
+		--navbar-muted-fg: #6b7280;
+		--navbar-avatar-bg: #111827;
+		--navbar-avatar-fg: #ffffff;
+		--navbar-primary-hover-bg: #0056b3;
+		--navbar-secondary-bg: #f3f4f6;
+		--navbar-secondary-bg-hover: #e5e7eb;
+		--navbar-secondary-fg: #374151;
+		--navbar-secondary-border: #d1d5db;
+		--navbar-badge-bg: #f3f4f6;
+		--navbar-badge-border: #d1d5db;
+		--navbar-badge-fg: #6b7280;
+		--navbar-panel-bg: #ffffff;
+		--navbar-panel-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+		--navbar-panel-divider: rgba(0, 0, 0, 0.06);
+		--navbar-panel-link-fg: #000000;
+		--navbar-panel-heading-fg: #374151;
+		--navbar-panel-heading-hover-bg: rgba(0, 0, 0, 0.03);
+		--navbar-panel-chevron: #9ca3af;
+		--navbar-panel-sublist-bg: rgba(0, 0, 0, 0.02);
+		--navbar-overlay: rgba(0, 0, 0, 0.4);
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.navbar,
+		.panel {
+			--navbar-accent: var(--accent, #60a5fa);
+			--navbar-bg: rgba(15, 23, 42, 0.94);
+			--navbar-border: rgba(148, 163, 184, 0.2);
+			--navbar-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+			--navbar-fg: #f8fafc;
+			--navbar-github-fg: #f8fafc;
+			--navbar-github-fg-hover: #ffffff;
+			--navbar-hover-bg: rgba(148, 163, 184, 0.16);
+			--navbar-user-fg: #f8fafc;
+			--navbar-muted-fg: #94a3b8;
+			--navbar-avatar-bg: #e2e8f0;
+			--navbar-avatar-fg: #0f172a;
+			--navbar-secondary-bg: #111827;
+			--navbar-secondary-bg-hover: #1e293b;
+			--navbar-secondary-fg: #e2e8f0;
+			--navbar-secondary-border: #334155;
+			--navbar-badge-bg: #111827;
+			--navbar-badge-border: #334155;
+			--navbar-badge-fg: #cbd5e1;
+			--navbar-panel-bg: #0f172a;
+			--navbar-panel-shadow: 2px 0 18px rgba(0, 0, 0, 0.38);
+			--navbar-panel-divider: rgba(148, 163, 184, 0.14);
+			--navbar-panel-link-fg: #e2e8f0;
+			--navbar-panel-heading-fg: #e2e8f0;
+			--navbar-panel-heading-hover-bg: rgba(148, 163, 184, 0.1);
+			--navbar-panel-chevron: #94a3b8;
+			--navbar-panel-sublist-bg: rgba(0, 0, 0, 0.18);
+		}
+	}
+
+	/* ============================================
 	   Framework7-Style Navbar with Left Panel
 	   ============================================ */
 
@@ -485,11 +570,11 @@
 		position: sticky;
 		top: 0;
 		z-index: 1000;
-		background-color: rgba(255, 255, 255, 0.95);
+		background-color: var(--navbar-bg);
 		backdrop-filter: blur(20px);
 		-webkit-backdrop-filter: blur(20px);
-		border-bottom: 0.5px solid rgba(0, 0, 0, 0.1);
-		box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
+		border-bottom: 0.5px solid var(--navbar-border);
+		box-shadow: var(--navbar-shadow);
 	}
 
 	.navbar-inner {
@@ -532,11 +617,11 @@
 	}
 
 	.hamburger-button:hover {
-		background-color: rgba(0, 0, 0, 0.05);
+		background-color: var(--navbar-hover-bg);
 	}
 
 	.hamburger-button:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: 2px;
 	}
 
@@ -544,7 +629,7 @@
 		display: block;
 		width: 1.25rem;
 		height: 2px;
-		background-color: #000000;
+		background-color: var(--navbar-fg);
 		border-radius: 2px;
 		transition: all 0.3s ease;
 		transform-origin: center;
@@ -569,7 +654,7 @@
 		gap: 0.625rem;
 		min-width: 0;
 		text-decoration: none;
-		color: #000000;
+		color: var(--navbar-fg);
 		font-weight: 600;
 		font-size: 1rem;
 		transition: opacity 0.2s ease;
@@ -581,7 +666,7 @@
 	}
 
 	.navbar-logo:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: 4px;
 		border-radius: 4px;
 	}
@@ -624,19 +709,19 @@
 		justify-content: center;
 		width: 2.25rem;
 		height: 2.25rem;
-		color: #24292f;
+		color: var(--navbar-github-fg);
 		background-color: transparent;
 		border-radius: 0.375rem;
 		transition: all 0.2s ease;
 	}
 
 	.github-button:hover {
-		background-color: rgba(0, 0, 0, 0.05);
-		color: #000000;
+		background-color: var(--navbar-hover-bg);
+		color: var(--navbar-github-fg-hover);
 	}
 
 	.github-button:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: 2px;
 	}
 
@@ -652,7 +737,7 @@
 		align-items: center;
 		justify-content: center;
 		padding: 0.5rem 1rem;
-		background-color: var(--accent, #004695);
+		background-color: var(--navbar-accent);
 		color: white;
 		text-decoration: none;
 		border: none;
@@ -666,23 +751,23 @@
 
 	.auth-button:hover,
 	.auth-buttons button:hover {
-		background-color: #0056b3;
+		background-color: var(--navbar-primary-hover-bg);
 	}
 
 	.auth-button:focus,
 	.auth-buttons button:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: 2px;
 	}
 
 	.auth-button.secondary {
-		background-color: #f3f4f6;
-		color: #374151;
-		border: 1px solid #d1d5db;
+		background-color: var(--navbar-secondary-bg);
+		color: var(--navbar-secondary-fg);
+		border: 1px solid var(--navbar-secondary-border);
 	}
 
 	.auth-button.secondary:hover {
-		background-color: #e5e7eb;
+		background-color: var(--navbar-secondary-bg-hover);
 	}
 
 	.auth-user {
@@ -691,7 +776,7 @@
 		gap: 0.5rem;
 		min-width: 0;
 		max-width: 15rem;
-		color: #111827;
+		color: var(--navbar-user-fg);
 		text-decoration: none;
 	}
 
@@ -707,8 +792,8 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		background: #111827;
-		color: #ffffff;
+		background: var(--navbar-avatar-bg);
+		color: var(--navbar-avatar-fg);
 		font-size: 0.875rem;
 		font-weight: 700;
 		text-transform: uppercase;
@@ -735,7 +820,7 @@
 
 	.auth-user-email {
 		font-size: 0.6875rem;
-		color: #6b7280;
+		color: var(--navbar-muted-fg);
 	}
 
 	.auth-demo-badge {
@@ -743,12 +828,12 @@
 		align-items: center;
 		gap: 0.375rem;
 		padding: 0.375rem 0.75rem;
-		background-color: #f3f4f6;
-		border: 1px solid #d1d5db;
+		background-color: var(--navbar-badge-bg);
+		border: 1px solid var(--navbar-badge-border);
 		border-radius: 9999px;
 		font-size: 0.75rem;
 		font-weight: 500;
-		color: #6b7280;
+		color: var(--navbar-badge-fg);
 		cursor: help;
 	}
 
@@ -807,106 +892,6 @@
 		}
 	}
 
-	@media (prefers-color-scheme: dark) {
-		.navbar {
-			background-color: rgba(15, 23, 42, 0.94);
-			border-bottom-color: rgba(148, 163, 184, 0.2);
-			box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
-		}
-
-		.navbar-logo,
-		.github-button {
-			color: #f8fafc;
-		}
-
-		.hamburger-line {
-			background-color: #f8fafc;
-		}
-
-		.hamburger-button:hover,
-		.github-button:hover {
-			background-color: rgba(148, 163, 184, 0.16);
-			color: #ffffff;
-		}
-
-		.auth-demo-badge {
-			background-color: #111827;
-			border-color: #334155;
-			color: #cbd5e1;
-		}
-
-		.auth-user {
-			color: #f8fafc;
-		}
-
-		.auth-user-email {
-			color: #94a3b8;
-		}
-
-		.auth-avatar-fallback {
-			background: #e2e8f0;
-			color: #0f172a;
-		}
-
-		.auth-button.secondary {
-			background-color: #111827;
-			color: #e2e8f0;
-			border-color: #334155;
-		}
-
-		.auth-button.secondary:hover {
-			background-color: #1e293b;
-		}
-
-		.panel {
-			background-color: #0f172a;
-			box-shadow: 2px 0 18px rgba(0, 0, 0, 0.38);
-		}
-
-		.panel-category {
-			border-bottom-color: rgba(148, 163, 184, 0.14);
-		}
-
-		.panel-menu-link,
-		.panel-category-header,
-		.panel-category-link,
-		:global(.panel-category-items .panel-menu-link) {
-			color: #e2e8f0;
-		}
-
-		.panel-menu-link:hover,
-		.panel-menu-link:focus,
-		.panel-category-header:hover,
-		.panel-category-link:hover,
-		.panel-category-link:focus,
-		:global(.panel-category-items .panel-menu-link:hover) {
-			background-color: rgba(96, 165, 250, 0.14);
-			color: #93c5fd;
-		}
-
-		.panel-menu-link.active,
-		.panel-category-header.expanded,
-		.panel-category-link.active,
-		:global(.panel-category-items .panel-menu-link.active) {
-			background-color: rgba(96, 165, 250, 0.18);
-			color: #bfdbfe;
-			border-left-color: #60a5fa;
-		}
-
-		.panel-category-chevron {
-			color: #94a3b8;
-		}
-
-		:global(.panel-category-items) {
-			background-color: rgba(15, 23, 42, 0.72);
-		}
-
-		.panel-menu-indicator,
-		:global(.panel-category-items .panel-menu-indicator) {
-			background-color: #60a5fa;
-		}
-	}
-
 	/* ============================================
 	   Panel Overlay
 	   ============================================ */
@@ -917,7 +902,7 @@
 		left: 0;
 		right: 0;
 		bottom: 0;
-		background-color: rgba(0, 0, 0, 0.4);
+		background-color: var(--navbar-overlay, rgba(0, 0, 0, 0.4));
 		z-index: 999;
 		animation: fade-in 0.3s ease;
 	}
@@ -941,8 +926,8 @@
 		left: 0;
 		bottom: 0;
 		width: min(80vw, 280px);
-		background-color: #ffffff;
-		box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+		background-color: var(--navbar-panel-bg);
+		box-shadow: var(--navbar-panel-shadow);
 		z-index: 1000;
 		transform: translateX(-100%);
 		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -989,7 +974,7 @@
 		gap: 1rem;
 		padding: 1rem 1.5rem;
 		text-decoration: none;
-		color: #000000;
+		color: var(--navbar-panel-link-fg);
 		font-weight: 500;
 		font-size: 1rem;
 		transition: all 0.2s ease;
@@ -998,21 +983,21 @@
 	}
 
 	.panel-menu-link:hover {
-		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
-		color: var(--accent, #004695);
+		background-color: color-mix(in srgb, var(--navbar-accent) 6%, transparent);
+		color: var(--navbar-accent);
 	}
 
 	.panel-menu-link:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: -2px;
-		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
+		background-color: color-mix(in srgb, var(--navbar-accent) 6%, transparent);
 	}
 
 	.panel-menu-link.active {
-		color: var(--accent, #004695);
+		color: var(--navbar-accent);
 		font-weight: 600;
-		background-color: color-mix(in srgb, var(--accent, #004695) 10%, transparent);
-		border-left-color: var(--accent, #004695);
+		background-color: color-mix(in srgb, var(--navbar-accent) 10%, transparent);
+		border-left-color: var(--navbar-accent);
 	}
 
 	/*
@@ -1045,7 +1030,7 @@
 	.panel-menu-indicator {
 		width: 0.375rem;
 		height: 0.375rem;
-		background-color: var(--accent, #004695);
+		background-color: var(--navbar-accent);
 		border-radius: 50%;
 		margin-left: auto;
 		flex-shrink: 0;
@@ -1061,7 +1046,7 @@
 	}
 
 	.panel-category {
-		border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+		border-bottom: 1px solid var(--navbar-panel-divider);
 	}
 
 	.panel-category:last-child {
@@ -1081,16 +1066,16 @@
 		text-align: left;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: #374151;
+		color: var(--navbar-panel-heading-fg);
 		transition: all 0.2s ease;
 	}
 
 	.panel-category-header:hover {
-		background-color: rgba(0, 0, 0, 0.03);
+		background-color: var(--navbar-panel-heading-hover-bg);
 	}
 
 	.panel-category-header:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: -2px;
 	}
 
@@ -1102,8 +1087,8 @@
 	 * a different shelf manually, the highlight follows them.
 	 */
 	.panel-category-header.expanded {
-		color: var(--accent, #004695);
-		background-color: color-mix(in srgb, var(--accent, #004695) 8%, transparent);
+		color: var(--navbar-accent);
+		background-color: color-mix(in srgb, var(--navbar-accent) 8%, transparent);
 	}
 
 	/* Single-item category link (like Home) */
@@ -1115,23 +1100,23 @@
 		text-decoration: none;
 		font-size: 0.875rem;
 		font-weight: 600;
-		color: #374151;
+		color: var(--navbar-panel-heading-fg);
 		transition: all 0.2s ease;
 	}
 
 	.panel-category-link:hover {
-		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
-		color: var(--accent, #004695);
+		background-color: color-mix(in srgb, var(--navbar-accent) 6%, transparent);
+		color: var(--navbar-accent);
 	}
 
 	.panel-category-link:focus {
-		outline: 2px solid var(--accent, #004695);
+		outline: 2px solid var(--navbar-accent);
 		outline-offset: -2px;
 	}
 
 	.panel-category-link.active {
-		color: var(--accent, #004695);
-		background-color: color-mix(in srgb, var(--accent, #004695) 10%, transparent);
+		color: var(--navbar-accent);
+		background-color: color-mix(in srgb, var(--navbar-accent) 10%, transparent);
 	}
 
 	/* TFE editorial: numbered category markers replace the emoji */
@@ -1154,7 +1139,7 @@
 		font:
 			500 11px/1 var(--font-mono, 'IBM Plex Mono', 'JetBrains Mono', monospace);
 		letter-spacing: 0.1em;
-		color: var(--accent, #004695);
+		color: var(--navbar-accent);
 	}
 
 	.panel-category-name {
@@ -1167,7 +1152,7 @@
 		justify-content: center;
 		width: 1.25rem;
 		height: 1.25rem;
-		color: #9ca3af;
+		color: var(--navbar-panel-chevron);
 		transition: transform 0.2s ease;
 	}
 
@@ -1180,7 +1165,7 @@
 		list-style: none;
 		margin: 0;
 		padding: 0 0 0.5rem 0;
-		background-color: rgba(0, 0, 0, 0.02);
+		background-color: var(--navbar-panel-sublist-bg);
 	}
 
 	:global(.panel-category-items .panel-menu-item) {
@@ -1194,7 +1179,7 @@
 		gap: 1rem;
 		padding: 0.625rem 1.25rem 0.625rem 3rem;
 		text-decoration: none;
-		color: #000000;
+		color: var(--navbar-panel-link-fg);
 		font-size: 0.875rem;
 		font-weight: 500;
 		border-left: none;
@@ -1202,14 +1187,14 @@
 	}
 
 	:global(.panel-category-items .panel-menu-link:hover) {
-		background-color: color-mix(in srgb, var(--accent, #004695) 6%, transparent);
-		color: var(--accent, #004695);
+		background-color: color-mix(in srgb, var(--navbar-accent) 6%, transparent);
+		color: var(--navbar-accent);
 	}
 
 	:global(.panel-category-items .panel-menu-link.active) {
-		color: var(--accent, #004695);
+		color: var(--navbar-accent);
 		font-weight: 600;
-		background-color: color-mix(in srgb, var(--accent, #004695) 10%, transparent);
+		background-color: color-mix(in srgb, var(--navbar-accent) 10%, transparent);
 	}
 
 	:global(.panel-category-items .panel-menu-icon) {
@@ -1227,7 +1212,7 @@
 	:global(.panel-category-items .panel-menu-indicator) {
 		width: 0.375rem;
 		height: 0.375rem;
-		background-color: var(--accent, #004695);
+		background-color: var(--navbar-accent);
 		border-radius: 50%;
 		margin-left: auto;
 		flex-shrink: 0;
@@ -1275,7 +1260,3 @@
 		}
 	}
 </style>
-
-<!-- Claude is happy that this file is mint. Signed off 19.11.25. -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

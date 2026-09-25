@@ -13,6 +13,16 @@
 	The component checks whether each file is allowed, shows clear feedback,
 	and gives users obvious remove/retry controls.
 
+	THEMING
+	Dual light / dark via CSS custom properties on .upload-dropzone (see
+	docs/THEMING.md). Chrome tokens (--upload-fg, --upload-surface-bg,
+	--upload-row-bg, --upload-button-*, --upload-pill-*, …) default to light
+	and flip under prefers-color-scheme: dark. --upload-accent (brand),
+	--upload-success and --upload-danger (semantic) never flip, so the
+	progress bar and hover states keep their meaning on both schemes.
+	Override with doubled-class specificity:
+	    body .upload-dropzone.upload-dropzone { --upload-accent: #7c3aed; }
+
 	============================================================
 -->
 
@@ -441,8 +451,37 @@
 		--upload-accent: #2563eb;
 		--upload-success: #059669;
 		--upload-danger: #dc2626;
+
+		/* Chrome tokens — light defaults; flipped in the dark block at the end */
+		--upload-fg: #172033;
+		--upload-title-fg: #0f172a;
+		--upload-muted-fg: #64748b;
+		--upload-surface-bg: #fbfdff;
+		--upload-surface-bg-dragging: #f7fffb;
+		--upload-surface-bg-limit: #f8fafc;
+		--upload-surface-shadow: 0 18px 45px rgba(23, 32, 51, 0.08);
+		--upload-card-bg: #ffffff;
+		--upload-row-bg: rgba(255, 255, 255, 0.94);
+		--upload-row-bg-error: #fffafa;
+		--upload-row-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+		--upload-action-bg: #0f172a;
+		--upload-action-fg: #ffffff;
+		--upload-preview-bg: #eef2ff;
+		--upload-preview-fg: #334155;
+		--upload-track-bg: #e2e8f0;
+		--upload-button-bg: #f1f5f9;
+		--upload-button-fg: #334155;
+		--upload-button-hover-bg: #dbeafe;
+		--upload-button-danger-hover-bg: #fee2e2;
+		--upload-pill-bg: #e0f2fe;
+		--upload-pill-fg: #075985;
+		--upload-pill-success-bg: #dcfce7;
+		--upload-pill-success-fg: #166534;
+		--upload-pill-error-bg: #fee2e2;
+		--upload-pill-error-fg: #991b1b;
+
 		width: 100%;
-		color: #172033;
+		color: var(--upload-fg);
 	}
 
 	.upload-dropzone.is-disabled {
@@ -471,8 +510,8 @@
 		border-radius: 8px;
 		background:
 			linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(5, 150, 105, 0.06)),
-			#fbfdff;
-		box-shadow: 0 18px 45px rgba(23, 32, 51, 0.08);
+			var(--upload-surface-bg);
+		box-shadow: var(--upload-surface-shadow);
 		color: inherit;
 		text-align: left;
 		cursor: pointer;
@@ -497,13 +536,13 @@
 		border-color: rgba(5, 150, 105, 0.9);
 		background:
 			linear-gradient(135deg, rgba(5, 150, 105, 0.13), rgba(37, 99, 235, 0.09)),
-			#f7fffb;
+			var(--upload-surface-bg-dragging);
 		box-shadow: 0 24px 60px rgba(5, 150, 105, 0.18);
 	}
 
 	.upload-surface.is-at-limit {
 		border-color: rgba(100, 116, 139, 0.32);
-		background: #f8fafc;
+		background: var(--upload-surface-bg-limit);
 	}
 
 	.upload-surface:disabled {
@@ -518,7 +557,7 @@
 		width: 4rem;
 		height: 4rem;
 		border-radius: 8px;
-		background: #ffffff;
+		background: var(--upload-card-bg);
 		color: var(--upload-accent);
 		box-shadow: inset 0 0 0 1px rgba(37, 99, 235, 0.16);
 	}
@@ -533,7 +572,7 @@
 		font-size: clamp(1.05rem, 1rem + 0.3vw, 1.32rem);
 		font-weight: 800;
 		letter-spacing: 0;
-		color: #0f172a;
+		color: var(--upload-title-fg);
 	}
 
 	.surface-description,
@@ -543,7 +582,7 @@
 	.file-type {
 		font-size: 0.88rem;
 		line-height: 1.45;
-		color: #64748b;
+		color: var(--upload-muted-fg);
 	}
 
 	.surface-action {
@@ -553,8 +592,8 @@
 		min-height: 2.5rem;
 		padding: 0 1rem;
 		border-radius: 999px;
-		background: #0f172a;
-		color: #ffffff;
+		background: var(--upload-action-bg);
+		color: var(--upload-action-fg);
 		font-size: 0.9rem;
 		font-weight: 700;
 		white-space: nowrap;
@@ -581,8 +620,8 @@
 		min-height: 4rem;
 		border: 1px solid rgba(148, 163, 184, 0.22);
 		border-radius: 8px;
-		background: #ffffff;
-		color: #64748b;
+		background: var(--upload-card-bg);
+		color: var(--upload-muted-fg);
 		font-weight: 650;
 	}
 
@@ -594,13 +633,13 @@
 		padding: 0.75rem;
 		border: 1px solid rgba(148, 163, 184, 0.24);
 		border-radius: 8px;
-		background: rgba(255, 255, 255, 0.94);
-		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+		background: var(--upload-row-bg);
+		box-shadow: var(--upload-row-shadow);
 	}
 
 	.file-row.is-error {
 		border-color: rgba(220, 38, 38, 0.25);
-		background: #fffafa;
+		background: var(--upload-row-bg-error);
 	}
 
 	.file-preview {
@@ -611,8 +650,8 @@
 		height: 3rem;
 		overflow: hidden;
 		border-radius: 8px;
-		background: #eef2ff;
-		color: #334155;
+		background: var(--upload-preview-bg);
+		color: var(--upload-preview-fg);
 		font-size: 0.72rem;
 		font-weight: 800;
 	}
@@ -640,7 +679,7 @@
 
 	.file-name {
 		overflow: hidden;
-		color: #0f172a;
+		color: var(--upload-title-fg);
 		font-weight: 760;
 		text-overflow: ellipsis;
 		white-space: nowrap;
@@ -652,27 +691,27 @@
 		min-height: 1.45rem;
 		padding: 0 0.55rem;
 		border-radius: 999px;
-		background: #e0f2fe;
-		color: #075985;
+		background: var(--upload-pill-bg);
+		color: var(--upload-pill-fg);
 		font-size: 0.76rem;
 		font-weight: 760;
 	}
 
 	.status-pill.success {
-		background: #dcfce7;
-		color: #166534;
+		background: var(--upload-pill-success-bg);
+		color: var(--upload-pill-success-fg);
 	}
 
 	.status-pill.error {
-		background: #fee2e2;
-		color: #991b1b;
+		background: var(--upload-pill-error-bg);
+		color: var(--upload-pill-error-fg);
 	}
 
 	.progress-track {
 		height: 0.42rem;
 		overflow: hidden;
 		border-radius: 999px;
-		background: #e2e8f0;
+		background: var(--upload-track-bg);
 	}
 
 	.progress-track span {
@@ -696,8 +735,8 @@
 		height: 2.25rem;
 		border: 0;
 		border-radius: 8px;
-		background: #f1f5f9;
-		color: #334155;
+		background: var(--upload-button-bg);
+		color: var(--upload-button-fg);
 		cursor: pointer;
 		transition:
 			background 160ms ease,
@@ -707,7 +746,7 @@
 
 	.icon-button:hover:not(:disabled),
 	.icon-button:focus-visible {
-		background: #dbeafe;
+		background: var(--upload-button-hover-bg);
 		color: var(--upload-accent);
 		outline: none;
 		transform: translateY(-1px);
@@ -715,7 +754,7 @@
 
 	.icon-button.danger:hover:not(:disabled),
 	.icon-button.danger:focus-visible {
-		background: #fee2e2;
+		background: var(--upload-button-danger-hover-bg);
 		color: var(--upload-danger);
 	}
 
@@ -754,6 +793,42 @@
 			align-items: flex-start;
 			flex-direction: column;
 			gap: 0.35rem;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome only. --upload-accent / --upload-success /
+	 * --upload-danger are brand and semantic, so they stay put; the blue and
+	 * green rgba() borders and glows already read on a dark surface.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.upload-dropzone {
+			--upload-fg: #e2e8f0;
+			--upload-title-fg: #f8fafc;
+			--upload-muted-fg: #94a3b8;
+			--upload-surface-bg: #0f172a;
+			--upload-surface-bg-dragging: #052e1f;
+			--upload-surface-bg-limit: #111827;
+			--upload-surface-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+			--upload-card-bg: #1e293b;
+			--upload-row-bg: rgba(15, 23, 42, 0.94);
+			--upload-row-bg-error: #2a0f12;
+			--upload-row-shadow: 0 10px 28px rgba(0, 0, 0, 0.3);
+			--upload-action-bg: #f8fafc;
+			--upload-action-fg: #0f172a;
+			--upload-preview-bg: #1e1b4b;
+			--upload-preview-fg: #cbd5e1;
+			--upload-track-bg: #334155;
+			--upload-button-bg: #1e293b;
+			--upload-button-fg: #cbd5e1;
+			--upload-button-hover-bg: #172554;
+			--upload-button-danger-hover-bg: #450a0a;
+			--upload-pill-bg: #0c4a6e;
+			--upload-pill-fg: #bae6fd;
+			--upload-pill-success-bg: #052e16;
+			--upload-pill-success-fg: #86efac;
+			--upload-pill-error-bg: #450a0a;
+			--upload-pill-error-fg: #fca5a5;
 		}
 	}
 

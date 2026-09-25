@@ -19,6 +19,13 @@
   - Honours prefers-reduced-motion (no transitions)
   - Pure Svelte 5 runes, zero dependencies
 
+  THEMING
+  - Dual light / dark via --pagination-* custom properties on .pagination
+  - Chrome (button fg / bg / border / hover / disabled / ellipsis) flips
+    under prefers-color-scheme: dark
+  - Brand (--pagination-active-*, --pagination-focus-ring) never flips so
+    the current page reads the same on both schemes (docs/THEMING.md)
+
   ACCESSIBILITY
   - Wrapper is a real nav element with aria-label="Pagination"
   - Each page is a real button with aria-label="Go to page N"
@@ -169,6 +176,22 @@
 </nav>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.pagination {
+		--pagination-fg: #1f2937;
+		--pagination-bg: #ffffff;
+		--pagination-border: #d1d5db;
+		--pagination-hover-bg: #f3f4f6;
+		--pagination-muted: #9ca3af;
+		--pagination-disabled-bg: #f9fafb;
+		--pagination-focus-ring: #3b82f6;
+		--pagination-active-bg: #2563eb;
+		--pagination-active-bg-hover: #1d4ed8;
+		--pagination-ellipsis: #6b7280;
+		--pagination-active-fg: #ffffff;
+	}
+
 	.pagination {
 		display: inline-flex;
 		align-items: center;
@@ -185,9 +208,9 @@
 		padding: 0.375rem 0.625rem;
 		font: inherit;
 		font-weight: 500;
-		color: #1f2937;
-		background-color: #ffffff;
-		border: 1px solid #d1d5db;
+		color: var(--pagination-fg);
+		background-color: var(--pagination-bg);
+		border: 1px solid var(--pagination-border);
 		border-radius: 6px;
 		cursor: pointer;
 		transition:
@@ -197,30 +220,30 @@
 	}
 
 	.page-btn:hover:not(:disabled) {
-		background-color: #f3f4f6;
-		border-color: #9ca3af;
+		background-color: var(--pagination-hover-bg);
+		border-color: var(--pagination-muted);
 	}
 
 	.page-btn:focus-visible {
-		outline: 2px solid #3b82f6;
+		outline: 2px solid var(--pagination-focus-ring);
 		outline-offset: 2px;
 	}
 
 	.page-btn:disabled {
-		color: #9ca3af;
-		background-color: #f9fafb;
+		color: var(--pagination-muted);
+		background-color: var(--pagination-disabled-bg);
 		cursor: not-allowed;
 	}
 
 	.page-btn.active {
-		color: #ffffff;
-		background-color: #2563eb;
-		border-color: #2563eb;
+		color: var(--pagination-active-fg);
+		background-color: var(--pagination-active-bg);
+		border-color: var(--pagination-active-bg);
 	}
 
 	.page-btn.active:hover {
-		background-color: #1d4ed8;
-		border-color: #1d4ed8;
+		background-color: var(--pagination-active-bg-hover);
+		border-color: var(--pagination-active-bg-hover);
 	}
 
 	.page-ellipsis {
@@ -229,7 +252,7 @@
 		justify-content: center;
 		min-width: 1.5rem;
 		padding: 0 0.25rem;
-		color: #6b7280;
+		color: var(--pagination-ellipsis);
 		user-select: none;
 	}
 
@@ -246,6 +269,22 @@
 	@media (prefers-reduced-motion: reduce) {
 		.page-btn {
 			transition: none;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome only. The active page and focus ring are brand and
+	 * stay the same blue on both schemes.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.pagination {
+			--pagination-fg: #e5e7eb;
+			--pagination-bg: #111827;
+			--pagination-border: #374151;
+			--pagination-hover-bg: #1f2937;
+			--pagination-muted: #6b7280;
+			--pagination-disabled-bg: #0b1220;
+			--pagination-ellipsis: #9ca3af;
 		}
 	}
 </style>

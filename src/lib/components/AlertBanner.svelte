@@ -23,6 +23,14 @@
   • Dismiss button has aria-label="Dismiss"
   • Focus-visible ring on dismiss button
 
+  🌗 THEMING
+  Dual light / dark. Each .alert-<variant> class sets --alert-bg,
+  --alert-border and --alert-fg. The hue of each variant is semantic and
+  is kept on both schemes; the tint's lightness is chrome, so under
+  prefers-color-scheme: dark it flips to a deep tint of the same hue with
+  a light foreground. See docs/THEMING.md. Override one variant with:
+      body .alert-info.alert-info { --alert-bg: #e0f2fe; }
+
   📦 DEPENDENCIES
   Zero dependencies. Inline SVG + scoped CSS.
 
@@ -149,6 +157,10 @@
 		font-size: 0.9375rem;
 		line-height: 1.5;
 		animation: slide-in 0.2s ease;
+		background: var(--alert-bg);
+		border-color: var(--alert-border);
+		color: var(--alert-fg);
+		--alert-dismiss-hover-bg: rgba(0, 0, 0, 0.06);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -163,27 +175,27 @@
 	}
 
 	.alert-info {
-		background: #eff6ff;
-		border-color: #bfdbfe;
-		color: #1e40af;
+		--alert-bg: #eff6ff;
+		--alert-border: #bfdbfe;
+		--alert-fg: #1e40af;
 	}
 
 	.alert-success {
-		background: #ecfdf5;
-		border-color: #a7f3d0;
-		color: #065f46;
+		--alert-bg: #ecfdf5;
+		--alert-border: #a7f3d0;
+		--alert-fg: #065f46;
 	}
 
 	.alert-warning {
-		background: #fffbeb;
-		border-color: #fde68a;
-		color: #92400e;
+		--alert-bg: #fffbeb;
+		--alert-border: #fde68a;
+		--alert-fg: #92400e;
 	}
 
 	.alert-error {
-		background: #fef2f2;
-		border-color: #fecaca;
-		color: #991b1b;
+		--alert-bg: #fef2f2;
+		--alert-border: #fecaca;
+		--alert-fg: #991b1b;
 	}
 
 	.alert-icon {
@@ -234,12 +246,43 @@
 
 	.alert-dismiss:hover {
 		opacity: 1;
-		background: rgba(0, 0, 0, 0.06);
+		background: var(--alert-dismiss-hover-bg);
 	}
 
 	.alert-dismiss:focus-visible {
 		opacity: 1;
 		outline: 2px solid currentColor;
 		outline-offset: 2px;
+	}
+
+	/*
+	 * Dark scheme — same hue per variant, flipped lightness. The meaning
+	 * (blue = info, green = success, amber = warning, red = error) never
+	 * changes; only the tint moves so it sits on a dark surface.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.alert-banner {
+			--alert-dismiss-hover-bg: rgba(255, 255, 255, 0.1);
+		}
+		.alert-info {
+			--alert-bg: #172554;
+			--alert-border: #1e3a8a;
+			--alert-fg: #bfdbfe;
+		}
+		.alert-success {
+			--alert-bg: #022c22;
+			--alert-border: #065f46;
+			--alert-fg: #a7f3d0;
+		}
+		.alert-warning {
+			--alert-bg: #2a1a05;
+			--alert-border: #78350f;
+			--alert-fg: #fde68a;
+		}
+		.alert-error {
+			--alert-bg: #2a0a0a;
+			--alert-border: #7f1d1d;
+			--alert-fg: #fecaca;
+		}
 	}
 </style>

@@ -18,6 +18,13 @@
   - Honours prefers-reduced-motion (no stripe animation)
   - Pure Svelte 5 runes, zero dependencies
 
+  THEMING
+  - Dual light / dark via --pb-* custom properties on .pb
+  - Chrome (--pb-label-fg, --pb-value-fg, --pb-track-bg) flips under
+    prefers-color-scheme: dark
+  - Brand --pb-fill and semantic --pb-success / --pb-warning / --pb-danger
+    never flip, so "green = done" holds on both schemes (docs/THEMING.md)
+
   ACCESSIBILITY
   - Uses semantic <progress> element under the hood — screen readers
     announce "X percent" automatically
@@ -141,6 +148,18 @@
 </div>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.pb {
+		--pb-label-fg: #374151;
+		--pb-value-fg: #6b7280;
+		--pb-track-bg: #e5e7eb;
+		--pb-fill: #146ef5;
+		--pb-success: #16a34a;
+		--pb-warning: #f59e0b;
+		--pb-danger: #dc2626;
+	}
+
 	.pb {
 		display: flex;
 		flex-direction: column;
@@ -162,18 +181,18 @@
 	}
 
 	.pb-label-text {
-		color: #374151;
+		color: var(--pb-label-fg);
 		font-weight: 500;
 	}
 
 	.pb-label-value {
-		color: #6b7280;
+		color: var(--pb-value-fg);
 		font-variant-numeric: tabular-nums;
 	}
 
 	.pb-label-inline {
 		font-size: 0.875rem;
-		color: #6b7280;
+		color: var(--pb-value-fg);
 		font-variant-numeric: tabular-nums;
 		min-width: 3rem;
 		text-align: right;
@@ -183,7 +202,7 @@
 		position: relative;
 		flex: 1;
 		min-width: 0;
-		background: #e5e7eb;
+		background: var(--pb-track-bg);
 		border-radius: 9999px;
 		overflow: hidden;
 	}
@@ -215,25 +234,25 @@
 
 	.pb-fill {
 		height: 100%;
-		background: #146ef5;
+		background: var(--pb-fill);
 		border-radius: inherit;
 		transition: width 0.3s ease;
 	}
 
 	.pb-success .pb-fill {
-		background: #16a34a;
+		background: var(--pb-success);
 	}
 
 	.pb-warning .pb-fill {
-		background: #f59e0b;
+		background: var(--pb-warning);
 	}
 
 	.pb-danger .pb-fill {
-		background: #dc2626;
+		background: var(--pb-danger);
 	}
 
 	.pb-complete .pb-fill {
-		background: #16a34a;
+		background: var(--pb-success);
 	}
 
 	/*
@@ -246,22 +265,22 @@
 		background: linear-gradient(
 			90deg,
 			transparent 0%,
-			#146ef5 50%,
+			var(--pb-fill) 50%,
 			transparent 100%
 		);
 		animation: pb-slide 1.5s ease-in-out infinite;
 	}
 
 	.pb-indeterminate.pb-success .pb-fill {
-		background: linear-gradient(90deg, transparent 0%, #16a34a 50%, transparent 100%);
+		background: linear-gradient(90deg, transparent 0%, var(--pb-success) 50%, transparent 100%);
 	}
 
 	.pb-indeterminate.pb-warning .pb-fill {
-		background: linear-gradient(90deg, transparent 0%, #f59e0b 50%, transparent 100%);
+		background: linear-gradient(90deg, transparent 0%, var(--pb-warning) 50%, transparent 100%);
 	}
 
 	.pb-indeterminate.pb-danger .pb-fill {
-		background: linear-gradient(90deg, transparent 0%, #dc2626 50%, transparent 100%);
+		background: linear-gradient(90deg, transparent 0%, var(--pb-danger) 50%, transparent 100%);
 	}
 
 	@keyframes pb-slide {
@@ -281,6 +300,17 @@
 			animation: none;
 			width: 100%;
 			opacity: 0.5;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome only. Fill colours are brand / semantic and stay.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.pb {
+			--pb-label-fg: #e5e7eb;
+			--pb-value-fg: #9ca3af;
+			--pb-track-bg: #374151;
 		}
 	}
 </style>
