@@ -36,7 +36,7 @@
 	- $lib/gsapMotion for SSR-safe loading and reduced-motion helpers
 
 	ACCESSIBILITY:
-	- Headline remains an h2 element
+	- Headline remains an h1 element
 	- Controls are native buttons with aria-pressed state
 	- Reduced-motion users receive the final text state without animation
 
