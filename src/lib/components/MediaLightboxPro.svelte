@@ -1,3 +1,45 @@
+<!--
+  ===========================================================
+  MediaLightboxPro
+  ===========================================================
+  WHAT — a thumbnail gallery that opens any item in a modal viewer
+  with previous/next navigation, a counter and an optional caption.
+
+  WHY — screenshot proof, QA evidence and portfolio galleries all need
+  "click to enlarge" without dragging in a lightbox library.
+
+  FEATURES
+  - Thumbnail grid of buttons (one per item)
+  - Modal viewer with wrap-around previous/next controls
+  - Counter ("2 / 5") and optional caption per item
+  - Body scroll lock while the viewer is open
+
+  ACCESSIBILITY
+  - role="dialog" + aria-modal="true", labelled by the item title
+  - Focus moves into the dialog on open and is trapped there (Tab and
+    Shift+Tab cycle through the dialog's controls only)
+  - Escape closes; focus returns to the thumbnail that opened it
+  - ArrowLeft / ArrowRight step through items when there is more than one
+  - Previous/next controls are hidden when there is only one item
+  - Visible focus rings; the fade-in honours prefers-reduced-motion
+
+  DEPENDENCIES — zero.
+
+  PERFORMANCE — thumbnails use loading="lazy"; only the active item's
+  full image is in the DOM while the viewer is open.
+
+  USAGE
+      <MediaLightboxPro items={shots} title="Visual proof" />
+
+  PROPS
+  | Prop  | Type                | Default              | Description                  |
+  |-------|---------------------|----------------------|------------------------------|
+  | items | MediaLightboxItem[] | required             | Items to show                |
+  | title | string              | 'Media lightbox pro' | Heading above the gallery    |
+  | class | string              | ''                   | Extra classes on the wrapper |
+  ===========================================================
+-->
+
 <script lang="ts" module>
 	export interface MediaLightboxItem {
 		id: string;
@@ -24,6 +66,8 @@
 </script>
 
 <script lang="ts">
+	import { tick } from 'svelte';
+
 	interface Props {
 		items: MediaLightboxItem[];
 		title?: string;
@@ -32,16 +76,113 @@
 
 	let { items, title = 'Media lightbox pro', class: extraClass = '' }: Props = $props();
 
+	// Same list browsers treat as tabbable — used for the focus trap.
+	const TABBABLE_SELECTOR =
+		'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 	let open = $state(false);
 	let activeIndex = $state(0);
+	let panelEl: HTMLDivElement | undefined = $state();
+
+	// Remember who opened the viewer so we can hand focus back on close —
+	// otherwise keyboard users are dumped at the top of the document.
+	let returnFocusTo: HTMLElement | null = null;
+	let previousBodyOverflow = '';
 
 	const active = $derived(items[activeIndex]);
+	const hasMultiple = $derived(items.length > 1);
 
-	function openAt(index: number) {
+	async function openAt(index: number, event?: MouseEvent) {
+		returnFocusTo =
+			(event?.currentTarget as HTMLElement | null) ??
+			(typeof document !== 'undefined' ? (document.activeElement as HTMLElement | null) : null);
 		activeIndex = index;
 		open = true;
+		if (typeof document !== 'undefined') {
+			previousBodyOverflow = document.body.style.overflow;
+			document.body.style.overflow = 'hidden';
+		}
+		await tick();
+		panelEl?.querySelector<HTMLElement>('[data-ml-close]')?.focus();
 	}
+
+	function close() {
+		if (!open) return;
+		open = false;
+		if (typeof document !== 'undefined') {
+			document.body.style.overflow = previousBodyOverflow;
+		}
+		const target = returnFocusTo;
+		returnFocusTo = null;
+		// Only restore focus to an element that still exists in the page.
+		if (target && typeof document !== 'undefined' && document.body.contains(target)) {
+			target.focus();
+		}
+	}
+
+	function showPrevious() {
+		activeIndex = previousMediaIndex(activeIndex, items.length);
+	}
+
+	function showNext() {
+		activeIndex = nextMediaIndex(activeIndex, items.length);
+	}
+
+	function trapTab(event: KeyboardEvent) {
+		if (!panelEl) return;
+		const tabbables = Array.from(panelEl.querySelectorAll<HTMLElement>(TABBABLE_SELECTOR));
+		if (tabbables.length === 0) {
+			event.preventDefault();
+			return;
+		}
+		const first = tabbables[0];
+		const last = tabbables[tabbables.length - 1];
+		const current = document.activeElement;
+		// If focus has somehow slipped outside the panel, pull it back in.
+		const outside = !panelEl.contains(current);
+		if (event.shiftKey && (current === first || outside)) {
+			event.preventDefault();
+			last.focus();
+		} else if (!event.shiftKey && (current === last || outside)) {
+			event.preventDefault();
+			first.focus();
+		}
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		if (!open) return;
+		switch (event.key) {
+			case 'Escape':
+				event.preventDefault();
+				close();
+				break;
+			case 'ArrowLeft':
+				if (!hasMultiple) return;
+				event.preventDefault();
+				showPrevious();
+				break;
+			case 'ArrowRight':
+				if (!hasMultiple) return;
+				event.preventDefault();
+				showNext();
+				break;
+			case 'Tab':
+				trapTab(event);
+				break;
+		}
+	}
+
+	// If the component unmounts while open, don't leave the page scroll-locked.
+	$effect(() => {
+		return () => {
+			if (open && typeof document !== 'undefined') {
+				document.body.style.overflow = previousBodyOverflow;
+			}
+		};
+	});
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <section class="media-lightbox {extraClass}" aria-labelledby="media-lightbox-title">
 	<header>
@@ -51,7 +192,7 @@
 
 	<div class="ml-grid">
 		{#each items as item, index (item.id)}
-			<button type="button" onclick={() => openAt(index)}>
+			<button type="button" onclick={(event) => openAt(index, event)}>
 				<img src={item.src} alt={item.alt} loading="lazy" />
 				<span>{item.title}</span>
 			</button>
@@ -59,14 +200,29 @@
 	</div>
 
 	{#if open && active}
-		<div class="ml-dialog" role="dialog" aria-modal="true" aria-label={active.title}>
-			<div class="ml-panel">
+		<!-- Clicking the dimmed backdrop (but not the panel) closes the viewer;
+		     the keyboard equivalent is Escape, handled on the window. -->
+		<div
+			class="ml-dialog"
+			role="presentation"
+			onclick={(event) => {
+				if (event.target === event.currentTarget) close();
+			}}
+		>
+			<div
+				bind:this={panelEl}
+				class="ml-panel"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="media-lightbox-active-title"
+				tabindex="-1"
+			>
 				<header>
 					<div>
 						<p>{mediaCounter(activeIndex, items.length)}</p>
-						<h3>{active.title}</h3>
+						<h3 id="media-lightbox-active-title">{active.title}</h3>
 					</div>
-					<button type="button" aria-label="Close lightbox" onclick={() => (open = false)}>Close</button>
+					<button type="button" data-ml-close aria-label="Close lightbox" onclick={close}>Close</button>
 				</header>
 
 				<figure>
@@ -74,10 +230,12 @@
 					{#if active.caption}<figcaption>{active.caption}</figcaption>{/if}
 				</figure>
 
-				<nav aria-label="Media controls">
-					<button type="button" onclick={() => (activeIndex = previousMediaIndex(activeIndex, items.length))}>Previous</button>
-					<button type="button" onclick={() => (activeIndex = nextMediaIndex(activeIndex, items.length))}>Next</button>
-				</nav>
+				{#if hasMultiple}
+					<nav aria-label="Media controls">
+						<button type="button" aria-label="Previous item" onclick={showPrevious}>Previous</button>
+						<button type="button" aria-label="Next item" onclick={showNext}>Next</button>
+					</nav>
+				{/if}
 			</div>
 		</div>
 	{/if}
@@ -147,6 +305,32 @@
 		place-items: center;
 		padding: 20px;
 		background: rgba(15, 23, 42, 0.74);
+		animation: ml-fade-in 160ms ease-out;
+	}
+
+	@keyframes ml-fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ml-dialog {
+			animation: none;
+		}
+	}
+
+	.ml-grid button:focus-visible,
+	.ml-panel button:focus-visible {
+		outline: 3px solid #be123c;
+		outline-offset: 2px;
+	}
+
+	.ml-panel:focus {
+		outline: none;
 	}
 
 	.ml-panel {
