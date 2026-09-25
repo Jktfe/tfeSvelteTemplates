@@ -298,6 +298,3 @@
 		outline-offset: 4px;
 	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.04.26 -->

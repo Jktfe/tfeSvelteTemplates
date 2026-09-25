@@ -148,4 +148,3 @@ export async function loadLinkPreviewsFromDatabase(category?: string): Promise<L
 		return FALLBACK_LINK_PREVIEWS;
 	}
 }
-// Claude is happy that this file is mint. Signed off 19.11.25.
