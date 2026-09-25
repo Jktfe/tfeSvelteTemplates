@@ -160,6 +160,31 @@ For the indeterminate stripe, the animation is GPU-accelerated `transform`. No l
 | `ariaLabel` | `string` | `'Progress'` | Forwarded to the native `<progress>` for SR announcement. |
 | `class` | `string` | `''` | Extra classes appended to the wrapper. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The brand fill and the semantic success / warning / danger fills never flip, so "green = done" holds on both schemes.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--pb-label-fg` | `#374151` | `#e5e7eb` | `.pb-label-text` |
+| `--pb-value-fg` | `#6b7280` | `#9ca3af` | `.pb-label-value`, `.pb-label-inline` |
+| `--pb-track-bg` | `#e5e7eb` | `#374151` | `.pb-track` |
+| `--pb-fill` | `#146ef5` | *(unchanged — brand / semantic)* | `.pb-fill`, `.pb-indeterminate .pb-fill` |
+| `--pb-success` | `#16a34a` | *(unchanged — brand / semantic)* | `.pb-success .pb-fill`, `.pb-complete .pb-fill` |
+| `--pb-warning` | `#f59e0b` | *(unchanged — brand / semantic)* | `.pb-warning .pb-fill`, `.pb-indeterminate.pb-warning .pb-fill` |
+| `--pb-danger` | `#dc2626` | *(unchanged — brand / semantic)* | `.pb-danger .pb-fill`, `.pb-indeterminate.pb-danger .pb-fill` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .pb.pb {
+  --pb-fill: #7c3aed;
+  --pb-track-bg: #ede9fe;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

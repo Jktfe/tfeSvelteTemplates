@@ -173,6 +173,32 @@ Just a one-step border darkening and a soft drop shadow. The card itself isn't c
 | `icon` | `Snippet` | `undefined` | Leading icon snippet shown in the header. |
 | `class` | `string` | `''` | Extra classes appended to the article. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+Sentiment colours are semantic: they keep their hue (green = good, red = bad) and only lift in lightness on dark so they stay legible on the dark card.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--stat-bg` | `#ffffff` | `#111827` | `.stat-card` |
+| `--stat-border` | `#e2e8f0` | `#1f2937` | `.stat-card` |
+| `--stat-border-hover` | `#cbd5e1` | `#374151` | `.stat-card:hover` |
+| `--stat-muted` | `#64748b` | `#94a3b8` | `.stat-icon`, `.stat-title` |
+| `--stat-value-fg` | `#0f172a` | `#f8fafc` | `.stat-value` |
+| `--stat-positive` | `#15803d` | `#4ade80` | `.sentiment-positive` |
+| `--stat-negative` | `#b91c1c` | `#f87171` | `.sentiment-negative` |
+| `--stat-subtle` | `#94a3b8` | `#64748b` | `.stat-delta-label` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .stat-card.stat-card {
+  --stat-bg: #f8fafc;
+  --stat-border: #cbd5e1;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

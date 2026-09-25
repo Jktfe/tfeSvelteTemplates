@@ -15,7 +15,8 @@
   • Six languages: ts, js, svelte, json, bash, plain
   • Optional line-number gutter and per-line highlight ranges
   • Copy-to-clipboard button (auto-gated on browser support)
-  • Light + dark themes; terminal ignores theme by design
+  • Light, dark and auto (follows prefers-color-scheme) themes;
+    terminal ignores theme by design
   • Soft-wrap toggle; preserves CRLF/CR/LF input
   • SSR-safe — every browser-only call is feature-detected
   • Respects prefers-reduced-motion for the copy feedback
@@ -26,6 +27,15 @@
     aria-live (polite)
   • Line numbers use aria-hidden so screen readers read code only
   • prefers-reduced-motion → instant copy feedback (no fade)
+
+  🌗 THEMING
+  Every colour is a --cb-* custom property on .codeblock (see
+  docs/THEMING.md). theme="dark" (default) and theme="light" pin a
+  palette; theme="auto" starts light and flips to the dark palette
+  under prefers-color-scheme: dark. Diff add / delete tints and marks
+  are semantic and identical in both palettes. Override any token with
+  doubled-class specificity:
+      body .codeblock.codeblock { --cb-keyword: #ff79c6; }
 
   📦 DEPENDENCIES
   • Internal: $lib/tokenize (zero external deps)
@@ -49,7 +59,7 @@
   | `highlight`   | `string` (e.g. "1,3-5,8")               | `undefined` | Comma-separated 1-based ranges               |
   | `wrap`        | `boolean`                               | `false`     | Soft-wrap long lines instead of scrolling    |
   | `copyable`    | `boolean`                               | `true`      | Show the copy button when supported          |
-  | `theme`       | `'light'\|'dark'`                       | `'dark'`    | Colour palette (terminal ignores)            |
+  | `theme`       | `'light'\|'dark'\|'auto'`               | `'dark'`    | Colour palette; auto follows OS scheme       |
   | `aria-label`  | `string`                                | `'Code'`    | Region label for screen readers              |
 
   ============================================================
@@ -186,7 +196,7 @@
 		highlight?: string;
 		wrap?: boolean;
 		copyable?: boolean;
-		theme?: 'light' | 'dark';
+		theme?: 'light' | 'dark' | 'auto';
 		'aria-label'?: string;
 	}
 
@@ -404,7 +414,13 @@
 		--cb-attr: #9cdcfe;
 	}
 
-	.codeblock.theme-light {
+	/*
+	 * theme="auto" follows the reader's OS scheme: light palette by default,
+	 * dark palette under prefers-color-scheme: dark. The terminal variant is
+	 * excluded because it is a deliberately fixed green-on-black look.
+	 */
+	.codeblock.theme-light,
+	.codeblock.theme-auto:not(.variant-terminal) {
 		--cb-fg: #2d2d2d;
 		--cb-bg: #f8f8f8;
 		--cb-bg-header: #efefef;
@@ -422,6 +438,28 @@
 		--cb-regex: #d16969;
 		--cb-tag: #800000;
 		--cb-attr: #c5252e;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.codeblock.theme-auto:not(.variant-terminal) {
+			--cb-fg: #d4d4d4;
+			--cb-bg: #1e1e1e;
+			--cb-bg-header: #2d2d2d;
+			--cb-fg-muted: #858585;
+			--cb-border: #3c3c3c;
+			--cb-highlight: rgba(255, 255, 255, 0.06);
+			--cb-diff-add: rgba(46, 160, 67, 0.18);
+			--cb-diff-del: rgba(248, 81, 73, 0.18);
+			--cb-keyword: #c586c0;
+			--cb-string: #ce9178;
+			--cb-comment: #6a9955;
+			--cb-number: #b5cea8;
+			--cb-punct: #d4d4d4;
+			--cb-type: #4ec9b0;
+			--cb-regex: #d16969;
+			--cb-tag: #569cd6;
+			--cb-attr: #9cdcfe;
+	}
 	}
 
 	.codeblock.variant-terminal {

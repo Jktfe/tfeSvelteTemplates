@@ -27,6 +27,14 @@
 	DEPENDENCIES:
 	Zero external dependencies
 
+	THEMING:
+	- Dual light / dark via --countdown-* custom properties on .countdown
+	- Chrome (--countdown-fg, --countdown-muted) flips under
+	  prefers-color-scheme: dark for the labels and compact formats
+	- The cards format paints its own dark tiles (--countdown-card-*), so it
+	  looks the same on both schemes; the completion green is semantic
+	  (docs/THEMING.md)
+
 	ACCESSIBILITY:
 	- Keyboard: No interaction needed (display only)
 	- Screen readers: Uses aria-live for updates, aria-label for units
@@ -294,6 +302,18 @@
 {/if}
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.countdown {
+		--countdown-fg: #1e293b;
+		--countdown-muted: #64748b;
+		--countdown-complete: #10b981;
+		--countdown-card-top: #1e293b;
+		--countdown-card-bottom: #0f172a;
+		--countdown-card-fg: #ffffff;
+		--countdown-card-label: #94a3b8;
+	}
+
 	/* ==========================================================================
 	 * BASE STYLES
 	 * [CR] Core styles that apply to all format variants
@@ -330,7 +350,7 @@
 		font-weight: 500;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #64748b;
+		color: var(--countdown-muted);
 		margin-top: 0.25rem;
 	}
 
@@ -342,7 +362,7 @@
 	.countdown__complete {
 		font-size: 1.5rem;
 		font-weight: 700;
-		color: #10b981;
+		color: var(--countdown-complete);
 		animation: complete-bounce 0.5s ease-out;
 	}
 
@@ -357,7 +377,7 @@
 	}
 
 	.countdown--cards .countdown__segment {
-		background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+		background: linear-gradient(180deg, var(--countdown-card-top) 0%, var(--countdown-card-bottom) 100%);
 		border-radius: 0.5rem;
 		padding: 1rem 1.25rem;
 		min-width: 4.5rem;
@@ -369,12 +389,12 @@
 
 	.countdown--cards .countdown__value {
 		font-size: 2.5rem;
-		color: #ffffff;
+		color: var(--countdown-card-fg);
 		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 	}
 
 	.countdown--cards .countdown__label {
-		color: #94a3b8;
+		color: var(--countdown-card-label);
 		margin-top: 0.5rem;
 	}
 
@@ -395,12 +415,12 @@
 
 	.countdown--labels .countdown__value {
 		font-size: 3rem;
-		color: #1e293b;
+		color: var(--countdown-fg);
 	}
 
 	.countdown--labels .countdown__label {
 		font-size: 0.875rem;
-		color: #64748b;
+		color: var(--countdown-muted);
 	}
 
 	.countdown--labels .countdown__segment--changed .countdown__value {
@@ -419,13 +439,13 @@
 
 	.countdown--compact .countdown__value {
 		font-size: 2rem;
-		color: #1e293b;
+		color: var(--countdown-fg);
 		padding: 0 0.125rem;
 	}
 
 	.countdown--compact .countdown__separator {
 		font-size: 2rem;
-		color: #1e293b;
+		color: var(--countdown-fg);
 		padding: 0 0.25rem;
 	}
 
@@ -529,6 +549,17 @@
 		.countdown--compact .countdown__value,
 		.countdown--compact .countdown__separator {
 			font-size: 1.5rem;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome only. Card tiles are already dark and the
+	 * completion green is semantic, so neither flips.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.countdown {
+			--countdown-fg: #f1f5f9;
+			--countdown-muted: #94a3b8;
 		}
 	}
 </style>

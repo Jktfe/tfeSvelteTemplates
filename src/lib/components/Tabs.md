@@ -129,6 +129,30 @@ The two variants share the same DOM structure — only CSS differs. Switching `v
 | `class` | `string` | `''` | Extra classes on the wrapper. |
 | `panel` | `Snippet<[string]>` | — | Snippet that receives the active id and renders the panel. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+`--tabs-accent` (active underline and focus ring) is brand and stays the same blue on both schemes.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--tabs-fg` | `#0f172a` | `#f1f5f9` | `.tabs`, `.tab:hover:not(:disabled):not(.active)` |
+| `--tabs-border` | `#e2e8f0` | `#334155` | `.tabs-horizontal.tabs-underline .tablist`, `.tabs-vertical .tablist` |
+| `--tabs-tab-fg` | `#475569` | `#94a3b8` | `.tab` |
+| `--tabs-hover-bg` | `#f8fafc` | `#273449` | `.tab:hover:not(:disabled):not(.active)` |
+| `--tabs-pill-track` | `#f1f5f9` | `#1e293b` | `.tabs-pill .tablist` |
+| `--tabs-pill-active-bg` | `#fff` | `#334155` | `.tabs-pill .tab.active` |
+| `--tabs-accent` | `#2563eb` | *(unchanged — brand / semantic)* | `.tab:focus-visible`, `.tabs-horizontal.tabs-underline .tab.active` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .tabs.tabs {
+  --tabs-accent: #7c3aed;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

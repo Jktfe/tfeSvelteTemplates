@@ -103,6 +103,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Sidebar {items} activeHref="/dashboard" title="Acme" />`
 			}),
 			component('Navbar', '/navbar', '☰', 'Responsive app navigation with a sliding panel.', {
+				themeSupport: 'dual',
 				screenshotFile: 'NavBarShot.webp',
 				usage: `<script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
@@ -205,6 +206,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Breadcrumbs {items} separator="/" maxVisible={4} />`
 			}),
 			component('Pagination', '/pagination', '📑', 'Page-number navigation with ellipsis handling.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Pagination from '$lib/components/Pagination.svelte';
 
@@ -418,6 +420,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				agentHint: 'Copy the field components you need, or copy the whole forms folder for the full suite.'
 			}),
 			component('PinInput', '/pininput', '🔢', 'Segmented OTP and verification-code entry.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import PinInput from '$lib/components/PinInput.svelte';
   let code = $state('');
@@ -426,6 +429,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <PinInput bind:value={code} length={6} onComplete={(v) => console.log('done', v)} />`
 			}),
 			component('UploadDropzone', '/uploaddropzone', '📤', 'Drag, paste, and validate file uploads.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import UploadDropzone from '$lib/components/UploadDropzone.svelte';
 </script>
@@ -514,6 +518,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Accordion items={faqs} />`
 			}),
 			component('Tabs', '/tabs', '🗂', 'ARIA-correct tabbed content switcher.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Tabs from '$lib/components/Tabs.svelte';
   const tabs = [
@@ -576,6 +581,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 				}
 			),
 			component('CopyButton', '/copybutton', '📋', 'Clipboard button with copied-state feedback.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import CopyButton from '$lib/components/CopyButton.svelte';
 </script>
@@ -636,6 +642,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <button onclick={() => addToast({ message: 'Saved!', severity: 'success' })}>Save</button>`
 			}),
 			component('AlertBanner', '/alertbanner', '🚨', 'Inline status banner for common tones.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import AlertBanner from '$lib/components/AlertBanner.svelte';
   let shown = $state(true);
@@ -683,6 +690,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </ProgressRing>`
 			}),
 			component('ProgressBar', '/progressbar', '📊', 'Linear progress indicator with labels and variants.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import ProgressBar from '$lib/components/ProgressBar.svelte';
 </script>
@@ -699,6 +707,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 </button>`
 			}),
 			component('BadgePill', '/badgepill', '🏷️', 'Status pills, tags, and dismissible chips.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import BadgePill from '$lib/components/BadgePill.svelte';
 </script>
@@ -707,6 +716,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <BadgePill label="Frontend" tone="info" dismissible />`
 			}),
 			component('Avatar', '/avatar', '🙂', 'User image with initials and status fallback.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Avatar from '$lib/components/Avatar.svelte';
 </script>
@@ -730,6 +740,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <AvatarStack people={team} max={3} size={36} />`
 			}),
 			component('StatCard', '/statcard', '📈', 'KPI card with trend-aware sentiment.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import StatCard from '$lib/components/StatCard.svelte';
 </script>
@@ -832,6 +843,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <SplitFlap {value} charset="alnum" stagger={60} flipDuration={320} size="lg" />`
 			}),
 			component('TickerTape', '/tickertape', '📈', 'Structured infinite-scroll information strip.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import TickerTape from '$lib/components/TickerTape.svelte';
   const items = [
@@ -879,6 +891,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 					'Copy src/lib/tokenize.ts with the component; it is the local tokenizer that replaces a heavyweight highlighter dependency.'
 			}),
 			component('Countdown', '/countdown', '⏱️', 'Animated timer for deadlines and launches.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import Countdown from '$lib/components/Countdown.svelte';
 </script>
@@ -1348,6 +1361,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <AuroraBackdrop palette="classic" speed={0.6} />`
 			}),
 			component('MeshGradient', '/meshgradient', '🎨', 'Animated mesh-gradient backdrop.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import MeshGradient from '$lib/components/MeshGradient.svelte';
 </script>
@@ -1743,6 +1757,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 					'Pair the component with editorData server helpers and API routes; create/update/delete require DATABASE_URL.'
 			}),
 			component('FolderFiles', '/folderfiles', '🗂️', '3D filing cabinet with database-ready folders and files.', {
+				themeSupport: 'dual',
 				usage: `<script lang="ts">
   import FolderFiles from '$lib/components/FolderFiles.svelte';
   import type { Folder, File } from '$lib/types';

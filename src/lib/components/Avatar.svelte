@@ -51,6 +51,12 @@
 	 * renders the user's initials on a deterministically-coloured background
 	 * derived from the name, so the same user gets the same colour everywhere.
 	 *
+	 * Theming: dual light / dark. The only chrome is --avatar-ring, the
+	 * cut-out ring around the status dot, which has to match the surface the
+	 * avatar sits on — so it flips under prefers-color-scheme: dark. Initials
+	 * colours are brand (identity) and status colours are semantic; neither
+	 * flips. See docs/THEMING.md.
+	 *
 	 * For overlapping groups with overflow counter, see AvatarStack.
 	 */
 
@@ -146,13 +152,24 @@
 </span>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.avatar {
+		--avatar-initials-fg: #fff;
+		--avatar-status-online: #10b981;
+		--avatar-status-away: #f59e0b;
+		--avatar-status-busy: #ef4444;
+		--avatar-status-offline: #94a3b8;
+		--avatar-ring: #fff;
+	}
+
 	.avatar {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		overflow: visible;
-		color: #fff;
+		color: var(--avatar-initials-fg);
 		font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 		font-weight: 600;
 		line-height: 1;
@@ -213,7 +230,7 @@
 		width: 0.6em;
 		height: 0.6em;
 		border-radius: 9999px;
-		border: 2px solid #fff;
+		border: 2px solid var(--avatar-ring);
 		box-sizing: content-box;
 	}
 
@@ -224,15 +241,25 @@
 	}
 
 	.status-online {
-		background: #10b981;
+		background: var(--avatar-status-online);
 	}
 	.status-away {
-		background: #f59e0b;
+		background: var(--avatar-status-away);
 	}
 	.status-busy {
-		background: #ef4444;
+		background: var(--avatar-status-busy);
 	}
 	.status-offline {
-		background: #94a3b8;
+		background: var(--avatar-status-offline);
+	}
+
+	/*
+	 * Dark scheme — only the status-dot ring flips so it keeps punching a
+	 * clean hole against a dark surface. Identity and status colours stay.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.avatar {
+			--avatar-ring: #111827;
+		}
 	}
 </style>

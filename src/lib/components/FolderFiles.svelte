@@ -27,6 +27,14 @@
 	 * - $lib/scrollLock (coordinated body scroll prevention)
 	 * - Zero external animation/UI libraries
 	 *
+	 * [CR] THEMING
+	 * Dual light / dark. Chrome tokens (--ff-surface, --ff-border,
+	 * --ff-title-fg, …) live on .filing-cabinet-container and .folder-modal
+	 * and flip under prefers-color-scheme: dark. Folder colours, the accent
+	 * blue and the green item border are brand and never flip. Override with
+	 * doubled-class specificity (see docs/THEMING.md):
+	 *     body .folder-modal.folder-modal { --ff-surface: #fdf6e3; }
+	 *
 	 * [CR] KNOWN SVELTE WARNINGS (Safe to ignore)
 	 * - a11y_no_noninteractive_element_interactions: Intentional - listbox items need click
 	 * - a11y_click_events_have_key_events: Handled via onkeydown on same element
@@ -652,6 +660,64 @@
 
 <style>
 	/**
+	 * THEME TOKENS
+	 * The cabinet and the modal are sibling roots (the modal is fixed and
+	 * rendered outside the stack), so both declare the same chrome tokens.
+	 * Folder colours come from data and are brand — they never flip. The
+	 * accent blue and the green item border are brand too. See
+	 * docs/THEMING.md for the chrome / brand / semantic split.
+	 */
+	.filing-cabinet-container,
+	.folder-modal {
+		--ff-cabinet-bg-top: #f5f5f5;
+		--ff-cabinet-bg-bottom: #e8e8e8;
+		--ff-surface: #ffffff;
+		--ff-surface-hover: #f7fafc;
+		--ff-border: #e2e8f0;
+		--ff-border-strong: #cbd5e0;
+		--ff-icon-fg: #4a5568;
+		--ff-icon-fg-hover: #2d3748;
+		--ff-title-fg: #1a202c;
+		--ff-muted-fg: #718096;
+		--ff-body-fg: #4a5568;
+		--ff-selected-bg: #ebf5ff;
+		--ff-clear-bg: #f1f5f9;
+		--ff-clear-fg: #64748b;
+		--ff-clear-bg-hover: #e2e8f0;
+		--ff-clear-fg-hover: #475569;
+		--ff-action-bar-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+		--ff-item-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+		--ff-focus-ring: #146ef5;
+		--ff-accent: #3b82f6;
+		--ff-accent-hover: #2563eb;
+		--ff-item-border: #4ade80;
+	}
+
+	@media (prefers-color-scheme: dark) {
+		.filing-cabinet-container,
+		.folder-modal {
+			--ff-cabinet-bg-top: #1a1d21;
+			--ff-cabinet-bg-bottom: #111316;
+			--ff-surface: #1e2126;
+			--ff-surface-hover: #2a2e35;
+			--ff-border: #334155;
+			--ff-border-strong: #475569;
+			--ff-icon-fg: #cbd5e1;
+			--ff-icon-fg-hover: #f8fafc;
+			--ff-title-fg: #f1f5f9;
+			--ff-muted-fg: #94a3b8;
+			--ff-body-fg: #cbd5e1;
+			--ff-selected-bg: #172554;
+			--ff-clear-bg: #2a2e35;
+			--ff-clear-fg: #94a3b8;
+			--ff-clear-bg-hover: #334155;
+			--ff-clear-fg-hover: #e2e8f0;
+			--ff-action-bar-shadow: 0 -2px 8px rgba(0, 0, 0, 0.4);
+			--ff-item-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.45);
+		}
+	}
+
+	/**
 	 * FILING CABINET CONTAINER
 	 * 3D perspective for folder stack
 	 */
@@ -660,7 +726,7 @@
 		perspective: 1000px;
 		min-height: 600px;
 		padding: 3rem 2rem;
-		background: linear-gradient(to bottom, #f5f5f5 0%, #e8e8e8 100%);
+		background: linear-gradient(to bottom, var(--ff-cabinet-bg-top) 0%, var(--ff-cabinet-bg-bottom) 100%);
 		overflow: visible;
 	}
 
@@ -709,7 +775,7 @@
 	}
 
 	.folder-container:focus-visible {
-		outline: 3px solid #146ef5;
+		outline: 3px solid var(--ff-focus-ring);
 		outline-offset: 2px;
 		z-index: 1000;
 	}
@@ -854,7 +920,7 @@
 		position: relative;
 		width: 95vw;
 		height: 95vh;
-		background: white;
+		background: var(--ff-surface);
 		border-radius: 12px;
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 		overflow: hidden;
@@ -868,26 +934,26 @@
 		width: 3rem;
 		height: 3rem;
 		border-radius: 50%;
-		background: white;
-		border: 2px solid #e2e8f0;
+		background: var(--ff-surface);
+		border: 2px solid var(--ff-border);
 		cursor: pointer;
 		transition: all 0.2s ease;
 		z-index: 10;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		color: #4a5568;
+		color: var(--ff-icon-fg);
 	}
 
 	.close-btn:hover {
-		background: #f7fafc;
-		border-color: #cbd5e0;
+		background: var(--ff-surface-hover);
+		border-color: var(--ff-border-strong);
 		transform: rotate(90deg);
-		color: #2d3748;
+		color: var(--ff-icon-fg-hover);
 	}
 
 	.close-btn:focus-visible {
-		outline: 3px solid #146ef5;
+		outline: 3px solid var(--ff-focus-ring);
 		outline-offset: 2px;
 	}
 
@@ -901,7 +967,7 @@
 		grid-template-columns: 1fr 1fr;
 		height: 100%;
 		gap: 1px;
-		background: #e2e8f0;
+		background: var(--ff-border);
 	}
 
 	.panel {
@@ -943,8 +1009,8 @@
 	}
 
 	.content-item {
-		background: white;
-		border: 2px solid #4ade80;
+		background: var(--ff-surface);
+		border: 2px solid var(--ff-item-border);
 		border-radius: 8px;
 		padding: 1.5rem;
 		cursor: grab;
@@ -954,7 +1020,7 @@
 
 	.content-item:hover {
 		transform: translateY(-4px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		box-shadow: var(--ff-item-shadow-hover);
 	}
 
 	.content-item:active {
@@ -967,7 +1033,7 @@
 	}
 
 	.content-item:focus-visible {
-		outline: 3px solid #146ef5;
+		outline: 3px solid var(--ff-focus-ring);
 		outline-offset: 2px;
 	}
 
@@ -975,18 +1041,18 @@
 		font-size: 1.125rem;
 		font-weight: 600;
 		margin-bottom: 0.5rem;
-		color: #1a202c;
+		color: var(--ff-title-fg);
 	}
 
 	.content-item-subtitle {
 		font-size: 0.875rem;
-		color: #718096;
+		color: var(--ff-muted-fg);
 		margin-bottom: 0.75rem;
 	}
 
 	.content-item-preview {
 		font-size: 0.9375rem;
-		color: #4a5568;
+		color: var(--ff-body-fg);
 		line-height: 1.6;
 		margin: 0;
 	}
@@ -1085,8 +1151,8 @@
 		width: 24px;
 		height: 24px;
 		border-radius: 50%;
-		border: 2px solid #cbd5e0;
-		background: white;
+		border: 2px solid var(--ff-border-strong);
+		background: var(--ff-surface);
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -1121,13 +1187,13 @@
 
 	/* Selected state styling */
 	.content-item.selected {
-		background: #ebf5ff;
-		border-color: #3b82f6;
+		background: var(--ff-selected-bg);
+		border-color: var(--ff-accent);
 	}
 
 	.content-item.selected .selection-indicator {
-		background: #3b82f6;
-		border-color: #3b82f6;
+		background: var(--ff-accent);
+		border-color: var(--ff-accent);
 	}
 
 	/**
@@ -1139,13 +1205,13 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: white;
+		background: var(--ff-surface);
 		padding: 0.875rem 1rem;
-		border-top: 1px solid #e2e8f0;
+		border-top: 1px solid var(--ff-border);
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
-		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+		box-shadow: var(--ff-action-bar-shadow);
 		margin-top: 1rem;
 		border-radius: 0 0 8px 8px;
 		z-index: 10;
@@ -1154,7 +1220,7 @@
 	.selection-count {
 		font-size: 0.875rem;
 		font-weight: 500;
-		color: #4a5568;
+		color: var(--ff-body-fg);
 		flex-shrink: 0;
 	}
 
@@ -1170,27 +1236,27 @@
 	}
 
 	.clear-btn {
-		background: #f1f5f9;
-		color: #64748b;
+		background: var(--ff-clear-bg);
+		color: var(--ff-clear-fg);
 		margin-left: auto;
 	}
 
 	.clear-btn:hover {
-		background: #e2e8f0;
-		color: #475569;
+		background: var(--ff-clear-bg-hover);
+		color: var(--ff-clear-fg-hover);
 	}
 
 	.move-btn {
-		background: #3b82f6;
+		background: var(--ff-accent);
 		color: white;
 	}
 
 	.move-btn:hover {
-		background: #2563eb;
+		background: var(--ff-accent-hover);
 	}
 
 	.action-btn:focus-visible {
-		outline: 2px solid #3b82f6;
+		outline: 2px solid var(--ff-accent);
 		outline-offset: 2px;
 	}
 
@@ -1282,4 +1348,3 @@
 	}
 </style>
 
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

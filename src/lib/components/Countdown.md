@@ -153,6 +153,31 @@ When `previousValues[unit] !== currentValue`, the segment gains a transient `.co
 | `onComplete` | `() => void` | `undefined` | Callback fired exactly once when the countdown completes. |
 | `hideOnComplete` | `boolean` | `false` | Hide the entire component when complete (otherwise `completedMessage` is shown). |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The `cards` format paints its own dark tiles (`--countdown-card-*`) and looks the same on both schemes. The completion green is semantic. Only the `labels` and `compact` text colours flip.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--countdown-fg` | `#1e293b` | `#f1f5f9` | `.countdown--labels .countdown__value`, `.countdown--compact .countdown__value` |
+| `--countdown-muted` | `#64748b` | `#94a3b8` | `.countdown__label`, `.countdown--labels .countdown__label` |
+| `--countdown-complete` | `#10b981` | *(unchanged — brand / semantic)* | `.countdown__complete` |
+| `--countdown-card-top` | `#1e293b` | *(unchanged — brand / semantic)* | `.countdown--cards .countdown__segment` |
+| `--countdown-card-bottom` | `#0f172a` | *(unchanged — brand / semantic)* | `.countdown--cards .countdown__segment` |
+| `--countdown-card-fg` | `#ffffff` | *(unchanged — brand / semantic)* | `.countdown--cards .countdown__value` |
+| `--countdown-card-label` | `#94a3b8` | *(unchanged — brand / semantic)* | `.countdown--cards .countdown__label` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .countdown.countdown {
+  --countdown-fg: #7c2d12;
+  --countdown-card-top: #7c2d12;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

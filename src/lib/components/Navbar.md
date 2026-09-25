@@ -248,6 +248,54 @@ Categories with only one item collapse the chevron and render as a direct link:
 | `authUser` | `AuthUser \| null` | `null` | Current signed-in user from the root layout's load function, or `null` for signed-out / demo mode. |
 | `githubUrl` | `string` | `''` | When non-empty, a GitHub icon button appears in the panel header. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+The header bar and the slide-out panel are sibling roots, so both `.navbar` and `.panel` declare the tokens. The accent reads the host app's `--accent` token (brand) — only its fallback lightens on dark so a copy-pasted Navbar without a host token still has a readable accent.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--navbar-accent` | `var(--accent, #004695)` | `var(--accent, #60a5fa)` | `.hamburger-button:focus`, `.navbar-logo:focus` |
+| `--navbar-bg` | `rgba(255, 255, 255, 0.95)` | `rgba(15, 23, 42, 0.94)` | `.navbar` |
+| `--navbar-border` | `rgba(0, 0, 0, 0.1)` | `rgba(148, 163, 184, 0.2)` | `.navbar` |
+| `--navbar-shadow` | `0 1px 0 rgba(0, 0, 0, 0.05)` | `0 1px 0 rgba(255, 255, 255, 0.06)` | `.navbar` |
+| `--navbar-fg` | `#000000` | `#f8fafc` | `.hamburger-line`, `.navbar-logo` |
+| `--navbar-github-fg` | `#24292f` | `#f8fafc` | `.github-button` |
+| `--navbar-github-fg-hover` | `#000000` | `#ffffff` | `.github-button:hover` |
+| `--navbar-hover-bg` | `rgba(0, 0, 0, 0.05)` | `rgba(148, 163, 184, 0.16)` | `.hamburger-button:hover`, `.github-button:hover` |
+| `--navbar-user-fg` | `#111827` | `#f8fafc` | `.auth-user` |
+| `--navbar-muted-fg` | `#6b7280` | `#94a3b8` | `.auth-user-email` |
+| `--navbar-avatar-bg` | `#111827` | `#e2e8f0` | `.auth-avatar-fallback` |
+| `--navbar-avatar-fg` | `#ffffff` | `#0f172a` | `.auth-avatar-fallback` |
+| `--navbar-primary-hover-bg` | `#0056b3` | *(unchanged — brand / semantic)* | `.auth-button:hover` |
+| `--navbar-secondary-bg` | `#f3f4f6` | `#111827` | `.auth-button.secondary` |
+| `--navbar-secondary-bg-hover` | `#e5e7eb` | `#1e293b` | `.auth-button.secondary:hover` |
+| `--navbar-secondary-fg` | `#374151` | `#e2e8f0` | `.auth-button.secondary` |
+| `--navbar-secondary-border` | `#d1d5db` | `#334155` | `.auth-button.secondary` |
+| `--navbar-badge-bg` | `#f3f4f6` | `#111827` | `.auth-demo-badge` |
+| `--navbar-badge-border` | `#d1d5db` | `#334155` | `.auth-demo-badge` |
+| `--navbar-badge-fg` | `#6b7280` | `#cbd5e1` | `.auth-demo-badge` |
+| `--navbar-panel-bg` | `#ffffff` | `#0f172a` | `.panel` |
+| `--navbar-panel-shadow` | `2px 0 8px rgba(0, 0, 0, 0.15)` | `2px 0 18px rgba(0, 0, 0, 0.38)` | `.panel` |
+| `--navbar-panel-divider` | `rgba(0, 0, 0, 0.06)` | `rgba(148, 163, 184, 0.14)` | `.panel-category` |
+| `--navbar-panel-link-fg` | `#000000` | `#e2e8f0` | `.panel-menu-link`, `.panel-category-items .panel-menu-link` |
+| `--navbar-panel-heading-fg` | `#374151` | `#e2e8f0` | `.panel-category-header`, `.panel-category-link` |
+| `--navbar-panel-heading-hover-bg` | `rgba(0, 0, 0, 0.03)` | `rgba(148, 163, 184, 0.1)` | `.panel-category-header:hover` |
+| `--navbar-panel-chevron` | `#9ca3af` | `#94a3b8` | `.panel-category-chevron` |
+| `--navbar-panel-sublist-bg` | `rgba(0, 0, 0, 0.02)` | `rgba(0, 0, 0, 0.18)` | `.panel-category-items` |
+| `--navbar-overlay` | `rgba(0, 0, 0, 0.4)` | *(unchanged — brand / semantic)* | `.panel-overlay` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .navbar.navbar,
+body .panel.panel {
+  --navbar-bg: rgba(253, 246, 227, 0.95);
+  --navbar-panel-bg: #fdf6e3;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

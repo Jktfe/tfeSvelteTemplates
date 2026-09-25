@@ -22,6 +22,13 @@
   • Colour alone never carries meaning — there is always an accompanying ↑/↓ glyph
   • Honours prefers-reduced-motion
 
+  🌗 THEMING
+  Dual light / dark via --stat-* custom properties on .stat-card. Chrome
+  (surface, border, muted text, value) flips under
+  prefers-color-scheme: dark. The sentiment colours are semantic: they
+  keep their hue (green = good, red = bad) and only lift in lightness so
+  they stay legible on the dark card. See docs/THEMING.md.
+
   📦 DEPENDENCIES
   Zero external dependencies.
 
@@ -140,20 +147,33 @@
 </article>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.stat-card {
+		--stat-bg: #ffffff;
+		--stat-border: #e2e8f0;
+		--stat-border-hover: #cbd5e1;
+		--stat-muted: #64748b;
+		--stat-value-fg: #0f172a;
+		--stat-positive: #15803d;
+		--stat-negative: #b91c1c;
+		--stat-subtle: #94a3b8;
+	}
+
 	.stat-card {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 1.25rem;
-		background: #ffffff;
-		border: 1px solid #e2e8f0;
+		background: var(--stat-bg);
+		border: 1px solid var(--stat-border);
 		border-radius: 12px;
 		transition:
 			border-color 0.15s ease,
 			box-shadow 0.15s ease;
 	}
 	.stat-card:hover {
-		border-color: #cbd5e1;
+		border-color: var(--stat-border-hover);
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 	}
 
@@ -197,7 +217,7 @@
 		width: 1.5rem;
 		height: 1.5rem;
 		font-size: 1rem;
-		color: #64748b;
+		color: var(--stat-muted);
 		flex-shrink: 0;
 	}
 
@@ -207,14 +227,14 @@
 		font-weight: 600;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #64748b;
+		color: var(--stat-muted);
 	}
 
 	.stat-value {
 		font-weight: 700;
 		font-size: 1.875rem;
 		line-height: 1.1;
-		color: #0f172a;
+		color: var(--stat-value-fg);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -241,17 +261,17 @@
 	/* Sentiment — colour comes from whether the trend matches positiveDirection,
 	   not from up/down absolutely. A falling load time looks positive (green). */
 	.sentiment-positive {
-		color: #15803d;
+		color: var(--stat-positive);
 	}
 	.sentiment-negative {
-		color: #b91c1c;
+		color: var(--stat-negative);
 	}
 	.sentiment-neutral {
-		color: #64748b;
+		color: var(--stat-muted);
 	}
 
 	.stat-delta-label {
-		color: #94a3b8;
+		color: var(--stat-subtle);
 	}
 
 	/* Visually hidden but read by screen readers */
@@ -270,6 +290,26 @@
 	@media (prefers-reduced-motion: reduce) {
 		.stat-card {
 			transition: none;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome flips; sentiment keeps its hue and only lightens
+	 * enough to hold contrast on the dark surface.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.stat-card {
+			--stat-bg: #111827;
+			--stat-border: #1f2937;
+			--stat-border-hover: #374151;
+			--stat-muted: #94a3b8;
+			--stat-value-fg: #f8fafc;
+			--stat-positive: #4ade80;
+			--stat-negative: #f87171;
+			--stat-subtle: #64748b;
+		}
+		.stat-card:hover {
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 		}
 	}
 </style>

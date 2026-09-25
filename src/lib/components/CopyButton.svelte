@@ -16,6 +16,13 @@
   - Honours prefers-reduced-motion (no transition flicker)
   - Pure Svelte 5 runes, zero dependencies
 
+  THEMING
+  - Dual light / dark via --copy-* custom properties on .copy-btn
+  - Chrome (surface, border, text, hover / active) flips under
+    prefers-color-scheme: dark
+  - The copied state is semantic green: its border never flips and its
+    tint keeps the same hue on both schemes (docs/THEMING.md)
+
   ACCESSIBILITY
   - Native button with aria-label fallback
   - aria-live="polite" region announces the copied state to screen readers
@@ -131,14 +138,29 @@
 </button>
 
 <style>
+	/* Theme tokens — light defaults; chrome flips in the dark block at the
+	   end of this stylesheet. See docs/THEMING.md. */
+	.copy-btn {
+		--copy-border: #d4d4d8;
+		--copy-fg: #18181b;
+		--copy-bg-hover: #fafafa;
+		--copy-border-hover: #a1a1aa;
+		--copy-focus-ring: #3b82f6;
+		--copy-bg-active: #f4f4f5;
+		--copy-success-bg: #ecfdf5;
+		--copy-success-border: #10b981;
+		--copy-success-fg: #065f46;
+		--copy-bg: #ffffff;
+	}
+
 	.copy-btn {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4em;
-		border: 1px solid #d4d4d8;
+		border: 1px solid var(--copy-border);
 		border-radius: 0.5rem;
-		background: white;
-		color: #18181b;
+		background: var(--copy-bg);
+		color: var(--copy-fg);
 		cursor: pointer;
 		font-family: inherit;
 		font-weight: 500;
@@ -147,23 +169,23 @@
 	}
 
 	.copy-btn:hover {
-		background: #fafafa;
-		border-color: #a1a1aa;
+		background: var(--copy-bg-hover);
+		border-color: var(--copy-border-hover);
 	}
 
 	.copy-btn:focus-visible {
-		outline: 2px solid #3b82f6;
+		outline: 2px solid var(--copy-focus-ring);
 		outline-offset: 2px;
 	}
 
 	.copy-btn:active {
-		background: #f4f4f5;
+		background: var(--copy-bg-active);
 	}
 
 	.copy-btn.is-copied {
-		background: #ecfdf5;
-		border-color: #10b981;
-		color: #065f46;
+		background: var(--copy-success-bg);
+		border-color: var(--copy-success-border);
+		color: var(--copy-success-fg);
 	}
 
 	/* Sizes */
@@ -213,6 +235,22 @@
 	@media (prefers-reduced-motion: reduce) {
 		.copy-btn {
 			transition: none;
+		}
+	}
+
+	/*
+	 * Dark scheme — chrome flips; the copied-state green keeps its hue.
+	 */
+	@media (prefers-color-scheme: dark) {
+		.copy-btn {
+			--copy-border: #3f3f46;
+			--copy-fg: #f4f4f5;
+			--copy-bg-hover: #27272a;
+			--copy-border-hover: #71717a;
+			--copy-bg-active: #3f3f46;
+			--copy-success-bg: #022c22;
+			--copy-success-fg: #6ee7b7;
+			--copy-bg: #18181b;
 		}
 	}
 </style>

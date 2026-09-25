@@ -8,7 +8,7 @@
 
 	let activeVariant = $state<CodeBlockVariant>('lined');
 	let activeSize = $state<CodeBlockSize>('md');
-	let activeTheme = $state<'light' | 'dark'>('dark');
+	let activeTheme = $state<'light' | 'dark' | 'auto'>('dark');
 	let activeLang = $state<'ts' | 'js' | 'svelte' | 'json' | 'bash'>('ts');
 	let activeWrap = $state(false);
 	let activeHighlight = $state('');
@@ -27,9 +27,10 @@
 		{ id: 'lg', label: 'Large' }
 	];
 
-	const themeOptions: Array<{ id: 'light' | 'dark'; label: string }> = [
+	const themeOptions: Array<{ id: 'light' | 'dark' | 'auto'; label: string }> = [
 		{ id: 'dark', label: 'Dark' },
-		{ id: 'light', label: 'Light' }
+		{ id: 'light', label: 'Light' },
+		{ id: 'auto', label: 'Auto' }
 	];
 
 	const langSnippets: Record<typeof activeLang, string> = {
@@ -235,6 +236,10 @@ done`
 						<h4>Light theme</h4>
 						<CodeBlock code={langSnippets.json} variant="lined" language="json" theme="light" />
 					</div>
+					<div>
+						<h4>Auto theme</h4>
+						<CodeBlock code={langSnippets.json} variant="lined" language="json" theme="auto" />
+					</div>
 				</div>
 			</section>
 		</div>
@@ -256,7 +261,7 @@ done`
 				<tr><td><code>highlight</code></td><td><code>string</code></td><td><code>undefined</code></td><td>1-based line ranges, e.g. "1,3-5".</td></tr>
 				<tr><td><code>wrap</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Soft-wrap long lines.</td></tr>
 				<tr><td><code>copyable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Show the copy button.</td></tr>
-				<tr><td><code>theme</code></td><td><code>"light" | "dark"</code></td><td><code>"dark"</code></td><td>Colour palette (terminal ignores).</td></tr>
+				<tr><td><code>theme</code></td><td><code>"light" | "dark" | "auto"</code></td><td><code>"dark"</code></td><td>Colour palette; <code>auto</code> follows the OS scheme (terminal ignores).</td></tr>
 				<tr><td><code>aria-label</code></td><td><code>string</code></td><td><code>"Code"</code></td><td>Region label for screen readers.</td></tr>
 			</tbody>
 		</table>

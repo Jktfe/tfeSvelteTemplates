@@ -136,6 +136,30 @@ The component itself never changes state — appearance changes happen via prop 
 | `children` | `Snippet` | `undefined` | Custom content snippet — overrides `label`. |
 | `class` | `string` | `''` | Extra classes appended to the pill. |
 
+## Theming
+
+Follows the project-wide convention in `docs/THEMING.md`: chrome flips under `prefers-color-scheme: dark`, brand and semantic colours stay.
+
+Each `.badge-<tone>` class sets the same four tone tokens; the values below are the `neutral` tone (the other five follow the same pattern with their own hue). Solid fills are semantic and never flip; the soft tint, text and outline border are chrome and flip to a deep tint of the same hue.
+
+| Property | Light | Dark | Used by |
+|---|---|---|---|
+| `--badge-solid-fg` | `#ffffff` | *(unchanged — brand / semantic)* | `.badge-solid` |
+| `--badge-dismiss-hover-bg` | `rgba(0, 0, 0, 0.08)` | `rgba(255, 255, 255, 0.14)` | `.badge-dismiss:hover` |
+| `--badge-fg` | `#475569` | `#cbd5e1` | `.badge-soft`, `.badge-outline` |
+| `--badge-soft-bg` | `#f1f5f9` | `#1e293b` | `.badge-soft` |
+| `--badge-border` | `#cbd5e1` | `#475569` | `.badge-outline` |
+| `--badge-solid-bg` | `#475569` | *(unchanged — brand / semantic)* | `.badge-solid` |
+
+Override with doubled-class specificity so the rule beats the component's scoped (0,2,0) declaration:
+
+```css
+body .badge-brand.badge-brand {
+  --badge-solid-bg: #0f766e;
+  --badge-fg: #0f766e;
+}
+```
+
 ## Edge Cases
 
 | Situation | Behaviour |

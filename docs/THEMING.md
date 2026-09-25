@@ -89,6 +89,29 @@ These shipped together in PR #22 and prove the rule applies across four very dif
 | `RatingStars` | Architectural migration (SVG `fill=` attribute → CSS class + `var()`) | 3 | `--rating-star-empty`, `--rating-focus-ring` | `--rating-star-filled` (brand gold) |
 | `KbdShortcut` | Simple-additive (kbd cap is all chrome — no brand) | 7 | `--kbd-fg`, `--kbd-bg-top`, `--kbd-bg-bottom`, `--kbd-border`, `--kbd-shadow-inner`, `--kbd-shadow-drop`, `--kbd-sep-color` | *(none — kbd cap has no brand)* |
 
+### Later adopters (hard-coded-hex migration pass)
+
+| Component | Patch shape | Chrome (flips) | Brand / semantic (stays) |
+|-----------|-------------|----------------|--------------------------|
+| `BadgePill` | Greenfield, per-tone token set | `--badge-fg`, `--badge-soft-bg`, `--badge-border`, `--badge-dismiss-hover-bg` | `--badge-solid-bg`, `--badge-solid-fg` |
+| `AlertBanner` | Greenfield, per-variant token set | `--alert-bg`, `--alert-border`, `--alert-fg` (same hue, flipped lightness) | variant hue |
+| `UploadDropzone` | Partial-API extension (existing accent / success / danger) | `--upload-fg`, `--upload-surface-*`, `--upload-row-*`, `--upload-button-*`, `--upload-pill-*` | `--upload-accent`, `--upload-success`, `--upload-danger` |
+| `FolderFiles` | Greenfield, two sibling roots (cabinet + modal) | `--ff-surface`, `--ff-border`, `--ff-*-fg`, `--ff-cabinet-bg-*` | folder colours, `--ff-accent`, `--ff-item-border` |
+| `Navbar` | Migration from a partly shadowed hard-coded dark block; two sibling roots (bar + panel) | `--navbar-*` | host `--accent` (only its fallback lightens) |
+| `TickerTape` | Variant-scoped flip (only the transparent `minimal` variant) | `--tickertape-fg`, `-label`, `-value`, `-sep`, `-rule` | self-painted variants; deltas keep hue |
+| `CodeBlock` | Prop-driven palette + new `theme="auto"` | whole `--cb-*` palette under `auto` | `terminal` variant, diff tints |
+| `MeshGradient` | No-op — all brand, transparent host | *(none)* | palette colours |
+| `Tabs` | Greenfield | `--tabs-fg`, `--tabs-border`, `--tabs-tab-fg`, `--tabs-hover-bg`, `--tabs-pill-*` | `--tabs-accent` |
+| `Pagination` | Greenfield | `--pagination-fg`, `-bg`, `-border`, `-hover-bg`, `-muted`, `-disabled-bg`, `-ellipsis` | `--pagination-active-*`, `--pagination-focus-ring` |
+| `Avatar` | Simple-additive (one chrome token) | `--avatar-ring` | initials palette, `--avatar-status-*` |
+| `ProgressBar` | Greenfield | `--pb-label-fg`, `--pb-value-fg`, `--pb-track-bg` | `--pb-fill`, `--pb-success`, `--pb-warning`, `--pb-danger` |
+| `StatCard` | Greenfield | `--stat-bg`, `--stat-border*`, `--stat-muted`, `--stat-value-fg`, `--stat-subtle` | sentiment hue (lightness lifts on dark) |
+| `CopyButton` | Greenfield | `--copy-bg`, `--copy-fg`, `--copy-border*`, `--copy-bg-*`, `--copy-success-bg/fg` | `--copy-focus-ring`, `--copy-success-border` |
+| `PinInput` | Greenfield | `--pin-fg`, `--pin-bg`, `--pin-border`, `--pin-filled-*`, `--pin-disabled-*` | `--pin-accent` |
+| `Countdown` | Greenfield; `cards` format self-painted | `--countdown-fg`, `--countdown-muted` | `--countdown-card-*`, `--countdown-complete` |
+
+> **Semantic tints vs semantic fills.** For tone-driven components (`BadgePill`, `AlertBanner`, `UploadDropzone` status pills) the *hue* is semantic and never changes, but a pale pastel tint is really a surface — so its lightness flips to a deep tint of the same hue. Saturated fills (solid badges, progress fills) stay exactly as they are.
+
 The rule held identically across **greenfield, extension, migration, and additive** shapes — that's why this is convention, not a recipe.
 
 ---
