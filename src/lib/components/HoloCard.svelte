@@ -1,3 +1,46 @@
+<!--
+  ============================================================
+  HoloCard — Holographic Foil Card Wrapper
+  ============================================================
+  WHAT — Wraps content in a trading-card style holographic foil whose hue
+  and sheen shift as the pointer moves around the card.
+
+  WHY — Collectible-card flair for profile cards, badges, pricing tiers
+  or achievements, with no images or WebGL.
+
+  FEATURES
+  - Three intensities: subtle / iridescent / cosmic (saturation,
+    sheen strength, number of hue bands)
+  - Four palettes: rainbow / pastel / cosmic / gold
+  - Hue follows the pointer angle around the card centre
+  - Resets to neutral when the pointer leaves
+  - Pure helpers exported: pickIntensity, pickPalette, clamp01,
+    cursorAngle, hueAtAngle, sheenAtAngle, isReducedMotion
+
+  ACCESSIBILITY
+  - Decorative wrapper: slotted content stays in the DOM and a11y tree
+  - Foil and sheen overlays are aria-hidden and pointer-events: none
+  - Pointer handlers are no-ops under prefers-reduced-motion: reduce,
+    where CSS swaps in a calm, static foil and sheen
+
+  DEPENDENCIES — Zero. Pure CSS gradients, blend modes and custom properties.
+
+  PERFORMANCE — Pointer moves only update two numbers (hue, sheen)
+  written as CSS variables; no layout work.
+
+  USAGE
+      <HoloCard intensity="cosmic" palette="gold">
+        <div class="card">Legendary</div>
+      </HoloCard>
+
+  PROPS
+  | Prop      | Type                                     | Default      | Description |
+  |-----------|------------------------------------------|--------------|-------------|
+  | intensity | 'subtle' | 'iridescent' | 'cosmic'       | 'iridescent' | Foil strength |
+  | palette   | 'rainbow' | 'pastel' | 'cosmic' | 'gold' | 'rainbow'    | Foil colours |
+  | children  | Snippet                                  | —            | Wrapped content |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type IntensityName = 'subtle' | 'iridescent' | 'cosmic';
 	export type PaletteName = 'rainbow' | 'pastel' | 'cosmic' | 'gold';

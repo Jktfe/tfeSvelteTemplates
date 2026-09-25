@@ -1,3 +1,46 @@
+<!--
+  ============================================================
+  FanDeckCarousel — GSAP Fanned Card Carousel
+  ============================================================
+  WHAT — Lays cards out like a fanned hand of playing cards; the selected
+  card sits upright in the centre and the rest tilt, shrink and fade.
+
+  WHY — A tactile alternative to a flat carousel for products, playlists,
+  feature highlights or gallery entries.
+
+  FEATURES
+  - Server-rendered fan layout via inline transforms (works without JS)
+  - GSAP tweens the fan after mount (0.55s, power3.out)
+  - Click any card, or use the previous/next buttons; wraps both ways
+  - Takes the short way round the deck so the fan stays balanced
+  - Pure helpers exported: normalizeIndex, deckTransform
+
+  ACCESSIBILITY
+  - Cards are native buttons with aria-pressed on the selected card
+  - Caption below is an aria-live="polite" region
+  - Previous/next buttons have descriptive aria-labels
+  - prefers-reduced-motion: reduce skips GSAP and CSS transitions
+
+  DEPENDENCIES — gsap, lazily imported through $lib/gsapMotion
+  (loadGsap, prefersReducedMotion). Copy that helper alongside.
+
+  PERFORMANCE — Only transform and opacity animate. Cards more than four
+  places from the selection are hidden, so large decks stay cheap.
+
+  USAGE
+      <FanDeckCarousel items={[
+        { title: 'Sequence', eyebrow: 'Reveal', description: 'Staggered entry.', tone: '#2563eb' },
+        { title: 'Shock', eyebrow: 'Text', description: 'Letter impact.', tone: '#db2777' }
+      ]} initialIndex={1} />
+
+  PROPS
+  | Prop         | Type          | Default         | Description |
+  |--------------|---------------|-----------------|-------------|
+  | items        | FanDeckItem[] | 4 sample cards  | Cards (title, description, eyebrow?, tone?) |
+  | initialIndex | number        | 0               | Card selected once mounted (wrapped) |
+  | class        | string        | ''              | Extra classes on the root section |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface FanDeckItem {
 		title: string;

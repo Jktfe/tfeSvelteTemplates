@@ -1,3 +1,48 @@
+<!--
+  ============================================================
+  KineticCanvasField — Pointer Trail and Click-Burst Particle Layer
+  ============================================================
+  WHAT — Wraps content in a canvas particle layer: moving the pointer
+  leaves a glowing trail and clicking fires a radial burst of sparks.
+
+  WHY — Playful, bounded interactivity for hero panels and demo stages
+  where content must stay clickable above the effect.
+
+  FEATURES
+  - Three palettes: aurora / ember / mono (hue ranges)
+  - Click bursts of `density` particles; trail bursts of density / 12
+  - Frame-rate independent friction plus gentle gravity
+  - Hard cap of 260 live particles; frame delta clamped to 40ms
+  - Canvas resized with ResizeObserver; device pixel ratio capped at 2
+  - Pure helpers exported: clampParticleCount, createKineticParticle,
+    stepKineticParticle
+
+  ACCESSIBILITY
+  - Canvas is aria-hidden and pointer-events: none; content sits above it
+  - prefers-reduced-motion: reduce attaches no listeners or ticker and
+    hides the canvas with CSS
+
+  DEPENDENCIES — gsap (only gsap.ticker), lazily imported through
+  $lib/gsapMotion. Copy that helper alongside.
+
+  PERFORMANCE — One shared ticker callback; particle cap bounds the
+  draw cost; listeners and ticker removed on unmount.
+
+  USAGE
+      <KineticCanvasField density={96} palette="aurora">
+        <section>Interactive content stays above the canvas.</section>
+      </KineticCanvasField>
+
+  PROPS
+  | Prop     | Type                          | Default  | Description |
+  |----------|-------------------------------|----------|-------------|
+  | density  | number                        | 72       | Particles per click burst (clamped 8–260) |
+  | trail    | boolean                       | true     | Emit a trail on pointer move |
+  | palette  | 'aurora' | 'ember' | 'mono'   | 'aurora' | Particle hue range |
+  | children | Snippet                       | —        | Content above the canvas |
+  | class    | string                        | ''       | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	import { clamp } from '$lib/gsapMotion';
 

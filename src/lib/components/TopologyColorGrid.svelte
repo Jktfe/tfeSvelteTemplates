@@ -1,3 +1,54 @@
+<!--
+  ============================================================
+  TopologyColorGrid — 3D Colour-System Topology Scene
+  ============================================================
+  WHAT — Presents a palette as swatch cards floating at different heights
+  above a rippling Three.js wireframe plane, with extrude/flatten and
+  light/dark toggles.
+
+  WHY — An art-directed hero for brand and design-system pages; inspired
+  by Aura's Interactive 3D Topology Color Grid.
+
+  FEATURES
+  - Seven-slot CSS 3D layout table; flatten sets every depth to 0
+  - Click a card to make it active
+  - Built-in theme and extrusion toggles
+  - Hex, RGB triplet and auto-contrast label text on every card
+  - Client-only Three.js wireframe (skipped without WebGL2)
+  - GSAP staggered entry reveal
+  - Pure helpers exported: normalizeHex, hexToRgbTriplet,
+    formatRgbTriplet, readableTextColor, topologyCardLayout
+
+  ACCESSIBILITY
+  - Cards are native buttons with aria-pressed
+  - Toggles are native buttons with aria-pressed
+  - Wireframe canvas is aria-hidden
+  - prefers-reduced-motion: reduce renders one still wireframe frame
+    and skips the entry reveal
+
+  DEPENDENCIES — three (wireframe plane) and gsap (entry reveal), both
+  lazily imported; $lib/gsapMotion for loading and the reduced-motion check.
+
+  PERFORMANCE — Cards are DOM, not WebGL. The wireframe updates about
+  1,100 vertices per frame and disposes geometry, material and renderer
+  on unmount.
+
+  USAGE
+      <TopologyColorGrid title="Chromatic Substrate Topology" extruded={true} theme="dark" />
+
+  PROPS
+  | Prop            | Type              | Default                        | Description |
+  |-----------------|-------------------|--------------------------------|-------------|
+  | swatches        | TopologySwatch[]  | defaultTopologySwatches        | Colours (id, name, hex, label) |
+  | title           | string            | 'Chromatic Substrate Topology' | Heading |
+  | subtitle        | string            | 'Spatial Z-Index Mapping'      | Sub-heading |
+  | extruded        | boolean           | true                           | Initial extrusion |
+  | interactive     | boolean           | true                           | Allow selecting cards |
+  | theme           | 'light' | 'dark'  | 'light'                        | Initial theme |
+  | showThemeToggle | boolean           | true                           | Show the theme button |
+  | class           | string            | ''                             | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface TopologySwatch {
 		id: string;

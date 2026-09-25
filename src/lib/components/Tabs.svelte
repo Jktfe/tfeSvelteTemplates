@@ -1,3 +1,48 @@
+<!--
+  ============================================================
+  Tabs — WAI-ARIA Tabbed Content Switcher
+  ============================================================
+  WHAT — A row (or column) of tabs that switches the content panel below,
+  with full tablist semantics and keyboard support.
+
+  WHY — Grouping related views on one page without navigation.
+
+  FEATURES
+  - Horizontal or vertical orientation
+  - Underline or pill visual variant
+  - $bindable active tab id
+  - Optional per-tab icon and disabled state (skipped by keyboard focus)
+  - Panel rendered via the `panel` snippet, which receives the active id
+
+  ACCESSIBILITY
+  - role="tablist" / "tab" / "tabpanel" with aria-selected,
+    aria-controls and aria-labelledby wired up
+  - Roving tabindex: exactly one tab is tabbable at a time
+  - ArrowLeft/Right (or Up/Down when vertical) move focus and wrap;
+    Home/End jump; Enter/Space activate the focused tab
+  - prefers-reduced-motion: reduce removes tab transitions
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Only the active panel renders.
+
+  USAGE
+      <Tabs tabs={[{ id: 'a', label: 'Overview' }, { id: 'b', label: 'API' }]} bind:active>
+        {#snippet panel(id)}<p>Panel {id}</p>{/snippet}
+      </Tabs>
+
+  PROPS
+  | Prop        | Type                       | Default      | Description |
+  |-------------|----------------------------|--------------|-------------|
+  | tabs        | TabItem[]                  | required     | Tabs ({ id, label, icon?, disabled? }) |
+  | active      | string (bindable)          | first tab id | Active tab id |
+  | orientation | 'horizontal' | 'vertical'  | 'horizontal' | Layout and arrow-key axis |
+  | variant     | 'underline' | 'pill'       | 'underline'  | Visual style |
+  | ariaLabel   | string                     | 'Tabs'       | Label for the tablist |
+  | panel       | Snippet<[string]>          | —            | Renders the active panel |
+  | class       | string                     | ''           | Extra classes |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Tabs

@@ -1,25 +1,38 @@
 <!--
-	AuthStatus Component
+  ============================================================
+  AuthStatus — Better Auth Configuration Badge
+  ============================================================
+  WHAT — A pill badge that shows whether Better Auth is configured
+  ("Auth Enabled") or the app is running without it ("Auth Offline").
 
-	Visual indicator for Better Auth configuration status.
-	Follows the DatabaseStatus component pattern for consistency.
+  WHY — Follows the DatabaseStatus component pattern for consistency, so
+  demo pages can be honest about which optional services are live.
 
-	Features:
-	- Clear visual distinction between configured and demo mode
-	- Emoji icons for quick recognition (🔐 configured, 🔓 demo)
-	- Semantic colour coding (green for configured, grey for demo)
-	- Accessible with ARIA live region for status updates
-	- Reduced motion support
-	- Zero dependencies
+  FEATURES
+  - Clear visual distinction between configured and demo mode
+  - Emoji icons for quick recognition (🔐 configured, 🔓 demo)
+  - Semantic colour coding (green for configured, grey for demo)
+  - Hover tooltip explaining which env vars enable auth
 
-	Usage:
-		<AuthStatus isConfigured={data.isConfigured} />
+  ACCESSIBILITY
+  - Accessible with ARIA live region for status updates
+    (role="status", aria-live="polite")
+  - Icon is aria-hidden; the text label carries the meaning
+  - Reduced motion support
 
-	Props:
-	- isConfigured: boolean - Whether Better Auth is configured
-	- class: string - Additional CSS classes (optional)
+  DEPENDENCIES — Zero. Props type comes from $lib/types (AuthStatusProps).
 
-	@component
+  PERFORMANCE — Three derived strings; negligible.
+
+  USAGE
+      <AuthStatus isConfigured={data.isConfigured} />
+
+  PROPS
+  | Prop         | Type    | Default  | Description |
+  |--------------|---------|----------|-------------|
+  | isConfigured | boolean | required | Whether Better Auth is configured |
+  | class        | string  | ''       | Additional CSS classes (optional) |
+  ============================================================
 -->
 <script lang="ts">
 	import type { AuthStatusProps } from '$lib/types';

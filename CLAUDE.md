@@ -198,7 +198,7 @@ src/
 │   ├── server/             # auth, betterAuth, dataSource, cards, dataGrid, editorData,
 │   │                       # expandingCards, linkPreviews, testimonials, sankeyData,
 │   │                       # calendarData, folderFiles, maps
-│   ├── data/storyboards/   # ExplainerCanvas data per component
+│   ├── data/storyboards/   # Optional ExplainerCanvas data (currently shineborder, timeline)
 │   ├── registry/           # Editorial registries (gsap-suite, ...)
 │   ├── gsap/               # GSAP utilities
 │   ├── styles/             # Shared tokens / theme CSS
@@ -220,7 +220,7 @@ src/
 │   ├── (protected)/        # Auth-required (dashboard, profile)
 │   ├── auth/               # sign-in, sign-up, account
 │   ├── api/                # REST endpoints
-│   ├── storyboard/[component]/  # Dynamic ExplainerCanvas per component
+│   ├── storyboard/[component]/  # Dynamic ExplainerCanvas for components with storyboard data
 │   ├── navbar/sandbox/     # Iframe sandbox for embedded preview (root layout suppresses chrome)
 │   └── <component>/        # Per-component demo (uses ComponentPageShell)
 ├── hooks.server.ts         # Better Auth middleware
@@ -249,7 +249,7 @@ docs/                       # THEMING.md, DATAGRID_FORMATTING.md,
 8. Create demo at `src/routes/componentname/+page.svelte`, wrapping content in `<ComponentPageShell>` snippets, with a real Live Demo block (see "Demo conventions")
 9. Register in `src/lib/componentCatalog.ts` — **the `usage:` field must be real copy-pasteable Svelte 5 code** (script + sample data + the actual mount), not the `<Foo />` placeholder. Multi-line is fine; consumers paste this verbatim into a `+page.svelte`.
 10. Add the doc path to `GOLD_STANDARD_DOCS` in `src/lib/componentDocs.test.ts` so the structural test pins it (902 assertions enforce the 7 required H2 sections + no YAML)
-11. Add storyboard data at `src/lib/data/storyboards/componentname.ts` (used by `/storyboard/[component]`)
+11. *(Optional)* Add storyboard data at `src/lib/data/storyboards/componentname.ts` and register it in `src/lib/data/storyboards/index.ts` (used by `/storyboard/[component]`)
 12. Verify the API table in the demo page matches the actual `$props()` block — every documented prop must exist on the component, every common config prop should have a row (omit the universal `class` forwarding prop unless it does something special)
 
 ## Conventions
@@ -418,7 +418,7 @@ A small set of tests time out only when run as part of the full `vitest` paralle
 
 ## Storyboards
 
-Each component has an interactive storyboard at `/storyboard/[component]`. Data lives in `src/lib/data/storyboards/[component].ts` and is loaded dynamically by the route. The standard sections (Overview / Visual Guide / Props / Code Examples / Accessibility / Tips) are followed across storyboards — copy an existing file when adding a new one.
+Storyboards are optional. Components with storyboard data (currently `shineborder` and `timeline`) get an interactive storyboard at `/storyboard/[component]`. Data lives in `src/lib/data/storyboards/[component].ts`, is registered in the `storyboards` map in `src/lib/data/storyboards/index.ts`, and is loaded dynamically by the route. The standard sections (Overview / Visual Guide / Props / Code Examples / Accessibility / Tips) are followed across storyboards — copy an existing file when adding a new one.
 
 ## Troubleshooting
 

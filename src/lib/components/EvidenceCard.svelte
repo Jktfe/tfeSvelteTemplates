@@ -1,3 +1,54 @@
+<!--
+  ============================================================
+  EvidenceCard — Proof-of-Work Summary Card
+  ============================================================
+  WHAT — A card summarising the evidence for a piece of work: owner,
+  timestamp, key/value facts, command results with truncated output, an
+  optional screenshot link and an overall pass/fail status.
+
+  WHY — Drop into review threads, PR dashboards or agent reports when
+  "it works" needs receipts.
+
+  FEATURES
+  - Five statuses: pass / fail / running / blocked / info, each with a tone
+  - Overall status derived from commands when not supplied
+    (any fail → fail, then blocked, then running, all pass → pass)
+  - Command output trimmed to 220 characters with an ellipsis
+  - Optional linked evidence items and screenshot link
+  - Pure helpers exported: statusLabel, statusTone, truncateOutput,
+    overallEvidenceStatus
+
+  ACCESSIBILITY
+  - <article> with an aria-label naming the evidence
+  - Status always written as text, never colour alone
+  - Facts use a <dl>; command list is labelled
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Static render; truncation keeps long logs cheap.
+
+  USAGE
+      <EvidenceCard
+        title="Docs gate"
+        owner="Agent B"
+        commands={[{ command: 'bun run check', status: 'pass', duration: '41s' }]}
+      />
+
+  PROPS
+  | Prop          | Type              | Default      | Description |
+  |---------------|-------------------|--------------|-------------|
+  | title         | string            | required     | Card heading |
+  | owner         | string            | 'Unassigned' | Who owns the work |
+  | status        | EvidenceStatus    | derived      | Overrides the status derived from commands |
+  | summary       | string            | ''           | Short summary paragraph |
+  | timestamp     | string            | ''           | When the evidence was captured |
+  | commands      | EvidenceCommand[] | []           | Commands with status, duration and output |
+  | items         | EvidenceItem[]    | []           | Label/value facts, optionally linked |
+  | screenshotHref| string            | —            | Link to screenshot proof |
+  | class         | string            | ''           | Extra classes on the article |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type EvidenceStatus = 'pass' | 'fail' | 'running' | 'blocked' | 'info';
 

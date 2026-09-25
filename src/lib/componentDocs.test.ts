@@ -186,7 +186,30 @@ const GOLD_STANDARD_DOCS = [
 	// Orphans brought to standard (previously undocumented / uncatalogued)
 	'src/lib/components/StaggeredMenu.md',
 	'src/lib/components/InfiniteCardSlider.md',
-	'src/lib/components/SearchBar.md'
+	'src/lib/components/SearchBar.md',
+
+	// Docs-headers batch: GSAP suite, workflow tooling and QA surfaces
+	'src/lib/components/CopyPasteComposer.md',
+	'src/lib/components/ExpandableSankey.md',
+	'src/lib/components/FanDeckCarousel.md',
+	'src/lib/components/GsapFlipGrid.md',
+	'src/lib/components/GsapRevealSequence.md',
+	'src/lib/components/GsapSplitTextHero.md',
+	'src/lib/components/HoldToConfirm.md',
+	'src/lib/components/KineticCanvasField.md',
+	'src/lib/components/TopologyColorGrid.md',
+	'src/lib/components/DatabaseStatus.md',
+	'src/lib/components/AgentLaneBoard.md',
+	'src/lib/components/CardStackMotionFlip.md',
+	'src/lib/components/ComponentHealthMatrix.md',
+	'src/lib/components/DataVizInspector.md',
+	'src/lib/components/EvidenceCard.md',
+	'src/lib/components/InteractionLab.md',
+	'src/lib/components/MarqueeDraggable.md',
+	'src/lib/components/MediaLightboxPro.md',
+	'src/lib/components/RoutePreviewRail.md',
+	'src/lib/components/ThemeTokenInspector.md',
+	'src/lib/components/TokenSwatchGrid.md'
 ] as const;
 
 // UTF-8 BOM (U+FEFF) — constructed via String.fromCharCode so the literal

@@ -1,3 +1,43 @@
+<!--
+  ============================================================
+  CopyPasteComposer — Catalogue Handoff Bundle Builder
+  ============================================================
+  WHAT — Pick a catalogue component, tick the artefacts you want, and get
+  the file list, install/copy commands, checklist and usage snippet.
+
+  WHY — Turns catalogue metadata into a practical "copy this into your
+  repo" pack for people or agents.
+
+  FEATURES
+  - Source is always included; docs, demo, tests and related files toggle
+  - Test files in relatedFiles are only bundled when Tests is on; other
+    related files stay behind the Related files toggle
+  - bun / pnpm / npm / yarn install lines and a custom target root
+  - Deduplicated mkdir -p and cp commands
+  - Pure helpers exported: deriveSelectedFiles, deriveInstallCommands,
+    dependencyInstallCommand, testCandidatesFor, checklistFor, normalisePath
+
+  ACCESSIBILITY
+  - Native select, text input and checkboxes inside labelled fields
+  - Panels are sections labelled by their headings
+  - Command block is a labelled region
+  - No motion
+
+  DEPENDENCIES — Zero beyond Svelte (svelte/reactivity SvelteSet).
+
+  PERFORMANCE — All outputs are $derived from toggle state; instant.
+
+  USAGE
+      <CopyPasteComposer entries={catalogEntries} initialHref="/speeddial" />
+
+  PROPS
+  | Prop        | Type                    | Default               | Description |
+  |-------------|-------------------------|-----------------------|-------------|
+  | entries     | CopyPasteCatalogEntry[] | required              | Catalogue rows to choose from |
+  | title       | string                  | 'Copy-paste composer' | Heading |
+  | initialHref | string                  | first entry           | Entry to preselect |
+  ============================================================
+-->
 <script lang="ts" module>
 	import { SvelteSet } from 'svelte/reactivity';
 

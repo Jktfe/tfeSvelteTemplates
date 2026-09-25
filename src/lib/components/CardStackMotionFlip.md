@@ -50,47 +50,6 @@ ROLL ANIMATION (state machine):
 
 ---
 
-## The State Machine
-
-CardStackMotionFlip uses a finite state machine to manage complex multi-phase animations:
-
-```
-                                    ┌─────────────┐
-                                    │    idle     │◄────────────────┐
-                                    └─────┬───────┘                 │
-                                          │ pointer down            │
-                                          ▼                         │
-                                    ┌─────────────┐                 │
-                                    │  dragging   │                 │
-                                    └─────┬───────┘                 │
-                                          │ pointer up              │
-                          ┌───────────────┼───────────────┐         │
-                          │               │               │         │
-              threshold   │    threshold  │   threshold   │ no      │
-              met (left)  │    met (up)   │   met (down)  │ threshold│
-                          ▼               ▼               ▼         │
-                   ┌──────────┐    ┌──────────┐    ┌──────────┐     │
-                   │rolling-L │    │rolling-U │    │rolling-D │ ────┘
-                   └────┬─────┘    └────┬─────┘    └────┬─────┘
-                        │               │               │
-                        └───────────────┼───────────────┘
-                                        │ rollDuration ms
-                                        ▼
-                              ┌─────────────────┐
-                              │  repositioning  │
-                              └────────┬────────┘
-                                       │ 16ms
-                                       ▼
-                              ┌─────────────────┐
-                              │    entering     │
-                              └────────┬────────┘
-                                       │ enterDuration ms
-                                       ▼
-                                    (back to idle)
-```
-
----
-
 ## 3D Rotation Explained
 
 When rolling, the card rotates 180° on the appropriate axis:
@@ -172,6 +131,47 @@ function handlePointerUp() {
 ```
 
 The `scrollLock` utility coordinates with other components (modals, drawers) to prevent conflicts.
+
+---
+
+## State Flow Diagram
+
+CardStackMotionFlip uses a finite state machine to manage complex multi-phase animations:
+
+```
+                                    ┌─────────────┐
+                                    │    idle     │◄────────────────┐
+                                    └─────┬───────┘                 │
+                                          │ pointer down            │
+                                          ▼                         │
+                                    ┌─────────────┐                 │
+                                    │  dragging   │                 │
+                                    └─────┬───────┘                 │
+                                          │ pointer up              │
+                          ┌───────────────┼───────────────┐         │
+                          │               │               │         │
+              threshold   │    threshold  │   threshold   │ no      │
+              met (left)  │    met (up)   │   met (down)  │ threshold│
+                          ▼               ▼               ▼         │
+                   ┌──────────┐    ┌──────────┐    ┌──────────┐     │
+                   │rolling-L │    │rolling-U │    │rolling-D │ ────┘
+                   └────┬─────┘    └────┬─────┘    └────┬─────┘
+                        │               │               │
+                        └───────────────┼───────────────┘
+                                        │ rollDuration ms
+                                        ▼
+                              ┌─────────────────┐
+                              │  repositioning  │
+                              └────────┬────────┘
+                                       │ 16ms
+                                       ▼
+                              ┌─────────────────┐
+                              │    entering     │
+                              └────────┬────────┘
+                                       │ enterDuration ms
+                                       ▼
+                                    (back to idle)
+```
 
 ---
 
@@ -264,6 +264,3 @@ CardStackMotionFlip.test.ts     # Unit tests
 CardStackMotionFlip.md          # This explainer
 ```
 
----
-
-*Last updated: 26 December 2025*

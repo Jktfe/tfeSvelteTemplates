@@ -1,3 +1,52 @@
+<!--
+  ============================================================
+  AgentLaneBoard — Delivery Lanes, Gates and Blockers at a Glance
+  ============================================================
+  WHAT — A board of work lanes (one per agent or owner) showing status,
+  acceptance gate, ETA, touched files and evidence, with a completion
+  score and a "next attention" callout.
+
+  WHY — Reach for it when several people or agents are shipping in
+  parallel and the room needs one shared view of who is blocked, who
+  needs review and what is done.
+
+  FEATURES
+  - Four lane states: active / review / blocked / done, each with a tone
+  - Summary buttons double as filters (click again to clear)
+  - Completion percentage from the share of done lanes
+  - "Next attention" picks the first blocked, then review, then active lane
+  - Optional per-lane file list and evidence list
+  - Pure helpers exported from <script module> for tests and agents:
+    laneStateLabel, laneStateTone, countLanesByState,
+    completionPercent, nextActionLane
+
+  ACCESSIBILITY
+  - <section> labelled by its heading; score has an aria-label
+  - Filters are native buttons (Tab + Enter/Space)
+  - File and evidence lists carry per-lane aria-labels
+  - Status is always written as text, never colour alone
+  - No motion, so nothing to reduce
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Counts and filters are $derived from the lanes array;
+  fine for dozens of lanes. Keep lane ids unique (they key the list).
+
+  USAGE
+      <AgentLaneBoard lanes={[
+        { id: 'docs', title: 'Docs pass', owner: 'Agent A', status: 'review',
+          gate: 'componentDocs tests green' }
+      ]} />
+
+  PROPS
+  | Prop     | Type         | Default                  | Description |
+  |----------|--------------|--------------------------|-------------|
+  | lanes    | AgentLane[]  | required                 | Lanes to show (id, title, owner, status, gate, eta?, files?, evidence?) |
+  | title    | string       | 'Agent lane board'       | Board heading |
+  | subtitle | string       | Short sample sentence    | Line under the heading |
+  | class    | string       | ''                       | Extra classes on the root section |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type LaneState = 'active' | 'review' | 'blocked' | 'done';
 

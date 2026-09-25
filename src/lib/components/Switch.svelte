@@ -1,3 +1,49 @@
+<!--
+  ============================================================
+  Switch — Accessible Boolean Toggle
+  ============================================================
+  WHAT — An iOS-style on/off switch with an optional label, bindable
+  checked state and three colour variants.
+
+  WHY — For settings that take effect immediately; use a checkbox in
+  forms that are submitted later.
+
+  FEATURES
+  - $bindable checked for two-way binding
+  - Label on the left or right; clicking the label flips the switch
+  - Three sizes (sm / md / lg) and variants (default / success / danger)
+  - onChange callback with the new value
+  - Disabled state
+
+  ACCESSIBILITY
+  - Native <button role="switch"> with aria-checked, so screen readers
+    announce "switch, on/off"; Space and Enter work with no shim
+  - aria-label from ariaLabel, then label, then "Toggle"
+  - Thumb is aria-hidden
+  - prefers-reduced-motion: reduce disables the thumb animation
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — The thumb animates transform only.
+
+  USAGE
+      <Switch bind:checked={notifications} label="Email notifications" />
+
+  PROPS
+  | Prop          | Type                               | Default   | Description |
+  |---------------|------------------------------------|-----------|-------------|
+  | checked       | boolean (bindable)                 | false     | Current state |
+  | label         | string                             | ''        | Visible label |
+  | labelPosition | 'left' | 'right'                   | 'right'   | Label side |
+  | size          | 'sm' | 'md' | 'lg'                 | 'md'      | Track size |
+  | variant       | 'default' | 'success' | 'danger'   | 'default' | On-state colour |
+  | disabled      | boolean                            | false     | Block interaction |
+  | id            | string                             | generated | Id linking label and button |
+  | ariaLabel     | string                             | —         | Accessible name override |
+  | onChange      | (checked: boolean) => void         | —         | Fires after each toggle |
+  | class         | string                             | ''        | Extra classes |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Switch
