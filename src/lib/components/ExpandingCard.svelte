@@ -227,9 +227,17 @@
 			height: 10rem;
 		}
 	}
+
+	/* Reduced motion: the card still swaps layout on click, it just does so
+	   instantly instead of morphing width/grid tracks, and hover no longer lifts. */
+	@media (prefers-reduced-motion: reduce) {
+		.layouta,
+		.expanding-card {
+			transition: none;
+		}
+
+		.layouta:hover {
+			transform: none;
+		}
+	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- Signed off: 26.12.25 -->
-
-<!-- RFO Review: 27.12.25 - No optimisation opportunities identified, component optimal -->

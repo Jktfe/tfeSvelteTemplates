@@ -15,6 +15,7 @@
 	ACCESSIBILITY
 	• Single <footer> landmark
 	• External links carry rel="noopener noreferrer"
+	• Hover transitions are disabled under prefers-reduced-motion
 
 	USAGE
 	<TfeFooter />
@@ -233,6 +234,14 @@
 		}
 		.t-foot__top {
 			grid-template-columns: 1fr;
+		}
+	}
+
+	/* Reduced motion: hover colour changes land instantly. */
+	@media (prefers-reduced-motion: reduce) {
+		.t-foot__col a,
+		.t-btn {
+			transition: none;
 		}
 	}
 </style>

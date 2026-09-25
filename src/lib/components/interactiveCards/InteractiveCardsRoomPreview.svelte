@@ -136,4 +136,17 @@
 			width: auto;
 		}
 	}
+
+	/* Reduced motion: skip the slide-up and the cross-fade. The overlay still
+	   toggles visibility, it just does so without travelling 20px. */
+	@media (prefers-reduced-motion: reduce) {
+		.room-overlay,
+		.painting-slot img {
+			transition: none;
+		}
+
+		.room-overlay {
+			transform: none;
+		}
+	}
 </style>
