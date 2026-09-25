@@ -25,6 +25,7 @@
 	// [NTL] Control how the switch looks and behaves!
 	let {
 		name,
+		id,
 		label,
 		checked = $bindable(false), // [CR] Two-way binding for on/off state
 		helpText = '',
@@ -38,10 +39,16 @@
 		oninput
 	}: SwitchFieldProps = $props();
 
+	// Every instance gets its own id prefix from Svelte, so two forms with the
+	// same field names on one page never share ids. `name` stays the form
+	// submission key; pass `id` only when something outside needs to target
+	// the control (e.g. a skip link or an external <label for>).
+	const uid = $props.id();
+
 	// [CR] DERIVED VALUES - Computed IDs for accessibility
-	let fieldId = $derived(`field-${name}`);
-	let helpId = $derived(`${name}-help`);
-	let errorId = $derived(`${name}-error`);
+	let fieldId = $derived(id ?? `field-${uid}`);
+	let helpId = $derived(`${fieldId}-help`);
+	let errorId = $derived(`${fieldId}-error`);
 
 	// [CR] Error state for conditional styling
 	let hasError = $derived(touched && !!error);
@@ -67,7 +74,7 @@
 	}
 </script>
 
-<FormField {name} {label} {required} {error} {touched} {helpText}>
+<FormField id={fieldId} {label} {required} {error} {touched} {helpText}>
 	<label
 		class="switch-container"
 		class:disabled

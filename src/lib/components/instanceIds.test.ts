@@ -39,6 +39,19 @@ import TopologyColorGrid from './TopologyColorGrid.svelte';
 import UploadDropzone from './UploadDropzone.svelte';
 import WaveText from './WaveText.svelte';
 import ConnectionLines from './ExplainerCanvas/ConnectionLines.svelte';
+import CheckboxField from './forms/CheckboxField.svelte';
+import CheckboxGroup from './forms/CheckboxGroup.svelte';
+import ColorField from './forms/ColorField.svelte';
+import DateField from './forms/DateField.svelte';
+import FormsTestHarness from './forms/FormsTestHarness.test.svelte';
+import NumberField from './forms/NumberField.svelte';
+import RadioGroup from './forms/RadioGroup.svelte';
+import RangeField from './forms/RangeField.svelte';
+import SelectField from './forms/SelectField.svelte';
+import SwitchField from './forms/SwitchField.svelte';
+import TextareaField from './forms/TextareaField.svelte';
+import TextField from './forms/TextField.svelte';
+import TimeField from './forms/TimeField.svelte';
 import SearchPanel from './ExplainerCanvas/SearchPanel.svelte';
 
 const specs: DataVizSpec[] = [
@@ -84,12 +97,51 @@ interface Case {
 	// Components have different prop shapes; the table only needs "mountable".
 	component: Component<any>;
 	props: Record<string, unknown>;
-	/**
-	 * Ids owned by a nested shared primitive rather than this component (the
-	 * forms family derives ids from each field's `name`), left out of the check.
-	 */
-	ignoreIds?: RegExp;
 }
+
+// Forms family: identical `name`s on purpose — that is exactly what two copies
+// of the same form on one page look like. Touched + error + help text so every
+// help / error / char-count element (and every id pointing at it) renders.
+const fieldOptions = [
+	{ value: 'a', label: 'Alpha' },
+	{ value: 'b', label: 'Beta' }
+];
+const fieldCommon = { helpText: 'Help', error: 'Error', touched: true };
+const formCases: Case[] = [
+	{ name: 'FormsTestHarness (full form)', component: FormsTestHarness, props: {} },
+	{ name: 'TextField', component: TextField, props: { name: 'email', label: 'Email', ...fieldCommon } },
+	{
+		name: 'TextareaField',
+		component: TextareaField,
+		props: { name: 'bio', label: 'Bio', maxlength: 100, showCharCount: true, ...fieldCommon }
+	},
+	{ name: 'NumberField', component: NumberField, props: { name: 'age', label: 'Age', ...fieldCommon } },
+	{
+		name: 'SelectField',
+		component: SelectField,
+		props: { name: 'country', label: 'Country', options: fieldOptions, ...fieldCommon }
+	},
+	{
+		name: 'RadioGroup',
+		component: RadioGroup,
+		props: { name: 'plan', label: 'Plan', options: fieldOptions, ...fieldCommon }
+	},
+	{ name: 'CheckboxField', component: CheckboxField, props: { name: 'terms', label: 'Terms', ...fieldCommon } },
+	{
+		name: 'CheckboxGroup',
+		component: CheckboxGroup,
+		props: { name: 'topics', label: 'Topics', options: fieldOptions, ...fieldCommon }
+	},
+	{
+		name: 'RangeField',
+		component: RangeField,
+		props: { name: 'volume', label: 'Volume', min: 0, max: 10, ...fieldCommon }
+	},
+	{ name: 'DateField', component: DateField, props: { name: 'start', label: 'Start', ...fieldCommon } },
+	{ name: 'TimeField', component: TimeField, props: { name: 'at', label: 'Time', ...fieldCommon } },
+	{ name: 'SwitchField', component: SwitchField, props: { name: 'alerts', label: 'Alerts', ...fieldCommon } },
+	{ name: 'ColorField', component: ColorField, props: { name: 'accent', label: 'Accent', ...fieldCommon } }
+];
 
 const cases: Case[] = [
 	{ name: 'GsapSplitTextHero', component: GsapSplitTextHero, props: {} },
@@ -98,7 +150,7 @@ const cases: Case[] = [
 	{ name: 'TokenSwatchGrid', component: TokenSwatchGrid, props: { tokens } },
 	{ name: 'InteractionLab', component: InteractionLab, props: { scenarios } },
 	{ name: 'CopyPasteComposer', component: CopyPasteComposer, props: { entries: [composerEntry] } },
-	{ name: 'Editor', component: Editor, props: {}, ignoreIds: /^field-|-error$/ },
+	{ name: 'Editor', component: Editor, props: {} },
 	{ name: 'UploadDropzone', component: UploadDropzone, props: {} },
 	{ name: 'DataGridFilters', component: DataGridFilters, props: { initiallyExpanded: true } },
 	{ name: 'LiquidTabBar', component: LiquidTabBar, props: { tabs: [{ id: 't1', label: 'Tab 1' }] } },
@@ -122,14 +174,15 @@ const cases: Case[] = [
 			query: 'al',
 			results: [{ card: cards[0], path: ['Alpha'], matchField: 'title', score: 1 }]
 		}
-	}
+	},
+	...formCases
 ];
 
 /** Every id an element in `root` points at, via ARIA idrefs, label[for] or url(#)/href="#". */
 function referencedIds(root: Element): string[] {
 	const ids: string[] = [];
 	for (const el of root.querySelectorAll('*')) {
-		for (const attr of ['aria-labelledby', 'aria-controls', 'aria-describedby', 'for']) {
+		for (const attr of ['aria-labelledby', 'aria-controls', 'aria-describedby', 'aria-errormessage', 'for']) {
 			const value = el.getAttribute(attr);
 			if (value) ids.push(...value.split(/\s+/).filter(Boolean));
 		}
@@ -152,13 +205,12 @@ describe('per-instance ids ($props.id)', () => {
 		const first = render(c.component, { props: c.props });
 		const second = render(c.component, { props: c.props });
 
-		const ignored = (id: string) => c.ignoreIds?.test(id) ?? false;
-		const allIds = [...document.querySelectorAll('[id]')].map((el) => el.id).filter((id) => !ignored(id));
+		const allIds = [...document.querySelectorAll('[id]')].map((el) => el.id);
 		const duplicates = allIds.filter((id, index) => allIds.indexOf(id) !== index);
 		expect(duplicates).toEqual([]);
 
 		for (const { container } of [first, second]) {
-			const refs = referencedIds(container).filter((id) => !ignored(id));
+			const refs = referencedIds(container);
 			for (const id of refs) {
 				const target = document.getElementById(id);
 				expect(target, `#${id} should exist`).toBeTruthy();

@@ -408,7 +408,13 @@
 					<td><code>name</code></td>
 					<td><code>string</code></td>
 					<td>—</td>
-					<td>Required. Used for the input id, error id, and form submission key.</td>
+					<td>Required. The form submission key (the control&rsquo;s <code>name</code> attribute). Not used for ids.</td>
+				</tr>
+				<tr>
+					<td><code>id</code></td>
+					<td><code>string</code></td>
+					<td>per-instance (<code>$props.id()</code>)</td>
+					<td>Optional override for the control&rsquo;s id, for when something outside the field needs to target it. Help and error ids derive from it.</td>
 				</tr>
 				<tr>
 					<td><code>label</code></td>

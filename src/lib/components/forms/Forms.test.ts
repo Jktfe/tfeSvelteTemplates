@@ -50,7 +50,7 @@ describe('FormField', () => {
 	it('renders label correctly', () => {
 		render(FormField, {
 			props: {
-				name: 'test',
+				id: 'test',
 				label: 'Test Label',
 				children: mockSnippet
 			}
@@ -61,7 +61,7 @@ describe('FormField', () => {
 	it('shows required indicator when required', () => {
 		render(FormField, {
 			props: {
-				name: 'test',
+				id: 'test',
 				label: 'Test Label',
 				required: true,
 				children: mockSnippet
@@ -73,7 +73,7 @@ describe('FormField', () => {
 	it('shows help text when provided', () => {
 		render(FormField, {
 			props: {
-				name: 'test',
+				id: 'test',
 				label: 'Test Label',
 				helpText: 'This is help text',
 				children: mockSnippet
@@ -85,7 +85,7 @@ describe('FormField', () => {
 	it('shows error when touched and has error', () => {
 		render(FormField, {
 			props: {
-				name: 'test',
+				id: 'test',
 				label: 'Test Label',
 				error: 'This field is required',
 				touched: true,
@@ -98,7 +98,7 @@ describe('FormField', () => {
 	it('does not show error when not touched', () => {
 		render(FormField, {
 			props: {
-				name: 'test',
+				id: 'test',
 				label: 'Test Label',
 				error: 'This field is required',
 				touched: false,
@@ -106,6 +106,32 @@ describe('FormField', () => {
 			}
 		});
 		expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+	});
+
+	it('derives help and error ids from the id it is given', () => {
+		render(FormField, {
+			props: {
+				id: 'custom',
+				label: 'Test Label',
+				helpText: 'Help',
+				error: 'Oops',
+				touched: true,
+				children: mockSnippet
+			}
+		});
+		expect(screen.getByText('Test Label').closest('label')).toHaveAttribute('for', 'custom');
+		expect(screen.getByText('Help')).toHaveAttribute('id', 'custom-help');
+		expect(screen.getByRole('alert')).toHaveAttribute('id', 'custom-error');
+	});
+
+	it('generates a per-instance id when none is given', () => {
+		render(FormField, { props: { label: 'One', children: mockSnippet } });
+		render(FormField, { props: { label: 'Two', children: mockSnippet } });
+		const first = screen.getByText('One').closest('label')!.getAttribute('for');
+		const second = screen.getByText('Two').closest('label')!.getAttribute('for');
+		expect(first).toBeTruthy();
+		expect(second).toBeTruthy();
+		expect(first).not.toBe(second);
 	});
 });
 
@@ -894,8 +920,73 @@ describe('ColorField', () => {
 describe('Form Components Accessibility', () => {
 	it('all text-based fields have associated labels', () => {
 		render(TextField, { props: { name: 'test', label: 'Test' } });
+		// Pairing, not a fixed id: the label's `for` must land on this input.
 		const input = screen.getByRole('textbox');
-		expect(input).toHaveAttribute('id', 'field-test');
+		const label = screen.getByText('Test').closest('label')!;
+		expect(input.id).toBeTruthy();
+		expect(label).toHaveAttribute('for', input.id);
+		expect(screen.getByLabelText('Test')).toBe(input);
+	});
+
+	it('keeps `name` as the submission key but not as the id', () => {
+		render(TextField, { props: { name: 'email', label: 'Email' } });
+		const input = screen.getByRole('textbox');
+		expect(input).toHaveAttribute('name', 'email');
+		expect(input.id).not.toBe('field-email');
+	});
+
+	it('honours an explicit id override for label, help and error wiring', () => {
+		render(TextField, {
+			props: {
+				id: 'signup-email',
+				name: 'email',
+				label: 'Email',
+				helpText: 'We never share it.',
+				error: 'Required',
+				touched: true
+			}
+		});
+		const input = screen.getByRole('textbox');
+		expect(input).toHaveAttribute('id', 'signup-email');
+		expect(screen.getByLabelText('Email')).toBe(input);
+		expect(input).toHaveAttribute('aria-describedby', 'signup-email-help');
+		expect(input).toHaveAttribute('aria-errormessage', 'signup-email-error');
+		expect(document.getElementById('signup-email-help')).toHaveTextContent('We never share it.');
+		expect(document.getElementById('signup-email-error')).toHaveTextContent('Required');
+	});
+
+	it('help text and error ids resolve to the field\'s own elements', () => {
+		render(TextareaField, {
+			props: {
+				name: 'bio',
+				label: 'Bio',
+				helpText: 'A short intro.',
+				error: 'Too short',
+				touched: true,
+				maxlength: 100,
+				showCharCount: true
+			}
+		});
+		const textarea = screen.getByRole('textbox');
+		const describedBy = textarea.getAttribute('aria-describedby')!.split(' ');
+		expect(describedBy).toHaveLength(2);
+		for (const id of describedBy) expect(document.getElementById(id)).toBeTruthy();
+		expect(document.getElementById(describedBy[0])).toHaveTextContent('A short intro.');
+		const errorId = textarea.getAttribute('aria-errormessage')!;
+		expect(document.getElementById(errorId)).toHaveTextContent('Too short');
+	});
+
+	it('radio and checkbox groups are labelled by their visible label', () => {
+		const options = [
+			{ value: 'a', label: 'Alpha' },
+			{ value: 'b', label: 'Beta' }
+		];
+		render(RadioGroup, { props: { name: 'pick', label: 'Pick one', options, helpText: 'Choose.' } });
+		render(CheckboxGroup, { props: { name: 'many', label: 'Pick many', options } });
+		expect(screen.getByRole('radiogroup', { name: 'Pick one' })).toBeInTheDocument();
+		expect(screen.getByRole('group', { name: 'Pick many' })).toBeInTheDocument();
+		const radioGroup = screen.getByRole('radiogroup');
+		expect(document.getElementById(radioGroup.getAttribute('aria-describedby')!)).toHaveTextContent('Choose.');
 	});
 
 	it('error messages have alert role', () => {

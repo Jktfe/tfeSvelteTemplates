@@ -529,7 +529,13 @@ export type FieldType =
  * Base props shared by all form field components
  */
 export interface BaseFieldProps {
+	/** Form submission key (the control's `name` attribute). Not used for ids. */
 	name: string;
+	/**
+	 * Optional id override for the control. By default each instance derives a
+	 * unique id from `$props.id()`, so repeated field names never collide.
+	 */
+	id?: string;
 	label: string;
 	value?: any;
 	placeholder?: string;
