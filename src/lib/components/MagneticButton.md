@@ -169,5 +169,7 @@ The initial mount cost is two `matchMedia` subscriptions, both released by a ret
 ```
 src/lib/components/MagneticButton.svelte      # implementation
 src/lib/components/MagneticButton.md          # this explainer
+src/lib/components/MagneticButton.test.ts     # unit tests
+src/lib/components/MagneticButtonTestHarness.test.svelte  # snippet harness for tests
 src/routes/magneticbutton/+page.svelte        # demo page
 ```

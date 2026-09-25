@@ -314,7 +314,7 @@ If you want to "expand a card into a detail view that visually grew out of the c
 src/lib/components/MorphingDialog.svelte         # implementation
 src/lib/components/MorphingDialog.md             # this file
 src/lib/components/MorphingDialog.test.ts        # vitest unit tests
-src/lib/components/MorphingDialogTest.svelte     # internal harness used by tests
+src/lib/components/MorphingDialogTestHarness.test.svelte  # internal harness used by tests
 src/routes/morphingdialog/+page.svelte           # demo page
 src/lib/scrollLock.ts                            # shared body-overflow lock utility
 src/lib/types.ts                                 # MorphingDialogProps

@@ -1,3 +1,50 @@
+<!--
+  ===========================================================
+  SearchBar
+  ===========================================================
+  WHAT — A rounded search input with a magnifier icon and a clear
+         button, bound to a string value.
+  WHY  — Site infrastructure: it powers the component filter on the
+         home page. It isn't a catalogued template, but it's small and
+         dependency-free, so feel free to lift it into your own app.
+
+  FEATURES
+  • bind:value two-way binding
+  • Clear button appears only when there is text; refocuses the input
+  • Escape clears a non-empty query
+  • Hides the browser's own search "×" so there's only one clear control
+  • Inline SVG icons — no icon library
+  • Themeable via --fg-1 / --fg-2 / --surface / --surface-2 / --border / --accent
+
+  ACCESSIBILITY
+  • Native <input type="search"> with a configurable aria-label
+  • Clear button is a real <button> with aria-label="Clear search"
+  • Visible focus ring on the input and the clear button
+  • prefers-reduced-motion: border / shadow / hover transitions are removed
+
+  DEPENDENCIES
+  Zero.
+
+  PERFORMANCE
+  One input handler that copies the DOM value into the bound prop.
+  Debounce in the parent if each keystroke triggers expensive work.
+
+  USAGE
+  <script lang="ts">
+    import SearchBar from '$lib/components/SearchBar.svelte';
+    let query = $state('');
+  </script>
+  <SearchBar bind:value={query} placeholder="Search recipes…" ariaLabel="Search recipes" />
+
+  PROPS
+  | Prop        | Type               | Default               | Description                       |
+  |-------------|--------------------|-----------------------|-----------------------------------|
+  | value       | string (bindable)  | ''                    | Current query                     |
+  | placeholder | string             | 'Search components…'  | Placeholder text                  |
+  | ariaLabel   | string             | 'Search components'   | Accessible name of the input      |
+  | class       | string             | ''                    | Extra classes on the wrapper      |
+  ===========================================================
+-->
 <script lang="ts" module>
 	export interface SearchBarProps {
 		value?: string;
@@ -8,19 +55,12 @@
 </script>
 
 <script lang="ts">
-	interface Props {
-		value?: string;
-		placeholder?: string;
-		ariaLabel?: string;
-		class?: string;
-	}
-
 	let {
 		value = $bindable(''),
 		placeholder = 'Search components…',
 		ariaLabel = 'Search components',
 		class: className = ''
-	}: Props = $props();
+	}: SearchBarProps = $props();
 
 	let inputEl: HTMLInputElement | undefined = $state();
 	let clearVisible = $derived(value.length > 0);
@@ -33,6 +73,16 @@
 		value = '';
 		if (inputEl) inputEl.value = '';
 		inputEl?.focus();
+	}
+
+	// Escape is the conventional "never mind" key for a search field. Only
+	// swallow it when there is something to clear, so an empty field lets
+	// Escape bubble up to close whatever dialog or panel it lives in.
+	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && value.length > 0) {
+			event.preventDefault();
+			clear();
+		}
 	}
 </script>
 
@@ -49,6 +99,7 @@
 		aria-label={ariaLabel}
 		{value}
 		oninput={handleInput}
+		onkeydown={handleKeydown}
 		autocomplete="off"
 		spellcheck="false"
 	/>
@@ -94,6 +145,13 @@
 		transition: border-color 150ms ease, box-shadow 150ms ease;
 	}
 
+	/* We render our own clear button, so hide the browser's built-in one. */
+	.search-bar__input::-webkit-search-cancel-button,
+	.search-bar__input::-webkit-search-decoration {
+		appearance: none;
+		-webkit-appearance: none;
+	}
+
 	.search-bar__input::placeholder {
 		color: var(--fg-2, #9ca3af);
 	}
@@ -125,8 +183,20 @@
 		color: var(--fg-1, #111827);
 	}
 
+	.search-bar__clear:focus-visible {
+		outline: 2px solid var(--accent, #6366f1);
+		outline-offset: 1px;
+	}
+
 	.search-bar__clear svg {
 		width: 14px;
 		height: 14px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.search-bar__input,
+		.search-bar__clear {
+			transition: none;
+		}
 	}
 </style>

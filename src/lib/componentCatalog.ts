@@ -253,6 +253,43 @@ export const componentCategories: ComponentCatalogCategory[] = [
   position="top"
   color="#6366f1"
 />`
+			}),
+			component('StaggeredMenu', '/staggeredmenu', '🪜', 'Navigation list whose links cascade in one after another on open.', {
+				screenshotFile: 'StaggeredMenuShot.svg',
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/types.ts', 'src/lib/components/StaggeredMenu.test.ts'],
+				usage: `<script lang="ts">
+  import StaggeredMenu from '$lib/components/StaggeredMenu.svelte';
+  import type { MenuItem } from '$lib/types';
+
+  let open = $state(false);
+
+  const items: MenuItem[] = [
+    { href: '/', label: 'Home', icon: '🏠', active: true },
+    { href: '/work', label: 'Work', icon: '💼' },
+    { href: '/about', label: 'About', icon: '👋' },
+    { href: '/contact', label: 'Contact', icon: '✉️' }
+  ];
+</script>
+
+<button
+  type="button"
+  aria-expanded={open}
+  aria-controls="site-menu"
+  onclick={() => (open = !open)}
+>
+  {open ? 'Close menu' : 'Open menu'}
+</button>
+
+<StaggeredMenu
+  id="site-menu"
+  {items}
+  bind:isOpen={open}
+  orientation="vertical"
+  staggerMs={60}
+/>`,
+				agentHint:
+					'The cascade is pure CSS keyed off --stagger-delay; keep every href unique (it is the each-block key) and keep total settle time under ~600ms.'
 			})
 		]
 	},
@@ -1071,6 +1108,26 @@ export const componentCategories: ComponentCatalogCategory[] = [
     The dialog grew out of the button you just clicked.
   </p>
 </MorphingDialog>`
+			}),
+			component('InfiniteCardSlider', '/infinitecardslider', '🎠', 'Looping card carousel with a focal centre card, drag, arrows and keys.', {
+				screenshotFile: 'InfiniteCardSliderShot.svg',
+				dependencies: ['gsap'],
+				relatedFiles: ['src/lib/gsapMotion.ts', 'src/lib/components/InfiniteCardSlider.test.ts'],
+				usage: `<script lang="ts">
+  import InfiniteCardSlider, { type SliderItem } from '$lib/components/InfiniteCardSlider.svelte';
+
+  const cards: SliderItem[] = [
+    { id: 1, title: 'Northern Lights', description: 'Five nights chasing aurora above the Arctic Circle.' },
+    { id: 2, title: 'Coastal Path', description: 'Cliff-top walking with a pub at every cove.' },
+    { id: 3, title: 'Alpine Rail', description: 'Glaciers from the window of a panoramic carriage.' },
+    { id: 4, title: 'Desert Stars', description: 'Dark-sky camping far from any city glow.' },
+    { id: 5, title: 'Island Hop', description: 'Ferries, beaches and very slow lunches.' }
+  ];
+</script>
+
+<InfiniteCardSlider items={cards} cardWidth={280} gap={24} ariaLabel="Trips" />`,
+				agentHint:
+					'Loop maths is wrappedOffset (exported); GSAP only tweens and is skipped under reduced motion. Give items a stable id so keyed cards keep their DOM nodes.'
 			})
 		]
 	},

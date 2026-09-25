@@ -158,10 +158,22 @@ export interface MenuCategory {
  *
  * @property items - Array of menu items to display
  * @property isOpen - Whether the menu is visible (bindable)
+ * @property staggerMs - Delay between each item's entrance in ms (default: 50)
+ * @property durationMs - Length of each item's entrance in ms (default: 300)
+ * @property orientation - 'auto' (row on desktop, stack on mobile), 'horizontal' or 'vertical' (default: 'auto')
+ * @property ariaLabel - Accessible name for the <nav> landmark (default: 'Main navigation')
+ * @property id - Optional id on the <nav>, handy for a toggle's aria-controls
+ * @property class - Extra classes forwarded to the <nav>
  */
 export interface StaggeredMenuProps {
 	items: MenuItem[];
 	isOpen?: boolean;
+	staggerMs?: number;
+	durationMs?: number;
+	orientation?: 'auto' | 'horizontal' | 'vertical';
+	ariaLabel?: string;
+	id?: string;
+	class?: string;
 }
 
 /**

@@ -1,363 +1,190 @@
-# StaggeredMenu
+# StaggeredMenu - Technical Logic Explainer
 
-## What It Does
+## What Does It Do? (Plain English)
 
-StaggeredMenu creates an animated navigation menu where items fly in one after another with cascading delays, creating a smooth waterfall effect. Perfect for mobile menus, dropdowns, and sidebar navigation with visual flair.
+StaggeredMenu renders a list of navigation links that cascade in one after another whenever the menu opens. The first link appears straight away, the second a beat later, the third a beat after that — a small waterfall that makes an on-demand menu feel intentional instead of abrupt.
 
-**Think of it like:** When you flip through a deck of cards, releasing them one at a time - each menu item appears with a slight delay after the previous one, creating a pleasing ripple effect.
+**Think of it like:** dealing a hand of cards. The dealer doesn't drop the whole deck at once; each card lands a moment after the last, so your eye follows the motion down the table.
 
 ---
 
-## Quick Start
+## How It Works (Pseudo-Code)
 
-```svelte
-<script>
-  import StaggeredMenu from '$lib/components/StaggeredMenu.svelte';
+```
+props:
+  items, isOpen (bindable), staggerMs, durationMs, orientation
 
-  const menuItems = [
-    { href: '/', label: 'Home', active: true },
-    { href: '/about', label: 'About', icon: '👤' },
-    { href: '/contact', label: 'Contact', icon: '📧' }
-  ];
-</script>
+derived:
+  safeStagger  = max(0, staggerMs)   (NaN → 50)
+  safeDuration = max(0, durationMs)  (NaN → 300)
 
-<StaggeredMenu items={menuItems} />
+render:
+  <nav aria-label> is always present (keeps the landmark stable)
+  IF isOpen:
+    FOR each item at index i:
+      <li style="--stagger-delay: i × safeStagger ms">
+        CSS keyframe: opacity 0 → 1, translateY(-10px) → 0
+        animation-delay: var(--stagger-delay)
+
+WHEN isOpen flips false → true:
+  the <ul> remounts → every <li> starts its keyframe again
+  → the cascade replays from the top
+
+WHEN prefers-reduced-motion: reduce:
+  animation: none; opacity: 1  → links appear instantly
 ```
 
 ---
 
-## Props
+## The Core Concept: One Custom Property Per Item
+
+The whole cascade is a single keyframe plus one number per item. There are no JavaScript timers and no Svelte transitions — the browser schedules every item as soon as the list mounts.
+
+```
+index:     0      1      2      3      4
+delay:     0ms    50ms   100ms  150ms  200ms
+           │      │      │      │      │
+time ──────●──────●──────●──────●──────●──────────▶
+           └─300ms─┘
+                  └─300ms─┘
+                         └─300ms─┘ …
+```
+
+Total time for the menu to settle is `(items − 1) × staggerMs + durationMs`. For five items at the defaults that's `4 × 50 + 300 = 500ms`. Keep that number under about 600ms for menus people open often; longer cascades start to feel like waiting.
+
+Because the delay is written to `--stagger-delay` on each `<li>` (via `style:--stagger-delay`), consumers can also override the keyframe itself from outside without touching the component.
+
+---
+
+## CSS Animation Strategy
+
+```css
+.menu-item {
+  opacity: 0;
+  animation: staggered-menu-in var(--staggered-menu-duration) ease-out forwards;
+  animation-delay: var(--stagger-delay, 0ms);
+}
+
+@keyframes staggered-menu-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-item { animation: none; opacity: 1; transform: none; }
+}
+```
+
+- **Only `opacity` and `transform` animate**, so the work stays on the compositor and never triggers layout.
+- **`forwards` fill mode** keeps each item at its final frame once its animation ends.
+- **Reduced motion wins outright** — the starting `opacity: 0` is overridden too, otherwise a user who disabled motion would be left with invisible links.
+- Earlier versions ran a Svelte `fly` transition *and* the CSS keyframe on the same element. That doubled the work and ignored reduced motion; the CSS-only path does both jobs.
+
+---
+
+## Theming
+
+Chrome tokens flip under `prefers-color-scheme: dark`; the accent is brand and stays constant (see `docs/THEMING.md`).
+
+| Token | Kind | Light | Dark |
+|-------|------|-------|------|
+| `--staggered-menu-fg` | chrome | `#4a5568` | `#cbd5e1` |
+| `--staggered-menu-hover-bg` | chrome | blue at 6% | blue at 12% |
+| `--staggered-menu-accent` | brand | `#146ef5` | `#146ef5` |
+| `--staggered-menu-accent-2` | brand | `#667eea` | `#667eea` |
+
+Override any of them on a wrapper: `.my-nav { --staggered-menu-accent: #e11d48; }`.
+
+---
+
+## State Flow Diagram
+
+```
+          ┌────────────────────┐
+          │      CLOSED        │
+          │  isOpen = false    │
+          │  <nav> only, no ul │
+          └─────────┬──────────┘
+                    │ isOpen = true (toggle / bind)
+                    ▼
+          ┌────────────────────┐
+          │     CASCADING      │
+          │  <li> i waits      │
+          │  i × staggerMs     │
+          └─────────┬──────────┘
+                    │ last keyframe ends
+                    ▼
+          ┌────────────────────┐
+          │      SETTLED       │
+          │  all links visible │
+          └─────────┬──────────┘
+                    │ isOpen = false
+                    ▼
+               back to CLOSED
+                (instant; no exit animation)
+
+ reduced motion: CLOSED ──open──▶ SETTLED (skips CASCADING)
+```
+
+---
+
+## Props Reference
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `items` | `MenuItem[]` | required | Array of menu items to display |
-| `isOpen` | `boolean` | `true` | Whether menu is visible (bindable) |
+| `items` | `MenuItem[]` | required | Links to render. `href` must be unique — it's the keyed-each key. |
+| `isOpen` | `boolean` | `true` | Bindable. When false the `<ul>` unmounts; reopening replays the cascade. |
+| `staggerMs` | `number` | `50` | Delay between consecutive items, in ms. Negative/NaN values are clamped. |
+| `durationMs` | `number` | `300` | Length of each item's entrance, in ms. |
+| `orientation` | `'auto' \| 'horizontal' \| 'vertical'` | `'auto'` | `auto` is a row above 768px and a stack below it. |
+| `ariaLabel` | `string` | `'Main navigation'` | Accessible name of the `<nav>` landmark. Give each menu on a page a distinct label. |
+| `id` | `string` | — | Applied to the `<nav>`, so a toggle button can reference it with `aria-controls`. |
+| `class` | `string` | `''` | Extra classes forwarded to the `<nav>`. |
 
-### MenuItem Interface
+### MenuItem
 
 ```typescript
 interface MenuItem {
-  label: string;      // Display text
-  href: string;       // Link URL
-  icon?: string;      // Optional emoji or icon character
-  active?: boolean;   // Whether this is the current page
+  label: string;    // Visible link text
+  href: string;     // Destination (also the each-block key)
+  icon?: string;    // Emoji or single glyph, hidden from screen readers
+  active?: boolean; // Adds aria-current="page" and the underline
 }
 ```
 
 ---
 
-## Usage Examples
-
-### Basic Menu
-
-```svelte
-<script>
-  const items = [
-    { href: '/', label: 'Home' },
-    { href: '/products', label: 'Products' },
-    { href: '/about', label: 'About' },
-    { href: '/contact', label: 'Contact' }
-  ];
-</script>
-
-<StaggeredMenu {items} />
-```
-
-### With Icons
-
-```svelte
-<script>
-  const items = [
-    { href: '/', label: 'Home', icon: '🏠' },
-    { href: '/dashboard', label: 'Dashboard', icon: '📊' },
-    { href: '/settings', label: 'Settings', icon: '⚙️' },
-    { href: '/logout', label: 'Logout', icon: '🚪' }
-  ];
-</script>
-
-<StaggeredMenu {items} />
-```
-
-### With Active State
-
-```svelte
-<script>
-  import { page } from '$app/stores';
-
-  const items = [
-    { href: '/', label: 'Home' },
-    { href: '/about', label: 'About' },
-    { href: '/contact', label: 'Contact' }
-  ];
-
-  // Mark current page as active
-  $: activeItems = items.map(item => ({
-    ...item,
-    active: $page.url.pathname === item.href
-  }));
-</script>
-
-<StaggeredMenu items={activeItems} />
-```
-
-### Toggleable Menu (Mobile)
-
-```svelte
-<script>
-  let menuOpen = $state(false);
-
-  const items = [
-    { href: '/', label: 'Home' },
-    { href: '/products', label: 'Products' },
-    { href: '/about', label: 'About' }
-  ];
-</script>
-
-<!-- Hamburger button -->
-<button onclick={() => menuOpen = !menuOpen}>
-  {menuOpen ? '✕' : '☰'}
-</button>
-
-<!-- Menu (controlled by isOpen binding) -->
-<StaggeredMenu {items} bind:isOpen={menuOpen} />
-```
-
----
-
-## Animation Details
-
-### Stagger Effect
-
-Each menu item has two animations:
-
-1. **CSS Animation** (persistent):
-   - Fade in from `opacity: 0` to `opacity: 1`
-   - Translate from `-10px` to `0` (slide down)
-   - Delay calculated: `index × 50ms`
-
-2. **Svelte Transition** (on mount):
-   - Fly in from top (`y: -10`)
-   - Duration: 300ms
-   - Delay: `index × 50ms`
-
-**Result**: Smooth cascading entrance where Item 1 appears immediately, Item 2 appears 50ms later, Item 3 appears 100ms later, etc.
-
-### Configuration
-
-```css
-/* Stagger delay calculated per item */
-style="--stagger-delay: {index * 0.05}s"
-```
-
-To change the delay between items, modify the multiplier:
-- **Faster**: `index * 0.03s` (30ms gaps)
-- **Slower**: `index * 0.1s` (100ms gaps)
-
----
-
-## Visual States
-
-### Default Link
-```css
-color: #4a5568;           /* Grey */
-background: transparent;
-```
-
-### Hover
-```css
-color: #146ef5;                          /* Blue */
-background: rgba(20, 110, 245, 0.05);   /* Light blue tint */
-transform: translateY(-1px);             /* Subtle lift */
-```
-
-### Active (Current Page)
-```css
-color: #146ef5;           /* Blue */
-font-weight: 600;         /* Bolder text */
-/* Plus gradient underline */
-```
-
----
-
-## Accessibility
-
-| Feature | Implementation |
-|---------|----------------|
-| **Navigation landmark** | `<nav aria-label="Main navigation">` |
-| **Current page** | `aria-current="page"` on active link |
-| **Icon hiding** | Icons have `aria-hidden="true"` |
-| **Keyboard nav** | Standard link focus with visible outline |
-| **Focus indicators** | 2px blue outline with offset |
-
----
-
-## Responsive Behaviour
-
-### Desktop (≥769px)
-- **Layout**: Horizontal row (`flex-direction: row`)
-- **Gap**: 2rem between items
-- **Padding**: 0.75rem × 1.25rem per link
-
-### Mobile (≤768px)
-- **Layout**: Vertical column (`flex-direction: column`)
-- **Gap**: 0.5rem between items
-- **Padding**: 1rem × 1.5rem per link
-- **Full width**: Links span entire container
-
----
-
-## Common Integration Patterns
-
-### In a Navbar
-
-```svelte
-<header>
-  <nav class="navbar">
-    <a href="/" class="logo">MyApp</a>
-    <StaggeredMenu {items} />
-  </nav>
-</header>
-
-<style>
-  .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-  }
-</style>
-```
-
-### As Dropdown Menu
-
-```svelte
-<div class="dropdown">
-  <button onclick={() => dropdownOpen = !dropdownOpen}>
-    Menu ▼
-  </button>
-
-  {#if dropdownOpen}
-    <div class="dropdown-panel">
-      <StaggeredMenu {items} bind:isOpen={dropdownOpen} />
-    </div>
-  {/if}
-</div>
-
-<style>
-  .dropdown-panel {
-    position: absolute;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-</style>
-```
-
-### Mobile Sidebar
-
-```svelte
-<div class="sidebar" class:open={sidebarOpen}>
-  <StaggeredMenu {items} bind:isOpen={sidebarOpen} />
-</div>
-
-<style>
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: -280px;
-    width: 280px;
-    height: 100vh;
-    background: white;
-    transition: left 0.3s ease;
-    z-index: 1000;
-  }
-
-  .sidebar.open {
-    left: 0;
-  }
-</style>
-```
-
----
-
-## Performance Notes
-
-- **Zero JavaScript animation**: Uses CSS keyframes for smooth performance
-- **GPU-accelerated**: `transform` properties use hardware acceleration
-- **No layout thrashing**: Animations don't trigger reflows
-- **Lightweight**: ~60 lines of code, no external dependencies
-
----
-
-## Reduced Motion Support
-
-The CSS animation respects user motion preferences:
-
-```css
-@media (prefers-reduced-motion: reduce) {
-  .menu-item {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-}
-```
-
-Users who prefer reduced motion see instant menu display without animations.
-
----
-
-## Customisation
-
-### Change Stagger Timing
-
-```svelte
-<!-- Faster cascade (30ms between items) -->
-{#each items as item, index}
-  <li style="--stagger-delay: {index * 0.03}s">
-    <!-- ... -->
-  </li>
-{/each}
-```
-
-### Change Animation Direction
-
-```svelte
-<!-- Slide in from bottom instead -->
-in:fly={{ y: 10, duration: 300, delay: index * 50 }}
-```
-
-### Change Active Link Style
-
-```css
-.menu-link.active::after {
-  /* Solid underline instead of gradient */
-  background: #146ef5;
-}
-```
+## Edge Cases
+
+| Situation | Behaviour |
+|-----------|-----------|
+| Empty `items` | Renders an empty `<ul>` inside the landmark — no errors |
+| Duplicate `href` values | Svelte throws on duplicate keys; make each `href` unique (add a hash like `/docs#a`) |
+| `staggerMs` negative or NaN | Clamped to `0` / defaulted to `50` so delays never go negative |
+| `durationMs = 0` | Items appear instantly but still honour the stagger offset |
+| Many items (20+) | Cascade gets long — lower `staggerMs` so the total stays under ~600ms |
+| Toggled rapidly | Each reopen remounts the list; the cascade restarts cleanly from item 0 |
+| Reduced motion | No animation, no hover lift; links are visible immediately |
+| Multiple menus on one page | Pass a unique `ariaLabel` to each so landmarks are distinguishable |
 
 ---
 
 ## Dependencies
 
-**Zero external dependencies** (except Svelte's built-in transitions).
+**Zero external dependencies.**
 
-Uses only:
-- Svelte 5 runes (`$props`, `$bindable`)
-- Svelte's `fly` transition (built-in)
-- Standard CSS animations
-- Semantic HTML
+- Svelte 5 runes (`$props`, `$bindable`, `$derived`)
+- `$lib/types` — `StaggeredMenuProps`, `MenuItem` (inline them if copying to another project)
+- Plain CSS keyframes and custom properties
 
 ---
 
-## Related Components
+## File Structure
 
-- **Navbar**: Often contains StaggeredMenu
-- **SpeedDial**: Another animated menu pattern
-- **Mobile navigation**: Common use case
-
----
-
-*Documentation created: 3 January 2026*
+```
+src/lib/components/StaggeredMenu.svelte      # component
+src/lib/components/StaggeredMenu.md          # this explainer
+src/lib/components/StaggeredMenu.test.ts     # unit tests
+src/lib/types.ts                             # StaggeredMenuProps, MenuItem
+src/routes/staggeredmenu/+page.svelte        # demo page
+```
