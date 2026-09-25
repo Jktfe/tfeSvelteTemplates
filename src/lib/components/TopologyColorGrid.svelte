@@ -168,6 +168,11 @@
 		class: className = ''
 	}: Props = $props();
 
+	// $props.id() gives each instance its own stable (SSR-safe) id so two grids
+	// on one page do not fight over the same aria-labelledby target.
+	const uid = $props.id();
+	const headingId = `topology-color-grid-title-${uid}`;
+
 	let root: HTMLElement | null = null;
 	let canvas: HTMLCanvasElement | null = null;
 	// svelte-ignore state_referenced_locally
@@ -345,7 +350,7 @@
 	class:is-flat={!isExtruded}
 	class:is-dark={activeTheme === 'dark'}
 	class:is-light={activeTheme === 'light'}
-	aria-labelledby="topology-color-grid-title"
+	aria-labelledby={headingId}
 >
 	<canvas
 		bind:this={canvas}
@@ -361,7 +366,7 @@
 			<span></span>
 		</div>
 		<div class="title-block">
-			<h1 id="topology-color-grid-title">{title}</h1>
+			<h1 id={headingId}>{title}</h1>
 			<p>{subtitle}</p>
 		</div>
 		<div class="topology-controls">

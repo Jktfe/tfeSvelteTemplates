@@ -26,14 +26,19 @@
 		palette?: MembranePalette;
 		/** Show the focal Lissajous dot. */
 		showDot?: boolean;
-		/** Stable id suffix so multiple instances don't collide on filter id. */
+		/** Optional explicit id prefix for the SVG filter; defaults to a per-instance id. */
 		uid?: string;
 	}
 
-	let { palette = 'aurora', showDot = true, uid = 'mh' }: Props = $props();
+	let { palette = 'aurora', showDot = true, uid }: Props = $props();
+
+	// A fixed fallback ('mh') made every MembraneHero on a page share one filter
+	// id, so later instances rendered with the first one's palette. $props.id()
+	// keeps each instance's <filter> unique without the parent passing anything.
+	const autoId = $props.id();
 
 	const stops = $derived(paletteToFilterStops(palette));
-	const filterId = $derived(`${uid}-displace`);
+	const filterId = $derived(`${uid ?? `mh-${autoId}`}-displace`);
 
 	let reduced = $state(false);
 	let dotX = $state(0);

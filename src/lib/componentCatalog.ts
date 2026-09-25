@@ -1302,8 +1302,19 @@ export const componentCategories: ComponentCatalogCategory[] = [
 						'src/lib/components/VariableShockText.svelte',
 						'src/lib/gsapMotion.ts'
 					],
-					usage: '<GsapSplitTextHero title="Launch faster" />',
-					agentHint: 'Use the route as the suite demo and copy only the GSAP primitive your target UI needs.'
+					usage: `<script lang="ts">
+  import GsapSplitTextHero from '$lib/components/GsapSplitTextHero.svelte';
+</script>
+
+<GsapSplitTextHero
+  headline="Launch faster"
+  eyebrow="GSAP suite"
+  copy="SplitText, scoped timelines, canvas motion, and deck choreography packaged as reusable Svelte components."
+  initialMode="words"
+  theme="dark"
+/>`,
+					agentHint:
+						'Use the route as the suite demo and copy only the GSAP primitive your target UI needs. GsapSplitTextHero takes headline/eyebrow/copy/initialMode/theme (not title); omit theme to follow prefers-color-scheme.'
 				}
 			),
 			component('EqualizerBars', '/equalizerbars', '🎵', 'CSS equalizer indicator with phased bars.', {
@@ -1438,7 +1449,23 @@ export const componentCategories: ComponentCatalogCategory[] = [
 					screenshotFile: 'TopologyColorGridShot.webp',
 					themeSupport: 'dual',
 					dependencies: ['three', 'gsap'],
-					agentHint: 'Mount this client-side; the component owns its Three.js renderer and GSAP cleanup.'
+					usage: `<script lang="ts">
+  import TopologyColorGrid, {
+    defaultTopologySwatches
+  } from '$lib/components/TopologyColorGrid.svelte';
+</script>
+
+<TopologyColorGrid
+  swatches={defaultTopologySwatches}
+  title="Chromatic Substrate Topology"
+  subtitle="Spatial Z-Index Mapping"
+  extruded
+  interactive
+  theme="dark"
+  showThemeToggle
+/>`,
+					agentHint:
+						'Mount this client-side; the component owns its Three.js renderer and GSAP cleanup. Props: swatches, title, subtitle, extruded, interactive, theme, showThemeToggle.'
 				}
 			)
 		]

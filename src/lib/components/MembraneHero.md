@@ -41,7 +41,7 @@ state (MembraneSurface):
     on prefers-reduced-motion change → reduced = e.matches
 
 render:
-  inline SVG <filter id="mh-displace">
+  inline SVG <filter id="mh-{uid}-displace">   (uid = $props.id(), unique per instance)
     <feTurbulence baseFrequency="0.014" octaves="2" seed="7">
       if !reduced:
         <animate attributeName="baseFrequency"
@@ -51,7 +51,7 @@ render:
     <feDisplacementMap in="SourceGraphic" scale="38" />
 
   div .mh-mesh with conic+radial gradient
-                  style="filter: url(#mh-displace)"
+                  style="filter: url(#mh-{uid}-displace)"
 
   div .mh-dot positioned at
     translate3d(50vw + dotX*38vw, 50vh + dotY*30vh, 0)

@@ -86,6 +86,11 @@
 
 	let { scenarios, title = 'Interaction lab', class: extraClass = '' }: Props = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const titleId = `interaction-lab-title-${uid}`;
+
 	let activeId = $state('');
 	let reducedMotion = $state(false);
 
@@ -97,11 +102,11 @@
 	const counts = $derived(modeCount(scenarios));
 </script>
 
-<section class="interaction-lab {extraClass}" aria-labelledby="interaction-lab-title">
+<section class="interaction-lab {extraClass}" aria-labelledby={titleId}>
 	<header>
 		<div>
 			<p>Interaction QA</p>
-			<h2 id="interaction-lab-title">{title}</h2>
+			<h2 id={titleId}>{title}</h2>
 		</div>
 		<label>
 			<input bind:checked={reducedMotion} type="checkbox" />

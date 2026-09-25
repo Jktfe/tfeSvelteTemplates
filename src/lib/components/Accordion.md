@@ -28,10 +28,10 @@ events:
     fire onToggle(id, !wasOpen)
 
 render per item:
-  <button aria-expanded={openIds.has(id)} aria-controls="panel-{id}">
+  <button id="trigger-{uid}-{id}" aria-expanded={openIds.has(id)} aria-controls="panel-{uid}-{id}">
     title + chevron
   </button>
-  <div role="region" aria-labelledby="trigger-{id}" aria-hidden={!isOpen}>
+  <div role="region" id="panel-{uid}-{id}" aria-labelledby="trigger-{uid}-{id}" aria-hidden={!isOpen}>
     grid-template-rows: 0fr (closed) | 1fr (open)
     overflow: hidden
     {content}
@@ -155,7 +155,7 @@ So clicking the last open panel in anchor mode is a no-op — `onToggle` doesn't
 | Disabled item's header clicked | `item.disabled` short-circuits the toggle; the button is also `disabled` so AT announces it as such. |
 | Content is dynamic (set via prop after mount) | The `grid-template-rows: 0fr ↔ 1fr` interpolation handles any content height — no measurement needed. |
 | User has `prefers-reduced-motion: reduce` | The 200 ms grid-row transition and the chevron rotation transition are disabled; panels open and close instantly. |
-| Two Accordions on the same page sharing item ids | The DOM uses `id="trigger-{id}"` and `id="panel-{id}"` — duplicate ids cause invalid HTML and broken aria-labelledby. Make ids unique across the page (or scope them per accordion: `faq-shipping`, `settings-shipping`). |
+| Two Accordions on the same page sharing item ids | Safe — DOM ids are `trigger-{uid}-{id}` / `panel-{uid}-{id}`, where `uid` comes from `$props.id()`, so each instance's aria wiring stays self-contained. |
 
 ## Dependencies
 

@@ -146,3 +146,9 @@ src/lib/components/GsapSplitTextHero.test.ts    # vitest unit tests
 src/lib/gsapMotion.ts                           # shared GSAP loader + reduced-motion check
 src/routes/gsap-suite/+page.svelte              # demo page (GSAP suite)
 ```
+
+## Multiple instances
+
+The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built
+from `$props.id()`, so several heroes can share a page without duplicate ids — each section
+always points at its own headline.

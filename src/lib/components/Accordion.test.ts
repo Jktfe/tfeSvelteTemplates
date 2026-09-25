@@ -131,18 +131,22 @@ describe('Accordion', () => {
 
 	it('each panel has aria-labelledby pointing to its trigger', () => {
 		const { container } = render(Accordion, { props: { items } });
-		const triggerA = container.querySelector('#trigger-a') as HTMLElement;
-		const panelA = container.querySelector('#panel-a') as HTMLElement;
+		// Ids carry a per-instance prefix ($props.id()), so match on the suffix.
+		const triggerA = container.querySelector('[id^="trigger-"][id$="-a"]') as HTMLElement;
+		const panelA = container.querySelector('[id^="panel-"][id$="-a"]') as HTMLElement;
 		expect(triggerA).toBeTruthy();
 		expect(panelA).toBeTruthy();
-		expect(panelA.getAttribute('aria-labelledby')).toBe('trigger-a');
+		expect(panelA.getAttribute('aria-labelledby')).toBe(triggerA.id);
+		expect(triggerA.getAttribute('aria-controls')).toBe(panelA.id);
 		expect(panelA.getAttribute('role')).toBe('region');
 	});
 
 	it('each trigger has aria-controls pointing to its panel', () => {
 		const { container } = render(Accordion, { props: { items } });
-		const triggerB = container.querySelector('#trigger-b') as HTMLElement;
-		expect(triggerB.getAttribute('aria-controls')).toBe('panel-b');
+		const triggerB = container.querySelector('[id^="trigger-"][id$="-b"]') as HTMLElement;
+		const panelId = triggerB.getAttribute('aria-controls') ?? '';
+		expect(panelId).toMatch(/^panel-.*-b$/);
+		expect(container.querySelector(`[id="${panelId}"]`)?.getAttribute('role')).toBe('region');
 	});
 
 	it('forwards extra classes', () => {

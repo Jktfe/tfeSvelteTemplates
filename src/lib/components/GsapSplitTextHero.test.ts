@@ -46,16 +46,39 @@ describe('GsapSplitTextHero module helpers', () => {
 describe('GsapSplitTextHero component', () => {
 	it('renders the default headline as an H1 with the right id', () => {
 		const { container } = render(GsapSplitTextHero, { props: {} });
-		const h1 = container.querySelector('h1#gsap-suite-title');
+		const h1 = container.querySelector('h1[id^="gsap-suite-title"]');
 		expect(h1).toBeTruthy();
 		expect(h1?.textContent).toContain('Motion primitives');
+	});
+
+	it('labels the section with its own heading id', () => {
+		const { container } = render(GsapSplitTextHero, { props: {} });
+		const section = container.querySelector('section.split-text-hero');
+		const h1 = container.querySelector('h1');
+		expect(h1?.id).toBeTruthy();
+		expect(section?.getAttribute('aria-labelledby')).toBe(h1?.id);
+	});
+
+	// Regression: the heading id used to be hard-coded, so two heroes on one
+	// page produced duplicate ids and both sections pointed at the first h1.
+	it('gives each mounted instance a unique heading id', () => {
+		const first = render(GsapSplitTextHero, { props: { headline: 'First hero' } });
+		const second = render(GsapSplitTextHero, { props: { headline: 'Second hero' } });
+		const firstId = first.container.querySelector('h1')?.id;
+		const secondId = second.container.querySelector('h1')?.id;
+		expect(firstId).toBeTruthy();
+		expect(secondId).toBeTruthy();
+		expect(firstId).not.toBe(secondId);
+		expect(first.container.querySelector('section')?.getAttribute('aria-labelledby')).toBe(firstId);
+		expect(second.container.querySelector('section')?.getAttribute('aria-labelledby')).toBe(secondId);
+		expect(document.querySelectorAll(`[id="${firstId}"]`)).toHaveLength(1);
 	});
 
 	it('uses a custom headline when supplied', () => {
 		const { container } = render(GsapSplitTextHero, {
 			props: { headline: 'Bespoke headline content' }
 		});
-		const h1 = container.querySelector('h1#gsap-suite-title');
+		const h1 = container.querySelector('h1[id^="gsap-suite-title"]');
 		expect(h1?.textContent).toContain('Bespoke headline content');
 	});
 

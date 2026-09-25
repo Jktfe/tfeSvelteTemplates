@@ -153,3 +153,9 @@ src/lib/components/TopologyColorGrid.test.ts    # vitest unit tests
 src/lib/gsapMotion.ts                           # shared GSAP loader + reduced-motion check
 src/routes/topologycolorgrid/+page.svelte       # demo page
 ```
+
+## Multiple instances
+
+The `<section>` is labelled by its `<h1>` through `aria-labelledby`. The heading id is built
+from `$props.id()`, so several grids can share a page (the demo route mounts four) without
+duplicate ids — each section always points at its own title.

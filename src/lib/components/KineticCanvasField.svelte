@@ -80,6 +80,23 @@
 		};
 	}
 
+	/** Longest step we will simulate in one frame; stops a backgrounded tab from teleporting particles. */
+	export const MAX_FRAME_DELTA = 0.04;
+
+	/**
+	 * Seconds elapsed since the previous frame, clamped for stability.
+	 *
+	 * `gsap.ticker` hands listeners its elapsed time already in SECONDS (unlike
+	 * `requestAnimationFrame`, which passes milliseconds), so there is no
+	 * `/ 1000` here — dividing again would make every frame ~1000x too short and
+	 * freeze the particles in place. The first frame (no previous time) and any
+	 * backwards jump fall back to a nominal 60fps step.
+	 */
+	export function tickerFrameDelta(time: number, lastTime: number | null): number {
+		if (lastTime === null || !Number.isFinite(time) || time <= lastTime) return 1 / 60;
+		return Math.min(MAX_FRAME_DELTA, time - lastTime);
+	}
+
 	export function stepKineticParticle(particle: KineticParticle, delta: number): KineticParticle {
 		const friction = Math.pow(0.9, delta * 60);
 		return {
@@ -117,7 +134,7 @@
 	let canvas: HTMLCanvasElement | null = null;
 	let gsapInstance: Gsap | null = null;
 	let particles: KineticParticle[] = [];
-	let lastTime = 0;
+	let lastTime: number | null = null;
 	let width = 0;
 	let height = 0;
 	let pixelRatio = 1;
@@ -174,7 +191,8 @@
 		const context = canvas.getContext('2d');
 		if (!context) return;
 
-		const delta = lastTime === 0 ? 1 / 60 : Math.min(0.04, (time - lastTime) / 1000);
+		// `time` is gsap.ticker's elapsed time in seconds — see tickerFrameDelta.
+		const delta = tickerFrameDelta(time, lastTime);
 		lastTime = time;
 		particles = particles.map((particle) => stepKineticParticle(particle, delta)).filter((p) => p.life > 0);
 
@@ -212,6 +230,7 @@
 			root?.removeEventListener('pointermove', handlePointerMove);
 			root?.removeEventListener('pointerdown', handlePointerDown);
 			gsapInstance?.ticker.remove(draw);
+			lastTime = null;
 		};
 	});
 </script>

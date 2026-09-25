@@ -56,6 +56,12 @@
 		onRetry
 	}: UploadDropzoneProps = $props();
 
+	// $props.id() gives every instance its own SSR-stable id prefix, so mounting
+	// this component twice on one page never produces duplicate ids.
+	const uid = $props.id();
+	const helpId = `upload-dropzone-help-${uid}`;
+	const countId = `upload-dropzone-count-${uid}`;
+
 	let inputEl = $state<HTMLInputElement | undefined>();
 	let isDragging = $state(false);
 	let dragDepth = $state(0);
@@ -306,7 +312,7 @@
 		ondragleave={handleDragLeave}
 		ondrop={handleDrop}
 		onpaste={handlePaste}
-		aria-describedby="upload-dropzone-help upload-dropzone-count"
+		aria-describedby="{helpId} {countId}"
 	>
 		<span class="surface-icon" aria-hidden="true">
 			<svg
@@ -326,13 +332,13 @@
 		</span>
 		<span class="surface-copy">
 			<span class="surface-title">{isAtLimit ? 'Upload limit reached' : title}</span>
-			<span id="upload-dropzone-help" class="surface-description">{description}</span>
+			<span id={helpId} class="surface-description">{description}</span>
 			<span class="surface-meta">{helperText}</span>
 		</span>
 		<span class="surface-action">{isAtLimit ? 'Limit reached' : browseLabel}</span>
 	</button>
 
-	<div id="upload-dropzone-count" class="upload-count">
+	<div id={countId} class="upload-count">
 		<span>{items.length} / {maxFiles} selected</span>
 		{#if remainingSlots > 0}
 			<span>{remainingSlots} {remainingSlots === 1 ? 'slot' : 'slots'} available</span>

@@ -59,7 +59,9 @@ describe('Editor', () => {
 		it('has aria-labelledby pointing to title', () => {
 			const { container } = render(Editor);
 			const dialog = container.querySelector('[role="dialog"]');
-			expect(dialog).toHaveAttribute('aria-labelledby', 'editor-title');
+			const title = container.querySelector('h2.editor-title');
+			expect(title?.id).toMatch(/^editor-title-/);
+			expect(dialog).toHaveAttribute('aria-labelledby', title?.id);
 		});
 	});
 

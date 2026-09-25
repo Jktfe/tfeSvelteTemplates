@@ -36,7 +36,7 @@ describe('LiquidTabBar', () => {
 
 	it('applies gooey filter SVG', () => {
 		const { container } = render(LiquidTabBar, { tabs });
-		const filter = container.querySelector('#gooey-filter');
+		const filter = container.querySelector('filter[id^="gooey-filter-"]');
 		expect(filter).toBeTruthy();
 	});
 
