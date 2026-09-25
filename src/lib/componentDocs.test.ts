@@ -2,7 +2,7 @@
  * Component documentation structural tests.
  *
  * Each component listed in `GOLD_STANDARD_DOCS` must:
- *   - load via the eager `import.meta.glob` in `componentDocs.ts`
+ *   - load via the eager `import.meta.glob` in `server/componentDocs.ts`
  *   - start with `# ` (an H1) — never YAML front-matter (`---`)
  *   - contain every required H2 string in `REQUIRED_H2_SECTIONS` verbatim
  *
@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { docsPaths, getDocsRawForPath } from './componentDocs';
+import { docsPaths, getDocsRawForPath } from './server/componentDocs';
 
 const REQUIRED_H2_SECTIONS = [
 	'## What Does It Do? (Plain English)',

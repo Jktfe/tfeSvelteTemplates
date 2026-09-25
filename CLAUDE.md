@@ -145,7 +145,7 @@ Auth replaced an earlier Clerk integration. **Do not reintroduce `svelte-clerk` 
 | `src/lib/auth-client.ts` | Browser client — exports `authClient` from `better-auth/svelte` |
 | `src/hooks.server.ts` | Populates `event.locals.session` / `event.locals.user`, calls `svelteKitHandler` |
 | `src/app.d.ts` | `App.Locals` declares `session: Session \| null`, `user: User \| null` from `better-auth` |
-| `src/routes/+layout.server.ts` | Returns `{ isAuthConfigured, authUser }` to every page |
+| `src/routes/+layout.server.ts` | Returns `{ isAuthConfigured, authUser, componentDocs }` to every page |
 | `src/routes/(protected)/+layout.server.ts` | Calls `requireAuth` to gate the route group |
 | `database/schema_better_auth.sql` | Auth tables (regen via `bunx @better-auth/cli@latest generate --config src/lib/server/betterAuth.ts --output database/schema_better_auth.sql -y`) |
 
@@ -343,12 +343,14 @@ Every component has a sibling `<Name>.md` that is **rendered live** inside `Comp
 
 ```
 src/lib/components/<Name>.md
-   ↓ import.meta.glob('?raw', eager)   src/lib/componentDocs.ts
-   ↓ getDocsHtmlForPath(item.docs)     src/lib/componentCatalog.ts → shellPropsFromCatalog
-   ↓ renderMarkdown(raw, { stripFirstH1: true })   src/lib/utils/markdown.ts
-   ↓ docsHtml prop                     ComponentPageShell.svelte
-   ↓ {@html} inside .cp-explainer
+   ↓ import.meta.glob('?raw', eager)   src/lib/server/componentDocs.ts (server-only)
+   ↓ getComponentDocsForRoute(route.id) src/routes/+layout.server.ts → page.data.componentDocs
+   ↓ renderMarkdown(raw, { stripFirstH1: true })   src/lib/utils/markdown.ts (highlight.js core + registered subset)
+   ↓ docsPath prop (from shellPropsFromCatalog) matched against page.data.componentDocs.path
+   ↓ {@html} inside .cp-explainer      ComponentPageShell.svelte
 ```
+
+Docs render on the server so the browser never downloads the doc corpus or the markdown pipeline — each page receives only its own HTML. **Do not import `$lib/server/componentDocs` or call `renderMarkdown` for docs from client code.** A new code-fence language needs registering in `src/lib/utils/markdown.ts` (unregistered languages fall back to auto-detection).
 
 Authoring a doc:
 

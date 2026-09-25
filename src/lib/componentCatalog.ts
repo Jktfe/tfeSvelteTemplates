@@ -1,5 +1,4 @@
 import type { MenuCategory } from './types';
-import { getDocsHtmlForPath } from './componentDocs';
 
 export interface ComponentCatalogItem {
 	name: string;
@@ -2054,8 +2053,13 @@ export interface CatalogShellProps {
 	install: string;
 	resources: { label: string; href: string }[];
 	codeFileName: string;
-	/** Pre-rendered HTML from the sibling .md, sanitised by `renderMarkdown`. */
-	docsHtml?: string;
+	/**
+	 * Repo-relative path of the sibling .md doc. The HTML itself is rendered
+	 * on the server (see `src/routes/+layout.server.ts`) and handed to
+	 * ComponentPageShell through page data, so the catalog stays free of the
+	 * markdown pipeline and every page ships only its own doc.
+	 */
+	docsPath?: string;
 	/** Previous/next component links within the same catalog shelf. */
 	shelfNavigation?: ShelfNavigation;
 }
@@ -2092,7 +2096,7 @@ export function shellPropsFromCatalog(
 		install: `cp ${item.source} ./src/lib/components/`,
 		resources,
 		codeFileName: sourceFile,
-		docsHtml: getDocsHtmlForPath(item.docs),
+		docsPath: item.docs,
 		shelfNavigation: getShelfNavigation(item.href)
 	};
 }
