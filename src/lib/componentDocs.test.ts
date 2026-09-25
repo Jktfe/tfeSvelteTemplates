@@ -75,6 +75,7 @@ const GOLD_STANDARD_DOCS = [
 	'src/lib/components/ScrambledText.md',
 	'src/lib/components/TrueFocus.md',
 	'src/lib/components/VariableProximity.md',
+	'src/lib/components/VariableShockText.md',
 	'src/lib/components/GlitchText.md',
 	'src/lib/components/SplitFlap.md',
 	'src/lib/components/TickerTape.md',

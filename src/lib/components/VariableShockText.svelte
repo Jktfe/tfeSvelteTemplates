@@ -1,3 +1,51 @@
+<!--
+	============================================================
+	VariableShockText
+	============================================================
+
+	WHAT
+	Display copy split into letters that breathe while idle and ripple
+	outward from the point of contact when clicked, tapped or activated
+	with Enter / Space.
+
+	WHY
+	Reach for it on hero headlines and playful CTAs where a single
+	word should feel tactile. It animates variable-font axes plus
+	transforms, so it pairs best with a font that ships wght / wdth axes.
+
+	FEATURES
+	• Per-glyph ripple weighted by distance from the hit letter
+	• Optional idle "breathing" loop between shocks
+	• Intensity multiplier (clamped 0.25 – 2.5)
+	• Exported helpers: splitTextForShock, distanceFromOrigin
+
+	ACCESSIBILITY
+	• Real <button> with an accessible name (ariaLabel, defaults to text)
+	• Glyph spans are aria-hidden so screen readers hear one word, not letters
+	• Enter / Space trigger the shock; visible focus ring
+	• prefers-reduced-motion: no idle loop and no shock at all
+
+	DEPENDENCIES
+	gsap — lazily imported via $lib/gsapMotion so SSR never loads it
+
+	PERFORMANCE
+	Only transform and font-variation custom properties animate. Keep
+	it to headline-length strings; every glyph is its own tween target.
+
+	USAGE
+	<VariableShockText text="Motion with manners" intensity={1.2} />
+
+	PROPS
+	| Prop      | Type    | Default | Description                              |
+	|-----------|---------|---------|------------------------------------------|
+	| text      | string  | —       | Copy to split into glyphs                |
+	| ariaLabel | string  | text    | Accessible name for the button           |
+	| idle      | boolean | true    | Run the breathing loop between shocks    |
+	| intensity | number  | 1       | Lift multiplier, clamped to 0.25 – 2.5   |
+	| class     | string  | ''      | Extra classes on the button              |
+	============================================================
+-->
+
 <script lang="ts" module>
 	export interface ShockGlyph {
 		id: string;
