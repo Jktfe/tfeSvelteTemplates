@@ -175,7 +175,12 @@ const GOLD_STANDARD_DOCS = [
 	'src/lib/components/DonutChart.md',
 	'src/lib/components/Kanban.md',
 	'src/lib/components/Sidebar.md',
-	'src/lib/components/NotificationCentre.md'
+	'src/lib/components/NotificationCentre.md',
+
+	// Orphans brought to standard (previously undocumented / uncatalogued)
+	'src/lib/components/StaggeredMenu.md',
+	'src/lib/components/InfiniteCardSlider.md',
+	'src/lib/components/SearchBar.md'
 ] as const;
 
 // UTF-8 BOM (U+FEFF) — constructed via String.fromCharCode so the literal
