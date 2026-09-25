@@ -3215,3 +3215,18 @@ export interface GsapGanttProps {
 	ariaLabel?: string;
 	class?: string;
 }
+
+// =============================================================================
+// COMPONENT DOCS (server-rendered sibling .md)
+// =============================================================================
+
+/**
+ * A component's sibling .md doc, rendered to sanitised HTML on the server by
+ * `src/routes/+layout.server.ts` and read by ComponentPageShell via page data.
+ * `path` is the repo-relative doc path so the shell can confirm the HTML
+ * belongs to the component it is rendering.
+ */
+export interface ComponentDocsData {
+	path: string;
+	html: string;
+}

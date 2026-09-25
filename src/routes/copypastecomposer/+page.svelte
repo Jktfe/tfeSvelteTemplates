@@ -3,7 +3,6 @@
 		type CopyPasteCatalogEntry
 	} from '$lib/components/CopyPasteComposer.svelte';
 	import ComponentPageShell from '$lib/components/ComponentPageShell.svelte';
-	import { getDocsHtmlForPath } from '$lib/componentDocs';
 	import { catalogShellPropsForSlug, componentCatalogEntries } from '$lib/componentCatalog';
 
 	const catalogShell = catalogShellPropsForSlug('/copypastecomposer');
@@ -53,7 +52,7 @@
 			}
 		],
 		codeFileName: 'CopyPasteComposer.svelte',
-		docsHtml: getDocsHtmlForPath('src/lib/components/CopyPasteComposer.md')
+		docsPath: 'src/lib/components/CopyPasteComposer.md'
 	};
 
 	const shellProps = catalogShell?.props ?? fallbackShellProps;
