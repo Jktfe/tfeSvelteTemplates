@@ -1,3 +1,51 @@
+<!--
+  ============================================================
+  Divider — Section Separator with Optional Label
+  ============================================================
+  WHAT — A horizontal or vertical rule, optionally with a centred, left or
+  right label, in three thicknesses and three line styles.
+
+  WHY — Structural separation between sections, menu groups or "or"
+  choices in auth forms.
+
+  FEATURES
+  - No label + horizontal → plain native <hr>
+  - Label or vertical → <div role="separator"> with flanking lines
+  - thin / medium / thick; solid / dashed / dotted
+  - Custom colour via the colour prop (--divider-colour)
+  - children snippet for rich label content
+  - decorative mode for purely visual rules
+
+  ACCESSIBILITY
+  - <hr> exposes role="separator" natively
+  - Labelled and vertical dividers use role="separator"
+    (vertical adds aria-orientation="vertical")
+  - decorative={true} adds aria-hidden so assistive tech skips it
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Static markup; negligible.
+
+  USAGE
+      <Divider />
+      <Divider label="or" />
+      <Divider orientation="vertical" thickness="medium" />
+
+  PROPS
+  | Prop          | Type                          | Default      | Description |
+  |---------------|-------------------------------|--------------|-------------|
+  | orientation   | 'horizontal' | 'vertical'     | 'horizontal' | Direction of the rule |
+  | thickness     | 'thin' | 'medium' | 'thick'   | 'thin'       | Line weight |
+  | lineStyle     | 'solid' | 'dashed' | 'dotted' | 'solid'      | Line style |
+  | label         | string                        | ''           | Optional label text |
+  | labelPosition | 'left' | 'center' | 'right'   | 'center'     | Where the label sits |
+  | colour        | string                        | —            | Line colour override |
+  | decorative    | boolean                       | false        | Hide from assistive tech |
+  | children      | Snippet                       | —            | Rich label content |
+  | class         | string                        | ''           | Extra classes |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Divider

@@ -1,3 +1,43 @@
+<!--
+  ============================================================
+  DataVizInspector — Chart Specification QA Scorer
+  ============================================================
+  WHAT — Scores chart specs against six checks (title, rows, source, alt
+  text, units, legend) and shows a ready / review / blocked verdict.
+
+  WHY — A pre-flight checklist before a chart ships in a report or
+  dashboard.
+
+  FEATURES
+  - Six pure checks with human-readable reasons
+  - Score = share of passing checks (0–100); 90+ ready, 60+ review
+  - Tables pass the legend check automatically
+  - Chart list to switch the active spec
+  - Pure helpers exported: dataVizChecks, dataVizScore, dataVizVerdict
+
+  ACCESSIBILITY
+  - Chart list is a labelled <nav> of native buttons
+  - Pass / Review written as text on every check
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Checks run only for the active spec; negligible.
+
+  USAGE
+      <DataVizInspector specs={[
+        { title: 'Revenue', chartType: 'bar', rowCount: 12, hasSource: true,
+          hasAltText: true, hasUnits: true, hasColorLegend: false }
+      ]} />
+
+  PROPS
+  | Prop  | Type          | Default              | Description |
+  |-------|---------------|----------------------|-------------|
+  | specs | DataVizSpec[] | required             | Chart specs to inspect |
+  | title | string        | 'Data viz inspector' | Heading |
+  | class | string        | ''                   | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface DataVizSpec {
 		title: string;

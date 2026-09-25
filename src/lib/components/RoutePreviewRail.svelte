@@ -1,3 +1,48 @@
+<!--
+  ============================================================
+  RoutePreviewRail — Visual Route Index with Screenshot Status
+  ============================================================
+  WHAT — A searchable strip of route cards, each with a screenshot,
+  description, category and ready / review / missing status.
+
+  WHY — A visual index for inspecting live component pages and spotting
+  missing screenshot proof at a glance.
+
+  FEATURES
+  - Status summary counts in the header
+  - Search across name, route, description and category
+  - Status filter (all / ready / review / missing)
+  - Items without a status count as ready
+  - Pure helpers exported: routePreviewStatusLabel,
+    summarizeRoutePreviews, filterRoutePreviews
+
+  ACCESSIBILITY
+  - <section> labelled by its heading; stats use a labelled <dl>
+  - Native search input and select with visible labels
+  - Cards are real links with descriptive screenshot alt text
+  - Status written as text, not colour alone
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Screenshots use loading="lazy"; filtering is one
+  $derived pass.
+
+  USAGE
+      <RoutePreviewRail items={[
+        { name: 'SpeedDial', href: '/speeddial', screenshot: '/shots/speeddial.png',
+          description: 'Floating action menu', status: 'ready' }
+      ]} />
+
+  PROPS
+  | Prop     | Type               | Default              | Description |
+  |----------|--------------------|----------------------|-------------|
+  | items    | RoutePreviewItem[] | required             | Routes to show |
+  | title    | string             | 'Route preview rail' | Heading |
+  | subtitle | string             | Short sample sentence| Line under the heading |
+  | class    | string             | ''                   | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export type RoutePreviewStatus = 'ready' | 'review' | 'missing';
 

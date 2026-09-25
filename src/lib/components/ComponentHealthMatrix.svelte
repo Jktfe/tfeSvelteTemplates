@@ -1,3 +1,51 @@
+<!--
+  ============================================================
+  ComponentHealthMatrix — Catalogue QA Table
+  ============================================================
+  WHAT — A searchable, filterable table showing, for every catalogue
+  component, whether its source, docs, demo, screenshot and tests exist,
+  plus an overall ready / partial / missing verdict.
+
+  WHY — Keeps a large component library honest: missing screenshots or
+  tests surface immediately instead of in review.
+
+  FEATURES
+  - Rows prebuilt with createHealthRows(entries, files) from sets of
+    known file paths (the component never reads the filesystem)
+  - Test detection from colocated .test.ts, .test.svelte and
+    TestHarness.test.svelte candidates
+  - Search across name, category, route, source and dependencies
+  - Status and theme-support (light / dual) filters
+  - Headline ready / partial / missing totals and per-column counts
+  - Pure helpers exported: normalisePath, statusFromPresence,
+    combineHealthStatus, testCandidatesFor, createHealthRows, countByStatus
+
+  ACCESSIBILITY
+  - <section> labelled by its heading; score has a descriptive aria-label
+  - Native search input and selects with visible labels
+  - Status shown as text, not colour alone
+  - No motion
+
+  DEPENDENCIES — Zero beyond Svelte (svelte/reactivity SvelteSet).
+
+  PERFORMANCE — Filtering is a single $derived pass; comfortable for
+  a few hundred rows.
+
+  USAGE
+      // in the page script
+      import ComponentHealthMatrix, { createHealthRows } from '$lib/components/ComponentHealthMatrix.svelte';
+      const rows = createHealthRows(entries, files);
+
+      // in the markup
+      <ComponentHealthMatrix {rows} />
+
+  PROPS
+  | Prop  | Type                 | Default                   | Description |
+  |-------|----------------------|---------------------------|-------------|
+  | rows  | ComponentHealthRow[] | required                  | Rows from createHealthRows() |
+  | title | string               | 'Component health matrix' | Table heading |
+  ============================================================
+-->
 <script lang="ts" module>
 	import { SvelteSet } from 'svelte/reactivity';
 

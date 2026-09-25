@@ -1,3 +1,45 @@
+<!--
+  ============================================================
+  VariableShockText — Variable-Font Impact Text
+  ============================================================
+  WHAT — Splits text into letters that gently breathe while idle and
+  ripple outwards with a weight, width and bounce shock when pressed.
+
+  WHY — A tactile headline or call-to-action for playful landing pages
+  and the GSAP suite.
+
+  FEATURES
+  - Idle yoyo motion on font weight and lift (optional)
+  - Pointer press shocks outwards from the letter you hit;
+    Enter/Space shocks from the centre
+  - Intensity multiplier (clamped 0.25–2.5)
+  - Elastic settle back to rest, then idle resumes
+  - Pure helpers exported: splitTextForShock, distanceFromOrigin
+
+  ACCESSIBILITY
+  - Rendered as a native button with an aria-label (defaults to the text)
+  - Individual letters are aria-hidden so the phrase is read once
+  - Keyboard parity via Enter and Space
+  - prefers-reduced-motion: reduce skips both idle and shock motion
+
+  DEPENDENCIES — gsap, lazily imported through $lib/gsapMotion. Works
+  best with a variable font exposing wght and wdth axes.
+
+  PERFORMANCE — One tween per letter; keep to headline-length text.
+
+  USAGE
+      <VariableShockText text="Shock the grid" intensity={1.4} />
+
+  PROPS
+  | Prop      | Type    | Default | Description |
+  |-----------|---------|---------|-------------|
+  | text      | string  | required| Text to animate |
+  | ariaLabel | string  | text    | Accessible name |
+  | idle      | boolean | true    | Run the idle breathing motion |
+  | intensity | number  | 1       | Shock strength (0.25–2.5) |
+  | class     | string  | ''      | Extra classes on the button |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface ShockGlyph {
 		id: string;

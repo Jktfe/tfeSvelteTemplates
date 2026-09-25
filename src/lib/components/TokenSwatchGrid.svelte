@@ -1,3 +1,44 @@
+<!--
+  ============================================================
+  TokenSwatchGrid — Grouped Design-Token Swatches
+  ============================================================
+  WHAT — Shows colour tokens as swatch cards grouped into chrome, brand
+  and semantic, each with its name, value, usage note and contrast label.
+
+  WHY — Review the actual token inventory before or beside
+  ThemeTokenInspector.
+
+  FEATURES
+  - Grouping by chrome / brand / semantic in source order
+  - Friendly names from CSS custom-property names
+  - WCAG contrast ratio against an optional foreground (#111827 default)
+  - AA / Review / Unknown labels (Unknown for non 6-digit hex values)
+  - Pure helpers exported: readableTokenName, contrastRatio,
+    tokenContrastLabel, groupTokenSwatches
+
+  ACCESSIBILITY
+  - Each group is a section labelled by its heading
+  - Contrast status written as text
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Static render derived from the tokens array.
+
+  USAGE
+      <TokenSwatchGrid tokens={[
+        { name: '--brand-accent', value: '#146ef5', group: 'brand',
+          usage: 'Primary buttons', foreground: '#ffffff' }
+      ]} />
+
+  PROPS
+  | Prop   | Type          | Default             | Description |
+  |--------|---------------|---------------------|-------------|
+  | tokens | TokenSwatch[] | required            | Tokens (name, value, group, usage, foreground?) |
+  | title  | string        | 'Token swatch grid' | Heading |
+  | class  | string        | ''                  | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface TokenSwatch {
 		name: string;

@@ -1,3 +1,45 @@
+<!--
+  ============================================================
+  ThemeTokenInspector — Live Reference for the Theming Convention
+  ============================================================
+  WHAT — Groups theme tokens into chrome / brand / semantic, previews
+  their light and dark values with contrast labels, and produces
+  copyable CSS override snippets.
+
+  WHY — A living explainer for docs/THEMING.md: chrome flips, brand
+  stays, semantic stays.
+
+  FEATURES
+  - Ships defaultThemeTokenRows covering the library's themed components
+  - Light / dark preview toggle
+  - Category buttons with flipping / stable counts
+  - Light, dark and active swatches per token
+  - WCAG-style contrast label (high / ok / low / n/a) against the preview surface
+  - Per-row and per-category copy buttons using the Clipboard API
+  - Pure helpers exported: groupTokenRows, tokenValueForMode, flipsInDark,
+    hexToRgb, relativeLuminance, contrastRatio, contrastLabel,
+    cssOverrideSnippet
+
+  ACCESSIBILITY
+  - Preview toggle and category buttons are native buttons with aria-pressed
+  - Copy feedback is shown as text
+  - No motion
+
+  DEPENDENCIES — Zero beyond Svelte (svelte/reactivity SvelteMap).
+
+  PERFORMANCE — All values are $derived from the rows; negligible.
+
+  USAGE
+      <ThemeTokenInspector initialMode="dark" />
+
+  PROPS
+  | Prop        | Type              | Default                 | Description |
+  |-------------|-------------------|-------------------------|-------------|
+  | rows        | ThemeTokenRow[]   | defaultThemeTokenRows   | Token metadata to inspect |
+  | title       | string            | 'Theme token inspector' | Heading |
+  | initialMode | 'light' | 'dark'  | 'light'                 | Starting preview mode |
+  ============================================================
+-->
 <script lang="ts" module>
 	import { SvelteMap } from 'svelte/reactivity';
 

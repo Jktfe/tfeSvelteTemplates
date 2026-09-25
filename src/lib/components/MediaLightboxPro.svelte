@@ -1,3 +1,45 @@
+<!--
+  ============================================================
+  MediaLightboxPro — Thumbnail Gallery with Modal Viewer
+  ============================================================
+  WHAT — A responsive thumbnail grid that opens any item in a larger
+  viewer with title, caption, counter and wrapping previous/next.
+
+  WHY — Dependency-free screenshot or media proof for component docs,
+  QA dashboards and release notes.
+
+  FEATURES
+  - Lazy-loaded thumbnails in an auto-fit grid
+  - Viewer with "3 / 8" counter and optional caption
+  - Previous/next wrap round the ends
+  - Pure helpers exported: nextMediaIndex, previousMediaIndex, mediaCounter
+
+  ACCESSIBILITY
+  - Thumbnails and controls are native buttons
+  - Viewer uses role="dialog" with aria-modal and an aria-label
+  - Close button has an explicit aria-label
+  - Escape-to-close and focus trapping are not built in — add them if
+    you use it as a true modal
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Only the active item renders at full size; thumbnails
+  use loading="lazy".
+
+  USAGE
+      <MediaLightboxPro items={[
+        { id: 'home', title: 'Home', src: '/shots/home.png', alt: 'Home page', caption: 'Light theme' }
+      ]} />
+
+  PROPS
+  | Prop  | Type                | Default              | Description |
+  |-------|---------------------|----------------------|-------------|
+  | items | MediaLightboxItem[] | required             | Media (id, title, src, alt, caption?, type?) |
+  | title | string              | 'Media lightbox pro' | Heading |
+  | class | string              | ''                   | Extra classes on the root |
+  ============================================================
+-->
 <script lang="ts" module>
 	export interface MediaLightboxItem {
 		id: string;

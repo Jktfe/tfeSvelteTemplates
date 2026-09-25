@@ -1,3 +1,47 @@
+<!--
+  ============================================================
+  Avatar — User Identity Image with Initials Fallback
+  ============================================================
+  WHAT — Shows a user's photo, or their initials on a colour derived from
+  their name when there is no photo or it fails to load.
+
+  WHY — The single identity element; for overlapping groups with an
+  overflow counter, use AvatarStack.
+
+  FEATURES
+  - Automatic <img> onerror fallback to initials (resets if src changes)
+  - Deterministic background colour from the name, so the same user
+    gets the same colour everywhere
+  - Three sizes (sm / md / lg) and three shapes (circle / rounded / square)
+  - Optional presence dot: online / away / busy / offline
+  - children snippet to render a custom glyph instead of initials
+
+  ACCESSIBILITY
+  - role="img" with aria-label (alt, then name, then "User")
+  - Inner image, initials and status dot are aria-hidden so the label
+    is announced once
+  - No motion
+
+  DEPENDENCIES — Zero. Pure Svelte 5 runes and scoped CSS.
+
+  PERFORMANCE — Trivial; initials and colour are $derived.
+
+  USAGE
+      <Avatar name="Ada Lovelace" src="/ada.jpg" size="lg" status="online" />
+
+  PROPS
+  | Prop     | Type                                     | Default  | Description |
+  |----------|------------------------------------------|----------|-------------|
+  | src      | string                                   | —        | Image URL; falls back to initials on error |
+  | name     | string                                   | —        | Used for initials, colour and the label |
+  | alt      | string                                   | name     | Accessible label override |
+  | size     | 'sm' | 'md' | 'lg'                      | 'md'     | Diameter scale |
+  | shape    | 'circle' | 'rounded' | 'square'        | 'circle' | Corner treatment |
+  | status   | 'online' | 'away' | 'busy' | 'offline' | —        | Presence dot |
+  | children | Snippet                                  | —        | Custom content instead of initials |
+  | class    | string                                   | ''       | Extra classes |
+  ============================================================
+-->
 <script lang="ts">
 	/*
 	 * Avatar
