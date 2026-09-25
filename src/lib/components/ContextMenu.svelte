@@ -367,7 +367,7 @@
 	}
 </script>
 
-<svelte:window on:mousedown={handleWindowClick} on:keydown={handleWindowKeydown} />
+<svelte:window onmousedown={handleWindowClick} onkeydown={handleWindowKeydown} />
 
 <div
 	bind:this={triggerEl}

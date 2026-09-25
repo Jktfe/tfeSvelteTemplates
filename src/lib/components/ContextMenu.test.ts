@@ -412,4 +412,61 @@ describe('ContextMenu — keyboard interaction', () => {
 
 		expect(onSelect).toHaveBeenCalledWith('edit');
 	});
+
+	it('moves focus to the first enabled item on open and returns it to the trigger on Escape', async () => {
+		const { container } = render(ContextMenuTestHarness);
+		const trigger = container.querySelector('.ctx-trigger') as HTMLElement;
+		trigger.focus();
+
+		await fireEvent.keyDown(trigger, { key: 'F10', shiftKey: true });
+		await vi.runAllTimersAsync();
+		expect(document.activeElement?.getAttribute('data-context-menu-item-id')).toBe('edit');
+
+		await fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+	});
+
+	it('ArrowDown/ArrowUp move focus across items, skipping dividers and wrapping', async () => {
+		const { container } = render(ContextMenuTestHarness);
+		const trigger = container.querySelector('.ctx-trigger') as HTMLElement;
+
+		await fireEvent.contextMenu(trigger);
+		await vi.runAllTimersAsync();
+		const menu = screen.getByRole('menu');
+		const focusedId = () => document.activeElement?.getAttribute('data-context-menu-item-id');
+
+		await fireEvent.keyDown(menu, { key: 'ArrowDown' });
+		expect(focusedId()).toBe('copy');
+		await fireEvent.keyDown(menu, { key: 'ArrowDown' });
+		expect(focusedId()).toBe('delete');
+		await fireEvent.keyDown(menu, { key: 'ArrowDown' });
+		expect(focusedId()).toBe('edit');
+		await fireEvent.keyDown(menu, { key: 'ArrowUp' });
+		expect(focusedId()).toBe('delete');
+	});
+
+	it('closes on a window-level Escape even when focus has left the menu', async () => {
+		const { container } = render(ContextMenuTestHarness);
+		const trigger = container.querySelector('.ctx-trigger') as HTMLElement;
+
+		await fireEvent.contextMenu(trigger);
+		await vi.runAllTimersAsync();
+		expect(screen.getByRole('menu')).toBeTruthy();
+
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
+
+	it('closes on a mousedown outside the menu and trigger', async () => {
+		const { container } = render(ContextMenuTestHarness);
+		const trigger = container.querySelector('.ctx-trigger') as HTMLElement;
+
+		await fireEvent.contextMenu(trigger);
+		await vi.runAllTimersAsync();
+		expect(screen.getByRole('menu')).toBeTruthy();
+
+		await fireEvent.mouseDown(document.body);
+		expect(screen.queryByRole('menu')).toBeNull();
+	});
 });
