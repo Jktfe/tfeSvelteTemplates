@@ -28,7 +28,7 @@
 	ACCESSIBILITY:
 	- Animation is purely decorative
 	- Child content focus states work normally
-	- Respects prefers-reduced-motion (should be added to CSS)
+	- Respects prefers-reduced-motion (the shine stops looping)
 
 	USAGE:
 	<ShineBorder color="#146ef5" duration={4} borderWidth={2} borderRadius={16}>
@@ -142,20 +142,11 @@
 		width: 100%;
 	}
 
-	/*
-	 * [RFO] prefers-reduced-motion support - NEEDED
-	 * WHY NOT DONE BEFORE: Line 31 documents this as a known TODO that was deferred.
-	 * The animation is continuous and decorative, making it a clear accessibility issue.
-	 * This is a simple CSS fix (no JavaScript changes required).
-	 *
-	 * Implementation:
-	 * @media (prefers-reduced-motion: reduce) {
-	 *   .shine-border-wrapper { animation-duration: 0.01s; }
-	 * }
-	 */
+	/* The shine loops forever, so it is exactly the kind of decorative motion
+	   reduced-motion users want gone. Park the gradient in place instead. */
+	@media (prefers-reduced-motion: reduce) {
+		.shine-border-wrapper {
+			animation: none;
+		}
+	}
 </style>
-
-<!-- [CR] Component reviewed and documented. Gold Standard Pipeline: Steps 1-8 complete. -->
-<!-- [CR] RFO Review 27.12.25: prefers-reduced-motion support identified as NEEDED (simple CSS fix) -->
-<!-- Signed off: 26.12.25 -->
-<!-- RFO Review: 27.12.25 -->
