@@ -6,16 +6,17 @@
   WHAT IT DOES
   Wraps any trigger element (button, link, icon) and shows a small floating
   panel with helpful text on hover or keyboard focus. Hides on mouse leave,
-  blur, or pressing Escape. The trigger is linked to the tooltip body via
-  aria-describedby so screen readers announce the description after the
-  element's own name.
+  blur, or pressing Escape. The focusable element inside the trigger is
+  linked to the tooltip body via aria-describedby so screen readers
+  announce the description after the element's own name.
 
   FEATURES
   - Four placements: top / right / bottom / left
   - Configurable show / hide delays (ms)
   - Plain string or rich snippet content
   - Hover AND focus both trigger (touch and keyboard supported)
-  - Escape closes the tooltip if it's open
+  - Escape closes the tooltip if it's open — even a hover-opened one while
+    keyboard focus is elsewhere (WCAG 1.4.13 "dismissible")
   - Honours prefers-reduced-motion (no fade)
   - Honours prefers-color-scheme (dark flip via CSS custom properties)
   - Pure Svelte 5 runes, zero dependencies
@@ -157,13 +158,40 @@
 		}, hideDelay);
 	}
 
+	// Listening on the window (not just the wrapper) matters for WCAG 1.4.13:
+	// a tooltip opened by hover must be dismissible with Escape even when
+	// keyboard focus is somewhere else on the page.
 	function handleKey(event: KeyboardEvent) {
-		if (event.key === 'Escape' && visible) {
-			clearTimers();
-			visible = false;
-		}
+		if (event.key !== 'Escape') return;
+		if (!visible && !showTimer) return;
+		clearTimers();
+		visible = false;
 	}
+
+	// Screen readers only announce aria-describedby on the element that
+	// actually receives focus. The `.tooltip-trigger` span is never focused,
+	// so mirror the reference onto the first focusable thing inside it
+	// (preserving any describedby ids the consumer already set).
+	const FOCUSABLE_SELECTOR =
+		'a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
+
+	let triggerEl: HTMLSpanElement | undefined = $state();
+
+	$effect(() => {
+		const target = triggerEl?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+		if (!target) return;
+		const ref = tooltipId;
+		const isVisible = visible;
+		const existing = (target.getAttribute('aria-describedby') ?? '')
+			.split(/\s+/)
+			.filter((token) => token && token !== ref);
+		const next = isVisible ? [...existing, ref] : existing;
+		if (next.length) target.setAttribute('aria-describedby', next.join(' '));
+		else target.removeAttribute('aria-describedby');
+	});
 </script>
+
+<svelte:window onkeydown={handleKey} />
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <span
@@ -172,9 +200,8 @@
 	onmouseleave={hide}
 	onfocusin={show}
 	onfocusout={hide}
-	onkeydown={handleKey}
 >
-	<span class="tooltip-trigger" aria-describedby={visible ? tooltipId : undefined}>
+	<span bind:this={triggerEl} class="tooltip-trigger" aria-describedby={visible ? tooltipId : undefined}>
 		{@render children?.()}
 	</span>
 
