@@ -72,6 +72,8 @@ const GOLD_STANDARD_DOCS = [
 	// Text, Time & Content Motion
 	'src/lib/components/Typewriter.md',
 	'src/lib/components/ShinyText.md',
+	'src/lib/components/AnimatedText.md',
+	'src/lib/components/WaveText.md',
 	'src/lib/components/ScrambledText.md',
 	'src/lib/components/TrueFocus.md',
 	'src/lib/components/VariableProximity.md',

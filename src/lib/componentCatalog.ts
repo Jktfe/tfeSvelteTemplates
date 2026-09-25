@@ -704,6 +704,43 @@ export const componentCategories: ComponentCatalogCategory[] = [
 
 <ShinyText text="Premium" baseColor="#475569" shineColor="#fbbf24" duration={2.5} />`
 			}),
+			component('AnimatedText', '/animated-text', '➰', 'Text ribbon drifting along an SVG path that cross-fades into a hidden phrase.', {
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/components/AnimatedText.test.ts', 'src/lib/types.ts'],
+				usage: `<script lang="ts">
+  import AnimatedText from '$lib/components/AnimatedText.svelte';
+
+  let morphed = $state(false);
+</script>
+
+<AnimatedText
+  originalText="STATIC DRIFT TRANSMIT RECEIVE"
+  morphedText="SIGNAL FOUND — SAY HELLO"
+  trigger="hover"
+  speed={30}
+  direction="left"
+  bind:morphed
+/>
+<p>Showing: {morphed ? 'morphed' : 'original'}</p>`,
+				agentHint:
+					'Zero-dep SVG textPath ribbon. Uses $props.id() (Svelte 5.20+) for per-instance path ids, so multiple mounts never collide. Interactive modes render a real <button aria-pressed>: hover and keyboard focus-visible morph, tap / Enter / Space toggle, Escape resets; trigger="none" renders role="img". The rAF drift loop stops off-screen, when paused and under prefers-reduced-motion (morph becomes an instant swap). Theme via --animated-text-bg / --animated-text-fg / --animated-text-focus-ring (chrome, flip in dark) and --animated-text-accent (brand, stays). Import AnimatedTextProps from $lib/types or inline it.'
+			}),
+			component('WaveText', '/wavetext', '🌊', 'Phrase set on a generated sine wave that ripples on hover, focus or tap.', {
+				themeSupport: 'dual',
+				relatedFiles: ['src/lib/components/WaveText.test.ts', 'src/lib/types.ts'],
+				usage: `<script lang="ts">
+  import WaveText from '$lib/components/WaveText.svelte';
+
+  let playing = $state(false);
+</script>
+
+<WaveText text="Making waves" amplitude={24} wavelength={240} speed={0.6} bind:playing />
+<button type="button" onclick={() => (playing = !playing)}>
+  {playing ? 'Pause' : 'Play'} ripple
+</button>`,
+				agentHint:
+					'Zero-dep SVG sine path generated from amplitude + wavelength; advancing the phase makes the ripple flow. Styles are scoped (.wt-root / .wt-text) — never :global — and $props.id() (Svelte 5.20+) keeps path ids unique per mount. Interactive modes render <button aria-pressed> with hover, keyboard focus-visible, tap / Enter / Space toggle and Escape to stop; trigger="none" renders role="img" for purely decorative use. Under prefers-reduced-motion the wave flips half a cycle instead of animating. Theme via --wave-text-fg / --wave-text-bg / --wave-text-focus-ring (chrome, flip in dark) plus --wave-text-font / --wave-text-size.'
+			}),
 			component('ScrambledText', '/scrambledtext', '🔀', 'Glyph shuffle that resolves into readable copy.', {
 				usage: `<script lang="ts">
   import ScrambledText from '$lib/components/ScrambledText.svelte';
