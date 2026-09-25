@@ -11,7 +11,7 @@ const previews: RoutePreviewItem[] = [
 	{
 		name: 'ComponentHealthMatrix',
 		href: '/componenthealthmatrix',
-		screenshot: '/ComponentScreenshots/ComponentHealthMatrixShot.png',
+		screenshot: '/ComponentScreenshots/ComponentHealthMatrixShot.webp',
 		description: 'Catalogue QA dashboard.',
 		category: 'Library Operations',
 		status: 'ready'
@@ -19,7 +19,7 @@ const previews: RoutePreviewItem[] = [
 	{
 		name: 'RoutePreviewRail',
 		href: '/routepreviewrail',
-		screenshot: '/ComponentScreenshots/RoutePreviewRailShot.png',
+		screenshot: '/ComponentScreenshots/RoutePreviewRailShot.webp',
 		description: 'Visual route index.',
 		category: 'Library Operations',
 		status: 'review'
@@ -27,7 +27,7 @@ const previews: RoutePreviewItem[] = [
 	{
 		name: 'MissingDemo',
 		href: '/missingdemo',
-		screenshot: '/ComponentScreenshots/MissingDemoShot.png',
+		screenshot: '/ComponentScreenshots/MissingDemoShot.webp',
 		description: 'Needs proof.',
 		status: 'missing'
 	}

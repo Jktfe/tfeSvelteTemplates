@@ -56,7 +56,7 @@ const component = (
 	href: string,
 	icon: string,
 	description: string,
-	screenshotOrOptions: string | ComponentCatalogOptions = `${componentFileName(name)}Shot.png`,
+	screenshotOrOptions: string | ComponentCatalogOptions = `${componentFileName(name)}Shot.webp`,
 	options: ComponentCatalogOptions = {}
 ): ComponentCatalogItem => {
 	const resolvedOptions =
@@ -70,7 +70,7 @@ const component = (
 		href,
 		icon,
 		description,
-		screenshot: screenshot(resolvedOptions.screenshotFile ?? `${baseName}Shot.png`),
+		screenshot: screenshot(resolvedOptions.screenshotFile ?? `${baseName}Shot.webp`),
 		themeSupport: resolvedOptions.themeSupport ?? 'light',
 		source: resolvedOptions.source ?? `src/lib/components/${baseName}.svelte`,
 		docs: resolvedOptions.docs ?? `src/lib/components/${baseName}.md`,
@@ -104,7 +104,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <Sidebar {items} activeHref="/dashboard" title="Acme" />`
 			}),
 			component('Navbar', '/navbar', '☰', 'Responsive app navigation with a sliding panel.', {
-				screenshotFile: 'NavBarShot.png',
+				screenshotFile: 'NavBarShot.webp',
 				usage: `<script lang="ts">
   import Navbar from '$lib/components/Navbar.svelte';
   import type { MenuCategory } from '$lib/types';
@@ -1697,7 +1697,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 <GlobePresence {dots} autoRotate />`
 			}),
 			component('GeoViz', '/geo', '🌍', 'Choropleth and spike-map visualisations.', {
-				screenshotFile: 'GeoVizShot.png',
+				screenshotFile: 'GeoVizShot.webp',
 				source: 'src/lib/components/GeoChoropleth.svelte',
 				docs: 'src/lib/components/GeoViz.md',
 				relatedFiles: [
@@ -1815,7 +1815,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
     {
       name: 'EvidenceCard',
       href: '/evidencecard',
-      screenshot: '/ComponentScreenshots/EvidenceCardShot.png',
+      screenshot: '/ComponentScreenshots/EvidenceCardShot.webp',
       description: 'Compact delivery proof card.',
       status: 'ready'
     }
@@ -1876,7 +1876,7 @@ export const componentCategories: ComponentCatalogCategory[] = [
 			summary: 'Better Auth flows and protected-route examples for public demos.',
 		components: [
 			component('Auth Demo', '/auth', '🔐', 'Better Auth sign-in, sign-up, and demo-account entry.', {
-				screenshotFile: 'AuthShot.png',
+				screenshotFile: 'AuthShot.webp',
 				source: 'src/routes/auth/+page.svelte',
 				docs: 'src/lib/components/AuthStatus.md',
 				dependencies: ['better-auth'],

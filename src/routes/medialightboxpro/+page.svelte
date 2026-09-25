@@ -10,21 +10,21 @@
 		{
 			id: 'health',
 			title: 'Health matrix proof',
-			src: '/ComponentScreenshots/ComponentHealthMatrixShot.png',
+			src: '/ComponentScreenshots/ComponentHealthMatrixShot.webp',
 			alt: 'ComponentHealthMatrix screenshot',
 			caption: 'Catalogue health matrix route proof.'
 		},
 		{
 			id: 'evidence',
 			title: 'Evidence card proof',
-			src: '/ComponentScreenshots/EvidenceCardShot.png',
+			src: '/ComponentScreenshots/EvidenceCardShot.webp',
 			alt: 'EvidenceCard screenshot',
 			caption: 'Delivery proof card route proof.'
 		},
 		{
 			id: 'theme',
 			title: 'Theme inspector proof',
-			src: '/ComponentScreenshots/ThemeTokenInspectorShot.png',
+			src: '/ComponentScreenshots/ThemeTokenInspectorShot.webp',
 			alt: 'ThemeTokenInspector screenshot',
 			caption: 'Theme-token inspector route proof.'
 		}

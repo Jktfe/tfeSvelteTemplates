@@ -69,7 +69,7 @@ Every merged component needs:
 - Focused tests where logic exists.
 - Demo route at `src/routes/<name>/+page.svelte`
 - Home/nav visibility.
-- Screenshot in `static/ComponentScreenshots/`
+- Screenshot in `static/ComponentScreenshots/` as `<Name>Shot.webp` (max 1200px wide, top ~900px of the page — thumbnails, not full-page captures)
 - Accessible keyboard/focus states where interactive.
 - `prefers-reduced-motion` handling where animated.
 - No unnecessary external dependencies.
